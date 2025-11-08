@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 AutoUpdate-Show-In-Client: true
 OpenIDE-Module: openpkm.jcef
+OpenIDE-Module-Install: openpkm/jcef/Installer.class
 OpenIDE-Module-Localizing-Bundle: openpkm/jcef/Bundle.properties
 OpenIDE-Module-Specification-Version: 1.0
 

@@ -1,3 +1,9 @@
 /build/
 /jcef/release/modules/lib/amd64/libcef.dll
 /jcef/build/
+/asciidoc/build/
+/core/build/
+/asciidoc/nbproject/private/
+/base/nbproject/private/
+/core/nbproject/private/
+/jcef/nbproject/private/
