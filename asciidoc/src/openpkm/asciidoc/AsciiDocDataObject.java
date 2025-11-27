@@ -7,9 +7,6 @@ package openpkm.asciidoc;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-import openpkm.base.PkmData;
-import openpkm.base.PkmDataObject;
-import openpkm.core.PkmMultiViewEditorElement;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
 import org.openide.awt.ActionID;
@@ -94,7 +91,7 @@ import org.openide.windows.TopComponent;
         position=1400
     )
 })
-public class AsciiDocDataObject extends MultiDataObject implements PkmDataObject
+public class AsciiDocDataObject extends MultiDataObject
 {
     private static final Logger LOG = Logger.getLogger(AsciiDocDataObject.class.getName());
 
@@ -122,19 +119,7 @@ public class AsciiDocDataObject extends MultiDataObject implements PkmDataObject
             lookup = new ProxyLookup(super.getLookup(), new AbstractLookup(lookupContent));
         }
         return lookup;
-    } 
-    
-    @Override
-    public void addData(PkmData data)
-    {
-        lookupContent.add(data);
-    }   
-    
-    @Override
-    public void removeData(PkmData data)
-    {
-        lookupContent.remove(data);
-    }     
+    }    
 
     @MultiViewElement.Registration(
         displayName = "#LBL_AsciiDoc_EDITOR",
@@ -146,6 +131,6 @@ public class AsciiDocDataObject extends MultiDataObject implements PkmDataObject
     )
     @Messages("LBL_AsciiDoc_EDITOR=Source")
     public static MultiViewEditorElement createEditor(Lookup lkp) {
-        return new PkmMultiViewEditorElement(lkp);
-    }
+        return new MultiViewEditorElement(lkp);
+    }  
 }

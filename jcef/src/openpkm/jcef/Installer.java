@@ -4,18 +4,25 @@
  */
 package openpkm.jcef;
 
+import java.util.Collection;
 import org.openide.modules.ModuleInstall;
 import org.openide.util.Lookup;
 
 public class Installer extends ModuleInstall 
-{
+{    
     @Override
-    public void restored() 
+    public void close() 
     {
-        CefProvider provider = Lookup.getDefault().lookup(CefProvider.class);
+        Collection<? extends CefClientProvider> providers = Lookup.getDefault().lookupAll(CefClientProvider.class);
+        for(CefClientProvider provider : providers)
+        {
+            provider.dispose();
+        }
+        
+        CefAppProvider provider = Lookup.getDefault().lookup(CefAppProvider.class);
         if(provider != null)
         {
             provider.dispose();
         }
-    }
+    }    
 }

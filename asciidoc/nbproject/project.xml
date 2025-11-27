@@ -40,6 +40,15 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
+                    <code-name-base>org.netbeans.bootstrap</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <release-version>1</release-version>
+                        <implementation-version/>
+                    </run-dependency>
+                </dependency>
+                <dependency>
                     <code-name-base>org.netbeans.core.multiview</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
@@ -78,6 +87,14 @@
                     <compile-dependency/>
                     <run-dependency>
                         <specification-version>7.97</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.modules</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>7.78</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -130,6 +147,58 @@
                 </dependency>
             </module-dependencies>
             <public-packages/>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-cli-3.0.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-cli-3.0.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-diagram-plantuml-1.2024.5.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-diagram-plantuml-1.2024.5.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-diagram-2.3.1.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-diagram-2.3.1.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-epub3-2.1.3.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-epub3-2.1.3.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-pdf-2.3.18.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-pdf-2.3.18.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-3.0.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-3.0.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-diagram-jsyntrax-1.38.2.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-diagram-jsyntrax-1.38.2.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/jcommander-1.82.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/jcommander-1.82.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/jruby-complete-9.4.8.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/jruby-complete-9.4.8.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-revealjs-5.1.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-revealjs-5.1.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-diagram-batik-1.17.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-diagram-batik-1.17.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-api-3.0.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-api-3.0.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/asciidoctorj-diagram-ditaamini-1.0.3.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/asciidoctorj-diagram-ditaamini-1.0.3.jar</binary-origin>
+            </class-path-extension>
         </data>
     </configuration>
 </project>
