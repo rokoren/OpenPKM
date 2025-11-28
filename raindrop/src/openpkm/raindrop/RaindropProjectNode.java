@@ -42,7 +42,7 @@ public class RaindropProjectNode extends FilterNode implements ChangeListener, P
     public RaindropProjectNode(Node node, RaindropProject project) throws DataObjectNotFoundException {
         super(node, NodeFactorySupport.createCompositeChildren(
                 project,
-                "Projects/openpkm-raindrop-project/Nodes"),
+                "Projects/openpkm-project/Nodes"),
                 new ProxyLookup(
                         new Lookup[]{
                             Lookups.singleton(project),

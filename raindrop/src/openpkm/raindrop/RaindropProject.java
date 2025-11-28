@@ -50,7 +50,6 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenTopic;
-import openpkm.base.DataGroup;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
 import openpkm.base.Goal;
@@ -100,14 +99,13 @@ import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.FileUtil;
-import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObject;
-import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.DataGroupProvider;
 
 /**
  *
@@ -268,12 +266,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 list.add(new SourcesImpl()); 
                 
-                list.add(new ThoughtDataGroup()); 
-                list.add(new BookDataGroup()); 
-                list.add(new ArticleDataGroup()); 
-                list.add(new DocumentDataGroup()); 
-                list.add(new LinkDataGroup());                
-                list.add(new VideoDataGroup()); 
+                list.add(new ThoughtDataGroupProviderImpl()); 
+                list.add(new BookDataGroupProviderImpl()); 
+                list.add(new ArticleDataGroupProviderImpl()); 
+                list.add(new DocumentDataGroupProviderImpl()); 
+                list.add(new LinkDataGroupProviderImpl());                
+                list.add(new VideoDataGroupProviderImpl()); 
             }                                   
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
@@ -705,34 +703,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO DataGroup    
 
-    private final class ThoughtDataGroup implements DataGroup, PropertyChangeListener
+    private final class ThoughtDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/notes_pin.png"; 
         
         private final ChangeSupport changeSupport; 
 
-        public ThoughtDataGroup()
+        public ThoughtDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }         
+        
+        @Override
         public Integer getPosition() 
         {
             return POSITION_THOUGHTS;
-        }        
-        
-        private boolean hasThought(DataObject data)
-        {
-            Thought thought = data.getLookup().lookup(Thought.class);
-            if(thought != null)
-            {
-                return true;
-            } 
-            return false;
-        }
+        }                
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -776,25 +770,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public boolean contains(FileObject file) 
+        public boolean contains(DataObject data) 
         {
-            if(file.isData())
+            if(data != null)
             {
-                try
+                Thought thought = data.getLookup().lookup(Thought.class);
+                if(thought != null)
                 {
-                    DataObject data = DataObject.find(file);                    
-                    return hasThought(data);
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }
-            else if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                return hasThought(data);
-            }                                     
+                    return true;
+                }                 
+            }                                    
             return false;
         }
 
@@ -808,34 +793,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
     
-    private final class BookDataGroup implements DataGroup, PropertyChangeListener
+    private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/books.png"; 
         
         private final ChangeSupport changeSupport; 
 
-        public BookDataGroup()
+        public BookDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }         
+        
+        @Override
         public Integer getPosition() 
         {
             return POSITION_BOOKS;
-        }          
-        
-        private boolean hasBook(DataObject data)
-        {
-            Book book = data.getLookup().lookup(Book.class);
-            if(book != null)
-            {
-                return true;
-            } 
-            return false;
-        }
+        }                  
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -879,25 +860,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public boolean contains(FileObject file) 
+        public boolean contains(DataObject data) 
         {
-            if(file.isData())
+            if(data != null)
             {
-                try
+                Book book = data.getLookup().lookup(Book.class);
+                if(book != null)
                 {
-                    DataObject data = DataObject.find(file);                    
-                    return hasBook(data);
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }
-            else if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                return hasBook(data);
-            }                                     
+                    return true;
+                } 
+            }                                  
             return false;
         }
 
@@ -911,34 +883,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }   
     
-    private final class ArticleDataGroup implements DataGroup, PropertyChangeListener
+    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/newspaper.png"; 
         
         private final ChangeSupport changeSupport; 
 
-        public ArticleDataGroup()
+        public ArticleDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }         
+        
+        @Override
         public Integer getPosition() 
         {
             return POSITION_ARTICLES;
-        }          
-        
-        private boolean hasArticle(DataObject data)
-        {
-            Article article = data.getLookup().lookup(Article.class);
-            if(article != null)
-            {
-                return true;
-            } 
-            return false;
-        }
+        }                  
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -982,25 +950,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public boolean contains(FileObject file) 
+        public boolean contains(DataObject data) 
         {
-            if(file.isData())
+            if(data != null)
             {
-                try
+                Article article = data.getLookup().lookup(Article.class);
+                if(article != null)
                 {
-                    DataObject data = DataObject.find(file);                    
-                    return hasArticle(data);
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }
-            else if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                return hasArticle(data);
-            }                                     
+                    return true;
+                }                 
+            }                                    
             return false;
         }
 
@@ -1014,34 +973,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     } 
     
-    private final class DocumentDataGroup implements DataGroup, PropertyChangeListener
+    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/inbox_document.png"; 
         
         private final ChangeSupport changeSupport; 
 
-        public DocumentDataGroup()
+        public DocumentDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }         
+        
+        @Override
         public Integer getPosition() 
         {
             return POSITION_DOCUMENTS;
-        }          
-        
-        private boolean hasDocument(DataObject data)
-        {
-            Document document = data.getLookup().lookup(Document.class);
-            if(document != null)
-            {
-                return true;
-            } 
-            return false;
-        }
+        }                 
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -1085,25 +1040,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public boolean contains(FileObject file) 
+        public boolean contains(DataObject data) 
         {
-            if(file.isData())
+            if(data != null)
             {
-                try
+                Document document = data.getLookup().lookup(Document.class);
+                if(document != null)
                 {
-                    DataObject data = DataObject.find(file);                    
-                    return hasDocument(data);
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }
-            else if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                return hasDocument(data);
-            }                                     
+                    return true;
+                }                 
+            }                                    
             return false;
         }
 
@@ -1117,34 +1063,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
 
-    private final class LinkDataGroup implements DataGroup, PropertyChangeListener
+    private final class LinkDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/web_layout.png"; 
         
         private final ChangeSupport changeSupport; 
 
-        public LinkDataGroup()
+        public LinkDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }        
+        
+        @Override
         public Integer getPosition() 
         {
             return POSITION_LINKS;
-        }          
-        
-        private boolean hasLink(DataObject data)
-        {
-            Link link = data.getLookup().lookup(Link.class);
-            if(link != null)
-            {
-                return true;
-            } 
-            return false;
-        }
+        }                  
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -1188,25 +1130,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public boolean contains(FileObject file) 
+        public boolean contains(DataObject data) 
         {
-            if(file.isData())
+            if(data != null)
             {
-                try
+                Link link = data.getLookup().lookup(Link.class);
+                if(link != null)
                 {
-                    DataObject data = DataObject.find(file);                    
-                    return hasLink(data);
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }
-            else if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                return hasLink(data);
-            }                                     
+                    return true;
+                }                 
+            }                                    
             return false;
         }
 
@@ -1220,34 +1153,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
     
-    private final class VideoDataGroup implements DataGroup, PropertyChangeListener
+    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/television.png"; 
         
         private final ChangeSupport changeSupport; 
 
-        public VideoDataGroup()
+        public VideoDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }        
+        
+        @Override
         public Integer getPosition() 
         {
             return POSITION_VIDEOS;
-        }          
-        
-        private boolean hasVideo(DataObject data)
-        {
-            Video video = data.getLookup().lookup(Video.class);
-            if(video != null)
-            {
-                return true;
-            } 
-            return false;
-        }
+        }                  
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -1291,25 +1220,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public boolean contains(FileObject file) 
+        public boolean contains(DataObject data) 
         {
-            if(file.isData())
+            if(data != null)
             {
-                try
+                Video video = data.getLookup().lookup(Video.class);
+                if(video != null)
                 {
-                    DataObject data = DataObject.find(file);                    
-                    return hasVideo(data);
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }
-            else if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                return hasVideo(data);
-            }                                     
+                    return true;
+                }                 
+            }                                   
             return false;
         }
 
@@ -1333,7 +1253,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }
+        }        
         
         @Override
         public SourceProvider getSourceProvider(String folder)

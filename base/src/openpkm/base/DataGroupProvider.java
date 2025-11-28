@@ -9,28 +9,31 @@ import java.io.IOException;
 import java.util.Comparator;
 import javax.swing.event.ChangeListener;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public interface DataGroup 
+public interface DataGroupProvider 
 {
     FileObject getRootFolder() throws IOException;    
     String getName();
     String getDisplayName();
     Image getIcon(boolean hasChildren);
     Integer getPosition();
-    boolean contains(FileObject file);
+    boolean contains(DataObject data);
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener);
+    Lookup.Provider getProvider();    
     
-    public static Comparator<DataGroup> positionComparator() 
+    public static Comparator<DataGroupProvider> positionComparator() 
     {
-        return new Comparator<DataGroup>() 
+        return new Comparator<DataGroupProvider>() 
         {
             @Override
-            public int compare(DataGroup group1, DataGroup group2) 
+            public int compare(DataGroupProvider group1, DataGroupProvider group2) 
             {
                 return group1.getPosition().compareTo(group2.getPosition());
             }
