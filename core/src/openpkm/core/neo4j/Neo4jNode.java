@@ -35,7 +35,7 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-@ServicesTabNodeRegistration(name="neo4j", displayName="Neo4j", iconResource = "openpkm/neo4j/resources/logo16.png")
+@ServicesTabNodeRegistration(name="neo4j", displayName="Neo4j", iconResource = "openpkm/core/resources/neo4j.png")
 public class Neo4jNode extends AbstractNode
 {
     @StaticResource()
