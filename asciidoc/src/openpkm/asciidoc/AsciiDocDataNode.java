@@ -5,10 +5,14 @@
 package openpkm.asciidoc;
 
 import java.awt.Image;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import openpkm.base.IconProvider;
 import openpkm.base.TitleProvider;
 import org.openide.loaders.DataNode;
@@ -18,14 +22,15 @@ import org.openide.nodes.Children;
  *
  * @author Rok Koren
  */
-public class AsciiDocDataNode extends DataNode
+public class AsciiDocDataNode extends DataNode implements PropertyChangeListener, ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(AsciiDocDataNode.class.getName());    
     
     public AsciiDocDataNode(AsciiDocDataObject data) 
     {
         super(data, Children.LEAF, data.getLookup());
-        //data.getChangeSupport().addChangeListener(this);
+        data.addPropertyChangeListener(this);
+        data.addChangeListener(this);
     }
     
     @Override    
@@ -65,4 +70,19 @@ public class AsciiDocDataNode extends DataNode
         }       
         return super.getDisplayName();
     }     
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) 
+    {
+        if(evt.getPropertyName().equals(TitleProvider.PROP_TITLE))
+        {
+            fireDisplayNameChange(evt.getOldValue().toString(), evt.getNewValue().toString());
+        }
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) 
+    {
+        fireIconChange();
+    }
 }

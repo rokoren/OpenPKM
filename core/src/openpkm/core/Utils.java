@@ -25,6 +25,10 @@ import java.util.List;
 import java.util.Properties;
 import javax.swing.Icon;
 import javax.swing.UIManager;
+import openpkm.base.Source;
+import openpkm.base.SourceProvider;
+import openpkm.base.SourcesProvider;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
@@ -464,5 +468,25 @@ public class Utils
             return getRootProject(parent);            
         }
         return null;        
-    }     
+    }
+    
+    public static Source getSource(FileObject file)
+    {
+        Project project = FileOwnerQuery.getOwner(file);
+        if(project != null)
+        {
+            SourcesProvider sources = project.getLookup().lookup(SourcesProvider.class);
+            if(sources != null)
+            {
+                String sourceID = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_ID);
+                String folder = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_FOLDER);  
+                SourceProvider source = sources.getSourceProvider(folder);
+                if(source != null)
+                {
+                    return source.getSource(sourceID);
+                }
+            }
+        } 
+        return null;
+    }
 }

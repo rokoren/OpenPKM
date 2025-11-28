@@ -5,8 +5,14 @@
 
 package openpkm.asciidoc;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.logging.Logger;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import openpkm.base.Source;
+import openpkm.core.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
 import org.openide.awt.ActionID;
@@ -18,6 +24,7 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectExistsException;
 import org.openide.loaders.MultiDataObject;
 import org.openide.loaders.MultiFileLoader;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.AbstractLookup;
@@ -91,21 +98,33 @@ import org.openide.windows.TopComponent;
         position=1400
     )
 })
-public class AsciiDocDataObject extends MultiDataObject
+public class AsciiDocDataObject extends MultiDataObject implements PropertyChangeListener, ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(AsciiDocDataObject.class.getName());
 
     private final InstanceContent lookupContent;
+    private final ChangeSupport changeSupport;
     
     private Lookup lookup;    
     
     public AsciiDocDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException 
     {
         super(pf, loader);
-        lookupContent = new InstanceContent();        
-        registerEditor("text/x-asciidoc", true);
+        lookupContent = new InstanceContent(); 
+        changeSupport = new ChangeSupport(this);
+        registerEditor("text/x-asciidoc", true);        
+    }   
+    
+    public void addChangeListener(ChangeListener listener)
+    {
+        changeSupport.addChangeListener(listener);
     }
-
+    
+    public void removeChangeListener(ChangeListener listener)
+    {
+        changeSupport.removeChangeListener(listener);
+    }      
+    
     @Override
     protected int associateLookup() {
         return 1;
@@ -115,7 +134,14 @@ public class AsciiDocDataObject extends MultiDataObject
     public Lookup getLookup()
     { 
         if(lookup == null)
-        { 
+        {             
+            Source source = Utils.getSource(getPrimaryFile());
+            if(source != null)
+            {
+                source.addPropertyChangeListener(this);
+                source.addChangeListener(this);
+                lookupContent.add(source);                
+            }                                     
             lookup = new ProxyLookup(super.getLookup(), new AbstractLookup(lookupContent));
         }
         return lookup;
@@ -133,4 +159,26 @@ public class AsciiDocDataObject extends MultiDataObject
     public static MultiViewEditorElement createEditor(Lookup lkp) {
         return new MultiViewEditorElement(lkp);
     }  
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) 
+    {
+        firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent evt) 
+    {
+        Source source = (Source)evt.getSource();
+        if(source.isDeleted())
+        {
+            source.removePropertyChangeListener(this);
+            source.removeChangeListener(this);
+            lookupContent.remove(source);            
+        }
+        else
+        {
+            changeSupport.fireChange();
+        }
+    }
 }

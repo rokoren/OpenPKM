@@ -1552,7 +1552,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Reference reference = getReferences().remove(file.getName());  
             if(reference != null)
             {
-                reference.setDeleted(true);
+                reference.setDeleted();
+                setLastSource(reference);
             }
         }
 
@@ -1826,7 +1827,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Raindrop raindrop = getRaindrops().remove(file.getName());  
             if(raindrop != null)
             {
-                raindrop.setDeleted(true);
+                raindrop.setDeleted();
+                setLastSource(raindrop);
             }
         }
 
@@ -2013,7 +2015,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             YouTubeVideo video = getVideos().remove(file.getName());  
             if(video != null)
             {
-                video.setDeleted(true);
+                video.setDeleted();
+                setLastSource(video);
             }
         }
 

@@ -8,21 +8,23 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
+import javax.swing.event.ChangeListener;
 
 /**
  *
  * @author Rok Koren
  */
 public interface Source
-{     
-    String PROP_DELETED             = "deleted";    
+{      
     String PROP_TIME_CREATED        = "time.created";    
     
     String getSourceID();
     LocalDateTime getTimeCreated(); 
     void save(OutputStream os, String comments) throws IOException;    
+    void setDeleted();
     boolean isDeleted();
-    void setDeleted(boolean deleted);  
     void addPropertyChangeListener(PropertyChangeListener listener);
     void removePropertyChangeListener(PropertyChangeListener listener);
+    void addChangeListener(ChangeListener listener);  
+    void removeChangeListener(ChangeListener listener);     
 }

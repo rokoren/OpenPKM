@@ -12,7 +12,7 @@ import javax.swing.event.ChangeListener;
  * @author Rok Koren
  */
 public interface IconProvider 
-{
+{       
     Image getIcon(); 
     void addChangeListener(ChangeListener listener);  
     void removeChangeListener(ChangeListener listener);    

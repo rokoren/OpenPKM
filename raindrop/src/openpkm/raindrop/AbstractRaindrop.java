@@ -4,6 +4,7 @@
  */
 package openpkm.raindrop;
 
+import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -17,26 +18,31 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.Book;
 import openpkm.base.Document;
+import openpkm.base.IconProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Video;
 import openpkm.base.Link;
 import org.openide.awt.NotificationDisplayer;
+import org.openide.util.ChangeSupport;
+import org.openide.util.ImageUtilities;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, TagsProvider
+public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider
 {
     private static final Logger LOG = Logger.getLogger(AbstractRaindrop.class.getName());  
     
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");     
          
     protected final Properties props;    
-    protected final PropertyChangeSupport propertyChangeSupport; 
+    protected final PropertyChangeSupport propertyChangeSupport;
+    protected final ChangeSupport changeSupport; 
     
     private boolean isDeleted;
 
@@ -44,6 +50,7 @@ public abstract class AbstractRaindrop implements Raindrop, TagsProvider
     {
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
+        changeSupport = new ChangeSupport(this);
     }
     
     @Override
@@ -56,7 +63,19 @@ public abstract class AbstractRaindrop implements Raindrop, TagsProvider
     public void removePropertyChangeListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.removePropertyChangeListener(listener);
-    }   
+    } 
+    
+    @Override
+    public void addChangeListener(ChangeListener listener)
+    {
+        changeSupport.addChangeListener(listener);
+    }
+    
+    @Override
+    public void removeChangeListener(ChangeListener listener)
+    {
+        changeSupport.removeChangeListener(listener);
+    }     
     
     @Override
     public boolean isDeleted()
@@ -65,11 +84,10 @@ public abstract class AbstractRaindrop implements Raindrop, TagsProvider
     }
     
     @Override
-    public void setDeleted(boolean deleted)
+    public void setDeleted()
     {
-        boolean oldDeleted = isDeleted;
-        isDeleted = deleted;
-        propertyChangeSupport.firePropertyChange(PROP_DELETED, oldDeleted, deleted);
+        isDeleted = true;
+        changeSupport.fireChange();
     }
     
     @Override
@@ -375,7 +393,13 @@ public abstract class AbstractRaindrop implements Raindrop, TagsProvider
     public void setRemoved(boolean removed) 
     {
         props.setProperty(PROPS_REMOVED, Boolean.toString(removed));
-    }     
+    } 
+
+    @Override
+    public Image getIcon() 
+    {    
+        return ImageUtilities.loadImage(ICON); 
+    }
     
     @Override
     public void save(OutputStream os, String comments) throws IOException
