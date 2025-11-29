@@ -17,6 +17,7 @@ import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
+import org.openide.cookies.CloseCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.MIMEResolver;
 import org.openide.loaders.DataObject;
@@ -173,7 +174,12 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
         {
             source.removePropertyChangeListener(this);
             source.removeChangeListener(this);
-            lookupContent.remove(source);            
+            lookupContent.remove(source);  
+            CloseCookie close = getCookie(CloseCookie.class);
+            if(close != null)
+            {
+                close.close();
+            }            
         }
         else
         {

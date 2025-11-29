@@ -125,7 +125,7 @@
     <Component class="javax.swing.JButton" name="jButton1">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/project/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" value="BROWSE" noResource="true"/>
       </Properties>
