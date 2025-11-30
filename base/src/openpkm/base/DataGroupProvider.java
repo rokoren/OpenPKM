@@ -7,6 +7,8 @@ package openpkm.base;
 import java.awt.Image;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.List;
+import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
@@ -22,6 +24,7 @@ public interface DataGroupProvider
     String getName();
     String getDisplayName();
     Image getIcon(boolean hasChildren);
+    List<Action> getActions();
     Integer getPosition();
     boolean contains(DataObject data);
     void addChangeListener(ChangeListener listener);

@@ -6,8 +6,10 @@ package openpkm.core;
 
 import java.awt.Image;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -45,9 +47,12 @@ public class DataGroupNode extends AbstractNode implements NodeProvider
         this.provider = provider;
     }      
 
-    public @Override Action[] getActions(boolean context) 
+    @Override    
+    public Action[] getActions(boolean context) 
     {
-        return new Action[] {};
+        List<Action> actions = new ArrayList();
+        actions.addAll(provider.getActions());
+        return actions.toArray(new Action[actions.size()]);
     }
 
     private Image getIcon(boolean opened) 

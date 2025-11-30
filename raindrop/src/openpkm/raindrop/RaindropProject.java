@@ -106,6 +106,7 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
+import openpkm.youtube.YouTubeSourceProvider;
 
 /**
  *
@@ -148,7 +149,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private final FileObject projectDir;        
     private final ProjectState state;
     private final Properties props;   
-    private final RaindropSourceGroup raindrops;    
+    private final RaindropSourceProviderImpl raindrops;    
     
     private Lookup lkp;    
     private Source lastSource;
@@ -162,7 +163,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         this.projectDir = projectDir;        
         this.state = state;
         this.props = props;
-        raindrops = new RaindropSourceGroup();
+        raindrops = new RaindropSourceProviderImpl();
         
         ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
         if(referenceProvider != null)
@@ -174,7 +175,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
         if(youtubeProvider != null)
         {
-            SourceProvider youTube = new YouTubeSourceGroup(youtubeProvider);
+            SourceProvider youTube = new YouTubeSourceProviderImpl(youtubeProvider);
             sources.put(youTube.getRootFolder().getName(), youTube);                       
         }        
         
@@ -1488,7 +1489,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceGroup implements SourceProvider, FileChangeListener, Runnable 
+    private final class RaindropSourceProviderImpl implements SourceProvider, FileChangeListener, Runnable 
     {
         private static final String ROOT_FOLDER = "raindrop";       
               
@@ -1540,10 +1541,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 try
                 {                
-                    rootDir = getDataDirectory().getFileObject(ROOT_FOLDER);
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
                     if(rootDir == null)
                     {
-                        rootDir = getDataDirectory().createFolder(ROOT_FOLDER);
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
                         LOG.info("Raindrop root folder created: " + dataDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
@@ -1763,28 +1764,21 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     }  
     
-    private final class YouTubeSourceGroup implements SourceProvider, FileChangeListener
-    { 
-        private static final String ROOT_FOLDER = "youtube";       
-              
-        private Map<String, YouTubeVideo> videos; 
-        
-        private FileObject rootDir; 
-        
-        private final YouTubeVideoProvider provider;
-
-        public YouTubeSourceGroup(YouTubeVideoProvider provider) 
+    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener
+    {
+        public YouTubeSourceProviderImpl(YouTubeVideoProvider provider) 
         {
-            this.provider = provider;
-        }                
+            super(provider);
+        }          
         
         @Override
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
-        }         
+        } 
         
-        private synchronized Map<String, YouTubeVideo> getVideos()
+        @Override
+        public synchronized Map<String, YouTubeVideo> getVideos()
         {
             if(videos == null)
             {
@@ -1807,13 +1801,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
             }
             return videos;
-        }
-
-        @Override
-        public Source getSource(String sourceID) 
-        {
-            return getVideos().get(sourceID);
-        }                    
+        }        
 
         @Override
         public synchronized FileObject getRootFolder() 
@@ -1822,10 +1810,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 try
                 {                
-                    rootDir = getDataDirectory().getFileObject(ROOT_FOLDER);
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
                     if(rootDir == null)
                     {
-                        rootDir = getDataDirectory().createFolder(ROOT_FOLDER);
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
                         LOG.info("Raindrop root folder created: " + dataDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
@@ -1837,30 +1825,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             return rootDir;
         }                
-
-        @Override
-        public String getName() 
-        {
-            return "youtube";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "YouTube";
-        }
-
-        @Override
-        public Icon getIcon(boolean bln) 
-        {
-            return new ImageIcon(ImageUtilities.loadImage(YouTubeVideo.ICON));
-        }
-
-        @Override
-        public boolean contains(FileObject file) 
-        {
-            return getVideos().containsKey(file.getName());
-        }
 
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
