@@ -15,7 +15,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>openpkm.core</code-name-base>
+                    <code-name-base>openpkm.utils</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>

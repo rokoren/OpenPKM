@@ -3,7 +3,7 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>openpkm.raindrop</code-name-base>
+            <code-name-base>openpkm.utils</code-name-base>
             <suite-component/>
             <module-dependencies>
                 <dependency>
@@ -23,72 +23,12 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>openpkm.rss</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <specification-version>1.0</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
-                    <code-name-base>openpkm.utils</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <specification-version>1.0</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
-                    <code-name-base>openpkm.youtube</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <specification-version>1.0</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
-                    <code-name-base>org.netbeans.api.annotations.common</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <release-version>1</release-version>
-                        <specification-version>1.55</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
-                    <code-name-base>org.netbeans.core.ide</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <release-version>1</release-version>
-                        <specification-version>1.68</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
                     <code-name-base>org.netbeans.modules.projectapi</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
                         <release-version>1</release-version>
-                        <specification-version>1.99</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
-                    <code-name-base>org.netbeans.modules.projectuiapi</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <release-version>1</release-version>
-                        <specification-version>1.119.0.8</specification-version>
-                    </run-dependency>
-                </dependency>
-                <dependency>
-                    <code-name-base>org.netbeans.modules.projectuiapi.base</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
-                    <run-dependency>
-                        <release-version>1</release-version>
-                        <specification-version>1.113.0.9</specification-version>
+                        <specification-version>1.102</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -96,7 +36,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.95</specification-version>
+                        <specification-version>7.98</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -104,7 +44,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.74</specification-version>
+                        <specification-version>7.77</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -112,7 +52,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>9.40</specification-version>
+                        <specification-version>9.43</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -128,7 +68,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>7.72</specification-version>
+                        <specification-version>7.75</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -136,7 +76,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>9.35</specification-version>
+                        <specification-version>9.38</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -144,7 +84,7 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>8.61</specification-version>
+                        <specification-version>8.64</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -152,15 +92,13 @@
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
-                        <specification-version>9.36</specification-version>
+                        <specification-version>9.39</specification-version>
                     </run-dependency>
                 </dependency>
             </module-dependencies>
-            <public-packages/>
-            <class-path-extension>
-                <runtime-relative-path>ext/json-20231013.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/json-20231013.jar</binary-origin>
-            </class-path-extension>
+            <public-packages>
+                <package>openpkm.utils</package>
+            </public-packages>
         </data>
     </configuration>
 </project>

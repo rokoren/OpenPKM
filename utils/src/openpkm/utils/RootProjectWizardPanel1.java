@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/wizardPanel.java to edit this template
  */
-package openpkm.core;
+package openpkm.utils;
 
 import javax.swing.event.ChangeListener;
 import openpkm.base.TitleProvider;
