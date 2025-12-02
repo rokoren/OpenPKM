@@ -35,14 +35,14 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-@ServicesTabNodeRegistration(name="neo4j", displayName="Neo4j", iconResource = "openpkm/core/resources/neo4j.png")
+@ServicesTabNodeRegistration(name="neo4j", displayName="Neo4j", iconResource = "openpkm/core/resources/logo16.png")
 public class Neo4jNode extends AbstractNode
 {
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/neo4j.png"; 
+    public static final String ICON = "openpkm/core/resources/logo16.png"; 
     
     @StaticResource()
-    public static final String BANNER = "openpkm/core/resources/neo4j256.png";      
+    public static final String BANNER = "openpkm/core/resources/logo256.png";      
     
     public Neo4jNode() 
     {
