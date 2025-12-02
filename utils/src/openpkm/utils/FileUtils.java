@@ -8,9 +8,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.Logger;
 import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 
@@ -30,7 +33,18 @@ public class FileUtils
     public static MouseListener clicked2open(FileObject file)
     {
         return new MouseListenerImpl(file);
-    }    
+    } 
+    
+    public static String getFileName(LocalDateTime time, FileObject folder, String extension)
+    {
+        String name = time.format(DateTimeFormatter.BASIC_ISO_DATE);
+        return FileUtil.findFreeFileName(folder, name, extension);
+    }   
+    
+    public static String getFileName(FileObject folder, String extension)
+    {
+        return getFileName(LocalDateTime.now(), folder, extension);
+    }      
     
     private static final class ActionListenerImpl implements ActionListener
     {

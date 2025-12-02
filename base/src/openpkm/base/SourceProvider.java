@@ -13,8 +13,8 @@ import org.openide.util.Lookup;
  */
 public interface SourceProvider extends SourceGroup 
 {
-    String ATTR_SOURCE_ID     = "source.id";
-    String ATTR_SOURCE_FOLDER = "source.folder";    
+    String ATTR_SOURCE_ID       = "source.id";
+    String ATTR_SOURCE_PROVIDER = "source.provider";    
     
     Source getSource(String sourceID);
     Lookup.Provider getProvider();

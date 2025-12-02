@@ -16,9 +16,11 @@ import javax.swing.event.ChangeListener;
  */
 public interface Source
 {      
-    String PROP_TIME_CREATED        = "time.created";    
+    String PROP_TIME_CREATED = "time.created";    
+    String PROP_APP_ID       = "app.id";        
     
     String getSourceID();
+    String getAppID();
     LocalDateTime getTimeCreated(); 
     void save(OutputStream os, String comments) throws IOException;    
     void setDeleted();

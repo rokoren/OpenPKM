@@ -41,7 +41,7 @@ public abstract class YouTubeSourceProvider implements SourceProvider
     @Override
     public String getName() 
     {
-        return "youtube";
+        return YouTubeSourceProvider.class.getName();
     }
 
     @Override

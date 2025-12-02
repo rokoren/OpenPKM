@@ -104,6 +104,12 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     }
     
     @Override
+    public String getAppID()
+    {
+        return props.getProperty(PROP_APP_ID);
+    }    
+    
+    @Override
     public LocalDateTime getTimeCreated() 
     {
         String created = props.getProperty(PROP_TIME_CREATED);

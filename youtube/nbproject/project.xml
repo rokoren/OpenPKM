@@ -15,6 +15,22 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
+                    <code-name-base>openpkm.javafx</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>1.0</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>openpkm.utils</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>1.0</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
                     <code-name-base>org.netbeans.api.annotations.common</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
@@ -33,11 +49,51 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
+                    <code-name-base>org.openide.awt</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>7.98</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.dialogs</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>7.77</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.explorer</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>6.92</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
                     <code-name-base>org.openide.filesystems</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
                         <specification-version>9.43</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.nodes</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>7.75</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
+                    <code-name-base>org.openide.util</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>9.38</specification-version>
                     </run-dependency>
                 </dependency>
                 <dependency>
@@ -58,6 +114,7 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
+                <package>com.github.felipeucelli.javatube</package>
                 <package>com.google.api.client.auth.oauth</package>
                 <package>com.google.api.client.auth.oauth2</package>
                 <package>com.google.api.client.auth.openidconnect</package>
@@ -140,31 +197,10 @@
                 <package>javax.servlet</package>
                 <package>javax.servlet.http</package>
                 <package>openpkm.youtube</package>
+                <package>openpkm.youtube.resources</package>
                 <package>org.apache.http</package>
-                <package>org.apache.http.annotation</package>
-                <package>org.apache.http.auth</package>
-                <package>org.apache.http.auth.params</package>
-                <package>org.apache.http.client</package>
-                <package>org.apache.http.client.entity</package>
-                <package>org.apache.http.client.methods</package>
-                <package>org.apache.http.client.params</package>
-                <package>org.apache.http.client.protocol</package>
-                <package>org.apache.http.client.utils</package>
-                <package>org.apache.http.conn</package>
-                <package>org.apache.http.conn.params</package>
-                <package>org.apache.http.conn.routing</package>
-                <package>org.apache.http.conn.scheme</package>
-                <package>org.apache.http.conn.ssl</package>
-                <package>org.apache.http.conn.util</package>
-                <package>org.apache.http.cookie</package>
-                <package>org.apache.http.cookie.params</package>
                 <package>org.apache.http.entity</package>
                 <package>org.apache.http.impl</package>
-                <package>org.apache.http.impl.auth</package>
-                <package>org.apache.http.impl.client</package>
-                <package>org.apache.http.impl.conn</package>
-                <package>org.apache.http.impl.conn.tsccm</package>
-                <package>org.apache.http.impl.cookie</package>
                 <package>org.apache.http.impl.entity</package>
                 <package>org.apache.http.impl.io</package>
                 <package>org.apache.http.io</package>
@@ -194,6 +230,10 @@
                 <package>org.mortbay.xml</package>
             </public-packages>
             <class-path-extension>
+                <runtime-relative-path>ext/json-20250107.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/json-20250107.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
                 <runtime-relative-path>ext/httpclient-4.0.1.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/httpclient-4.0.1.jar</binary-origin>
             </class-path-extension>
@@ -204,6 +244,10 @@
             <class-path-extension>
                 <runtime-relative-path>ext/google-oauth-client-java6-1.23.0.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/google-oauth-client-java6-1.23.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/okhttp-4.12.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/okhttp-4.12.0.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
                 <runtime-relative-path>ext/jetty-6.1.26.jar</runtime-relative-path>
@@ -224,6 +268,10 @@
             <class-path-extension>
                 <runtime-relative-path>ext/servlet-api-2.5-20081211.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/servlet-api-2.5-20081211.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/commons-compress-1.28.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/commons-compress-1.28.0.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
                 <runtime-relative-path>ext/google-oauth-client-jetty-1.23.0.jar</runtime-relative-path>

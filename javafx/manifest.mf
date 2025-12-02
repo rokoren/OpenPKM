@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+AutoUpdate-Show-In-Client: true
+OpenIDE-Module: openpkm.javafx
+OpenIDE-Module-Install: openpkm/javafx/Installer.class
+OpenIDE-Module-Localizing-Bundle: openpkm/javafx/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
+

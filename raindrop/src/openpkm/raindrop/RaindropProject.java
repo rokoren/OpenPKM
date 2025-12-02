@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -65,7 +66,6 @@ import openpkm.base.Reference;
 import openpkm.base.ReferenceProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
-import openpkm.base.SourcesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
 import openpkm.base.TitleProvider;
@@ -106,13 +106,15 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
+import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeSourceProvider;
+import org.openide.util.Utilities;
 
 /**
  *
  * @author Rok Koren
  */
-public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, BatchUpdateSupport
+public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, BatchUpdateSupport
 {
     public static final String PROP_RAINDROP_USER_ID         = "raindrop.user.id";    
     public static final String PROP_RAINDROP_COLLECTION_ID   = "raindrop.collection.id";
@@ -140,11 +142,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
     private static final RequestProcessor RP = new RequestProcessor(RaindropProject.class);   
     
-    private final Map<String, SourceProvider> sources = new HashMap<>();  
+    private final List<SourceProvider> sources = new ArrayList<>();  
     private final List<UpdateCookie> cookies = new ArrayList();  
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);     
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
+    private final ChangeSupport changeSupport = new ChangeSupport(this);
     
     private final FileObject projectDir;        
     private final ProjectState state;
@@ -167,19 +170,17 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         
         ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
         if(referenceProvider != null)
-        {
-            SourceProvider references = new ReferenceSourceGroup(referenceProvider);            
-            sources.put(references.getRootFolder().getName(), references);            
+        {          
+            sources.add(new ReferenceSourceGroup(referenceProvider));            
         }
 
         YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
         if(youtubeProvider != null)
         {
-            SourceProvider youTube = new YouTubeSourceProviderImpl(youtubeProvider);
-            sources.put(youTube.getRootFolder().getName(), youTube);                       
+            sources.add(new YouTubeSourceProviderImpl(youtubeProvider));                       
         }        
         
-        sources.put(raindrops.getRootFolder().getName(), raindrops);            
+        sources.add(raindrops);            
     } 
     
     private synchronized FileObject getDataDirectory() throws IOException
@@ -216,7 +217,31 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     public void removePropertyChangeListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.removePropertyChangeListener(listener);
-    }    
+    } 
+    
+// TODO Sources    
+    
+    @Override
+    public SourceGroup[] getSourceGroups(String string) 
+    {
+        if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
+        {
+            return sources.toArray(new SourceGroup[0]);                
+        }
+        return new SourceGroup[0];
+    } 
+
+    @Override
+    public void addChangeListener(ChangeListener listener) 
+    {
+        changeSupport.addChangeListener(listener);
+    }
+
+    @Override
+    public void removeChangeListener(ChangeListener listener) 
+    {
+        changeSupport.removeChangeListener(listener);
+    }      
     
 // TODO Project
     
@@ -263,9 +288,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 list.add(new HtmlFilesProviderImpl());                                 
                 list.add(new KnowledgeGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
-                
-                
-                list.add(new SourcesImpl()); 
+                                
+                list.addAll(sources);
                 
                 list.add(new ThoughtDataGroupProviderImpl()); 
                 list.add(new BookDataGroupProviderImpl()); 
@@ -718,6 +742,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Thought"));         
+            return actions;
+        }        
+        
+        @Override
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
@@ -806,6 +838,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Book"));         
+            return actions;
+        }        
         
         @Override
         public Lookup.Provider getProvider()
@@ -898,6 +938,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Article"));         
+            return actions;
+        }        
+        
+        @Override
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
@@ -986,6 +1034,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Document"));         
+            return actions;
+        }        
         
         @Override
         public Lookup.Provider getProvider()
@@ -1078,6 +1134,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Link"));         
+            return actions;
+        }        
+        
+        @Override
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
@@ -1160,12 +1224,20 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         private static final String ICON = "openpkm/raindrop/resources/television.png"; 
         
         private final ChangeSupport changeSupport; 
-
+                
         public VideoDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
+
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Video"));         
+            return actions;
+        }
         
         @Override
         public Lookup.Provider getProvider()
@@ -1243,59 +1315,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
         }
     }    
-
-// TODO Sources
-
-    private final class SourcesImpl implements Sources, SourcesProvider, PropertyChangeListener
-    {
-        private final ChangeSupport changeSupport; 
-
-        public SourcesImpl()
-        {
-            changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }        
-        
-        @Override
-        public SourceProvider getSourceProvider(String folder)
-        {
-            return sources.get(folder);
-        }
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return RaindropProject.this;
-        }
-        
-        @Override
-        public SourceGroup[] getSourceGroups(String string) 
-        {
-            if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
-            {
-                return sources.values().toArray(new SourceGroup[0]);                
-            }
-            return new SourceGroup[0];
-        } 
-        
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }         
-        
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            changeSupport.fireChange();
-        }        
-    }
     
 // TODO SourceGroup    
     
@@ -1444,7 +1463,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }
                 
                 FileObject fo = getDataDirectory().createData(filename, reference.getDataFileExtension());  
-                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
+                fo.setAttribute(ATTR_SOURCE_PROVIDER, getClass().getName());
                 fo.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());
 
                 setLastSource(reference);                
@@ -1489,21 +1508,15 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceProviderImpl implements SourceProvider, FileChangeListener, Runnable 
-    {
-        private static final String ROOT_FOLDER = "raindrop";       
-              
-        private Map<String, Raindrop> raindrops; 
-        
-        private FileObject rootDir;         
-        
+    private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 
+    {        
         @Override
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
         
-        private synchronized Map<String, Raindrop> getRaindrops()
+        public synchronized Map<String, Raindrop> getRaindrops()
         {
             if(raindrops == null)
             {
@@ -1526,13 +1539,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
             }
             return raindrops;
-        }
-
-        @Override
-        public Source getSource(String sourceID) 
-        {
-            return getRaindrops().get(sourceID);
-        }                    
+        }                 
 
         @Override
         public synchronized FileObject getRootFolder() 
@@ -1555,30 +1562,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
             }
             return rootDir;
-        }
-
-        @Override
-        public String getName() 
-        {
-            return "raindrop";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "Raindrops";
-        }
-
-        @Override
-        public Icon getIcon(boolean bln) 
-        {
-            return new ImageIcon(ImageUtilities.loadImage(Raindrop.ICON));
-        }
-
-        @Override
-        public boolean contains(FileObject file) 
-        {                                   
-            return getRaindrops().containsKey(file.getName());
         }
 
         @Override
@@ -1605,7 +1588,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 SyndFeed feed = input.build(new XmlReader(url));
                 if(feed.getPublishedDate() != null)
                 {
-                    LocalDateTime newPublishedDate = Utils.convertToLocalDateTime(feed.getPublishedDate());
+                    LocalDateTime newPublishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
                     LocalDateTime publishedDate = getRaindropPublishedDate();
                     if(publishedDate == null || newPublishedDate.isAfter(publishedDate))
                     {                      
@@ -1702,7 +1685,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
                 
                 FileObject fo = getDataDirectory().createData(filename, MarkdownSupport.EXTENSION);  
-                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
+                fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                 fo.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID());
                 if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
                 {
@@ -1824,7 +1807,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
             }
             return rootDir;
-        }                
+        }          
 
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
@@ -1856,22 +1839,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
                 getVideos().put(video.getSourceID(), video);                
-                
-                String filename = null;
-                if(video instanceof TitleProvider)
+                                              
+                if(Utils.getAppID().equals(video.getAppID()))
                 {
-                    TitleProvider provider = (TitleProvider)video;
-                    filename = FileUtil.findFreeFileName(getDataDirectory(), provider.getTitle(), video.getDataFileExtension());                    
+                    String fileName = FileUtils.getFileName(file, EXTENSION);
+                    FileObject fo = getDataDirectory().createData(fileName, video.getDataFileExtension());  
+                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());                    
                 }
-                else
-                {
-                    String name = video.getTimeCreated().format(DateTimeFormatter.BASIC_ISO_DATE);   
-                    filename = FileUtil.findFreeFileName(getDataDirectory(), name, video.getDataFileExtension());                    
-                }                
-                
-                FileObject fo = getDataDirectory().createData(filename, video.getDataFileExtension());  
-                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
-                fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());
 
                 setLastSource(video);                
             }           

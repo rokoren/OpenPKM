@@ -17,6 +17,8 @@ import org.openide.util.Lookup;
  */
 public interface FileTypeProvider
 {
+    String PROP_FILE_TYPE = "file.type";    
+    
     String getExtension();
     String getDisplayName();
 

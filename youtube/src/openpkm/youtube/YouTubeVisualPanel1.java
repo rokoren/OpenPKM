@@ -1,0 +1,371 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/visualPanel.java to edit this template
+ */
+package openpkm.youtube;
+
+import java.awt.EventQueue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JPanel;
+import openpkm.base.FileTypeProvider;
+import openpkm.base.KnowledgeGraphProvider;
+import openpkm.base.Topic;
+import openpkm.base.VisibilityProvider;
+import openpkm.utils.TopicNode;
+import org.controlsfx.control.CheckComboBox;
+import org.openide.explorer.ExplorerManager;
+import org.openide.nodes.AbstractNode;
+import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.util.Lookup;
+
+public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager.Provider
+{ 
+    private final DefaultComboBoxModel<FileTypeProvider> fileTypes = new DefaultComboBoxModel<>(); 
+    private final DefaultComboBoxModel<VisibilityProvider.Modifier> modifiers = new DefaultComboBoxModel<>();  
+    private final ObservableList<String> tags = FXCollections.observableArrayList();  
+    
+    private final ExplorerManager explorerManager = new ExplorerManager();
+    
+    private CheckComboBox<String> comboBox;
+    private JFXPanel panel;    
+    
+    /**
+     * Creates new form YouTubeVisualPanel1
+     */
+    public YouTubeVisualPanel1() 
+    {
+        setFileTypes();
+        setModifiers();
+        initComponents(); 
+        
+        Platform.runLater(new Runnable() 
+        {
+            @Override
+            public void run() 
+            {                
+                comboBox = new CheckComboBox(tags);
+                comboBox.setMaxWidth(Double.MAX_VALUE);  
+                comboBox.setMaxHeight(Double.MAX_VALUE);   
+                Scene scene = new Scene(comboBox);                             
+                panel.setScene(scene);                
+            }
+        });         
+    }
+    
+    @Override
+    public ExplorerManager getExplorerManager() 
+    {
+        return explorerManager;
+    }    
+    
+    private void setFileTypes()
+    {
+        fileTypes.removeAllElements();
+        fileTypes.addAll(FileTypeProvider.getAll());        
+    }   
+    
+    private void setModifiers()
+    {
+        modifiers.removeAllElements();
+        modifiers.addAll(Arrays.asList(VisibilityProvider.Modifier.values()));        
+    }     
+    
+    public void setTags(Set<String> projectTags)
+    {
+        tags.clear();
+        tags.addAll(projectTags);
+        Collections.sort(tags);        
+    }    
+    
+    public void setSelectedTags(Set<String> selectedTags)
+    {
+        Platform.runLater(new Runnable() 
+        {
+            @Override
+            public void run() 
+            {
+                comboBox.getCheckModel().clearChecks();
+                for(String tag : selectedTags)
+                {
+                    int index = comboBox.getCheckModel().getItemIndex(tag);
+                    comboBox.getCheckModel().checkIndices(index);
+                }            
+            }
+        });                 
+    }  
+    
+    public void setTopics(Lookup lookup)
+    {
+        KnowledgeGraphProvider provider = lookup.lookup(KnowledgeGraphProvider.class);
+        if(provider != null)
+        {
+            TopicsChildren topics = new TopicsChildren(provider);
+            explorerManager.setRootContext(new AbstractNode(topics));
+        }        
+    }
+
+    @Override
+    public String getName() 
+    {
+        return "General";
+    }
+    
+    public FileTypeProvider getVideoFileType()
+    {
+        return (FileTypeProvider)fileTypes.getSelectedItem();
+    }    
+    
+    public String getVideoID()
+    {
+        return jTextField6.getText().trim();
+    }  
+    
+    public void setVideoID(String videoID)
+    {
+        jTextField6.setText(videoID);
+    }
+    
+    public VisibilityProvider.Modifier getVideoVisibilityModifier()
+    {
+        return (VisibilityProvider.Modifier)jComboBox2.getSelectedItem();
+    } 
+    
+    public List<String> getVideoTags()
+    {
+        return comboBox.getCheckModel().getCheckedItems();
+    } 
+    
+    public List<Topic> getVideoTopics()
+    {
+        Node[] nodes = explorerManager.getSelectedNodes();
+        if(nodes.length > 0)
+        {
+            List<Topic> topics = new ArrayList<>();
+            for(Node node : nodes)
+            {
+                Topic topic = node.getLookup().lookup(Topic.class);
+                if(topic != null)
+                {
+                    topics.add(topic);
+                }
+            }
+            return topics;
+        }
+        return null;
+    }
+    
+    static final class TopicsChildren extends Children.Keys<Topic> 
+    {
+        private final KnowledgeGraphProvider provider;
+
+        public TopicsChildren(KnowledgeGraphProvider provider)
+        {
+            this.provider = provider;
+        }  
+
+        @Override
+        protected void addNotify() 
+        {
+            updateKeys();                             
+        }
+
+        private void updateKeys() 
+        {
+            EventQueue.invokeLater(new Runnable() 
+            {
+                public void run()
+                {                                                
+                    SortedSet<Topic> topics = new TreeSet<Topic>(Topic.nameComparator());
+                    topics.addAll(provider.getRootTopics());           
+                    setKeys(topics);                   
+                }
+            });
+        }        
+
+        @Override
+        protected void removeNotify() 
+        {                            
+            setKeys(Collections.<Topic>emptySet());
+        }
+
+        @Override
+        protected Node[] createNodes(Topic topic) 
+        {
+            return new Node[] {new TopicNode(provider, topic)};
+        }           
+    }     
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
+
+        jLabel7 = new javax.swing.JLabel();
+        jTextField6 = new javax.swing.JTextField();
+        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jLabel2 = new javax.swing.JLabel();
+        jPanel1 = new javax.swing.JPanel();
+        filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jLabel3 = new javax.swing.JLabel();
+        jComboBox1 = new javax.swing.JComboBox<>();
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jLabel1 = new javax.swing.JLabel();
+        iconView1 = new org.openide.explorer.view.IconView();
+        filler4 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
+        jLabel4 = new javax.swing.JLabel();
+        jComboBox2 = new javax.swing.JComboBox<>();
+
+        setLayout(new java.awt.GridBagLayout());
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel7, org.openide.util.NbBundle.getMessage(YouTubeVisualPanel1.class, "YouTubeVisualPanel1.jLabel7.text_1") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabel7, gridBagConstraints);
+
+        jTextField6.setColumns(20);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jTextField6, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 4;
+        add(filler1, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(YouTubeVisualPanel1.class, "YouTubeVisualPanel1.jLabel2.text") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabel2, gridBagConstraints);
+
+        jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.LINE_AXIS));
+        panel = new JFXPanel();
+        jPanel1.add(panel);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        add(jPanel1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler3, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(YouTubeVisualPanel1.class, "YouTubeVisualPanel1.jLabel3.text") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabel3, gridBagConstraints);
+
+        jComboBox1.setModel(fileTypes);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jComboBox1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler2, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(YouTubeVisualPanel1.class, "YouTubeVisualPanel1.jLabel1.text") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabel1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        add(iconView1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler4, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(filler5, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel4, org.openide.util.NbBundle.getMessage(YouTubeVisualPanel1.class, "YouTubeVisualPanel1.jLabel4.text") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabel4, gridBagConstraints);
+
+        jComboBox2.setModel(modifiers);
+        jComboBox2.setSelectedItem(VisibilityProvider.Modifier.NONE);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jComboBox2, gridBagConstraints);
+    }// </editor-fold>//GEN-END:initComponents
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler2;
+    private javax.swing.Box.Filler filler3;
+    private javax.swing.Box.Filler filler4;
+    private javax.swing.Box.Filler filler5;
+    private org.openide.explorer.view.IconView iconView1;
+    private javax.swing.JComboBox<FileTypeProvider> jComboBox1;
+    private javax.swing.JComboBox<VisibilityProvider.Modifier> jComboBox2;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JTextField jTextField6;
+    // End of variables declaration//GEN-END:variables
+}

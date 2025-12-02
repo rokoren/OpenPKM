@@ -23,11 +23,13 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 import javax.swing.Icon;
 import javax.swing.UIManager;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
-import openpkm.base.SourcesProvider;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -52,6 +54,8 @@ public class Utils
     private static final String OPENED_ICON_KEY_UIMANAGER_NB = "Nb.Explorer.Folder.openedIcon"; // NOI18N
     private static final String ICON_PATH = "second/brain/core/resources/defaultFolder.gif"; // NOI18N
     private static final String OPENED_ICON_PATH = "second/brain/core/resources/defaultFolderOpen.gif"; // NOI18N    
+    
+    private static final Logger LOG = Logger.getLogger(Utils.class.getName());     
     
     public static Properties getProperties(FileObject file) throws IOException
     {
@@ -385,17 +389,7 @@ public class Utils
         g2d.dispose();
 
         return resizeImage(originalImage, newWidth, newHeight);
-    }     
-    
-    public static LocalDate convertToLocalDate(Date dateToConvert) {
-        return LocalDate.ofInstant(
-                dateToConvert.toInstant(), ZoneId.systemDefault());
-    }
-
-    public static LocalDateTime convertToLocalDateTime(Date dateToConvert) {
-        return LocalDateTime.ofInstant(
-                dateToConvert.toInstant(), ZoneId.systemDefault());
-    }  
+    }         
     
     public static String getText(String text, int maxLength)
     {
@@ -475,18 +469,33 @@ public class Utils
         Project project = FileOwnerQuery.getOwner(file);
         if(project != null)
         {
-            SourcesProvider sources = project.getLookup().lookup(SourcesProvider.class);
-            if(sources != null)
+            String sourceID = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_ID);
+            String name = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_PROVIDER); 
+            try
             {
-                String sourceID = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_ID);
-                String folder = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_FOLDER);  
-                SourceProvider source = sources.getSourceProvider(folder);
-                if(source != null)
+                Object obj = project.getLookup().lookup(Class.forName(name));            
+                if(obj instanceof SourceProvider)
                 {
-                    return source.getSource(sourceID);
-                }
+                    SourceProvider provider = (SourceProvider)obj;
+                    return provider.getSource(sourceID);                
+                }                  
+            }
+            catch(ClassNotFoundException e)
+            {
+                LOG.warning(e.getMessage());
             }
         } 
         return null;
+    }
+    
+    public static final String getAppID()
+    {
+        Preferences prefs = Preferences.userRoot().node("openpkm");
+        String appId = prefs.get("app.id", null);
+        if (appId == null) {
+            appId = UUID.randomUUID().toString();
+            prefs.put("app.id", appId);
+        }  
+        return appId;
     }
 }
