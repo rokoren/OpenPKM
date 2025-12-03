@@ -4,7 +4,7 @@
  */
 package openpkm.core;
 
-import openpkm.youtube.YouTubeServiceProvider;
+import openpkm.youtube.YouTubeService;
 import org.openide.util.NbPreferences;
 
 final class YouTubePanel extends javax.swing.JPanel {
@@ -79,8 +79,8 @@ final class YouTubePanel extends javax.swing.JPanel {
         // someCheckBox.setSelected(NbPreferences.forModule(YouTubePanel.class).getBoolean("someFlag", false));
         // or:
         // someTextField.setText(SomeSystemOption.getDefault().getSomeStringProperty());
-        jPasswordField1.setText(NbPreferences.forModule(YouTubeServiceProvider.class).get(YouTubeServiceProvider.PROP_GOOGLE_KEY, ""));
-        jTextField1.setText(NbPreferences.forModule(YouTubeServiceProvider.class).get(YouTubeServiceProvider.PROP_DATA_DIR, ""));
+        jPasswordField1.setText(NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, ""));
+        jTextField1.setText(NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_DATA_DIR, ""));
     }
 
     void store() {
@@ -92,8 +92,8 @@ final class YouTubePanel extends javax.swing.JPanel {
         // or:
         // SomeSystemOption.getDefault().setSomeStringProperty(someTextField.getText());
         String password = new String(jPasswordField1.getPassword());
-        NbPreferences.forModule(YouTubeServiceProvider.class).put(YouTubeServiceProvider.PROP_GOOGLE_KEY, password);
-        NbPreferences.forModule(YouTubeServiceProvider.class).put(YouTubeServiceProvider.PROP_DATA_DIR, jTextField1.getText().trim());
+        NbPreferences.forModule(YouTubeService.class).put(YouTubeService.PROP_GOOGLE_KEY, password);
+        NbPreferences.forModule(YouTubeService.class).put(YouTubeService.PROP_DATA_DIR, jTextField1.getText().trim());
     }
 
     boolean valid() {

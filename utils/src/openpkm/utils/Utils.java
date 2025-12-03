@@ -14,9 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.Collator;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +27,7 @@ import javax.swing.Icon;
 import javax.swing.UIManager;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
+import openpkm.base.SourceProviders;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -469,20 +467,16 @@ public class Utils
         Project project = FileOwnerQuery.getOwner(file);
         if(project != null)
         {
-            String sourceID = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_ID);
-            String name = (String)file.getAttribute(SourceProvider.ATTR_SOURCE_PROVIDER); 
-            try
+            SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+            if(providers != null)
             {
-                Object obj = project.getLookup().lookup(Class.forName(name));            
-                if(obj instanceof SourceProvider)
+                String sourceID = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_ID);
+                String folder = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_FOLDER); 
+                SourceProvider provider = providers.getSourceProvider(folder);
+                if(provider != null)
                 {
-                    SourceProvider provider = (SourceProvider)obj;
-                    return provider.getSource(sourceID);                
-                }                  
-            }
-            catch(ClassNotFoundException e)
-            {
-                LOG.warning(e.getMessage());
+                    return provider.getSource(sourceID);
+                }              
             }
         } 
         return null;

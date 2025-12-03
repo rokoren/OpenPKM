@@ -27,9 +27,6 @@ import openpkm.base.TagsProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.youtube.YouTubeServiceProvider;
-import openpkm.youtube.YouTubeVideo;
-import org.netbeans.api.project.Project;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.Exceptions;
@@ -83,7 +80,7 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
         {
             throw new WizardValidationException(null, "File Type can not be empty", null);
         }          
-        String googleKey = NbPreferences.forModule(YouTubeServiceProvider.class).get(YouTubeServiceProvider.PROP_GOOGLE_KEY, null);
+        String googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
         if (googleKey == null) 
         {
             throw new WizardValidationException(null, "Set Google Key in Settings", null);
@@ -92,10 +89,10 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
         {
             throw new WizardValidationException(null, "Video ID can not be empty", null);
         }
-        YouTubeServiceProvider provider = (YouTubeServiceProvider) Lookup.getDefault().lookup(YouTubeServiceProvider.class);
+        
         try
         {         
-            YouTube youtubeService = provider.getService();
+            YouTube youtubeService = YouTubeService.getDeafult().getService();
             YouTube.Videos.List request = youtubeService.videos().list("snippet,contentDetails,statistics,topicDetails");
             request.setKey(googleKey);
             response = request.setId(getComponent().getVideoID()).execute();  

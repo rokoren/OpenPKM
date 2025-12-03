@@ -74,7 +74,7 @@ public final class YouTubeVideoAction implements ActionListener
 
     @Override
     public void actionPerformed(ActionEvent ev) 
-    {
+    {        
         ReferenceSourceProvider referenceProvider = provider.getProvider().getLookup().lookup(ReferenceSourceProvider.class); 
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeWizardPanel1());

@@ -106,15 +106,17 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.SourceProviders;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeSourceProvider;
+import org.openide.filesystems.FileSystem;
 import org.openide.util.Utilities;
 
 /**
  *
  * @author Rok Koren
  */
-public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, BatchUpdateSupport
+public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_RAINDROP_USER_ID         = "raindrop.user.id";    
     public static final String PROP_RAINDROP_COLLECTION_ID   = "raindrop.collection.id";
@@ -142,7 +144,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
     private static final RequestProcessor RP = new RequestProcessor(RaindropProject.class);   
     
-    private final List<SourceProvider> sources = new ArrayList<>();  
+    private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();  
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
@@ -171,17 +173,25 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
         if(referenceProvider != null)
         {          
-            sources.add(new ReferenceSourceGroup(referenceProvider));            
+            SourceProvider references = new ReferenceSourceGroup(referenceProvider);
+            sources.put(references.getRootFolder().getName(), references);            
         }
 
         YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
         if(youtubeProvider != null)
         {
-            sources.add(new YouTubeSourceProviderImpl(youtubeProvider));                       
+            SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
+            sources.put(videos.getRootFolder().getName(), videos);                       
         }        
         
-        sources.add(raindrops);            
+        sources.put(raindrops.getRootFolder().getName(), raindrops);            
     } 
+    
+    @Override
+    public SourceProvider getSourceProvider(String folder)
+    {
+        return sources.get(folder);
+    }
     
     private synchronized FileObject getDataDirectory() throws IOException
     {
@@ -226,7 +236,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     {
         if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
         {
-            return sources.toArray(new SourceGroup[0]);                
+            return sources.values().toArray(new SourceGroup[0]);                
         }
         return new SourceGroup[0];
     } 
@@ -289,7 +299,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 list.add(new KnowledgeGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
                                 
-                list.addAll(sources);
+                list.addAll(sources.values());
                 
                 list.add(new ThoughtDataGroupProviderImpl()); 
                 list.add(new BookDataGroupProviderImpl()); 
@@ -469,17 +479,17 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         protected void projectOpened() 
         {            
             task = RP.create(raindrops);  
-            task.schedule(60000); 
-            propertyChangeSupport.addPropertyChangeListener(this);                      
+            task.schedule(60000);    
+            propertyChangeSupport.addPropertyChangeListener(this);
         }
 
         @Override
         protected void projectClosed() 
-        { 
-            propertyChangeSupport.removePropertyChangeListener(this);             
+        {             
+            propertyChangeSupport.removePropertyChangeListener(this);
             task.cancel();
         } 
-        
+
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
@@ -494,7 +504,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 // TODO ProjectInformation 
     
     private final class Info implements ProjectInformation
-    {                                       
+    {                     
         @Override
         public Icon getIcon()
         {                    
@@ -523,7 +533,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(ProjectInformation.PROP_DISPLAY_NAME, listener);
-        }
+        }                
 
         @Override
         public Project getProject() 
@@ -1383,7 +1393,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     if(rootDir == null)
                     {
                         rootDir = getDataDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Reference root folder created: " + dataDir.getPath());                        
+                        LOG.info("Reference root folder created: " + rootDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
                 }
@@ -1463,7 +1473,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }
                 
                 FileObject fo = getDataDirectory().createData(filename, reference.getDataFileExtension());  
-                fo.setAttribute(ATTR_SOURCE_PROVIDER, getClass().getName());
+                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
                 fo.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());
 
                 setLastSource(reference);                
@@ -1552,7 +1562,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     if(rootDir == null)
                     {
                         rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Raindrop root folder created: " + dataDir.getPath());                        
+                        LOG.info("Raindrop root folder created: " + rootDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
                 }
@@ -1685,7 +1695,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
                 
                 FileObject fo = getDataDirectory().createData(filename, MarkdownSupport.EXTENSION);  
-                fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
                 fo.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID());
                 if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
                 {
@@ -1797,7 +1807,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     if(rootDir == null)
                     {
                         rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Raindrop root folder created: " + dataDir.getPath());                        
+                        LOG.info("YouTube root folder created: " + rootDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
                 }
@@ -1842,10 +1852,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                               
                 if(Utils.getAppID().equals(video.getAppID()))
                 {
-                    String fileName = FileUtils.getFileName(file, EXTENSION);
-                    FileObject fo = getDataDirectory().createData(fileName, video.getDataFileExtension());  
-                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());                    
+                    String fileName = FileUtils.getFileName(getDataDirectory(), video.getDataFileExtension());
+                    FileObject fo = getDataDirectory().createData(fileName, video.getDataFileExtension()); 
+                    
+                    FileSystem fs = fo.getFileSystem();
+                    System.out.println("Tip FileSystem-a: " + fs.getClass().getName());                    
+                    
+                    fo.getFileSystem().runAtomicAction(() -> {
+                        fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
+                        fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    });                    
                 }
 
                 setLastSource(video);                

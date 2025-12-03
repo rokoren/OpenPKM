@@ -34,7 +34,7 @@ public abstract class RaindropSourceProvider implements SourceProvider
     @Override
     public String getName() 
     {
-        return RaindropSourceProvider.class.getName();
+        return "raindrop";
     }
 
     @Override

@@ -13,10 +13,10 @@ import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
 @OptionsPanelController.SubRegistration(
-        location = "OpenPkm",
+        location = "OpenPKM",
         displayName = "#AdvancedOption_DisplayName_YouTube",
         keywords = "#AdvancedOption_Keywords_YouTube",
-        keywordsCategory = "OpenPkm/YouTube"
+        keywordsCategory = "OpenPKM/YouTube"
 )
 @org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_YouTube=YouTube", "AdvancedOption_Keywords_YouTube=youtube"})
 public final class YouTubeOptionsPanelController extends OptionsPanelController {
@@ -25,11 +25,13 @@ public final class YouTubeOptionsPanelController extends OptionsPanelController 
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     private boolean changed;
 
+    @Override
     public void update() {
         getPanel().load();
         changed = false;
     }
 
+    @Override
     public void applyChanges() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -40,30 +42,37 @@ public final class YouTubeOptionsPanelController extends OptionsPanelController 
         });
     }
 
+    @Override
     public void cancel() {
         // need not do anything special, if no changes have been persisted yet
     }
 
+    @Override
     public boolean isValid() {
         return getPanel().valid();
     }
 
+    @Override
     public boolean isChanged() {
         return changed;
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return null; // new HelpCtx("...ID") if you have a help set
     }
 
+    @Override
     public JComponent getComponent(Lookup masterLookup) {
         return getPanel();
     }
 
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener l) {
         pcs.addPropertyChangeListener(l);
     }
 
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener l) {
         pcs.removePropertyChangeListener(l);
     }

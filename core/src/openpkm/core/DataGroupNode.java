@@ -185,7 +185,7 @@ public class DataGroupNode extends AbstractNode implements NodeProvider
             public int compare(DataObject data1, DataObject data2) 
             {
                 TitleProvider provider1 = data1.getLookup().lookup(TitleProvider.class);
-                TitleProvider provider2 = data1.getLookup().lookup(TitleProvider.class);
+                TitleProvider provider2 = data2.getLookup().lookup(TitleProvider.class);
                 return provider1.getTitle().compareTo(provider2.getTitle());
             }
         };

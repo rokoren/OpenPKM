@@ -25,6 +25,7 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectExistsException;
 import org.openide.loaders.MultiDataObject;
 import org.openide.loaders.MultiFileLoader;
+import org.openide.nodes.Node;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
@@ -146,7 +147,13 @@ public class AsciiDocDataObject extends MultiDataObject implements PropertyChang
             lookup = new ProxyLookup(super.getLookup(), new AbstractLookup(lookupContent));
         }
         return lookup;
-    }    
+    } 
+    
+    @Override
+    protected Node createNodeDelegate() 
+    {
+        return new AsciiDocDataNode(this);
+    }      
 
     @MultiViewElement.Registration(
         displayName = "#LBL_AsciiDoc_EDITOR",

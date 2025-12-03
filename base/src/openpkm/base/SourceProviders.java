@@ -4,15 +4,14 @@
  */
 package openpkm.base;
 
-import org.netbeans.api.project.SourceGroup;
-import org.openide.util.Lookup;
-
 /**
  *
  * @author Rok Koren
  */
-public interface SourceProvider extends SourceGroup 
-{    
-    Source getSource(String sourceID);
-    Lookup.Provider getProvider();
+public interface SourceProviders 
+{
+    String ATTR_SOURCE_ID     = "source.id";
+    String ATTR_SOURCE_FOLDER = "source.folder";     
+    
+    SourceProvider getSourceProvider(String folder);
 }
