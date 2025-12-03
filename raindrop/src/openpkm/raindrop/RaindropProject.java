@@ -174,17 +174,17 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         if(referenceProvider != null)
         {          
             SourceProvider references = new ReferenceSourceGroup(referenceProvider);
-            sources.put(references.getRootFolder().getName(), references);            
+            sources.put(references.getName(), references);            
         }
 
         YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
         if(youtubeProvider != null)
         {
             SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
-            sources.put(videos.getRootFolder().getName(), videos);                       
+            sources.put(videos.getName(), videos);                       
         }        
         
-        sources.put(raindrops.getRootFolder().getName(), raindrops);            
+        sources.put(raindrops.getName(), raindrops);            
     } 
     
     @Override
@@ -1473,7 +1473,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }
                 
                 FileObject fo = getDataDirectory().createData(filename, reference.getDataFileExtension());  
-                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
+                fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                 fo.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());
 
                 setLastSource(reference);                
@@ -1695,7 +1695,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
                 
                 FileObject fo = getDataDirectory().createData(filename, MarkdownSupport.EXTENSION);  
-                fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
+                fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                 fo.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID());
                 if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
                 {
@@ -1859,7 +1859,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     System.out.println("Tip FileSystem-a: " + fs.getClass().getName());                    
                     
                     fo.getFileSystem().runAtomicAction(() -> {
-                        fo.setAttribute(ATTR_SOURCE_FOLDER, getRootFolder().getName());
+                        fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                         fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
                     });                    
                 }

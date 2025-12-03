@@ -471,8 +471,8 @@ public class Utils
             if(providers != null)
             {
                 String sourceID = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_ID);
-                String folder = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_FOLDER); 
-                SourceProvider provider = providers.getSourceProvider(folder);
+                String name = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_PROVIDER); 
+                SourceProvider provider = providers.getSourceProvider(name);
                 if(provider != null)
                 {
                     return provider.getSource(sourceID);

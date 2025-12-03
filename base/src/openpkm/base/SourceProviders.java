@@ -10,8 +10,8 @@ package openpkm.base;
  */
 public interface SourceProviders 
 {
-    String ATTR_SOURCE_ID     = "source.id";
-    String ATTR_SOURCE_FOLDER = "source.folder";     
+    String ATTR_SOURCE_ID       = "source.id";
+    String ATTR_SOURCE_PROVIDER = "source.provider";     
     
-    SourceProvider getSourceProvider(String folder);
+    SourceProvider getSourceProvider(String name);
 }
