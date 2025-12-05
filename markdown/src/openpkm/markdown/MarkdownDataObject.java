@@ -135,14 +135,14 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
     public Lookup getLookup()
     { 
         if(lookup == null)
-        {             
+        { 
             Source source = Utils.getSource(getPrimaryFile());
             if(source != null)
             {
                 source.addPropertyChangeListener(this);
                 source.addChangeListener(this);
                 lookupContent.add(source);                
-            }                                     
+            }  
             lookup = new ProxyLookup(super.getLookup(), new AbstractLookup(lookupContent));
         }
         return lookup;
@@ -192,5 +192,5 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
         {
             changeSupport.fireChange();
         }
-    }    
+    }  
 }

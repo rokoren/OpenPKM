@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -98,7 +99,6 @@ import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
-import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
@@ -109,7 +109,8 @@ import openpkm.base.DataGroupProvider;
 import openpkm.base.SourceProviders;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeSourceProvider;
-import org.openide.filesystems.FileSystem;
+import org.openide.filesystems.FileUtil;
+import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
 
 /**
@@ -156,16 +157,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private final Properties props;   
     private final RaindropSourceProviderImpl raindrops;    
     
-    private Lookup lkp;    
-    private Source lastSource;
-    private FileObject dataDir;     
+    private Lookup lkp;  
+    private FileObject dataDir;
+    private LocalFileSystem fileSystem;
+    private Source lastSource; 
+    
     private RaindropCollection raindropCollection;  
     private Neo4jInstance neo4jInstance;   
     private RequestProcessor.Task task;     
     
     public RaindropProject(FileObject projectDir, ProjectState state, Properties props) 
     {
-        this.projectDir = projectDir;        
+        this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
         raindrops = new RaindropSourceProviderImpl();
@@ -184,8 +187,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             sources.put(videos.getName(), videos);                       
         }        
         
-        sources.put(raindrops.getName(), raindrops);            
-    } 
+        sources.put(raindrops.getName(), raindrops);  
+    }     
+    
+    private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
+    {
+        if(fileSystem == null)
+        {
+            fileSystem = new LocalFileSystem();
+            fileSystem.setRootDirectory(FileUtil.toFile(getDataDirectory()));            
+        }
+        return fileSystem;
+    }
     
     @Override
     public SourceProvider getSourceProvider(String folder)
@@ -197,15 +210,33 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     {
         if(dataDir == null)
         {
-            dataDir = projectDir.getFileObject(DATA_FOLDER);
+            dataDir = getProjectDirectory().getFileObject(DATA_FOLDER);
             if(dataDir == null)
             {
-                dataDir = projectDir.createFolder(DATA_FOLDER);
+                dataDir = getProjectDirectory().createFolder(DATA_FOLDER);
                 LOG.info("Data dir created: " + dataDir.getPath());                        
             }                 
         }                           
         return dataDir;       
-    }      
+    } 
+    
+    @Override
+    public FileObject getFileWithAttrs(FileObject file)
+    {
+        try
+        {
+            return getFileSystem().getRoot().getFileObject(file.getName(), file.getExt());            
+        }
+        catch(IOException e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        catch(PropertyVetoException e)
+        {
+            LOG.warning(e.getMessage());
+        }  
+        return null;
+    }
 
     private Source getLastSource() 
     {
@@ -477,7 +508,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     {
         @Override
         protected void projectOpened() 
-        {            
+        {  
             task = RP.create(raindrops);  
             task.schedule(60000);    
             propertyChangeSupport.addPropertyChangeListener(this);
@@ -485,7 +516,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
         @Override
         protected void projectClosed() 
-        {             
+        { 
             propertyChangeSupport.removePropertyChangeListener(this);
             task.cancel();
         } 
@@ -1389,10 +1420,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 try
                 {                
-                    rootDir = getDataDirectory().getFileObject(ROOT_FOLDER);
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
                     if(rootDir == null)
                     {
-                        rootDir = getDataDirectory().createFolder(ROOT_FOLDER);
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
                         LOG.info("Reference root folder created: " + rootDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
@@ -1460,28 +1491,24 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
                 getReferences().put(reference.getSourceID(), reference);
                 
-                String filename = null;
-                if(reference instanceof TitleProvider)
+                if(Utils.getAppID().equals(reference.getAppID()))
                 {
-                    TitleProvider provider = (TitleProvider)reference;
-                    filename = FileUtil.findFreeFileName(getDataDirectory(), provider.getTitle(), reference.getDataFileExtension());                    
-                }
-                else
-                {
-                    String name = reference.getTimeCreated().format(DateTimeFormatter.BASIC_ISO_DATE);   
-                    filename = FileUtil.findFreeFileName(getDataDirectory(), name, reference.getDataFileExtension());                    
-                }
-                
-                FileObject fo = getDataDirectory().createData(filename, reference.getDataFileExtension());  
-                fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                fo.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());
+                    String fileName = FileUtils.getFileName(getDataDirectory(), reference.getDataFileExtension());
+                    FileObject fo = getFileSystem().getRoot().createData(fileName, reference.getDataFileExtension()); 
+                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    fo.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());                     
+                }                
 
                 setLastSource(reference);                
             }           
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }                                                
+            }  
+            catch(PropertyVetoException e)
+            {
+                LOG.warning(e.getMessage());
+            }              
         }
 
         @Override
@@ -1680,47 +1707,44 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 Raindrop raindrop = AbstractRaindrop.getRaindrop(Utils.getProperties(file)); 
-                getRaindrops().put(raindrop.getSourceID(), raindrop);                
-                
-                String filename = null;
-                if(raindrop instanceof TitleProvider)
-                {
-                    TitleProvider provider = (TitleProvider)raindrop;
-                    filename = FileUtil.findFreeFileName(getDataDirectory(), provider.getTitle(), MarkdownSupport.EXTENSION);                    
-                }
-                else
-                {
-                    String name = raindrop.getTimeCreated().format(DateTimeFormatter.BASIC_ISO_DATE);   
-                    filename = FileUtil.findFreeFileName(getDataDirectory(), name, MarkdownSupport.EXTENSION);                    
-                }                
-                
-                FileObject fo = getDataDirectory().createData(filename, MarkdownSupport.EXTENSION);  
-                fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                fo.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID());
-                if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
-                {
-                    OutputStream output = fo.getOutputStream();
-                    output.write(raindrop.getNote().getBytes());
-                    output.close();
-                }
+                getRaindrops().put(raindrop.getSourceID(), raindrop);  
 
-                setLastSource(raindrop);
-                
-                URL url = new URL(raindrop.getCover());
-                Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
-                Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
-                Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
-                JLabel baloonDetails = new JLabel(picture);
-                baloonDetails.addMouseListener(FileUtils.clicked2open(fo));
-                baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                JComponent details = createDetails(raindrop.getExcerpt(), FileUtils.action2open(fo), picture); 
-                String title = getTitle() + ": " + raindrop.getTitle();                                                                  
-                NotificationDisplayer.getDefault().notify(title, icon, baloonDetails, details, AbstractRaindrop.getPriority(raindrop), AbstractRaindrop.getCategory(raindrop));                   
+                if(Utils.getAppID().equals(raindrop.getAppID()))
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), MarkdownSupport.EXTENSION);
+                    FileObject fo = getFileSystem().getRoot().createData(fileName, MarkdownSupport.EXTENSION); 
+                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    fo.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID());                  
+
+                    if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
+                    {
+                        OutputStream output = fo.getOutputStream();
+                        output.write(raindrop.getNote().getBytes());
+                        output.close();
+                    }  
+                    
+                    URL url = new URL(raindrop.getCover());
+                    Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
+                    Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
+                    Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
+                    JLabel baloonDetails = new JLabel(picture);
+                    baloonDetails.addMouseListener(FileUtils.clicked2open(fo));
+                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    JComponent details = createDetails(raindrop.getExcerpt(), FileUtils.action2open(fo), picture); 
+                    String title = getTitle() + ": " + raindrop.getTitle();                                                                  
+                    NotificationDisplayer.getDefault().notify(title, icon, baloonDetails, details, AbstractRaindrop.getPriority(raindrop), AbstractRaindrop.getCategory(raindrop));                        
+                }                
+
+                setLastSource(raindrop);                               
             }           
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }                                                
+            }   
+            catch(PropertyVetoException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
         }
 
         @Override
@@ -1853,15 +1877,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 if(Utils.getAppID().equals(video.getAppID()))
                 {
                     String fileName = FileUtils.getFileName(getDataDirectory(), video.getDataFileExtension());
-                    FileObject fo = getDataDirectory().createData(fileName, video.getDataFileExtension()); 
+                    FileObject fo = getFileSystem().getRoot().createData(fileName, video.getDataFileExtension()); 
+                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
                     
+                    /*
                     FileSystem fs = fo.getFileSystem();
                     System.out.println("Tip FileSystem-a: " + fs.getClass().getName());                    
                     
                     fo.getFileSystem().runAtomicAction(() -> {
                         fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                         fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    });                    
+                    });
+                    */
                 }
 
                 setLastSource(video);                
@@ -1869,7 +1897,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }                                                
+            }  
+            catch(PropertyVetoException e)
+            {
+                LOG.warning(e.getMessage());
+            }              
         }
 
         @Override

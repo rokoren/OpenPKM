@@ -463,20 +463,24 @@ public class Utils
     }
     
     public static Source getSource(FileObject file)
-    {
+    {        
         Project project = FileOwnerQuery.getOwner(file);
         if(project != null)
         {
             SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
             if(providers != null)
-            {
-                String sourceID = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_ID);
-                String name = (String)file.getAttribute(SourceProviders.ATTR_SOURCE_PROVIDER); 
-                SourceProvider provider = providers.getSourceProvider(name);
-                if(provider != null)
+            {     
+                FileObject fileWithAttrs = providers.getFileWithAttrs(file);
+                if(fileWithAttrs != null)
                 {
-                    return provider.getSource(sourceID);
-                }              
+                    String sourceID = (String)fileWithAttrs.getAttribute(SourceProviders.ATTR_SOURCE_ID);
+                    String name = (String)fileWithAttrs.getAttribute(SourceProviders.ATTR_SOURCE_PROVIDER); 
+                    SourceProvider provider = providers.getSourceProvider(name);
+                    if(provider != null)
+                    {
+                        return provider.getSource(sourceID);
+                    }                      
+                }            
             }
         } 
         return null;

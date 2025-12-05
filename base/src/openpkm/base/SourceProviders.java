@@ -4,6 +4,8 @@
  */
 package openpkm.base;
 
+import org.openide.filesystems.FileObject;
+
 /**
  *
  * @author Rok Koren
@@ -14,4 +16,5 @@ public interface SourceProviders
     String ATTR_SOURCE_PROVIDER = "source.provider";     
     
     SourceProvider getSourceProvider(String name);
+    FileObject getFileWithAttrs(FileObject file);
 }

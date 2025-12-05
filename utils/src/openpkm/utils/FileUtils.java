@@ -44,7 +44,7 @@ public class FileUtils
     public static String getFileName(FileObject folder, String extension)
     {
         return getFileName(LocalDateTime.now(), folder, extension);
-    }      
+    }   
     
     private static final class ActionListenerImpl implements ActionListener
     {

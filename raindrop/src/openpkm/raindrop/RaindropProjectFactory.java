@@ -4,10 +4,8 @@
  */
 package openpkm.raindrop;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -52,7 +50,7 @@ public class RaindropProjectFactory implements ProjectFactory
             Properties props = new Properties();
             FileObject folder = dir.getFileObject(PROJECT_FOLDER);  
             props.load(folder.getFileObject(PROJECT_FILE).getInputStream());  
-            return new RaindropProject(dir, state, props);                           
+            return new RaindropProject(dir, state, props);   
         }       
         return null;          
     }    
