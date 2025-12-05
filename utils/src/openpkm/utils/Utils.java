@@ -470,7 +470,7 @@ public class Utils
             SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
             if(providers != null)
             {     
-                FileObject fileWithAttrs = providers.getFileWithAttrs(file);
+                FileObject fileWithAttrs = providers.getFileWithAttrs(file, false);
                 if(fileWithAttrs != null)
                 {
                     String sourceID = (String)fileWithAttrs.getAttribute(SourceProviders.ATTR_SOURCE_ID);

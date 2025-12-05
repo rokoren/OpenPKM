@@ -221,10 +221,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     } 
     
     @Override
-    public FileObject getFileWithAttrs(FileObject file)
+    public FileObject getFileWithAttrs(FileObject file, boolean refresh)
     {
         try
         {
+            if(refresh) getFileSystem().getRoot().refresh();
             return getFileSystem().getRoot().getFileObject(file.getName(), file.getExt());            
         }
         catch(IOException e)
@@ -1877,9 +1878,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 if(Utils.getAppID().equals(video.getAppID()))
                 {
                     String fileName = FileUtils.getFileName(getDataDirectory(), video.getDataFileExtension());
-                    FileObject fo = getFileSystem().getRoot().createData(fileName, video.getDataFileExtension()); 
-                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    FileObject fileWithAttrs = getFileWithAttrs(getDataDirectory().createData(fileName, video.getDataFileExtension()), true);
+                    fileWithAttrs.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    fileWithAttrs.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
                     
                     /*
                     FileSystem fs = fo.getFileSystem();
@@ -1897,11 +1898,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }  
-            catch(PropertyVetoException e)
-            {
-                LOG.warning(e.getMessage());
-            }              
+            }             
         }
 
         @Override

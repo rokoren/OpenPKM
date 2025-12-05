@@ -16,5 +16,5 @@ public interface SourceProviders
     String ATTR_SOURCE_PROVIDER = "source.provider";     
     
     SourceProvider getSourceProvider(String name);
-    FileObject getFileWithAttrs(FileObject file);
+    FileObject getFileWithAttrs(FileObject file, boolean refresh);
 }
