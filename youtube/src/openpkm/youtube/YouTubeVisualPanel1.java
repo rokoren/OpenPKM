@@ -225,6 +225,7 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel3 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
+        jComboBox1.setFocusable(false);
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel1 = new javax.swing.JLabel();
         iconView1 = new org.openide.explorer.view.IconView();
@@ -232,6 +233,7 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
         filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
         jLabel4 = new javax.swing.JLabel();
         jComboBox2 = new javax.swing.JComboBox<>();
+        jComboBox2.setFocusable(false);
 
         setLayout(new java.awt.GridBagLayout());
 
