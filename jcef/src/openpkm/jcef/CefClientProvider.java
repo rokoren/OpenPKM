@@ -4,7 +4,6 @@
  */
 package openpkm.jcef;
 
-import java.io.IOException;
 import org.cef.CefClient;
 
 /**
@@ -13,6 +12,6 @@ import org.cef.CefClient;
  */
 public interface CefClientProvider 
 {
-    CefClient getCefClient() throws IOException;  
+    CefClient getCefClient() throws Exception;  
     void dispose(); 
 }

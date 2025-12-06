@@ -17,6 +17,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
 import openpkm.base.IconProvider;
 import openpkm.base.PropertiesProvider;
@@ -25,11 +30,22 @@ import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.utils.DateTimeUtils;
+import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
+import org.cef.browser.CefBrowser;
+import org.netbeans.core.spi.multiview.CloseOperationState;
+import org.netbeans.core.spi.multiview.MultiViewDescription;
+import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.netbeans.core.spi.multiview.MultiViewElementCallback;
+import org.openide.awt.UndoRedo;
 import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.windows.TopComponent;
 
 /**
  *
@@ -46,7 +62,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return new YouTubeVideoImpl(props);
     }
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider
+    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -394,7 +410,37 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         {
             props.store(os, comments); 
             LOG.info("YouTube video saved");
+        } 
+        
+        @Override
+        public String preferredID() 
+        {
+            return "youtube";
+        }        
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new MultiViewElementImpl(this);
+        }  
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "YouTube";
         }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }        
 
         @Override
         public String getThumbnail(Thumbnail thumbnail) 
@@ -413,5 +459,120 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
             }         
             return getThumbnailDefault();
         }          
+    }
+    
+    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
+    {
+        private CefBrowser browser; 
+        
+        private transient MultiViewElementCallback callback;  
+        
+        private final YouTubeVideo video;
+
+        public MultiViewElementImpl(YouTubeVideo video) 
+        {
+            this.video = video;
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+        }                
+        
+        @Override
+        public UndoRedo getUndoRedo() 
+        {
+            return UndoRedo.NONE;
+        }
+
+        @Override
+        public void setMultiViewCallback(MultiViewElementCallback callback) 
+        {
+            this.callback = callback;
+        }
+
+        @Override
+        public CloseOperationState canCloseElement() 
+        {
+            return CloseOperationState.STATE_OK;
+        } 
+        
+        @Override
+        public JComponent getVisualRepresentation() 
+        {
+            if(browser == null)
+            {
+                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+                if(provider != null)
+                {
+                    try
+                    {
+                        browser = provider.getBrowser(video);   
+                        if(browser != null)
+                        {
+                            add(browser.getUIComponent());
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            return new JToolBar();
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookups.singleton(video);
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
+            
+        }
+
+        @Override
+        public void componentClosed() 
+        {
+            if(browser != null)
+            {
+                browser.close(true);
+            }
+        }
+
+        @Override
+        public void componentShowing() 
+        {
+            
+        }
+
+        @Override
+        public void componentHidden() 
+        {
+            
+        }
+
+        @Override
+        public void componentActivated() 
+        {
+            
+        }
+
+        @Override
+        public void componentDeactivated() 
+        {
+            
+        }
     }
 }

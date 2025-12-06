@@ -5,14 +5,16 @@
 package openpkm.core;
 
 import java.io.File;
+import java.util.Collection;
 import openpkm.jcef.CefAppProvider;
+import openpkm.jcef.CefClientProvider;
 import org.cef.CefApp;
-import org.cef.CefClient;
 import org.cef.CefSettings;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.modules.InstalledFileLocator;
 import org.openide.modules.Places;
+import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -22,8 +24,7 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=CefAppProvider.class)
 public class CefAppProviderImpl implements CefAppProvider
 {
-    private CefApp app;
-    private CefClient client;    
+    private CefApp app;  
 
     @Override
     public CefApp getApp() throws Exception
@@ -55,25 +56,17 @@ public class CefAppProviderImpl implements CefAppProvider
             app = CefApp.getInstance(settings);             
         }
         return app;
-    }
-    
-    @Override
-    public CefClient getDefaultClient() throws Exception
-    {
-        if(client == null)
-        {
-            client = getApp().createClient();            
-        }
-        return client;
-    }    
+    }  
 
     @Override
     public void dispose() 
     {
-        if(client != null)
+        Collection<? extends CefClientProvider> providers = Lookup.getDefault().lookupAll(CefClientProvider.class);
+        for(CefClientProvider provider : providers)
         {
-            client.dispose();
-        }
+            provider.dispose();
+        }  
+        
         if(app != null)
         {
             app.dispose();
