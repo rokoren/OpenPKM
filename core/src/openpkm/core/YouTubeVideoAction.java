@@ -17,6 +17,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -27,15 +29,16 @@ import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.Reference;
-import openpkm.base.ReferenceProvider;
-import openpkm.base.ReferenceSourceProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
+import openpkm.reference.AbstractFilesProvider;
+import openpkm.reference.Reference;
+import openpkm.reference.ReferenceProvider;
+import openpkm.reference.ReferenceSourceProvider;
 import openpkm.youtube.YouTubeDownloadWizardPanel.DownloadType;
 import openpkm.utils.Utils;
 import openpkm.youtube.YouTubeSourceProvider;
@@ -111,7 +114,9 @@ public final class YouTubeVideoAction implements ActionListener
     public static void showWizard(YouTubeSourceProvider provider, ReferenceSourceProvider referenceProvider, WizardDescriptor wiz)
     {
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-        {             
+        { 
+            LocalDateTime now = LocalDateTime.now();
+            
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);       
             String videoID = (String) wiz.getProperty(YouTubeVideo.PROP_VIDEO_ID);
@@ -134,7 +139,8 @@ public final class YouTubeVideoAction implements ActionListener
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
             List<String> youTubeTags = (List<String>) wiz.getProperty(YouTubeVideo.PROP_YOUTUBE_TAGS);        
 
-            Properties props = new Properties(); 
+            Properties props = new Properties();
+            props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));             
             props.setProperty(YouTubeVideo.PROP_APP_ID, Utils.getAppID());
             props.setProperty(FileTypeIndependent.PROP_DATA_FILE_EXTENSION, fileType.getExtension());
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());                 

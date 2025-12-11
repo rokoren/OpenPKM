@@ -63,8 +63,6 @@ import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Link;
 import openpkm.base.MarkdownSupport;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.Reference;
-import openpkm.base.ReferenceProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.TagsProvider;
@@ -107,6 +105,9 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.SourceProviders;
+import openpkm.reference.Reference;
+import openpkm.reference.ReferenceProvider;
+import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeSourceProvider;
 import org.openide.filesystems.FileUtil;
@@ -176,7 +177,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
         if(referenceProvider != null)
         {          
-            SourceProvider references = new ReferenceSourceGroup(referenceProvider);
+            SourceProvider references = new ReferenceSourceProviderImpl(referenceProvider);
             sources.put(references.getName(), references);            
         }
 
@@ -1360,21 +1361,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO SourceGroup    
     
-    private final class ReferenceSourceGroup implements SourceProvider, FileChangeListener
+    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
     {               
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/web_disk.png";   
-        
-        private static final String ROOT_FOLDER = "reference";       
-              
-        private Map<String, Reference> references;         
-        private FileObject rootDir;  
-
-        private final ReferenceProvider provider;
-
-        public ReferenceSourceGroup(ReferenceProvider provider) 
+        public ReferenceSourceProviderImpl(ReferenceProvider provider) 
         {
-            this.provider = provider;
+            super(provider);
         }               
         
         @Override
@@ -1383,7 +1374,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             return RaindropProject.this;
         }  
         
-        private synchronized Map<String, Reference> getReferences()
+        @Override
+        public synchronized Map<String, Reference> getReferences()
         {
             if(references == null)
             {
@@ -1406,13 +1398,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
             }
             return references;
-        } 
-        
-        @Override
-        public Source getSource(String sourceID) 
-        {
-            return getReferences().get(sourceID);
-        }                 
+        }                
 
         @Override
         public FileObject getRootFolder() 
@@ -1435,30 +1421,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                
             }
             return rootDir;
-        }
-
-        @Override
-        public String getName() 
-        {
-            return "reference";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "References";
-        }
-
-        @Override
-        public Icon getIcon(boolean bln) 
-        {
-            return new ImageIcon(ImageUtilities.loadImage(ICON));
-        }
-
-        @Override
-        public boolean contains(FileObject file) 
-        {
-            return getReferences().containsKey(file.getName());
         }
 
         @Override

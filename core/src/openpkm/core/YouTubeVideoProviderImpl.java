@@ -43,7 +43,6 @@ import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
 
@@ -533,7 +532,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         @Override
         public Lookup getLookup() 
         {
-            return Lookups.singleton(video);
+            return Lookup.EMPTY;
         }        
 
         @Override
