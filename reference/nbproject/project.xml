@@ -114,6 +114,9 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
+                <package>com.dlsc.pdfviewfx</package>
+                <package>com.dlsc.pdfviewfx.impl</package>
+                <package>com.dlsc.pdfviewfx.skins</package>
                 <package>openpkm.reference</package>
                 <package>openpkm.reference.resources</package>
                 <package>org.apache.fontbox</package>
@@ -251,6 +254,10 @@
             <class-path-extension>
                 <runtime-relative-path>ext/fontbox-3.0.6.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/fontbox-3.0.6.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/pdfviewfx-3.4.1.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/pdfviewfx-3.4.1.jar</binary-origin>
             </class-path-extension>
         </data>
     </configuration>

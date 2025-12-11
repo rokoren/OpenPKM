@@ -4,13 +4,17 @@
  */
 package openpkm.core;
 
+import com.dlsc.pdfviewfx.PDFView;
 import com.gluonhq.richtextarea.model.Decoration;
 import com.gluonhq.richtextarea.model.DecorationModel;
 import com.gluonhq.richtextarea.model.ParagraphDecoration;
 import com.gluonhq.richtextarea.model.TextDecoration;
 import java.awt.Image;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDate;
@@ -22,9 +26,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
+import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.Book;
@@ -49,10 +61,18 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.TextPosition;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.netbeans.core.spi.multiview.CloseOperationState;
+import org.netbeans.core.spi.multiview.MultiViewDescription;
+import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.netbeans.core.spi.multiview.MultiViewElementCallback;
+import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.windows.TopComponent;
 
 /**
  *
@@ -347,7 +367,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         }    
     } 
     
-    private static final class BookImpl extends AbstractReference implements Book, DescriptionProvider, PageProvider, TextProvider
+    private static final class BookImpl extends AbstractReference implements Book, DescriptionProvider, PageProvider, TextProvider, MultiViewDescription
     { 
         private static final String PROP_WEB_PAGE = "web.page";         
         private static final String PROP_GITHUB   = "github";         
@@ -650,6 +670,36 @@ public class ReferenceProviderImpl implements ReferenceProvider
             }
             return document;
         }
+        
+        @Override
+        public String preferredID() 
+        {
+            return "book";
+        }        
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new MultiViewElementImpl(this);
+        }  
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "Book";
+        }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }         
     }
     
     private static final class ArticleImpl extends AbstractReference implements Article, PageProvider
@@ -994,5 +1044,185 @@ public class ReferenceProviderImpl implements ReferenceProvider
         {
             setFile(file, AbstractFilesProvider.VIDEOS);
         }       
-    }     
+    }  
+    
+    private static final class MultiViewElementImpl extends JFXPanel implements MultiViewElement, ItemListener
+    {        
+        private PDFView pdfView; 
+        private JToolBar toolBar;
+        private JCheckBox toolbar, thumbnails;            
+        
+        private transient MultiViewElementCallback callback;  
+        
+        private final Reference reference;  
+
+        public MultiViewElementImpl(Reference reference) 
+        {
+            this.reference = reference;
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+        }                
+        
+        @Override
+        public UndoRedo getUndoRedo() 
+        {
+            return UndoRedo.NONE;
+        }
+
+        @Override
+        public void setMultiViewCallback(MultiViewElementCallback callback) 
+        {
+            this.callback = callback;
+        }
+
+        @Override
+        public CloseOperationState canCloseElement() 
+        {
+            return CloseOperationState.STATE_OK;
+        } 
+        
+        @Override
+        public JComponent getVisualRepresentation() 
+        {
+            if(pdfView == null)
+            {
+                pdfView = new PDFView();
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() 
+                    {
+                        pdfView.setShowToolBar(false);
+                        pdfView.setShowThumbnails(false);
+                        pdfView.setCacheThumbnails(true);
+                        //pdfView.setShowAll(true);
+                        //pdfView.getStylesheets().setAll(Objects.requireNonNull(Installer.class.getResource("nord-dark.css")).toExternalForm(), Objects.requireNonNull(Installer.class.getResource("pdf-view-atlanta.css")).toExternalForm());                   
+                        Scene scene = new Scene(pdfView);
+                        /*
+                        if (isDarkLaF)
+                        {
+                            scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
+                            // Loading default content to force apply a content with css for dark background
+                            //browser.getEngine().loadContent(readLoadingPage());
+                        }              
+                        */
+                        setScene(scene);
+                    }
+                }); 
+            }
+            return this;
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            if(toolBar ==  null)
+            {
+                toolBar = new JToolBar(JToolBar.HORIZONTAL);
+                toolbar = new JCheckBox("Toolbar");
+                toolbar.addItemListener(this);
+                thumbnails = new JCheckBox("Thumbnails");
+                thumbnails.addItemListener(this);       
+                toolBar.add(toolbar);
+                toolBar.add(thumbnails);
+            }
+            return toolBar;
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookup.EMPTY;
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
+            Platform.runLater(new Runnable() 
+            {
+                @Override
+                public void run() 
+                {
+                    try
+                    {
+                        pdfView.load(reference.getFile().getInputStream());  
+                        if(reference instanceof PageProvider)
+                        {
+                            PageProvider provider = (PageProvider)reference;
+                            Integer page = provider.getPageNumber();
+                            if(page != null)
+                            {
+                                pdfView.setPage(page);                               
+                            }
+                            pdfView.pageProperty().addListener(l -> updateCurrentPageNumber());                          
+                        }                       
+                    }
+                    catch(FileNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }     
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                 
+                }
+            });             
+        }
+
+        @Override
+        public void componentClosed() 
+        {
+        }
+
+        @Override
+        public void componentShowing() 
+        {
+            
+        }
+
+        @Override
+        public void componentHidden() 
+        {
+            
+        }
+
+        @Override
+        public void componentActivated() 
+        {
+            
+        }
+
+        @Override
+        public void componentDeactivated() 
+        {
+            
+        }
+        
+        private void updateCurrentPageNumber()
+        {
+            if(reference instanceof PageProvider)
+            {
+                PageProvider provider = (PageProvider)reference;
+                provider.setPageNumber(pdfView.getPage());
+            }
+        }         
+        
+        @Override
+        public void itemStateChanged(ItemEvent evt) 
+        {
+            boolean isSelected = evt.getStateChange() == ItemEvent.SELECTED;
+            if(evt.getSource() == toolbar)
+            {
+                pdfView.setShowToolBar(isSelected);
+            }
+            else if(evt.getSource() == thumbnails)
+            {
+                pdfView.setShowThumbnails(isSelected);
+            }
+        }        
+    }    
 }

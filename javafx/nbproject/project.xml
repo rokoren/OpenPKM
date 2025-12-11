@@ -24,7 +24,11 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
+                <package>com.gluonhq.richtextarea</package>
+                <package>com.gluonhq.richtextarea.action</package>
                 <package>com.gluonhq.richtextarea.model</package>
+                <package>com.gluonhq.richtextarea.undo</package>
+                <package>com.gluonhq.richtextarea.viewmodel</package>
                 <package>com.sun.glass.events</package>
                 <package>com.sun.glass.ui</package>
                 <package>com.sun.glass.ui.delegate</package>
@@ -245,10 +249,29 @@
                 <package>org.controlsfx.tools</package>
                 <package>org.controlsfx.validation</package>
                 <package>org.controlsfx.validation.decoration</package>
+                <package>org.kordamp.ikonli</package>
+                <package>org.kordamp.ikonli.javafx</package>
+                <package>org.kordamp.ikonli.materialdesign</package>
             </public-packages>
             <class-path-extension>
                 <runtime-relative-path>ext/javafx-swt.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/javafx-swt.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/ikonli-javafx-12.4.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/ikonli-javafx-12.4.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/ikonli-materialdesign-pack-12.4.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/ikonli-materialdesign-pack-12.4.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/controlsfx-11.2.2.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/controlsfx-11.2.2.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/javafx.web.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/javafx.web.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
                 <runtime-relative-path>ext/rich-text-area-1.2.3-SNAPSHOT.jar</runtime-relative-path>
@@ -279,12 +302,8 @@
                 <binary-origin>release/modules/ext/javafx.fxml.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/controlsfx-11.2.2.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/controlsfx-11.2.2.jar</binary-origin>
-            </class-path-extension>
-            <class-path-extension>
-                <runtime-relative-path>ext/javafx.web.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/javafx.web.jar</binary-origin>
+                <runtime-relative-path>ext/ikonli-core-12.4.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/ikonli-core-12.4.0.jar</binary-origin>
             </class-path-extension>
         </data>
     </configuration>
