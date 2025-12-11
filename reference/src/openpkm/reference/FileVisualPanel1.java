@@ -422,6 +422,7 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
         add(jLabel4, gridBagConstraints);
 
         jComboBox1.setModel(fileTypes);
+        jComboBox1.setFocusable(false);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
