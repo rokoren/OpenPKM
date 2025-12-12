@@ -109,6 +109,7 @@ import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.DateTimeUtils;
+import openpkm.utils.SavableImpl;
 import openpkm.youtube.YouTubeSourceProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
@@ -1361,7 +1362,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO SourceGroup    
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
+    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener, PropertyChangeListener
     {               
         public ReferenceSourceProviderImpl(ReferenceProvider provider) 
         {
@@ -1388,6 +1389,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
+                            reference.addPropertyChangeListener(this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -1452,6 +1454,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
+                reference.addPropertyChangeListener(this);
                 getReferences().put(reference.getSourceID(), reference);
                 
                 if(Utils.getAppID().equals(reference.getAppID()))
@@ -1492,6 +1495,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Reference reference = getReferences().remove(file.getName());  
             if(reference != null)
             {
+                reference.removePropertyChangeListener(this);
                 reference.setDeleted();
                 setLastSource(reference);
             }
@@ -1506,6 +1510,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            new SavableImpl(this, evt);
+        }
     } 
     
     private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 

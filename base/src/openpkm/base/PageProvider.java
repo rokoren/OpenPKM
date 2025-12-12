@@ -12,13 +12,10 @@ import java.beans.PropertyChangeListener;
  */
 public interface PageProvider 
 {
-    String PROP_PAGE_NUMBER   = "page.number";
-    String PROP_PAGE_MODIFIED = "page.modified";    
+    String PROP_PAGE_NUMBER   = "page.number"; 
     
     Integer getPageNumber();
     void setPageNumber(Integer page);
-    boolean isPageModified();
-    void setPageModified(boolean newValue);
     void addPropertyChangeListener(PropertyChangeListener listener);
     void removePropertyChangeListener(PropertyChangeListener listener);    
 }

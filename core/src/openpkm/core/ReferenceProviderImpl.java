@@ -420,6 +420,19 @@ public class ReferenceProviderImpl implements ReferenceProvider
         @Override
         public void setPageNumber(Integer page)
         {
+            String string = props.getProperty(PROP_PAGE_NUMBER);
+            Integer oldValue = null;
+            if(string != null)
+            {
+                try
+                {
+                    oldValue = Integer.parseInt(string);                    
+                }
+                catch(NumberFormatException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }
             if(page == null)
             {
                 props.remove(PROP_PAGE_NUMBER);
@@ -428,22 +441,8 @@ public class ReferenceProviderImpl implements ReferenceProvider
             {
                 props.setProperty(PROP_PAGE_NUMBER, page.toString());
             }  
-            setPageModified(true);
-        }  
-        
-        @Override
-        public boolean isPageModified()
-        {
-            return pageModified;
-        }
-        
-        @Override
-        public void setPageModified(boolean newValue)
-        {
-            boolean oldValue = pageModified;
-            pageModified = newValue;
-            propertyChangeSupport.firePropertyChange(PROP_PAGE_MODIFIED, oldValue, newValue);
-        }
+            propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);
+        }          
         
         public String getWebPage()
         {
@@ -620,7 +619,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         @Override
         public com.gluonhq.richtextarea.model.Document getTextOnPage()
         { 
-            if(textOnPage == null || isPageModified())
+            if(textOnPage == null)
             {
                 int page = getPageNumber() + 1;
                 try
@@ -761,22 +760,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
             {
                 props.setProperty(PROP_PAGE_NUMBER, page.toString());
             }  
-            setPageModified(true);
-        }  
-        
-        @Override
-        public boolean isPageModified()
-        {
-            return pageModified;
-        }
-        
-        @Override
-        public void setPageModified(boolean newValue)
-        {
-            boolean oldValue = pageModified;
-            pageModified = newValue;
-            pcs.firePropertyChange(PROP_PAGE_MODIFIED, oldValue, newValue);
-        }
+        }          
 
         @Override
         public String getPublisher() 
@@ -876,22 +860,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
             {
                 props.setProperty(PROP_PAGE_NUMBER, page.toString());
             }  
-            setPageModified(true);
-        }  
-        
-        @Override
-        public boolean isPageModified()
-        {
-            return pageModified;
-        }
-        
-        @Override
-        public void setPageModified(boolean newValue)
-        {
-            boolean oldValue = pageModified;
-            pageModified = newValue;
-            pcs.firePropertyChange(PROP_PAGE_MODIFIED, oldValue, newValue);
-        }
+        }          
         
         @Override
         public String getSubtitle() 
@@ -1170,7 +1139,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
                         LOG.warning(e.getMessage());
                     }                 
                 }
-            });             
+            });            
         }
 
         @Override
