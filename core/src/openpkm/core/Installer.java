@@ -7,6 +7,7 @@ package openpkm.core;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashSet;
+import java.util.Set;
 import openpkm.base.Source;
 import org.netbeans.core.api.multiview.MultiViewHandler;
 import org.netbeans.core.api.multiview.MultiViewPerspective;
@@ -28,7 +29,7 @@ public class Installer implements Runnable
 {
     @Override
     public void run() 
-    {
+    {        
         WindowManager.getDefault().getRegistry().addPropertyChangeListener(new PropertyChangeListener()
         {
             @Override
@@ -40,7 +41,7 @@ public class Installer implements Runnable
                     HashSet<TopComponent> oldHashSet = (HashSet<TopComponent>) evt.getOldValue();
                     for (TopComponent topComponent : newHashSet) 
                     {
-                        if (!oldHashSet.contains(topComponent)) 
+                        //if (!oldHashSet.contains(topComponent)) 
                         {
                             DataObject data = topComponent.getLookup().lookup(DataObject.class);
                             if (data != null) 
@@ -50,11 +51,18 @@ public class Installer implements Runnable
                                 if(mvd != null)
                                 {
                                     MultiViewHandler handler = MultiViews.findMultiViewHandler(topComponent);
-                                    MultiViewPerspective perspective = handler.getSelectedPerspective();
-                                    handler.addMultiViewDescription(mvd, 3);
-                                    if(perspective != null)
+                                    if(handler != null)
                                     {
-                                        handler.requestActive(perspective);
+                                        MultiViewPerspective[] perspectives = handler.getPerspectives();
+                                        if(!hasPerspective(perspectives, mvd.preferredID()))
+                                        {
+                                            MultiViewPerspective perspective = handler.getSelectedPerspective();
+                                            handler.addMultiViewDescription(mvd, 3);
+                                            if(perspective != null)
+                                            {
+                                                handler.requestActive(perspective);
+                                            }                                             
+                                        }                                      
                                     }
                                     
                                     //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
@@ -80,5 +88,17 @@ public class Installer implements Runnable
                 }
             }
         });
-    }    
+    }
+
+    private boolean hasPerspective(MultiViewPerspective[] perspectives, String preferredID)
+    {
+        for(MultiViewPerspective perspective : perspectives)
+        {
+            if(perspective.preferredID().equals(preferredID))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }

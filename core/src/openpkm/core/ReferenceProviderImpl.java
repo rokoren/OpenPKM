@@ -1495,6 +1495,30 @@ public class ReferenceProviderImpl implements ReferenceProvider
         @Override
         public JComponent getVisualRepresentation() 
         {
+            return this;
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            return new JToolBar();
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookup.EMPTY;
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
             if(mediaPlayer == null)
             {
                 try
@@ -1537,40 +1561,6 @@ public class ReferenceProviderImpl implements ReferenceProvider
                     LOG.warning(e.getMessage());
                 }
             }
-            return this;
-        }
-
-        @Override
-        public JComponent getToolbarRepresentation() 
-        {
-            return new JToolBar();
-        }
-
-        @Override
-        public Action[] getActions() 
-        {
-            return new Action[0];
-        }
-
-        @Override
-        public Lookup getLookup() 
-        {
-            return Lookup.EMPTY;
-        }        
-
-        @Override
-        public void componentOpened() 
-        {
-            /*
-            Platform.runLater(new Runnable() 
-            {
-                @Override
-                public void run() 
-                {
-                    mediaPlayer.play(); 
-                }
-            });
-            */
         }
 
         @Override
