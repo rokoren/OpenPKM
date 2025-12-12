@@ -29,6 +29,12 @@ import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaPlayer.Status;
+import javafx.scene.media.MediaView;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
@@ -269,7 +275,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
                 } 
                 else if(nameExt.equalsIgnoreCase(EXT_PNG))
                 {
-                    return ImageUtilities.loadImage(EXT_PNG);                
+                    return ImageUtilities.loadImage(ICON_PNG);                
                 }             
                 else if(nameExt.equalsIgnoreCase(EXT_MP4))
                 {
@@ -679,7 +685,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         @Override
         public MultiViewElement createElement() 
         {
-            return new MultiViewElementImpl(this);
+            return new PdfMultiViewElement(this);
         }  
 
         @Override
@@ -701,7 +707,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         }         
     }
     
-    private static final class ArticleImpl extends AbstractReference implements Article, PageProvider
+    private static final class ArticleImpl extends AbstractReference implements Article, PageProvider, MultiViewDescription
     { 
         private final PropertyChangeSupport pcs;
         
@@ -798,10 +804,40 @@ public class ReferenceProviderImpl implements ReferenceProvider
             {
                 props.setProperty(PROP_LANGUAGE, lang);
             }
-        }       
+        } 
+        
+        @Override
+        public String preferredID() 
+        {
+            return "article";
+        }        
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new PdfMultiViewElement(this);
+        }  
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "Article";
+        }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }         
     }    
     
-    private static final class DocumentImpl extends AbstractReference implements Document, PageProvider
+    private static final class DocumentImpl extends AbstractReference implements Document, PageProvider, MultiViewDescription
     { 
         private final PropertyChangeSupport pcs;
         
@@ -960,10 +996,40 @@ public class ReferenceProviderImpl implements ReferenceProvider
             {
                 props.setProperty(PROP_LANGUAGE, lang);
             }
+        }  
+        
+        @Override
+        public String preferredID() 
+        {
+            return "document";
         }        
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new PdfMultiViewElement(this);
+        }  
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "Document";
+        }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }          
     }  
     
-    public static final class PictureImpl extends AbstractReference implements Picture
+    public static final class PictureImpl extends AbstractReference implements Picture, MultiViewDescription
     {        
         public PictureImpl(Properties props)
         {
@@ -986,10 +1052,40 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public void setFile(FileObject file) throws IOException
         {
             setFile(file, AbstractFilesProvider.PICTURES);
+        }  
+        
+        @Override
+        public String preferredID() 
+        {
+            return "picture";
+        }        
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new ImageMultiViewElement(this);
+        }  
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "Picture";
+        }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
         }         
     }   
     
-    private static final class VideoImpl extends AbstractReference implements Video
+    private static final class VideoImpl extends AbstractReference implements Video, MultiViewDescription
     {        
         public VideoImpl(Properties props)
         {
@@ -1012,10 +1108,40 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public void setFile(FileObject file) throws IOException
         {
             setFile(file, AbstractFilesProvider.VIDEOS);
-        }       
+        }  
+        
+        @Override
+        public String preferredID() 
+        {
+            return "video";
+        }        
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new VideoMultiViewElement(this);
+        }  
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "Video";
+        }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }          
     }  
     
-    private static final class MultiViewElementImpl extends JFXPanel implements MultiViewElement, ItemListener
+    private static final class PdfMultiViewElement extends JFXPanel implements MultiViewElement, ItemListener
     {        
         private PDFView pdfView; 
         private JToolBar toolBar;
@@ -1025,7 +1151,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         
         private final Reference reference;  
 
-        public MultiViewElementImpl(Reference reference) 
+        public PdfMultiViewElement(Reference reference) 
         {
             this.reference = reference;
             setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
@@ -1193,5 +1319,296 @@ public class ReferenceProviderImpl implements ReferenceProvider
                 pdfView.setShowThumbnails(isSelected);
             }
         }        
-    }    
+    } 
+    
+    private static final class ImageMultiViewElement extends JFXPanel implements MultiViewElement
+    {        
+        private ImageView imageView;       
+        
+        private transient MultiViewElementCallback callback;  
+        
+        private final Reference reference;  
+
+        public ImageMultiViewElement(Reference reference) 
+        {
+            this.reference = reference;
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+        }                
+        
+        @Override
+        public UndoRedo getUndoRedo() 
+        {
+            return UndoRedo.NONE;
+        }
+
+        @Override
+        public void setMultiViewCallback(MultiViewElementCallback callback) 
+        {
+            this.callback = callback;
+        }
+
+        @Override
+        public CloseOperationState canCloseElement() 
+        {
+            return CloseOperationState.STATE_OK;
+        } 
+        
+        @Override
+        public JComponent getVisualRepresentation() 
+        {
+            if(imageView == null)
+            {
+                imageView = new ImageView();
+                Platform.runLater(new Runnable() 
+                {
+                    @Override
+                    public void run() 
+                    {
+                        BorderPane borderPane = new BorderPane();
+                        borderPane.setCenter(imageView);                  
+                        imageView.fitWidthProperty().bind(borderPane.widthProperty());
+                        imageView.fitHeightProperty().bind(borderPane.heightProperty());  
+                        imageView.setPreserveRatio(false);
+                        imageView.setSmooth(true);
+                        imageView.setCache(true);                  
+                        Scene scene = new Scene(borderPane);
+                        /*
+                        if (isDarkLaF)
+                        {
+                            scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
+                            // Loading default content to force apply a content with css for dark background
+                            //browser.getEngine().loadContent(readLoadingPage());
+                        }              
+                        */
+                        setScene(scene);
+                    }
+                }); 
+            }
+            return this;
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            return new JToolBar();
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookup.EMPTY;
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
+            Platform.runLater(new Runnable() 
+            {
+                @Override
+                public void run() 
+                {
+                    try
+                    {
+                        javafx.scene.image.Image image = new javafx.scene.image.Image(reference.getFile().getInputStream());                
+                        imageView.setImage(image); 
+                    }
+                    catch(FileNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                  
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                                 
+                }
+            });             
+        }
+
+        @Override
+        public void componentClosed() 
+        {
+        }
+
+        @Override
+        public void componentShowing() 
+        {
+            
+        }
+
+        @Override
+        public void componentHidden() 
+        {
+            
+        }
+
+        @Override
+        public void componentActivated() 
+        {
+            
+        }
+
+        @Override
+        public void componentDeactivated() 
+        {
+            
+        }               
+    }   
+    
+    private static final class VideoMultiViewElement extends JFXPanel implements MultiViewElement
+    {        
+        private MediaPlayer mediaPlayer;
+        
+        private transient MultiViewElementCallback callback;  
+        
+        private final Reference reference;  
+
+        public VideoMultiViewElement(Reference reference) 
+        {
+            this.reference = reference;
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+        }                
+        
+        @Override
+        public UndoRedo getUndoRedo() 
+        {
+            return UndoRedo.NONE;
+        }
+
+        @Override
+        public void setMultiViewCallback(MultiViewElementCallback callback) 
+        {
+            this.callback = callback;
+        }
+
+        @Override
+        public CloseOperationState canCloseElement() 
+        {
+            return CloseOperationState.STATE_OK;
+        } 
+        
+        @Override
+        public JComponent getVisualRepresentation() 
+        {
+            if(mediaPlayer == null)
+            {
+                try
+                {
+                    Media media = new Media(reference.getFile().toURI().toString());
+                    mediaPlayer = new MediaPlayer(media);
+                    Platform.runLater(new Runnable() 
+                    {
+                        @Override
+                        public void run() 
+                        {
+                            MediaView mediaView = new MediaView(mediaPlayer);                    
+                            BorderPane borderPane = new BorderPane();
+                            borderPane.setCenter(mediaView);  
+                            mediaView.fitWidthProperty().bind(borderPane.widthProperty());
+                            mediaView.fitHeightProperty().bind(borderPane.heightProperty());  
+                            mediaView.setPreserveRatio(false);
+                            Scene scene = new Scene(borderPane);
+
+                            mediaView.setOnMouseClicked(event -> {
+                                //if (event.isPrimaryButtonDown()) 
+                                {
+                                    if(mediaPlayer.getStatus() == Status.PLAYING)
+                                    {
+                                        mediaPlayer.pause();
+                                    }
+                                    else
+                                    {
+                                        mediaPlayer.play();
+                                    }
+                                }
+                            });                   
+
+                            setScene(scene); 
+                        }
+                    });                    
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            return new JToolBar();
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookup.EMPTY;
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
+            /*
+            Platform.runLater(new Runnable() 
+            {
+                @Override
+                public void run() 
+                {
+                    mediaPlayer.play(); 
+                }
+            });
+            */
+        }
+
+        @Override
+        public void componentClosed() 
+        {
+            Platform.runLater(new Runnable() 
+            {
+                @Override
+                public void run() 
+                {
+                    mediaPlayer.stop();
+                    mediaPlayer.dispose(); 
+                }
+            });              
+        }
+
+        @Override
+        public void componentShowing() 
+        {
+            
+        }
+
+        @Override
+        public void componentHidden() 
+        {
+            
+        }
+
+        @Override
+        public void componentActivated() 
+        {
+            
+        }
+
+        @Override
+        public void componentDeactivated() 
+        {
+            
+        }               
+    }     
 }

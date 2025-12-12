@@ -104,6 +104,7 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.Picture;
 import openpkm.base.SourceProviders;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
@@ -141,7 +142,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private static final int POSITION_ARTICLES  = 300;
     private static final int POSITION_BOOKS     = 400;
     private static final int POSITION_LINKS     = 500;
-    private static final int POSITION_VIDEOS    = 600;
+    private static final int POSITION_PICTURES  = 600;    
+    private static final int POSITION_VIDEOS    = 700;
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
@@ -340,6 +342,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 list.add(new ArticleDataGroupProviderImpl()); 
                 list.add(new DocumentDataGroupProviderImpl()); 
                 list.add(new LinkDataGroupProviderImpl());                
+                list.add(new PictureDataGroupProviderImpl()); 
                 list.add(new VideoDataGroupProviderImpl()); 
             }                                   
             
@@ -1261,6 +1264,104 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
         }
     }  
+
+    private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    {
+        @StaticResource()
+        private static final String ICON = "openpkm/raindrop/resources/images.png"; 
+        
+        private final ChangeSupport changeSupport; 
+                
+        public PictureDataGroupProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        } 
+
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Picture"));         
+            return actions;
+        }
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }        
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_PICTURES;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public FileObject getRootFolder() throws IOException 
+        {
+            return getDataDirectory();
+        }
+
+        @Override
+        public String getName() 
+        {
+            return "picture";
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Pictures";
+        }
+
+        @Override
+        public Image getIcon(boolean hasChildren) 
+        {
+            Image image = ImageUtilities.loadImage(ICON, false);
+            if(hasChildren)
+            {
+                return image;
+            }
+            return ImageUtilities.createDisabledImage(image);
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                Picture picture = data.getLookup().lookup(Picture.class);
+                if(picture != null)
+                {
+                    return true;
+                }                 
+            }                                   
+            return false;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            if(getLastSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }
+    } 
     
     private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {
