@@ -4,14 +4,22 @@
  */
 package openpkm.markdown;
 
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 import javax.swing.Action;
 import javax.swing.JComponent;
-import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import openpkm.base.HtmlFilesProvider;
+import org.netbeans.api.project.FileOwnerQuery;
+import org.netbeans.api.project.Project;
 import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
+import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.TopComponent;
@@ -25,20 +33,23 @@ import org.openide.windows.TopComponent;
         position = 2000
 )
 @Messages("LBL_Markdown_VISUAL=Visual")
-public final class MarkdownVisualElement extends JPanel implements MultiViewElement {
-
-    private MarkdownDataObject obj;
+public final class MarkdownVisualElement extends JFXPanel implements MultiViewElement
+{
+    private final Lookup context;     
+    
+    private WebView browser;
     private JToolBar toolbar = new JToolBar();
     private transient MultiViewElementCallback callback;
 
-    public MarkdownVisualElement(Lookup lkp) {
-        obj = lkp.lookup(MarkdownDataObject.class);
-        assert obj != null;
+    public MarkdownVisualElement(Lookup context) 
+    {
+        this.context = context;
         initComponents();
     }
 
     @Override
-    public String getName() {
+    public String getName() 
+    {
         return "MarkdownVisualElement";
     }
 
@@ -50,27 +61,20 @@ public final class MarkdownVisualElement extends JPanel implements MultiViewElem
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
+        setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.LINE_AXIS));
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
     @Override
-    public JComponent getVisualRepresentation() {
+    public JComponent getVisualRepresentation() 
+    {
         return this;
     }
 
     @Override
-    public JComponent getToolbarRepresentation() {
+    public JComponent getToolbarRepresentation() 
+    {
         return toolbar;
     }
 
@@ -80,12 +84,34 @@ public final class MarkdownVisualElement extends JPanel implements MultiViewElem
     }
 
     @Override
-    public Lookup getLookup() {
-        return obj.getLookup();
+    public Lookup getLookup() 
+    {
+        return context;
     }
 
     @Override
-    public void componentOpened() {
+    public void componentOpened() 
+    {
+        if(browser ==  null)
+        {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() 
+                {
+                    browser = new WebView();
+                    Scene scene = new Scene(browser);
+                    /*
+                    if (isDarkLaF)
+                    {
+                        scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
+                        // Loading default content to force apply a content with css for dark background
+                        //browser.getEngine().loadContent(readLoadingPage());
+                    }              
+                    */
+                    setScene(scene);                    
+                }
+            });            
+        }
     }
 
     @Override
@@ -101,26 +127,51 @@ public final class MarkdownVisualElement extends JPanel implements MultiViewElem
     }
 
     @Override
-    public void componentActivated() {
+    public void componentActivated() 
+    {  
+        MarkdownDataObject data = context.lookup(MarkdownDataObject.class);        
+        Project project = FileOwnerQuery.getOwner(data.getPrimaryFile());        
+        HtmlFilesProvider provider = project.getLookup().lookup(HtmlFilesProvider.class);             
+        if(provider != null)
+        {
+            FileObject file = provider.getDataFile(data.getPrimaryFile().getName());
+            if(file != null)
+            {
+                final String urlFile = file.toURI().toString();
+                //final String urlTheme = theme.getUrl();
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() 
+                    {
+                        WebEngine webEngine = browser.getEngine();
+                        //webEngine.setUserStyleSheetLocation(urlTheme);
+                        webEngine.load(urlFile);  
+                    }
+                });
+            }             
+        }              
     }
 
     @Override
-    public void componentDeactivated() {
+    public void componentDeactivated()
+    {
     }
 
     @Override
-    public UndoRedo getUndoRedo() {
+    public UndoRedo getUndoRedo() 
+    {
         return UndoRedo.NONE;
     }
 
     @Override
-    public void setMultiViewCallback(MultiViewElementCallback callback) {
+    public void setMultiViewCallback(MultiViewElementCallback callback) 
+    {
         this.callback = callback;
     }
 
     @Override
-    public CloseOperationState canCloseElement() {
+    public CloseOperationState canCloseElement() 
+    {
         return CloseOperationState.STATE_OK;
     }
-
 }

@@ -6,7 +6,6 @@ package openpkm.base;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Properties;
 import javax.swing.event.ChangeListener;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
