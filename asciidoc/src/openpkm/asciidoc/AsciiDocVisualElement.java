@@ -16,7 +16,7 @@ import org.openide.windows.TopComponent;
 @MultiViewElement.Registration(
         displayName = "#LBL_AsciiDoc_VISUAL",
         iconBase = "openpkm/asciidoc/resources/asciidoc.png",
-        mimeType = "text/x-asciidoc",
+        mimeType = AsciidocLanguageConfig.MIME_TYPE,
         persistenceType = TopComponent.PERSISTENCE_NEVER,
         preferredID = "AsciiDocVisual",
         position = 2000

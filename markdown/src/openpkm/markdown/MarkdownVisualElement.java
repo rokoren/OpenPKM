@@ -16,7 +16,7 @@ import org.openide.windows.TopComponent;
 @MultiViewElement.Registration(
         displayName = "#LBL_Markdown_VISUAL",
         iconBase = "openpkm/markdown/resources/markdown.png",
-        mimeType = "text/x-markdown",
+        mimeType = MarkdownLanguageConfig.MIME_TYPE,
         persistenceType = TopComponent.PERSISTENCE_NEVER,
         preferredID = "MarkdownVisual",
         position = 2000

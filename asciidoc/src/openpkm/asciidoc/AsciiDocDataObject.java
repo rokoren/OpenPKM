@@ -39,11 +39,11 @@ import org.openide.windows.TopComponent;
 })
 @MIMEResolver.ExtensionRegistration(
     displayName="#LBL_AsciiDoc_LOADER",
-    mimeType="text/x-asciidoc",
+    mimeType=AsciidocLanguageConfig.MIME_TYPE,
     extension={ "adoc" }
 )
 @DataObject.Registration(
-    mimeType = "text/x-asciidoc", 
+    mimeType = AsciidocLanguageConfig.MIME_TYPE, 
     iconBase = "openpkm/asciidoc/resources/asciidoc.png",
     displayName="#LBL_AsciiDoc_LOADER",
     position=300
@@ -114,7 +114,7 @@ public class AsciiDocDataObject extends MultiDataObject implements PropertyChang
         super(pf, loader);
         lookupContent = new InstanceContent(); 
         changeSupport = new ChangeSupport(this);
-        registerEditor("text/x-asciidoc", true);        
+        registerEditor(AsciidocLanguageConfig.MIME_TYPE, true);        
     }   
     
     public void addChangeListener(ChangeListener listener)
@@ -158,7 +158,7 @@ public class AsciiDocDataObject extends MultiDataObject implements PropertyChang
     @MultiViewElement.Registration(
         displayName = "#LBL_AsciiDoc_EDITOR",
         iconBase = "openpkm/asciidoc/resources/asciidoc.png",
-        mimeType = "text/x-asciidoc",
+        mimeType = AsciidocLanguageConfig.MIME_TYPE,
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED,
         preferredID = "AsciiDoc",
         position = 1000

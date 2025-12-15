@@ -38,11 +38,11 @@ import org.openide.windows.TopComponent;
 })
 @MIMEResolver.ExtensionRegistration(
         displayName = "#LBL_Markdown_LOADER",
-        mimeType = "text/x-markdown",
+        mimeType = MarkdownLanguageConfig.MIME_TYPE,
         extension = {"md"}
 )
 @DataObject.Registration(
-        mimeType = "text/x-markdown",
+        mimeType = MarkdownLanguageConfig.MIME_TYPE,
         iconBase = "openpkm/markdown/resources/markdown.png",
         displayName = "#LBL_Markdown_LOADER",
         position = 300
@@ -113,7 +113,7 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
         super(pf, loader);
         lookupContent = new InstanceContent(); 
         changeSupport = new ChangeSupport(this);        
-        registerEditor("text/x-markdown", true);
+        registerEditor(MarkdownLanguageConfig.MIME_TYPE, true);
     }
     
     public void addChangeListener(ChangeListener listener)
@@ -157,7 +157,7 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
     @MultiViewElement.Registration(
             displayName = "#LBL_Markdown_EDITOR",
             iconBase = "openpkm/markdown/resources/markdown.png",
-            mimeType = "text/x-markdown",
+            mimeType = MarkdownLanguageConfig.MIME_TYPE,
             persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED,
             preferredID = "Markdown",
             position = 1000

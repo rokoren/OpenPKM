@@ -19,8 +19,8 @@ import org.netbeans.modules.textmate.lexer.api.GrammarRegistration;
 @LanguageRegistration(mimeType = AsciidocLanguageConfig.MIME_TYPE)
 @GrammarRegistration(mimeType = AsciidocLanguageConfig.MIME_TYPE, grammar = "resources/asciidoc.tmLanguage.json")
 public class AsciidocLanguageConfig extends DefaultLanguageConfig
-{
-    public static final String MIME_TYPE = "text/x-asciidoc"; 
+{  
+    public static final String MIME_TYPE = "text/x-asciidoc";     
     
     private static final Logger LOG = Logger.getLogger(AsciidocLanguageConfig.class.getName());         
     

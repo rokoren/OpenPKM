@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
+<filesystem>  
+    <!--
+    <folder name="Editors">
+        <folder name="text">
+            <folder name="x-asciidoc">
+                <attr name="SystemFileSystem.localizingBundle" stringvalue="openpkm.asciidoc.Bundle"/>
+                <folder name="FontsColors">
+                    <folder name="NetBeans">
+                        <folder name="Defaults">
+                            <file name="FontAndColors.xml" url="resources/FontAndColors.xml">
+                                <attr name="SystemFileSystem.localizingBundle" stringvalue="openpkm.asciidoc.Bundle"/>
+                            </file>
+                        </folder>
+                    </folder>
+                </folder>
+            </folder>
+        </folder>
+    </folder>
+    -->
+
+    <folder name="OptionsDialog">
+        <folder name="PreviewExamples">
+            <folder name="text">
+                <file name="x-asciidoc" url="AsciiDocTemplate.adoc"/>
+            </folder>
+        </folder>
+    </folder>    
+      
+    <folder name="Spellcheckers">
+        <file name="Asciidoc">
+            <attr name="displayName" bundlevalue="openpkm.asciidoc.Bundle#text/x-asciidoc"/>
+        </file>
+    </folder>
+</filesystem>
