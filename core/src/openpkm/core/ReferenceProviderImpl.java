@@ -708,15 +708,10 @@ public class ReferenceProviderImpl implements ReferenceProvider
     }
     
     private static final class ArticleImpl extends AbstractReference implements Article, PageProvider, MultiViewDescription
-    { 
-        private final PropertyChangeSupport pcs;
-        
-        private boolean pageModified;                
-        
+    {                      
         public ArticleImpl(Properties props)
         {
             super(props);
-            pcs = new PropertyChangeSupport(this);
         } 
         
         @Override
@@ -838,15 +833,10 @@ public class ReferenceProviderImpl implements ReferenceProvider
     }    
     
     private static final class DocumentImpl extends AbstractReference implements Document, PageProvider, MultiViewDescription
-    { 
-        private final PropertyChangeSupport pcs;
-        
-        private boolean pageModified;           
-        
+    {                   
         public DocumentImpl(Properties props)
         {
             super(props);
-            pcs = new PropertyChangeSupport(this);
         }   
         
         @Override

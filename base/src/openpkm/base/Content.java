@@ -4,16 +4,15 @@
  */
 package openpkm.base;
 
-import java.awt.Component;
-
 /**
  *
  * @author Rok Koren
  */
-public interface CardPanel 
+public interface Content extends Source, FileTypeIndependent
 {
-    String getName();
-    Component getVisualRepresentation();
-    void reset();
-    void cardClosed();  
+    String PROP_CONTENT_ID      = "content.id";
+    String PROP_CONTENT_CREATOR = "content.creator";
+    
+    String getCreator();
+    void setCreator(String creator);
 }
