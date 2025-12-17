@@ -10,7 +10,6 @@ package openpkm.base;
  */
 public interface Content extends Source, FileTypeIndependent
 {
-    String PROP_CONTENT_ID      = "content.id";
     String PROP_CONTENT_CREATOR = "content.creator";
     
     String getCreator();

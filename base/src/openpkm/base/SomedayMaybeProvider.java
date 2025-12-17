@@ -4,14 +4,17 @@
  */
 package openpkm.base;
 
+import java.time.LocalDate;
+
 /**
  *
  * @author Rok Koren
  */
-public interface Thought
+public interface SomedayMaybeProvider 
 {
-    String PROP_SOMEDAY_MAYBE = "someday.maybe";
-    String PROP_TICKLE_DATE   = "tickle.date";   
-      
-    boolean isSomedayMaybe();     
+    String PROP_TICKLE_DATE = "tickle.date";     
+    
+    boolean isActive();
+    LocalDate getTickleDate();
+    void setTickleDate(LocalDate date);
 }

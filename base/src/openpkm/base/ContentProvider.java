@@ -22,9 +22,9 @@ public interface ContentProvider
     {
         BOOK("book"),
         ARTICLE("article"),        
-        DOCUMENT("document"),
-        STICKY("sticky"),        
+        DOCUMENT("document"),       
         IDEA("idea"),        
+        COMMENT("comment"),         
         NOTE("note");
 
         private String name;       

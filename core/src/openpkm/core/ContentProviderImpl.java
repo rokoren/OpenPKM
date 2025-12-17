@@ -27,8 +27,8 @@ import openpkm.base.Document;
 import openpkm.base.IconProvider;
 import openpkm.base.Note;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.SomedayMaybeProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.Thought;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
@@ -73,7 +73,11 @@ public class ContentProviderImpl implements ContentProvider
                 } 
                 else if(type.get() == Type.IDEA)
                 {
-                    return new ThoughtImpl(props);
+                    return new Idea(props);
+                }  
+                else if(type.get() == Type.COMMENT)
+                {
+                    return new Comment(props);
                 }                 
             }
         }
@@ -125,12 +129,6 @@ public class ContentProviderImpl implements ContentProvider
         public void removeChangeListener(ChangeListener listener)
         {
             changeSupport.removeChangeListener(listener);
-        } 
-        
-        @Override
-        public String getSourceID()
-        {
-            return props.getProperty(PROP_CONTENT_ID);
         }          
         
         @Override
@@ -286,7 +284,13 @@ public class ContentProviderImpl implements ContentProvider
         public BookImpl(Properties props)
         {
             super(props);
-        }                      
+        }  
+        
+        @Override
+        public String getSourceID()
+        {
+            return getISBN();
+        }        
         
         @Override
         public String getSubtitle() 
@@ -441,7 +445,13 @@ public class ContentProviderImpl implements ContentProvider
         public ArticleImpl(Properties props)
         {
             super(props);
-        }                  
+        } 
+        
+        @Override
+        public String getSourceID()
+        {
+            return getTimeCreated().getNano() + "";
+        }        
 
         @Override
         public String getPublisher() 
@@ -496,7 +506,13 @@ public class ContentProviderImpl implements ContentProvider
         public DocumentImpl(Properties props)
         {
             super(props);
-        }                       
+        }  
+        
+        @Override
+        public String getSourceID()
+        {
+            return getTimeCreated().getNano() + "";
+        }        
         
         @Override
         public String getSubtitle() 
@@ -613,7 +629,13 @@ public class ContentProviderImpl implements ContentProvider
         public NoteImpl(Properties props)
         {
             super(props);
-        }                               
+        } 
+        
+        @Override
+        public String getSourceID()
+        {
+            return getTimeCreated().getNano() + "";
+        }        
 
         @Override
         public String getLanguage() 
@@ -641,7 +663,7 @@ public class ContentProviderImpl implements ContentProvider
         }         
     } 
     
-    private static final class ThoughtImpl extends AbstractContent implements Thought, Note
+    private static final class Idea extends AbstractContent implements Note, SomedayMaybeProvider
     { 
         @StaticResource()
         public static final String ICON_ON = "openpkm/core/resources/lightbulb.png";
@@ -649,10 +671,16 @@ public class ContentProviderImpl implements ContentProvider
         @StaticResource()
         public static final String ICON_OFF = "openpkm/core/resources/lightbulb-off.png";         
         
-        public ThoughtImpl(Properties props)
+        public Idea(Properties props)
         {
             super(props);
-        }                               
+        } 
+        
+        @Override
+        public String getSourceID()
+        {
+            return getTimeCreated().getNano() + "";
+        }        
 
         @Override
         public String getLanguage() 
@@ -674,32 +702,93 @@ public class ContentProviderImpl implements ContentProvider
         } 
         
         @Override
-        public boolean isSomedayMaybe()
+        public boolean isActive()
         {
-            String somedayMaybe = props.getProperty(PROP_SOMEDAY_MAYBE, Boolean.FALSE.toString());
-            if (Boolean.parseBoolean(somedayMaybe))
+            if(props.containsKey(PROP_TICKLE_DATE))
             {
-                if(props.containsKey(PROP_TICKLE_DATE))
+                String date = props.getProperty(PROP_TICKLE_DATE);
+                if(LocalDate.parse(date).isAfter(LocalDate.now()))
                 {
-                    String tickleDate = props.getProperty(PROP_TICKLE_DATE);
-                    if(LocalDate.parse(tickleDate).isBefore(LocalDate.now()))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
-                return true;                                
-            } 
-            return false;
+            }
+            return true;  
         }         
         
         @Override
         public Image getIcon() 
         { 
-            if(isSomedayMaybe())
+            if(isActive())
             {
-                return ImageUtilities.loadImage(ICON_OFF);
+                return ImageUtilities.loadImage(ICON_ON);
             }    
-            return ImageUtilities.loadImage(ICON_ON);           
+            return ImageUtilities.loadImage(ICON_OFF);           
+        }         
+
+        @Override
+        public LocalDate getTickleDate() 
+        {
+            String string = props.getProperty(PROP_TICKLE_DATE);
+            if(string != null)
+            {
+                return LocalDate.parse(string);
+            }
+            return null;
+        }
+
+        @Override
+        public void setTickleDate(LocalDate date) 
+        {
+            if(date == null)
+            {
+                props.remove(PROP_TICKLE_DATE);
+            }
+            else
+            {
+                props.setProperty(PROP_TICKLE_DATE, date.format(DateTimeFormatter.ISO_DATE));
+            }
+        }
+    }  
+    
+    private static final class Comment extends AbstractContent implements Note
+    { 
+        @StaticResource()
+        public static final String ICON = "openpkm/core/resources/comment.png";        
+        
+        public Comment(Properties props)
+        {
+            super(props);
+        } 
+        
+        @Override
+        public String getSourceID()
+        {
+            return getTimeCreated().getNano() + "";
+        }        
+
+        @Override
+        public String getLanguage() 
+        {
+            return props.getProperty(PROP_LANGUAGE);
+        }
+
+        @Override
+        public void setLanguage(String lang)
+        {
+            if(lang == null)
+            {
+                props.remove(PROP_LANGUAGE);
+            }
+            else
+            {
+                props.setProperty(PROP_LANGUAGE, lang);
+            }
+        }       
+        
+        @Override
+        public Image getIcon() 
+        {    
+            return ImageUtilities.loadImage(ICON);           
         }         
     }     
 }

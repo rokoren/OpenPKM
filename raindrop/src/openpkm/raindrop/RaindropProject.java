@@ -803,6 +803,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             List<Action> actions = new ArrayList();
             actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Note"));         
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Idea")); 
             return actions;
         }        
         
