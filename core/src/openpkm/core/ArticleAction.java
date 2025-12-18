@@ -48,7 +48,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Article",
-        id = "openpkm.reference.ArticleAction"
+        id = "openpkm.core.ArticleAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/reference/resources/link.png",
