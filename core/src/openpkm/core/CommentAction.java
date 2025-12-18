@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import openpkm.base.ContentProvider;
 import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.SomedayMaybeProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.VisibilityProvider;
@@ -45,24 +43,24 @@ import org.openide.util.NbBundle.Messages;
  * @author Rok Koren
  */
 @ActionID(
-        category = "OpenPKM/Idea",
-        id = "openpkm.core.IdeaAction"
+        category = "OpenPKM/Comment",
+        id = "openpkm.core.CommentAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/core/resources/lightbulb.png",
-        displayName = "#CTL_IdeaAction"
+        iconBase = "openpkm/core/resources/comment.png",
+        displayName = "#CTL_CommentAction"
 )
-@Messages("CTL_IdeaAction=Add Idea")
-public class IdeaAction implements ActionListener
+@Messages("CTL_CommentAction=Add Comment")
+public class CommentAction implements ActionListener
 {
     @StaticResource()
-    private static final String BANNER = "openpkm/core/resources/lightbulb.png";     
+    private static final String BANNER = "openpkm/core/resources/comment.png";     
     
-    private static final Logger LOG = Logger.getLogger(IdeaAction.class.getName());     
+    private static final Logger LOG = Logger.getLogger(CommentAction.class.getName());     
     
     private final ContentSourceProvider provider;
 
-    public IdeaAction(ContentSourceProvider provider)
+    public CommentAction(ContentSourceProvider provider)
     {
         this.provider = provider;
     }
@@ -71,7 +69,7 @@ public class IdeaAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new IdeaWizardPanel1());
+        panels.add(new NoteWizardPanel1());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -90,21 +88,20 @@ public class IdeaAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add Idea");  
+        wiz.setTitle("Add Comment");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         {  
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
-            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-            LocalDate tickleDate = (LocalDate) wiz.getProperty(SomedayMaybeProvider.PROP_TICKLE_DATE);        
+            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);     
             List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
 
             LocalDateTime now = LocalDateTime.now();
 
             Properties props = new Properties(); 
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentProvider.PROP_TYPE, ContentProviderImpl.Type.IDEA.getName());
+            props.setProperty(ContentProvider.PROP_TYPE, ContentProviderImpl.Type.COMMENT.getName());
             props.setProperty(Content.PROP_APP_ID, Utils.getAppID());
             props.setProperty(FileTypeIndependent.PROP_DATA_FILE_EXTENSION, fileType.getExtension());            
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
@@ -120,12 +117,7 @@ public class IdeaAction implements ActionListener
             {
                 joiner.add(iterator.next());
             } 
-            props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());        
-
-            if (tickleDate != null)
-            {
-                props.setProperty(SomedayMaybeProvider.PROP_TICKLE_DATE, tickleDate.format(DateTimeFormatter.ISO_DATE)); 
-            }                                           
+            props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());                                                 
 
             FileObject folder = provider.getRootFolder();
             if(folder != null)
@@ -133,9 +125,9 @@ public class IdeaAction implements ActionListener
                 try
                 { 
                     OutputStream os = folder.createAndOpen(now.getNano() + "." + PropertiesProvider.EXTENSION);
-                    props.store(os, "New Idea Created by Wizard"); 
+                    props.store(os, "New Comment Created by Wizard"); 
                     os.close();                           
-                    StatusDisplayer.getDefault().setStatusText("Idea saved with title: " + title);             
+                    StatusDisplayer.getDefault().setStatusText("Comment saved with title: " + title);             
                 }
                 catch(IOException e) 
                 {
