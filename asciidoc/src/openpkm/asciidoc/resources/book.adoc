@@ -1,0 +1,7 @@
+= Book Name
+Author Name
+:doctype: book
+:encoding: utf-8
+:lang: en
+:toc: left
+:numbered:

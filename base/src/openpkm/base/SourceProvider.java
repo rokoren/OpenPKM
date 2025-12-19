@@ -4,6 +4,7 @@
  */
 package openpkm.base;
 
+import java.util.Properties;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.util.Lookup;
 
@@ -14,5 +15,6 @@ import org.openide.util.Lookup;
 public interface SourceProvider extends SourceGroup 
 {    
     Source getSource(String sourceID);
+    boolean saveSource(Properties props, FileTypeProvider fileTypeProvider);
     Lookup.Provider getProvider();
 }

@@ -14,7 +14,6 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
@@ -238,23 +237,9 @@ public final class YouTubeVideoAction implements ActionListener
                 YouTubeDownload downloader = new YouTubeDownload(props, referenceProvider, resolution, videoID, title, fileType);
                 RP.post(downloader);                
             }  
-            else
+            else if(provider.saveSource(props, fileType))
             {
-                FileObject folder = provider.getRootFolder();
-                if(folder != null)
-                {
-                    try
-                    { 
-                        OutputStream os = folder.createAndOpen(videoID + "." + PropertiesProvider.EXTENSION);
-                        props.store(os, "New YouTube Video Created by Wizard"); 
-                        os.close();                           
-                        StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);             
-                    }
-                    catch(IOException e) 
-                    {
-                        LOG.warning(e.getMessage());
-                    }                     
-                }                
+                StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                
             }                                             
         }          
     }    

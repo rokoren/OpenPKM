@@ -48,6 +48,7 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
+import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.ChildrenGoal;
@@ -105,6 +106,7 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.FileTypeProvider;
 import openpkm.base.Note;
 import openpkm.base.Picture;
 import openpkm.base.SourceProviders;
@@ -1560,6 +1562,46 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            /*
+            YouTubeVideo video = provider.getVideo(props);
+            if(video != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
+                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    
+                    if(fileTypeProvider instanceof ArticleProvider)
+                    {
+                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                        OutputStream output = file.getOutputStream();
+                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                        output.close();
+                    }                     
+                    
+                    FileObject folder = getRootFolder();
+                    if(folder != null)
+                    {  
+                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                        video.save(os, "New YouTube Video Created");
+                        os.close();  
+                        return true;
+                    }                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            } 
+            */
+            return true;
+        }          
+        
+        @Override
         public void fileFolderCreated(FileEvent evt) 
         {
             /*
@@ -1714,6 +1756,46 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             propertyChangeSupport.removePropertyChangeListener(listener);
         }
+        
+        @Override
+        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            /*
+            YouTubeVideo video = provider.getVideo(props);
+            if(video != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
+                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    
+                    if(fileTypeProvider instanceof ArticleProvider)
+                    {
+                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                        OutputStream output = file.getOutputStream();
+                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                        output.close();
+                    }                     
+                    
+                    FileObject folder = getRootFolder();
+                    if(folder != null)
+                    {  
+                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                        video.save(os, "New YouTube Video Created");
+                        os.close();  
+                        return true;
+                    }                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            } 
+            */
+            return true;
+        }          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1939,7 +2021,47 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     }                    
                 }
             } 
-        }
+        }  
+        
+        @Override
+        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            /*
+            YouTubeVideo video = provider.getVideo(props);
+            if(video != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
+                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    
+                    if(fileTypeProvider instanceof ArticleProvider)
+                    {
+                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                        OutputStream output = file.getOutputStream();
+                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                        output.close();
+                    }                     
+                    
+                    FileObject folder = getRootFolder();
+                    if(folder != null)
+                    {  
+                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                        video.save(os, "New YouTube Video Created");
+                        os.close();  
+                        return true;
+                    }                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }  
+            */
+            return true;
+        }          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2107,6 +2229,44 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            YouTubeVideo video = provider.getVideo(props);
+            if(video != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
+                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    
+                    if(fileTypeProvider instanceof ArticleProvider)
+                    {
+                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                        OutputStream output = file.getOutputStream();
+                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                        output.close();
+                    }                     
+                    
+                    FileObject folder = getRootFolder();
+                    if(folder != null)
+                    {  
+                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                        video.save(os, "New YouTube Video Created");
+                        os.close();  
+                        return true;
+                    }                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }                           
+            return true;
+        }          
+        
+        @Override
         public void fileFolderCreated(FileEvent evt) 
         {
             /*
@@ -2123,26 +2283,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
-                getVideos().put(video.getSourceID(), video);                
-                                              
-                if(Utils.getAppID().equals(video.getAppID()))
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), video.getDataFileExtension());
-                    FileObject fileWithAttrs = getFileWithAttrs(getDataDirectory().createData(fileName, video.getDataFileExtension()), true);
-                    fileWithAttrs.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    fileWithAttrs.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    
-                    /*
-                    FileSystem fs = fo.getFileSystem();
-                    System.out.println("Tip FileSystem-a: " + fs.getClass().getName());                    
-                    
-                    fo.getFileSystem().runAtomicAction(() -> {
-                        fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                        fo.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    });
-                    */
-                }
-
+                getVideos().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
             catch(IOException e)
