@@ -7,8 +7,6 @@ package openpkm.core;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +20,6 @@ import openpkm.base.Article;
 import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
-import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
@@ -39,7 +36,6 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
-import org.openide.filesystems.FileObject;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -147,20 +143,9 @@ public class ArticleAction implements ActionListener
                 }
             }  
 
-            FileObject folder = provider.getRootFolder();
-            if(folder != null)
+            if(provider.saveSource(props, fileType))
             {
-                try
-                { 
-                    OutputStream os = folder.createAndOpen(now.getNano() + "." + PropertiesProvider.EXTENSION);
-                    props.store(os, "New Article Created by Wizard"); 
-                    os.close();                           
-                    StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);             
-                }
-                catch(IOException e) 
-                {
-                    LOG.warning(e.getMessage());
-                }                     
+                StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);                      
             }                                              
         }        
     }      

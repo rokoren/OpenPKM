@@ -51,6 +51,7 @@ import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
+import openpkm.base.BookProvider;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Content;
@@ -1564,30 +1565,44 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
-            /*
-            YouTubeVideo video = provider.getVideo(props);
-            if(video != null)
+            Content content = provider.getContent(props);
+            if(content != null)
             {
                 try
                 {
                     String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
                     FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
                     file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    file.setAttribute(ATTR_SOURCE_ID, content.getSourceID());  
                     
-                    if(fileTypeProvider instanceof ArticleProvider)
+                    if(content instanceof Article)
                     {
-                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = file.getOutputStream();
-                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
-                        output.close();
-                    }                     
+                        Article article = (Article)content;
+                        if(fileTypeProvider instanceof ArticleProvider)
+                        {
+                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                            OutputStream output = file.getOutputStream();
+                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                            output.close();
+                        }                         
+                    }
+                    else if(content instanceof Book)
+                    {
+                        Book book = (Book)content;
+                        if(fileTypeProvider instanceof BookProvider)
+                        {
+                            BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                            OutputStream output = file.getOutputStream();
+                            output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                            output.close();
+                        }                         
+                    }
                     
                     FileObject folder = getRootFolder();
                     if(folder != null)
                     {  
-                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                        video.save(os, "New YouTube Video Created");
+                        OutputStream os = folder.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                        content.save(os, "New Content Created");
                         os.close();  
                         return true;
                     }                                                          
@@ -1597,7 +1612,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     LOG.warning(e.getMessage());
                 }
             } 
-            */
             return true;
         }          
         
@@ -1619,26 +1633,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Content content = provider.getContent(Utils.getProperties(file)); 
                 content.addPropertyChangeListener(this);
-                getContents().put(content.getSourceID(), content);
-                
-                if(Utils.getAppID().equals(content.getAppID()))
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), content.getDataFileExtension());
-                    FileObject fo = getFileSystem().getRoot().createData(fileName, content.getDataFileExtension()); 
-                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    fo.setAttribute(ATTR_SOURCE_ID, content.getSourceID());                     
-                }                
-
+                getContents().put(content.getSourceID(), content);               
                 setLastSource(content);                
             }           
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }  
-            catch(PropertyVetoException e)
-            {
-                LOG.warning(e.getMessage());
-            }              
+            }               
         }
 
         @Override

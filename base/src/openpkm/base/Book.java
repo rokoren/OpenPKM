@@ -10,7 +10,7 @@ import java.time.LocalDate;
  *
  * @author Rok Koren
  */
-public interface Book 
+public interface Book extends TitleProvider
 {
     String PROP_SUBTITLE     = "book.subtitle"; 
     String PROP_AUTHORS      = "book.authors";  

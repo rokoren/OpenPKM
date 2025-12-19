@@ -29,7 +29,6 @@ import openpkm.base.Note;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.SomedayMaybeProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -84,7 +83,7 @@ public class ContentProviderImpl implements ContentProvider
         return null;
     }  
     
-    private static abstract class AbstractContent implements Content, PropertiesProvider, TitleProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractContent implements Content, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {          
         protected static final Logger LOG = Logger.getLogger(AbstractContent.class.getName());     
 
@@ -159,26 +158,7 @@ public class ContentProviderImpl implements ContentProvider
                 return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
             }
             return null;
-        }     
-
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }  
+        }      
         
         @Override
         public String getCreator()
@@ -290,7 +270,26 @@ public class ContentProviderImpl implements ContentProvider
         public String getSourceID()
         {
             return getISBN();
-        }        
+        } 
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
         
         @Override
         public String getSubtitle() 
@@ -451,7 +450,26 @@ public class ContentProviderImpl implements ContentProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }        
+        } 
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
 
         @Override
         public String getPublisher() 

@@ -8,7 +8,7 @@ package openpkm.base;
  *
  * @author Rok Koren
  */
-public interface Article 
+public interface Article extends TitleProvider
 {
     String PROP_PUBLISHER = "article.publisher";  
     String PROP_LANGUAGE  = "article.language";    

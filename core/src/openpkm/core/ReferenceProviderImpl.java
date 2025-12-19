@@ -53,7 +53,6 @@ import openpkm.base.PageProvider;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
@@ -123,7 +122,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         return null;
     }
     
-    private static abstract class AbstractReference implements Reference, PropertiesProvider, TitleProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractReference implements Reference, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {
         public static final String EXT_GIF = "gif";
         public static final String EXT_JPG = "jpg";
@@ -219,26 +218,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
                 return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
             }
             return null;
-        }     
-
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }  
+        }      
         
         @Override
         public String getDataFileExtension() 
@@ -392,6 +372,25 @@ public class ReferenceProviderImpl implements ReferenceProvider
         {
             return getISBN();
         }
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
         
         @Override
         public FileObject getFile() throws IOException
@@ -719,6 +718,25 @@ public class ReferenceProviderImpl implements ReferenceProvider
         {
             return getTimeCreated().getNano() + "";
         }
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
         
         @Override
         public FileObject getFile() throws IOException

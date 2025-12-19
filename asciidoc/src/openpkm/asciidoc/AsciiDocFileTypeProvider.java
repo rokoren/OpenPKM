@@ -64,7 +64,7 @@ public class AsciiDocFileTypeProvider implements FileTypeProvider, ArticleProvid
         sb.append("\n");
         sb.append(authorName);
         sb.append("\n");
-        sb.append(":doctype: article");
+        sb.append(":doctype: book");
         sb.append("\n");
         sb.append(":encoding: utf-8");
         sb.append("\n");
