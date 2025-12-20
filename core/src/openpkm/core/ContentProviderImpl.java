@@ -29,6 +29,7 @@ import openpkm.base.Note;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.SomedayMaybeProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -516,7 +517,7 @@ public class ContentProviderImpl implements ContentProvider
         } 
     }    
     
-    private static final class DocumentImpl extends AbstractContent implements Document
+    private static final class DocumentImpl extends AbstractContent implements Document, TitleProvider
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/document_notes.png";         
@@ -530,7 +531,26 @@ public class ContentProviderImpl implements ContentProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }        
+        } 
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
         
         @Override
         public String getSubtitle() 
@@ -639,7 +659,7 @@ public class ContentProviderImpl implements ContentProvider
         }         
     } 
 
-    private static final class NoteImpl extends AbstractContent implements Note
+    private static final class NoteImpl extends AbstractContent implements Note, TitleProvider
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/note_pin.png";         
@@ -653,7 +673,26 @@ public class ContentProviderImpl implements ContentProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }        
+        }  
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
 
         @Override
         public String getLanguage() 
@@ -681,7 +720,7 @@ public class ContentProviderImpl implements ContentProvider
         }         
     } 
     
-    private static final class Idea extends AbstractContent implements Note, SomedayMaybeProvider
+    private static final class Idea extends AbstractContent implements Note, SomedayMaybeProvider, TitleProvider
     { 
         @StaticResource()
         public static final String ICON_ON = "openpkm/core/resources/lightbulb.png";
@@ -698,7 +737,26 @@ public class ContentProviderImpl implements ContentProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }        
+        }
+
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
 
         @Override
         public String getLanguage() 
@@ -768,7 +826,7 @@ public class ContentProviderImpl implements ContentProvider
         }
     }  
     
-    private static final class Comment extends AbstractContent implements Note
+    private static final class Comment extends AbstractContent implements Note, TitleProvider
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/comment.png";        
@@ -782,7 +840,26 @@ public class ContentProviderImpl implements ContentProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }        
+        }    
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
 
         @Override
         public String getLanguage() 

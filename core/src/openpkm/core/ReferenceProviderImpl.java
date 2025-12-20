@@ -53,6 +53,7 @@ import openpkm.base.PageProvider;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
@@ -850,7 +851,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         }         
     }    
     
-    private static final class DocumentImpl extends AbstractReference implements Document, PageProvider, MultiViewDescription
+    private static final class DocumentImpl extends AbstractReference implements Document, TitleProvider, PageProvider, MultiViewDescription
     {                   
         public DocumentImpl(Properties props)
         {
@@ -861,7 +862,26 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }        
+        }  
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
+        }         
 
         @Override
         public FileObject getFile() throws IOException
@@ -1037,7 +1057,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         }          
     }  
     
-    public static final class PictureImpl extends AbstractReference implements Picture, MultiViewDescription
+    public static final class PictureImpl extends AbstractReference implements Picture, TitleProvider, MultiViewDescription
     {        
         public PictureImpl(Properties props)
         {
@@ -1048,6 +1068,25 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
+        }  
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
         }         
         
         @Override
@@ -1093,7 +1132,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         }         
     }   
     
-    private static final class VideoImpl extends AbstractReference implements Video, MultiViewDescription
+    private static final class VideoImpl extends AbstractReference implements Video, TitleProvider, MultiViewDescription
     {        
         public VideoImpl(Properties props)
         {
@@ -1104,6 +1143,25 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
+        }  
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                props.remove(PROP_TITLE);
+            }
+            else
+            {
+                props.setProperty(PROP_TITLE, title);
+            }
         }         
 
         @Override
