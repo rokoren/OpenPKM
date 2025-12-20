@@ -36,7 +36,9 @@ public abstract class AbstractVisualElement extends JFXPanel implements MultiVie
     public AbstractVisualElement(Lookup lkp) 
     {
         this.lkp = lkp;
-    }             
+    } 
+    
+    public abstract String getThemeUrl(FileObject file, Project project);
 
     // Variables declaration - do not modify                     
     // End of variables declaration                   
@@ -106,13 +108,16 @@ public abstract class AbstractVisualElement extends JFXPanel implements MultiVie
             if(file != null)
             {
                 final String urlFile = file.toURI().toString();
-                //final String urlTheme = theme.getUrl();
+                final String urlTheme = getThemeUrl(data.getPrimaryFile(), project);
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() 
                     {
                         WebEngine webEngine = browser.getEngine();
-                        //webEngine.setUserStyleSheetLocation(urlTheme);
+                        if(urlTheme != null)
+                        {
+                            webEngine.setUserStyleSheetLocation(urlTheme);                            
+                        }
                         webEngine.load(urlFile);  
                     }
                 });

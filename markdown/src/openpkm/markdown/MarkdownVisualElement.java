@@ -7,8 +7,11 @@ package openpkm.markdown;
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JToolBar;
+import openpkm.base.SourceProviders;
 import openpkm.utils.AbstractVisualElement;
+import org.netbeans.api.project.Project;
 import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.TopComponent;
@@ -24,6 +27,8 @@ import org.openide.windows.TopComponent;
 @Messages("LBL_Markdown_VISUAL=Visual")
 public final class MarkdownVisualElement extends AbstractVisualElement
 {
+    public static final String ATTR_MARKDOWN_THEME = "markdown.theme";     
+    
     private JToolBar toolbar = new JToolBar();
 
     public MarkdownVisualElement(Lookup lkp) 
@@ -46,5 +51,25 @@ public final class MarkdownVisualElement extends AbstractVisualElement
     @Override
     public Action[] getActions() {
         return new Action[0];
+    }
+
+    @Override
+    public String getThemeUrl(FileObject file, Project project) 
+    {
+        SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+        if(providers != null)
+        {     
+            FileObject fileWithAttrs = providers.getFileWithAttrs(file, false);
+            if(fileWithAttrs != null)
+            {
+                String name = (String)fileWithAttrs.getAttribute(ATTR_MARKDOWN_THEME);
+                MarkdownTheme theme = MarkdownTheme.getTheme(name); 
+                if(theme != null)
+                {
+                    return theme.getUrl();
+                }
+            }            
+        }
+        return StandardThemeProviderImpl.getDefaultTheme().getUrl();  
     }
 }

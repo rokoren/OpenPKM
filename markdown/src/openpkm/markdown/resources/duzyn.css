@@ -1,0 +1,476 @@
+@charset "UTF-8";
+@import url("https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css");
+html {
+  font-size: 10px;
+}
+
+body {
+  font-family: "Fira Code", "Source Code Pro", Consolas, "Courier New", monospace;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: #333;
+  background-color: #f5f5f5;
+  line-height: 1.5;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2rem 8rem;
+  word-wrap: break-word;
+}
+
+h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote {
+  font-size: 1.6rem;
+  margin-top: 1.6rem;
+}
+
+h1, h2, h3, h4, h5, h6, pre, code, blockquote, em, strong, code {
+  font-weight: normal;
+  font-style: normal;
+  font-family: "Fira Code", "Source Code Pro", Consolas, "Courier New", monospace;
+}
+
+h1, h2, h3, h4, h5, h6, pre, code, blockquote, ol, ul, li, p, section, header, footer {
+  float: none;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote {
+  margin-top: 1.6rem;
+  margin-bottom: 1.6rem;
+}
+
+h1 {
+  margin: 0;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  position: relative;
+  margin-bottom: 1.6rem;
+}
+
+h1:before,
+h2:before,
+h3:before,
+h4:before,
+h5:before,
+h6:before {
+  display: inline;
+}
+
+h1:before {
+  content: "# ";
+}
+
+h2:before {
+  content: "## ";
+}
+
+h3:before {
+  content: "### ";
+}
+
+h4:before {
+  content: "#### ";
+}
+
+h5:before {
+  content: "##### ";
+}
+
+h6:before {
+  content: "###### ";
+}
+
+h1 {
+  margin-left: -2ch;
+  padding-left: 2ch;
+  text-indent: -2ch;
+}
+
+h2 {
+  margin-left: -3ch;
+  padding-left: 3ch;
+  text-indent: -3ch;
+}
+
+h3 {
+  margin-left: -4ch;
+  padding-left: 4ch;
+  text-indent: -4ch;
+}
+
+h4 {
+  margin-left: -5ch;
+  padding-left: 5ch;
+  text-indent: -5ch;
+}
+
+h5 {
+  margin-left: -6ch;
+  padding-left: 6ch;
+  text-indent: -6ch;
+}
+
+h6 {
+  margin-left: -7ch;
+  padding-left: 7ch;
+  text-indent: -7ch;
+}
+
+ul > li {
+  list-style-type: none;
+  padding-left: 3.2rem;
+  padding-left: 4ch;
+  text-indent: -3.2rem;
+  text-indent: -4ch;
+}
+ul > li:before {
+  content: "-   ";
+}
+ul > li p {
+  text-indent: 0;
+  display: inline;
+}
+
+ol ol {
+  list-style-type: lower-alpha;
+}
+
+dd {
+  margin-left: 0;
+  margin-bottom: 1.6rem;
+  padding-left: 3.2rem;
+  padding-left: 4ch;
+  text-indent: -3.2rem;
+  text-indent: -4ch;
+}
+dd:before {
+  content: ":   ";
+}
+dd ol, dd ul {
+  margin-bottom: 1.6rem;
+}
+dd ol ul {
+  margin-left: 0;
+}
+dd p:first-child, dd ol:first-child, dd ul:first-child {
+  margin-top: 0;
+}
+dd p {
+  text-indent: 0;
+}
+dd > p:first-child {
+  display: inline;
+  padding-left: 0;
+}
+dd ul {
+  margin-left: 0;
+}
+dd ul:first-child {
+  margin-top: 0;
+}
+dd ul li {
+  margin-left: 3.2rem;
+  margin-left: 4ch;
+}
+dd ul li p, dd ul li ul, dd ul li ol {
+  margin-left: -3.2rem;
+  margin-left: -4ch;
+}
+dd ul li p:last-child, dd ul li ul:last-child, dd ul li ol:last-child {
+  margin-bottom: 10px;
+}
+dd ol {
+  margin-left: 3ch;
+}
+dd ol:first-child {
+  margin-top: 0;
+}
+dd ol li {
+  margin-left: 0;
+  text-indent: 0;
+}
+dd ol li ul li {
+  text-indent: -3.2rem;
+  text-indent: -4ch;
+}
+dd ol li p, dd ol li ul {
+  text-indent: 0;
+}
+dd ol li p:last-child, dd ol li ul:last-child {
+  margin-bottom: 10px;
+}
+
+pre {
+  margin-left: 0;
+  padding-left: 4ch;
+}
+
+blockquote {
+  position: relative;
+  padding-left: 1.6rem;
+  padding-left: 2ch;
+  overflow: hidden;
+}
+blockquote p:first-child {
+  margin-top: 0;
+}
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+blockquote:after {
+  content: ">\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>\a>";
+  white-space: pre;
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 1.6rem;
+  line-height: 1.5;
+}
+
+strong {
+  font-weight: bold;
+}
+strong:before, strong:after {
+  content: "**";
+  display: inline;
+}
+
+em {
+  font-style: italic;
+}
+em:before, em:after {
+  content: "_";
+  display: inline;
+}
+
+a, a:hover, a:visited {
+  color: #333;
+  text-decoration: none;
+}
+a:before {
+  content: "[";
+  display: inline;
+  color: #333;
+}
+a:after {
+  content: "](" attr(href) ")";
+  display: inline;
+  color: #333;
+}
+
+a.footnoteRef:before,
+a[id^=fnref]:before {
+  content: "[^";
+}
+a.footnoteRef:after,
+a[id^=fnref]:after {
+  content: "]";
+}
+a.footnoteRef sup,
+a[id^=fnref] sup {
+  font-style: normal;
+  font-size: inherit;
+  position: inherit;
+}
+
+.footnotes ol {
+  counter-reset: ol;
+}
+.footnotes ol li[id^=fn] {
+  list-style-type: none;
+  padding-left: 8ch;
+  text-indent: -8ch;
+}
+.footnotes ol li[id^=fn] p {
+  display: inline;
+  text-indent: 0;
+}
+.footnotes ol li[id^=fn] > p:first-child {
+  display: inline;
+  padding-left: 0;
+}
+.footnotes ol li[id^=fn]:before {
+  content: "[^" counter(ol) "]:   ";
+  counter-increment: ol;
+}
+
+a[href^="#fnref"]:before {
+  content: " ";
+}
+a[href^="#fnref"]:after {
+  content: " ";
+}
+
+code {
+  font-weight: inherit;
+}
+
+code:before,
+code:after {
+  content: "`";
+  display: inline;
+}
+
+pre code {
+  display: block;
+  text-indent: 0;
+}
+pre code:before, pre code:after {
+  content: none;
+}
+
+hr {
+  position: relative;
+  height: 1.6rem;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  border: 0;
+  margin-bottom: 1.6rem;
+}
+hr:after {
+  content: "------------------------------------------------------------------------";
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 10px;
+  line-height: 1.6rem;
+  width: 100%;
+  word-wrap: break-word;
+}
+
+figure {
+  margin: 1.6rem 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+dd figure {
+  padding-left: 3.2rem;
+  padding-left: 4ch;
+}
+
+table {
+  width: 100%;
+  position: relative;
+  display: inline-block;
+  padding: 3.2rem 0;
+  margin: 0;
+  overflow: hidden;
+}
+table:before {
+  content: "------------------------------------------------------------------------";
+  position: absolute;
+  top: 1.6rem;
+  left: 0;
+}
+table:after {
+  content: "------------------------------------------------------------------------";
+  position: absolute;
+  bottom: 1.6rem;
+  left: 0;
+}
+
+thead {
+  width: 100%;
+  position: relative;
+  display: inline-block;
+  padding: 0 0 1.6rem 0;
+  margin: 0;
+  overflow: hidden;
+}
+thead:after {
+  content: "------------------------------------------------------------------------";
+  position: absolute;
+  left: 0;
+}
+
+tr {
+  text-align: left;
+}
+
+th, td {
+  padding: 0 1ch;
+}
+
+header {
+  position: relative;
+  display: inline-block;
+  padding: 3.2rem 0;
+  margin: 0;
+  overflow: hidden;
+}
+header p:last-child {
+  margin-bottom: 0;
+}
+header:before {
+  content: "---";
+  position: absolute;
+  top: 1rem;
+  left: 0;
+}
+header:after {
+  content: "---";
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+}
+
+h1.title,
+p.author,
+p.date {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+h1.title {
+  font-weight: 400;
+  margin-left: 0;
+  padding-left: 9ch;
+  text-indent: -9ch;
+}
+h1.title:before {
+  content: "title:  ";
+}
+
+p.author {
+  padding-left: 9ch;
+  text-indent: -9ch;
+}
+p.author:before {
+  content: "author: ";
+}
+
+p.date {
+  padding-left: 9ch;
+  text-indent: -9ch;
+}
+p.date:before {
+  content: "date:   ";
+}
+
+@media screen and (prefers-color-scheme: dark) {
+  body {
+    /* Redefining color variables for dark theme */
+    background-color: #333;
+    color: #f5f5f5;
+  }
+  a, a:hover, a:visited {
+    color: #f5f5f5;
+  }
+  a:before {
+    color: #f5f5f5;
+  }
+  a:after {
+    color: #f5f5f5;
+  }
+}
+
+/*# sourceMappingURL=markdown.css.map */

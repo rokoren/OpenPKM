@@ -1,0 +1,420 @@
+:root {
+  --dark0: #2e3440;
+  --dark1: #3b4252;
+  --dark2: #434c5e;
+  --dark3: #4c566a;
+
+  --light0: #d8dee9;
+  --light1: #e5e9f0;
+  --light2: #eceff4;
+
+  --frost0: #8fbcbb;
+  --frost1: #88c0d0;
+  --frost2: #81a1c1;
+  --frost3: #5e81ac;
+
+  --red: #bf616a;
+  --orange: #d08770;
+  --yellow: #ebcb8b;
+  --green: #a3be8c;
+  --purple: #b48ead;
+}
+
+.theme-dark,
+.theme-light {
+  --font-monospace: "Hack Nerd Font", "Source Code Pro", monospace;
+  --background-primary: var(--dark0);
+  --background-primary-alt: var(--dark0);
+  --background-secondary: var(--dark1);
+  --background-secondary-alt: var(--dark2);
+  --text-normal: var(--light2);
+  --text-faint: rgba(255, 255, 255, 0.2);
+  --text-muted: var(--light0);
+  --text-title-h1: var(--purple);
+  --text-title-h2: var(--orange);
+  --text-title-h3: var(--yellow);
+  --text-title-h4: var(--green);
+  --text-title-h5: var(--red);
+  --text-link: var(--frost0);
+  --text-a: var(--frost3);
+  --text-a-hover: var(--frost2);
+  --text-mark: var(--yellow);
+  --pre-code: var(--dark1);
+  --text-highlight-bg: var(--dark3);
+  --interactive-accent: var(--frost0);
+  --interactive-before: var(--dark3);
+  --background-modifier-border: var(--dark2);
+  --text-accent: var(--orange);
+  --interactive-accent-rgb: var(--orange);
+  --inline-code: var(--frost1);
+  --code-block: var(--frost1);
+  --vim-cursor: var(--orange);
+  --text-selection: rgba(30, 150, 220, 0.2);
+  --scrollbar-bg: transparent;
+  --scrollbar-thumb-bg: transparent;
+}
+
+.theme-dark code[class*="language-"],
+.theme-dark pre[class*="language-"],
+.theme-light code[class*="language-"],
+.theme-light pre[class*="language-"] {
+  text-shadow: none;
+  background-color: var(--pre-code);
+}
+
+#graph-view-canvas .links {
+  stroke: var(--interactive-accent-rgb);
+}
+
+html,
+body {
+  font-size: 16px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 500;
+}
+
+hr {
+  margin: 32px 0;
+}
+
+.markdown-preview-view h1,
+.markdown-preview-view h2,
+.markdown-preview-view h3,
+.markdown-preview-view h4,
+.markdown-preview-view h5,
+.markdown-preview-view h6 {
+  margin: 24px 0;
+}
+
+.markdown-preview-view {
+  font-family: "Avenir Next";
+}
+
+.markdown-source-view {
+  font-family: "Fira Code";
+}
+
+strong {
+  font-weight: 500;
+}
+
+a,
+.cm-hmd-internal-link {
+  color: var(--text-a);
+  text-decoration: none;
+}
+
+a:hover,
+.cm-hmd-internal-link:hover,
+.cm-url {
+  color: var(--text-a-hover);
+  text-decoration: none;
+}
+
+mark {
+  background-color: var(--text-mark);
+}
+
+.view-actions a {
+  color: var(--text-normal);
+}
+
+.view-actions a:hover {
+  color: var(--text-a);
+}
+
+.cm-s-obsidian pre.HyperMD-codeblock {
+  line-height: 1.4em;
+  padding-left: 4px;
+  padding-right: 4px;
+  background-color: var(--pre-code);
+  color: var(--code-block);
+}
+
+.HyperMD-codeblock-begin {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+.HyperMD-codeblock-end {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+th {
+  font-weight: 500;
+}
+
+thead {
+  border-bottom: 2px solid var(--background-modifier-border);
+}
+
+.HyperMD-table-row {
+  line-height: normal;
+  padding-left: 4px;
+  padding-right: 4px;
+  background-color: var(--pre-code);
+}
+
+.CodeMirror-foldgutter-folded,
+.is-collapsed .nav-folder-collapse-indicator {
+  color: var(--text-a);
+}
+
+.cm-s-obsidian pre.HyperMD-header {
+  padding-left: 0;
+}
+
+.nav-file-tag {
+  color: var(--text-a);
+}
+
+.is-active .nav-file-title {
+  color: var(--text-a);
+  background-color: var(--background-primary-alt);
+}
+
+.nav-file-title {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.internal-embed img {
+  max-height: 300px;
+}
+
+pre {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.markdown-preview-section pre code,
+.markdown-preview-section code {
+  background-color: var(--pre-code);
+}
+
+.markdown-preview-section pre code {
+  padding: 4px;
+  line-height: 1.4em;
+  display: block;
+  color: var(--code-block);
+}
+
+.markdown-preview-section code {
+  color: var(--inline-code);
+}
+
+.cm-s-obsidian span.cm-inline-code,
+.cm-s-obsidian
+  span.cm-inline-code:not(.cm-formatting):not(.cm-hmd-indented-code):not(.obsidian-search-match-highlight) {
+  color: var(--inline-code);
+  background-color: var(--pre-code);
+}
+
+.workspace-leaf-header-title {
+  font-weight: 500;
+}
+
+.side-dock-title {
+  padding-top: 15px;
+  font-size: 20px;
+}
+
+.side-dock-ribbon-tab:hover,
+.side-dock-ribbon-action:hover,
+.side-dock-ribbon-action.is-active:hover,
+.nav-action-button:hover,
+.side-dock-collapse-btn:hover {
+  color: var(--text-a);
+}
+
+.side-dock {
+  border-right: 0;
+}
+
+.cm-s-obsidian {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.markdown-preview-view {
+  padding-left: 48px;
+  padding-right: 48px;
+}
+
+.cm-s-obsidian,
+.markdown-preview-view,
+.workspace-leaf-header {
+  border-left: none;
+}
+
+.markdown-embed-title {
+  font-weight: 500;
+}
+
+.markdown-embed {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.cm-s-obsidian .cm-header,
+.cm-s-obsidian .cm-strong {
+  font-weight: 500;
+}
+
+.cm-header-1,
+.markdown-preview-section h1 {
+  font-size: 34px;
+  color: var(--text-title-h1);
+}
+
+.cm-header-2,
+.markdown-preview-section h2 {
+  font-size: 26px;
+  color: var(--text-title-h2);
+}
+
+.cm-header-3,
+.markdown-preview-section h3 {
+  font-size: 22px;
+  color: var(--text-title-h3);
+}
+
+.cm-header-4,
+.markdown-preview-section h4 {
+  font-size: 20px;
+  color: var(--text-title-h4);
+}
+
+.cm-header-5,
+.cm-header-6,
+.markdown-preview-section h5,
+.markdown-preview-section h6 {
+  font-size: 18px;
+  color: var(--text-title-h5);
+}
+
+.suggestion-item.is-selected {
+  background-color: var(--background-secondary);
+}
+
+.empty-state-container {
+  transition: background 100ms ease-in;
+  background-color: var(--background-secondary);
+  border: 2px dashed var(--text-faint);
+}
+
+.empty-state-container:hover {
+  background-color: var(--background-secondary-alt);
+  border: 2px solid var(--text-faint);
+}
+
+.checkbox-container {
+  background-color: var(--interactive-before);
+}
+
+.checkbox-container:after {
+  background-color: var(--background-secondary-alt);
+}
+
+.mod-cta {
+  color: var(--background-secondary-alt);
+  font-weight: 600;
+}
+
+.mod-cta:hover {
+  background-color: var(--interactive-before);
+  font-weight: 600;
+}
+
+.CodeMirror pre.CodeMirror-line {
+  z-index: auto;
+}
+
+.CodeMirror-cursor {
+  background-color: var(--vim-cursor);
+  opacity: 60%;
+}
+
+.CodeMirror-scroll {
+  padding: 0 48px;
+}
+
+/**
+ *  Zen Mode
+ */
+/* .CodeMirror-scroll {
+  max-width: 900px;
+  margin: 0 auto;
+} */
+
+/**
+ *  UI Hacks
+ */
+
+.prompt-instructions {
+  display: none;
+}
+
+.nav-files-container:hover {
+  --scrollbar-bg: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb-bg: rgba(255, 255, 255, 0.1);
+}
+
+.workspace-leaf.mod-active .view-header {
+  border-bottom: none;
+}
+
+.cm-header,
+.markdown-preview-view h1,
+.markdown-preview-view h2,
+.markdown-preview-view h3,
+.markdown-preview-view h4,
+.markdown-preview-view h5 {
+  font-family: "Georgia";
+}
+
+.tag {
+  background-color: var(--text-a);
+  color: white;
+  border-radius: 12px;
+  padding: 4px 12px;
+}
+
+.workspace-leaf-resize-handle {
+  background-color: var(--interactive-normal);
+}
+
+.cm-formatting-header {
+  left: calc(-60px + 0.2em);
+  opacity: 0.25;
+  position: absolute;
+  text-align: right;
+  width: 60px;
+}
+
+.markdown-embed-title,
+.file-embed-title {
+  color: var(--dark3);
+  font-family: "Avenir Next";
+  font-size: 16px;
+  text-align: left;
+}

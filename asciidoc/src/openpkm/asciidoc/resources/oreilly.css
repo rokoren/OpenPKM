@@ -1,0 +1,115 @@
+/* === Importi === */
+@import url("https://fonts.googleapis.com/css?family=Georgia|Helvetica+Neue");
+@import url("https://cdn.jsdelivr.net/gh/asciidoctor/asciidoctor@2.0/data/stylesheets/asciidoctor-default.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css");
+
+/* === Barvna shema === */
+:root {
+  --primarycolor: #b30000;       /* O'Reilly rdeča */
+  --highlightcolor: #f4f4f4;     /* Svetlo ozadje za inline kodo */
+  --titlecolor: #333333;         /* Temno siva za naslove */
+  --textcolor: #000000;          /* Črna za glavno besedilo */
+  --toctextcolor: #b30000;
+  --tocbackground: #ffffff;
+  --adnote: #fdf2f2;
+  --adwarning: #fff8e1;
+  --adimportant: #f3f3ff;
+  --adtip: #f1fdf1;
+}
+
+/* === Pisave in besedilo === */
+body {
+  font-family: Georgia, serif;
+  line-height: 1.6;
+  color: var(--textcolor);
+}
+h1 {
+  font-family: "Helvetica Neue", sans-serif;
+  font-weight: bold;
+  color: var(--titlecolor);
+}
+h2, h3, h4, h5, h6 {
+  font-family: "Helvetica Neue", sans-serif;
+  font-weight: bold;
+  color: var(--primarycolor);
+}
+
+/* === Inline koda === */
+code {
+  background-color: var(--highlightcolor);
+  color: var(--primarycolor);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+}
+
+/* === TOC === */
+#toc.toc2 {
+  background-color: var(--tocbackground);
+  padding: 1em;
+  border-radius: 4px;
+  font-family: Georgia, serif;
+  line-height: 1.6;
+}
+#toc.toc2 a {
+  color: var(--toctextcolor);
+  text-decoration: none;
+}
+#toctitle {
+  color: var(--titlecolor);
+  font-weight: bold;
+  font-family: "Helvetica Neue", sans-serif;
+  margin-bottom: 0.5em;
+}
+
+/* === Admonitions === */
+.admonitionblock {
+  display: flex;
+  align-items: flex-start;
+  border-left: 4px solid var(--primarycolor);
+  padding: 1em;
+  margin: 2em 0;
+  border-radius: 4px;
+  gap: 0.85em;
+}
+.admonitionblock.note,
+.admonitionblock.note .content,
+.admonitionblock.note .icon {
+  background-color: var(--adnote);
+}
+.admonitionblock.warning,
+.admonitionblock.warning .content,
+.admonitionblock.warning .icon {
+  background-color: var(--adwarning);
+}
+.admonitionblock.important,
+.admonitionblock.important .content,
+.admonitionblock.important .icon {
+  background-color: var(--adimportant);
+}
+.admonitionblock.tip,
+.admonitionblock.tip .content,
+.admonitionblock.tip .icon {
+  background-color: var(--adtip);
+}
+
+/* === Odstrani navpično črto v admonitions === */
+.admonitionblock .icon,
+.admonitionblock .content {
+  border-right: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+/* === Quote blok po O'Reilly stilu === */
+blockquote {
+  border-left: 4px solid var(--primarycolor);
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+  font-family: Georgia, serif;
+  color: #444;
+  background-color: #fafafa;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}

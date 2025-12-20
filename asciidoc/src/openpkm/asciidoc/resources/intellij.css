@@ -1,0 +1,100 @@
+/* === Pisave === */
+@import url("https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700|Roboto:400,700");
+
+/* === Barvna shema === */
+:root {
+  --bgcolor: #2b2b2b;
+  --textcolor: #dcdcdc;
+  --titlecolor: #ffffff;
+  --accentcolor: #589df6;
+  --codebg: #3c3f41;
+  --codeborder: #4e5254;
+  --blockquote: #616161;
+  --tableborder: #555;
+  --highlight: #ffc66d;
+}
+
+/* === Osnovni slog === */
+body {
+  background-color: var(--bgcolor);
+  color: var(--textcolor);
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 2em;
+}
+
+/* === Naslovi === */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  color: var(--titlecolor);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+/* === Poudarki === */
+strong {
+  font-weight: bold;
+  color: var(--titlecolor);
+}
+em {
+  font-style: italic;
+}
+
+/* === Povezave === */
+a {
+  color: var(--accentcolor);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* === Koda === */
+code {
+  font-family: "JetBrains Mono", monospace;
+  background-color: var(--codebg);
+  color: var(--highlight);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  border: 1px solid var(--codeborder);
+}
+pre {
+  background-color: var(--codebg);
+  border: 1px solid var(--codeborder);
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  color: var(--highlight);
+}
+
+/* === Blok citat === */
+blockquote {
+  border-left: 4px solid var(--accentcolor);
+  padding-left: 1em;
+  color: var(--textcolor);
+  background-color: var(--codebg);
+  margin: 1.5em 0;
+  font-style: italic;
+}
+
+/* === Tabele === */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+th, td {
+  border: 1px solid var(--tableborder);
+  padding: 0.5em;
+  color: var(--textcolor);
+}
+th {
+  background-color: #3c3f41;
+}
+
+/* === Seznami === */
+ul, ol {
+  margin-left: 2em;
+}

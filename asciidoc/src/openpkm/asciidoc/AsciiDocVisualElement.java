@@ -4,11 +4,17 @@
  */
 package openpkm.asciidoc;
 
+import java.io.IOException;
 import javax.swing.Action;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JToolBar;
+import openpkm.base.SourceProviders;
 import openpkm.utils.AbstractVisualElement;
+import org.netbeans.api.project.Project;
 import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.TopComponent;
@@ -24,7 +30,9 @@ import org.openide.windows.TopComponent;
 @Messages("LBL_AsciiDoc_VISUAL=Visual")
 public final class AsciiDocVisualElement extends AbstractVisualElement
 {
-    private JToolBar toolbar = new JToolBar();
+    public static final String ATTR_ASCIIDOC_THEME = "asciidoc.theme";     
+    
+    private JToolBar toolbar;
 
     public AsciiDocVisualElement(Lookup lkp)
     {
@@ -37,7 +45,14 @@ public final class AsciiDocVisualElement extends AbstractVisualElement
     }
 
     @Override
-    public JComponent getToolbarRepresentation() {
+    public JComponent getToolbarRepresentation() 
+    {
+        if(toolbar == null)
+        {
+            toolbar = new JToolBar();
+            JComboBox themes = new JComboBox();
+            
+        }
         return toolbar;
     }
 
@@ -45,4 +60,44 @@ public final class AsciiDocVisualElement extends AbstractVisualElement
     public Action[] getActions() {
         return new Action[0];
     }
+    
+    @Override
+    public String getThemeUrl(FileObject file, Project project)
+    {
+        SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+        if(providers != null)
+        {     
+            FileObject fileWithAttrs = providers.getFileWithAttrs(file, false);
+            if(fileWithAttrs != null)
+            {
+                String name = (String)fileWithAttrs.getAttribute(ATTR_ASCIIDOC_THEME);
+                AsciiDocTheme theme = AsciiDocTheme.getTheme(name); 
+                if(theme != null)
+                {
+                    return theme.getUrl();
+                }
+            }            
+        }
+        return AsciiDocStandardThemeProviderImpl.getDefaultTheme().getUrl();        
+    }
+    
+    private void setTheme(AsciiDocTheme theme) throws IOException
+    {
+        /*
+        FileObject file = getPrimaryFile();
+        Project project = FileOwnerQuery.getOwner(file);
+        if(project != null)
+        {
+            SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+            if(providers != null)
+            {     
+                FileObject fileWithAttrs = providers.getFileWithAttrs(file, false);
+                if(fileWithAttrs != null)
+                {
+                    fileWithAttrs.setAttribute(ATTR_ASCIIDOC_THEME, theme.getName());
+                }            
+            }
+        } 
+        */
+    }     
 }

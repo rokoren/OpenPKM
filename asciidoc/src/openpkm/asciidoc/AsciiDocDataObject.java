@@ -101,7 +101,7 @@ import org.openide.windows.TopComponent;
     )
 })
 public class AsciiDocDataObject extends MultiDataObject implements PropertyChangeListener, ChangeListener
-{
+{    
     private static final Logger LOG = Logger.getLogger(AsciiDocDataObject.class.getName());
 
     private final InstanceContent lookupContent;
@@ -153,7 +153,7 @@ public class AsciiDocDataObject extends MultiDataObject implements PropertyChang
     protected Node createNodeDelegate() 
     {
         return new AsciiDocDataNode(this);
-    }      
+    }        
 
     @MultiViewElement.Registration(
         displayName = "#LBL_AsciiDoc_EDITOR",

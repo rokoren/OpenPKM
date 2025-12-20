@@ -1,0 +1,114 @@
+/* === Importi === */
+@import url("https://fonts.googleapis.com/css?family=Georgia|Open+Sans:400,700");
+@import url("https://cdn.jsdelivr.net/gh/asciidoctor/asciidoctor@2.0/data/stylesheets/asciidoctor-default.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css");
+
+/* === Barvna shema === */
+:root {
+  --primarycolor: #ffc800;       /* Apress rumena */
+  --titlecolor: #000000;         /* Črna za naslove */
+  --textcolor: #1a1a1a;          /* Temno siva za glavno besedilo */
+  --highlightcolor: #fff8dc;     /* Svetlo rumeno ozadje za inline kodo */
+  --tocbackground: #ffffff;
+  --toctextcolor: #ffc800;
+  --adnote: #fffbe6;
+  --adwarning: #fff3cd;
+  --adimportant: #ffeeba;
+  --adtip: #e6ffed;
+}
+
+/* === Pisave in besedilo === */
+body {
+  font-family: "Open Sans", sans-serif;
+  line-height: 1.7;
+  color: var(--textcolor);
+}
+h1, h2 {
+  font-family: "Georgia", serif;
+  font-weight: bold;
+  color: var(--titlecolor);
+}
+h3, h4, h5, h6 {
+  font-family: "Open Sans", sans-serif;
+  font-weight: 700;
+  color: var(--primarycolor);
+}
+
+/* === Inline koda === */
+code {
+  background-color: var(--highlightcolor);
+  color: var(--primarycolor);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+}
+
+/* === TOC === */
+#toc.toc2 {
+  background-color: var(--tocbackground);
+  padding: 1em;
+  border-radius: 4px;
+  font-family: "Open Sans", sans-serif;
+  line-height: 1.6;
+}
+#toc.toc2 a {
+  color: var(--toctextcolor);
+  text-decoration: none;
+}
+#toctitle {
+  color: var(--titlecolor);
+  font-weight: bold;
+  font-family: "Georgia", serif;
+  margin-bottom: 0.5em;
+}
+
+/* === Admonitions === */
+.admonitionblock {
+  display: flex;
+  align-items: flex-start;
+  border-left: 4px solid var(--primarycolor);
+  padding: 1em;
+  margin: 2em 0;
+  border-radius: 4px;
+  gap: 0.85em;
+}
+.admonitionblock.note,
+.admonitionblock.note .content,
+.admonitionblock.note .icon {
+  background-color: var(--adnote);
+}
+.admonitionblock.warning,
+.admonitionblock.warning .content,
+.admonitionblock.warning .icon {
+  background-color: var(--adwarning);
+}
+.admonitionblock.important,
+.admonitionblock.important .content,
+.admonitionblock.important .icon {
+  background-color: var(--adimportant);
+}
+.admonitionblock.tip,
+.admonitionblock.tip .content,
+.admonitionblock.tip .icon {
+  background-color: var(--adtip);
+}
+.admonitionblock .icon,
+.admonitionblock .title,
+.admonitionblock .icon *,
+.admonitionblock .title * {
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+/* === Quote blok === */
+blockquote {
+  border-left: 4px solid var(--primarycolor);
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+  font-family: "Georgia", serif;
+  color: #444;
+  background-color: #f9f9f9;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
