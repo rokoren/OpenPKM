@@ -57,7 +57,7 @@ public class DataGroupNode extends AbstractNode implements NodeProvider
 
     private Image getIcon(boolean opened) 
     {
-        return provider.getIcon(opened);
+        return provider.getIcon(true);
     } 
     
     @Override    
