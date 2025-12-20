@@ -1761,30 +1761,44 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
-            /*
-            YouTubeVideo video = provider.getVideo(props);
-            if(video != null)
+            Reference reference = provider.getReference(props);
+            if(reference != null)
             {
                 try
                 {
                     String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
                     FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
                     file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+                    file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
                     
-                    if(fileTypeProvider instanceof ArticleProvider)
+                    if(reference instanceof Article)
                     {
-                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = file.getOutputStream();
-                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
-                        output.close();
-                    }                     
+                        Article article = (Article)reference;
+                        if(fileTypeProvider instanceof ArticleProvider)
+                        {
+                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                            OutputStream output = file.getOutputStream();
+                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                            output.close();
+                        }                         
+                    }
+                    else if(reference instanceof Book)
+                    {
+                        Book book = (Book)reference;
+                        if(fileTypeProvider instanceof BookProvider)
+                        {
+                            BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                            OutputStream output = file.getOutputStream();
+                            output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                            output.close();
+                        }                         
+                    }
                     
                     FileObject folder = getRootFolder();
                     if(folder != null)
                     {  
-                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                        video.save(os, "New YouTube Video Created");
+                        OutputStream os = folder.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                        reference.save(os, "New Reference Created");
                         os.close();  
                         return true;
                     }                                                          
@@ -1794,7 +1808,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     LOG.warning(e.getMessage());
                 }
             } 
-            */
             return true;
         }          
         
@@ -1816,26 +1829,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
                 reference.addPropertyChangeListener(this);
-                getReferences().put(reference.getSourceID(), reference);
-                
-                if(Utils.getAppID().equals(reference.getAppID()))
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), reference.getDataFileExtension());
-                    FileObject fo = getFileSystem().getRoot().createData(fileName, reference.getDataFileExtension()); 
-                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    fo.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());                     
-                }                
-
+                getReferences().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }  
-            catch(PropertyVetoException e)
-            {
-                LOG.warning(e.getMessage());
-            }              
+            }               
         }
 
         @Override

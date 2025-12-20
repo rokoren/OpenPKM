@@ -5,7 +5,6 @@
 package openpkm.reference;
 
 import java.io.IOException;
-import openpkm.base.FileTypeIndependent;
 import openpkm.base.Source;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.filesystems.FileObject;
@@ -14,7 +13,7 @@ import org.openide.filesystems.FileObject;
  *
  * @author Rok Koren
  */
-public interface Reference extends Source, FileTypeIndependent
+public interface Reference extends Source
 {   
     @StaticResource()
     String ICON = "openpkm/reference/resources/link.png";        

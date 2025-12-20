@@ -7,8 +7,6 @@ package openpkm.core;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,10 +19,8 @@ import javax.swing.JComponent;
 import openpkm.base.Article;
 import openpkm.base.Content;
 import openpkm.base.ContentProvider;
-import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
-import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
@@ -38,7 +34,6 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
-import org.openide.filesystems.FileObject;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -104,8 +99,7 @@ public class ArticleContentAction implements ActionListener
             Properties props = new Properties();
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(ContentProvider.PROP_TYPE, ContentProviderImpl.Type.ARTICLE.getName());
-            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());
-            props.setProperty(FileTypeIndependent.PROP_DATA_FILE_EXTENSION, fileType.getExtension());            
+            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());          
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)
             {
@@ -143,21 +137,10 @@ public class ArticleContentAction implements ActionListener
                 }
             }              
 
-            FileObject folder = provider.getRootFolder();
-            if(folder != null)
+            if(provider.saveSource(props, fileType))
             {
-                try
-                { 
-                    OutputStream os = folder.createAndOpen(now.getNano() + "." + PropertiesProvider.EXTENSION);
-                    props.store(os, "New Article Created by Wizard"); 
-                    os.close();                           
-                    StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);             
-                }
-                catch(IOException e) 
-                {
-                    LOG.warning(e.getMessage());
-                }                     
-            }                                             
+                StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);                  
+            }                                                         
         }        
     }     
 }

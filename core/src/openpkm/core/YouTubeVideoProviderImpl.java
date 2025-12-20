@@ -142,26 +142,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public String getTitle() 
         {
             return getVideoTitle();
-        }   
-        
-        @Override
-        public String getDataFileExtension() 
-        {
-            return props.getProperty(PROP_DATA_FILE_EXTENSION);
-        }
-
-        @Override
-        public void setDataFileExtension(String extension) 
-        {
-            if(extension == null)
-            {
-                props.remove(PROP_DATA_FILE_EXTENSION);
-            }
-            else
-            {
-                props.setProperty(PROP_DATA_FILE_EXTENSION, extension);
-            }
-        }
+        }           
 
         @Override
         public void setTitle(String title) {

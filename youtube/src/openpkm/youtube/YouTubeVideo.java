@@ -7,7 +7,6 @@ package openpkm.youtube;
 import com.google.api.client.util.DateTime;
 import java.util.List;
 import java.util.regex.Pattern;
-import openpkm.base.FileTypeIndependent;
 import openpkm.base.Source;
 import openpkm.base.Video;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -16,7 +15,7 @@ import org.netbeans.api.annotations.common.StaticResource;
  *
  * @author Rok Koren
  */
-public interface YouTubeVideo extends Source, Video, FileTypeIndependent 
+public interface YouTubeVideo extends Source, Video 
 {
     @StaticResource()
     String ICON = "openpkm/youtube/resources/logo.png";     

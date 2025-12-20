@@ -22,7 +22,6 @@ import javax.swing.JComponent;
 import openpkm.base.Content;
 import openpkm.base.ContentProvider;
 import openpkm.base.Document;
-import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
@@ -105,8 +104,7 @@ public class DocumentContentAction implements ActionListener
             Properties props = new Properties();
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(ContentProvider.PROP_TYPE, ContentProviderImpl.Type.DOCUMENT.getName());
-            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());
-            props.setProperty(FileTypeIndependent.PROP_DATA_FILE_EXTENSION, fileType.getExtension());            
+            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());           
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)
             {

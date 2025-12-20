@@ -17,7 +17,6 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Article;
-import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TagsProvider;
@@ -104,8 +103,7 @@ public class ArticleAction implements ActionListener
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));             
             props.setProperty(ReferenceProviderImpl.PROP_TYPE, ReferenceProviderImpl.Type.ARTICLE.getName());
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
-            props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());
-            props.setProperty(FileTypeIndependent.PROP_DATA_FILE_EXTENSION, fileType.getExtension());            
+            props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());           
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());
             props.setProperty(TitleProvider.PROP_TITLE, title);               

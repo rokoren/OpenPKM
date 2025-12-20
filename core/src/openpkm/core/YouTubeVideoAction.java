@@ -24,7 +24,6 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.FileTypeIndependent;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
@@ -141,7 +140,6 @@ public final class YouTubeVideoAction implements ActionListener
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));             
             props.setProperty(YouTubeVideo.PROP_APP_ID, Utils.getAppID());
-            props.setProperty(FileTypeIndependent.PROP_DATA_FILE_EXTENSION, fileType.getExtension());
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());                 
             props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID);
             props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, title);

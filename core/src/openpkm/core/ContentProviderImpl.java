@@ -178,26 +178,7 @@ public class ContentProviderImpl implements ContentProvider
             {
                 props.setProperty(PROP_CONTENT_CREATOR, creator);
             }
-        }         
-        
-        @Override
-        public String getDataFileExtension() 
-        {
-            return props.getProperty(PROP_DATA_FILE_EXTENSION);
-        }
-
-        @Override
-        public void setDataFileExtension(String extension) 
-        {
-            if(extension == null)
-            {
-                props.remove(PROP_DATA_FILE_EXTENSION);
-            }
-            else
-            {
-                props.setProperty(PROP_DATA_FILE_EXTENSION, extension);
-            }
-        }          
+        }                   
 
         @Override
         public List<String> getTags()

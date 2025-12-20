@@ -219,26 +219,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
                 return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
             }
             return null;
-        }      
-        
-        @Override
-        public String getDataFileExtension() 
-        {
-            return props.getProperty(PROP_DATA_FILE_EXTENSION);
-        }
-
-        @Override
-        public void setDataFileExtension(String extension) 
-        {
-            if(extension == null)
-            {
-                props.remove(PROP_DATA_FILE_EXTENSION);
-            }
-            else
-            {
-                props.setProperty(PROP_DATA_FILE_EXTENSION, extension);
-            }
-        }          
+        }                       
 
         @Override
         public Image getIcon() 
