@@ -4,13 +4,20 @@
  */
 package openpkm.asciidoc;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.logging.Logger;
+import javafx.application.Platform;
 import javax.swing.Action;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import openpkm.base.SourceProviders;
 import openpkm.utils.AbstractVisualElement;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.openide.filesystems.FileObject;
@@ -28,9 +35,17 @@ import org.openide.windows.TopComponent;
         position = 2000
 )
 @Messages("LBL_AsciiDoc_VISUAL=Visual")
-public final class AsciiDocVisualElement extends AbstractVisualElement
+public final class AsciiDocVisualElement extends AbstractVisualElement implements ActionListener
 {
     public static final String ATTR_ASCIIDOC_THEME = "asciidoc.theme";     
+    
+    private static final String ACTION_COMMAND_PROVIDER = "provider";
+    private static final String ACTION_COMMAND_THEME    = "theme";
+    
+    private static final Logger LOG = Logger.getLogger(AsciiDocVisualElement.class.getName());    
+    
+    private final DefaultComboBoxModel<AsciiDocThemeProvider> themes1 = new DefaultComboBoxModel<>(); 
+    private final DefaultComboBoxModel<AsciiDocTheme> themes2 = new DefaultComboBoxModel<>(); 
     
     private JToolBar toolbar;
 
@@ -49,9 +64,19 @@ public final class AsciiDocVisualElement extends AbstractVisualElement
     {
         if(toolbar == null)
         {
+            themes1.addAll(AsciiDocThemeProvider.getAll());
             toolbar = new JToolBar();
-            JComboBox themes = new JComboBox();
-            
+            JComboBox comboBox1 = new JComboBox();
+            JComboBox comboBox2 = new JComboBox();
+            comboBox1.setActionCommand(ACTION_COMMAND_PROVIDER);
+            comboBox1.addActionListener(this);
+            comboBox1.setModel(themes1);
+            comboBox2.setActionCommand(ACTION_COMMAND_THEME);
+            comboBox2.addActionListener(this);
+            comboBox2.setModel(themes2);  
+            //toolbar.add(new JSeparator(JSeparator.VERTICAL));
+            toolbar.add(comboBox1);
+            toolbar.add(comboBox2);
         }
         return toolbar;
     }
@@ -79,25 +104,51 @@ public final class AsciiDocVisualElement extends AbstractVisualElement
             }            
         }
         return AsciiDocStandardThemeProviderImpl.getDefaultTheme().getUrl();        
-    }
-    
-    private void setTheme(AsciiDocTheme theme) throws IOException
+    }    
+
+    @Override
+    public void actionPerformed(ActionEvent evt) 
     {
-        /*
-        FileObject file = getPrimaryFile();
-        Project project = FileOwnerQuery.getOwner(file);
-        if(project != null)
+        if(evt.getActionCommand().equals(ACTION_COMMAND_PROVIDER))
         {
-            SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
-            if(providers != null)
-            {     
-                FileObject fileWithAttrs = providers.getFileWithAttrs(file, false);
-                if(fileWithAttrs != null)
+            AsciiDocThemeProvider provider = (AsciiDocThemeProvider)themes1.getSelectedItem();
+            themes2.removeAllElements();
+            themes2.addAll(provider.getThemes());
+        }
+        else if(evt.getActionCommand().equals(ACTION_COMMAND_THEME))
+        {
+            AsciiDocTheme theme = (AsciiDocTheme)themes2.getSelectedItem();
+            if(theme != null)
+            {
+                DataObject data = getLookup().lookup(DataObject.class);  
+                Project project = FileOwnerQuery.getOwner(data.getPrimaryFile());
+                if(project != null)
                 {
-                    fileWithAttrs.setAttribute(ATTR_ASCIIDOC_THEME, theme.getName());
-                }            
-            }
-        } 
-        */
-    }     
+                    SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+                    if(providers != null)
+                    {     
+                        FileObject fileWithAttrs = providers.getFileWithAttrs(data.getPrimaryFile(), false);
+                        if(fileWithAttrs != null)
+                        {
+                            try
+                            {
+                                fileWithAttrs.setAttribute(ATTR_ASCIIDOC_THEME, theme.getName());    
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() 
+                                    {
+                                        browser.getEngine().setUserStyleSheetLocation(theme.getUrl()); 
+                                    }
+                                });                              
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }            
+                    }
+                }                  
+            }                                                             
+        }
+    }
 }
