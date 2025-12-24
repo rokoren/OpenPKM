@@ -149,7 +149,7 @@ public class BookContentAction implements ActionListener
                 }
             }              
 
-            if(provider.saveSource(props, fileType))
+            if(provider.createSource(props, fileType))
             {
                 StatusDisplayer.getDefault().setStatusText("Book saved with title: " + title);                    
             }                                             

@@ -108,18 +108,24 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.IconsProvider;
 import openpkm.base.Note;
 import openpkm.base.Picture;
 import openpkm.base.SourceProviders;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
+import openpkm.rss.Domain;
+import openpkm.rss.DomainsProvider;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.SavableImpl;
 import openpkm.youtube.YouTubeSourceProvider;
+import org.netbeans.api.project.ui.OpenProjects;
+import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
+import org.openide.loaders.DataFolder;
 import org.openide.util.Utilities;
 
 /**
@@ -340,10 +346,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 /*
                 list.add(new YouTubeProjectsProviderImpl());                
-                list.add(new DomainProjectsProviderImpl());
                 list.add(new GtdProjectsProviderImpl());  
                 */
                 
+                list.add(new DomainsProviderImpl()); 
                 list.add(new HtmlFilesProviderImpl());                                 
                 list.add(new KnowledgeGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
@@ -785,14 +791,271 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             changeSupport.removeChangeListener(listener);
         }
     }     
+  
+// TODO DomainsProvider
+
+    private final class DomainsProviderImpl implements DomainsProvider, FileChangeListener
+    {                        
+        private static final String ROOT_FOLDER = "domain";          
+        
+        private Map<String, Domain> domains; 
+        private FileObject rootDir;            
+        
+        private final ChangeSupport changeSupport;              
+
+        public DomainsProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+        } 
+        
+        private synchronized FileObject getRootDirectory() throws IOException
+        {
+            if(rootDir == null)
+            {
+                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                if(rootDir == null)
+                {
+                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                    LOG.info("Domain dir created: " + rootDir.getPath());                        
+                }                 
+            }                           
+            return rootDir;       
+        }         
+        
+        private synchronized Map<String, Domain> getDomainsById()
+        {
+            if(domains == null)
+            {
+                domains = new HashMap<>();
+                try
+                {
+                    FileObject root = getRootDirectory();
+                    if(root !=  null)
+                    {
+                        for (FileObject fo : root.getChildren()) 
+                        {
+                            if(fo.isFolder())
+                            {
+                                DataFolder folder = DataFolder.findFolder(fo);
+                                Domain domain = folder.getLookup().lookup(Domain.class);
+                                if(domain != null)
+                                {
+                                    domains.put(domain.getDomainID(), domain);
+                                }
+                            }
+                            else
+                            {
+                                DataObject data = DataObject.find(fo);
+                                Domain domain = data.getLookup().lookup(Domain.class);
+                                if(domain != null)
+                                {
+                                    domains.put(domain.getDomainID(), domain);
+                                }                            
+                            }                                                                                                                                            
+                        }                     
+                    }                      
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                              
+            }
+            return domains;
+        }  
+
+        @Override
+        public Collection<Domain> getDomains()
+        {
+            return Collections.unmodifiableCollection(getDomainsById().values());
+        }
+        
+        @Override
+        public boolean createDomain(Properties props, boolean open)
+        {
+            try
+            { 
+                String domainID = props.getProperty(Domain.PROP_DOMAIN_ID);
+                FileObject projectDirectory = FileUtil.createFolder(getRootDirectory(), domainID);           
+                FileObject projectFolder = FileUtil.createFolder(projectDirectory, Domain.PROJECT_FOLDER);                   
+
+                OutputStream os = projectFolder.createAndOpen(Domain.PROJECT_FILE);
+                props.store(os, "OpenPKM Domain Project"); 
+                os.close();
+                
+                if(open)
+                {
+                    Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                    if(project != null)
+                    {
+                        Project[] projects = {project};
+                        TitleProvider title = project.getLookup().lookup(TitleProvider.class);
+                        if(title != null)
+                        {
+                            StatusDisplayer.getDefault().setStatusText("Opening OpenPKM Domain Project: " + title.getTitle());                            
+                        }
+                        OpenProjects.getDefault().open(projects, false);                             
+                    }                      
+                }
+
+                return true;
+            }
+            catch (IOException e) 
+            {
+                LOG.warning(e.getMessage());
+            }              
+            return false;
+        }
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Domain"));         
+            return actions;
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }                        
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public String getName() 
+        {
+            return "domain";
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Domains";
+        }
+
+        @Override
+        public Image getIcon(boolean hasChildren) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.DOMAINS);
+        }
+
+        @Override
+        public boolean contains(Lookup.Provider provider) 
+        {
+            if(provider != null)
+            {
+                Domain domain = provider.getLookup().lookup(Domain.class);
+                if(domain != null)
+                {
+                    return true;
+                }                 
+            }                                    
+            return false;
+        }
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            Domain domain = data.getLookup().lookup(Domain.class);
+            if(domain != null)
+            {
+                getDomainsById().put(domain.getDomainID(), domain);
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                DataObject data = DataObject.find(file);
+                Domain domain = data.getLookup().lookup(Domain.class);
+                if(domain != null)
+                {
+                    getDomainsById().put(domain.getDomainID(), domain);
+                    changeSupport.fireChange();
+                }              
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            if(file.isFolder())
+            {
+                DataFolder data = DataFolder.findFolder(file);
+                Domain domain = data.getLookup().lookup(Domain.class);
+                if(domain != null)
+                {
+                    if(getDomainsById().remove(domain.getDomainID()) != null)
+                    {
+                        changeSupport.fireChange();                        
+                    }
+                }                
+            }
+            else
+            {
+                try
+                {
+                    DataObject data = DataObject.find(file);
+                    Domain domain = data.getLookup().lookup(Domain.class);
+                    if(domain != null)
+                    {
+                        if(getDomainsById().remove(domain.getDomainID()) != null)
+                        {
+                            changeSupport.fireChange();                        
+                        }
+                    }              
+                }           
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }          
+    }     
     
 // TODO DataGroup    
 
     private final class NoteDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/notes_pin.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
 
         public NoteDataGroupProviderImpl()
@@ -856,12 +1119,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.NOTES);
         }
 
         @Override
@@ -889,10 +1148,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     }  
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/books.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
 
         public BookDataGroupProviderImpl()
@@ -954,12 +1210,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.BOOKS);
         }
 
         @Override
@@ -987,10 +1239,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     }   
     
     private final class ArticleDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/newspaper.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
 
         public ArticleDataGroupProviderImpl()
@@ -1052,12 +1301,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.ARTICLES);
         }
 
         @Override
@@ -1085,10 +1330,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     } 
     
     private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/inbox_document.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
 
         public DocumentDataGroupProviderImpl()
@@ -1150,12 +1392,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.DOCUMENTS);
         }
 
         @Override
@@ -1183,10 +1421,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     }  
 
     private final class LinkDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/web_layout.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
 
         public LinkDataGroupProviderImpl()
@@ -1248,12 +1483,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.LINKS);
         }
 
         @Override
@@ -1281,10 +1512,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     }  
 
     private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/images.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
                 
         public PictureDataGroupProviderImpl()
@@ -1346,12 +1574,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.PICTURES);
         }
 
         @Override
@@ -1379,10 +1603,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     } 
     
     private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/television.png"; 
-        
+    {        
         private final ChangeSupport changeSupport; 
                 
         public VideoDataGroupProviderImpl()
@@ -1444,12 +1665,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Image getIcon(boolean hasChildren) 
         {
-            Image image = ImageUtilities.loadImage(ICON, false);
-            if(hasChildren)
-            {
-                return image;
-            }
-            return ImageUtilities.createDisabledImage(image);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.VIDEOS);
         }
 
         @Override
@@ -1563,7 +1780,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
-        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public boolean createSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
             Content content = provider.getContent(props);
             if(content != null)
@@ -1759,7 +1976,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
-        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public boolean createSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
             Reference reference = provider.getReference(props);
             if(reference != null)
@@ -1887,6 +2104,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             return RaindropProject.this;
         } 
         
+        @Override
         public synchronized Map<String, Raindrop> getRaindrops()
         {
             if(raindrops == null)
@@ -2025,7 +2243,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }  
         
         @Override
-        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public boolean createSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
             /*
             YouTubeVideo video = provider.getVideo(props);
@@ -2230,7 +2448,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
-        public boolean saveSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public boolean createSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
             YouTubeVideo video = provider.getVideo(props);
             if(video != null)

@@ -15,6 +15,6 @@ import org.openide.util.Lookup;
 public interface SourceProvider extends SourceGroup 
 {    
     Source getSource(String sourceID);
-    boolean saveSource(Properties props, FileTypeProvider fileTypeProvider);
+    boolean createSource(Properties props, FileTypeProvider fileTypeProvider);
     Lookup.Provider getProvider();
 }

@@ -235,7 +235,7 @@ public final class YouTubeVideoAction implements ActionListener
                 YouTubeDownload downloader = new YouTubeDownload(props, referenceProvider, resolution, videoID, title, fileType);
                 RP.post(downloader);                
             }  
-            else if(provider.saveSource(props, fileType))
+            else if(provider.createSource(props, fileType))
             {
                 StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                
             }                                             

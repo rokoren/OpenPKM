@@ -65,7 +65,8 @@ public class RaindropAccountNode extends AbstractNode
             this.account = account;
         }  
 
-        protected @Override void addNotify() {
+        @Override
+        protected void addNotify() {
             updateKeys();                             
         }
 

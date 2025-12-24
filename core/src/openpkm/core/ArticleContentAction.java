@@ -137,7 +137,7 @@ public class ArticleContentAction implements ActionListener
                 }
             }              
 
-            if(provider.saveSource(props, fileType))
+            if(provider.createSource(props, fileType))
             {
                 StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);                  
             }                                                         
