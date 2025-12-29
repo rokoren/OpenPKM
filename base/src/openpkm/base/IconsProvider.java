@@ -25,6 +25,13 @@ public interface IconsProvider
         DOCUMENTS,
         LINKS,
         PICTURES,
+        YOUTUBE_VIDEO,
+        YOUTUBE_CHANNEL,
+        BULLET_RED,
+        BULLET_GREEN,
+        BULLET_BLUE,        
+        BULLET_BELL,
+        BULLET_STAR,
         VIDEOS;    
     }     
 }

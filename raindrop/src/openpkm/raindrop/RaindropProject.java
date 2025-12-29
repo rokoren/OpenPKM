@@ -107,6 +107,8 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.Domain;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.Note;
@@ -115,14 +117,10 @@ import openpkm.base.SourceProviders;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
-import openpkm.rss.Domain;
-import openpkm.rss.DomainsProvider;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.SavableImpl;
 import openpkm.youtube.YouTubeSourceProvider;
-import org.netbeans.api.project.ui.OpenProjects;
-import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.loaders.DataFolder;
@@ -808,7 +806,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             changeSupport = new ChangeSupport(this); 
         } 
         
-        private synchronized FileObject getRootDirectory() throws IOException
+        @Override
+        public synchronized FileObject getRootDirectory() throws IOException
         {
             if(rootDir == null)
             {
@@ -829,30 +828,25 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 domains = new HashMap<>();
                 try
                 {
-                    FileObject root = getRootDirectory();
-                    if(root !=  null)
+                    for (FileObject fo : getRootDirectory().getChildren()) 
                     {
-                        for (FileObject fo : root.getChildren()) 
+                        if(fo.isFolder())
                         {
-                            if(fo.isFolder())
+                            Project project = ProjectManager.getDefault().findProject(fo);
+                            if(project instanceof Domain domain)
                             {
-                                DataFolder folder = DataFolder.findFolder(fo);
-                                Domain domain = folder.getLookup().lookup(Domain.class);
-                                if(domain != null)
-                                {
-                                    domains.put(domain.getDomainID(), domain);
-                                }
-                            }
-                            else
+                                domains.put(domain.getDomainID(), domain);
+                            }                                                                                    
+                        }
+                        else
+                        {
+                            DataObject data = DataObject.find(fo);
+                            Domain domain = data.getLookup().lookup(Domain.class);
+                            if(domain != null)
                             {
-                                DataObject data = DataObject.find(fo);
-                                Domain domain = data.getLookup().lookup(Domain.class);
-                                if(domain != null)
-                                {
-                                    domains.put(domain.getDomainID(), domain);
-                                }                            
-                            }                                                                                                                                            
-                        }                     
+                                domains.put(domain.getDomainID(), domain);
+                            }                            
+                        }                                                                                                                                            
                     }                      
                 }
                 catch(IOException e)
@@ -867,43 +861,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public Collection<Domain> getDomains()
         {
             return Collections.unmodifiableCollection(getDomainsById().values());
-        }
-        
-        @Override
-        public boolean createDomain(Properties props, boolean open)
-        {
-            try
-            { 
-                String domainID = props.getProperty(Domain.PROP_DOMAIN_ID);
-                FileObject projectDirectory = FileUtil.createFolder(getRootDirectory(), domainID);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, Domain.PROJECT_FOLDER);                   
-
-                OutputStream os = projectFolder.createAndOpen(Domain.PROJECT_FILE);
-                props.store(os, "OpenPKM Domain Project"); 
-                os.close();
-                
-                if(open)
-                {
-                    Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                    if(project != null)
-                    {
-                        Project[] projects = {project};
-                        TitleProvider title = project.getLookup().lookup(TitleProvider.class);
-                        if(title != null)
-                        {
-                            StatusDisplayer.getDefault().setStatusText("Opening OpenPKM Domain Project: " + title.getTitle());                            
-                        }
-                        OpenProjects.getDefault().open(projects, false);                             
-                    }                      
-                }
-
-                return true;
-            }
-            catch (IOException e) 
-            {
-                LOG.warning(e.getMessage());
-            }              
-            return false;
         }
         
         @Override

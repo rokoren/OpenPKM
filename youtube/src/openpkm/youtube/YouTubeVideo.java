@@ -9,17 +9,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 import openpkm.base.Source;
 import openpkm.base.Video;
-import org.netbeans.api.annotations.common.StaticResource;
 
 /**
  *
  * @author Rok Koren
  */
 public interface YouTubeVideo extends Source, Video 
-{
-    @StaticResource()
-    String ICON = "openpkm/youtube/resources/logo.png";     
-    
+{    
     //String YOUTUBE_URL = "https://www.youtube.com/";
     String YOUTUBE_URL = "https://www.youtube-nocookie.com/";
     //String YOUTUBE_URL = "https://www.youtube.com/watch?v=";

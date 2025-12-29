@@ -2,14 +2,15 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package openpkm.rss;
+package openpkm.base;
 
 import java.awt.Image;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
+import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
 
 /**
@@ -18,8 +19,8 @@ import org.openide.util.Lookup;
  */
 public interface DomainsProvider 
 {
-    Collection<Domain> getDomains(); 
-    boolean createDomain(Properties props, boolean open);    
+    FileObject getRootDirectory() throws IOException;    
+    Collection<Domain> getDomains();    
     Lookup.Provider getProvider();
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener); 

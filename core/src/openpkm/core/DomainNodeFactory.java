@@ -5,7 +5,7 @@
 package openpkm.core;
 
 import java.util.logging.Logger;
-import openpkm.rss.DomainsProvider;
+import openpkm.base.DomainsProvider;
 import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;

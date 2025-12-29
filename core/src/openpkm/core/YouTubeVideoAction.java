@@ -56,7 +56,7 @@ import org.openide.util.RequestProcessor;
         id = "openpkm.core.YouTubeVideoAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/youtube/resources/logo.png",
+        iconBase = "openpkm/core/resources/youtube_video.png",
         displayName = "#CTL_YouTubeVideoAction"
 )
 @Messages("CTL_YouTubeVideoAction=Add YouTube Video")

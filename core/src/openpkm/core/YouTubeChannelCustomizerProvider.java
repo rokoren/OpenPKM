@@ -17,13 +17,13 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public class DomainProjectCustomizerProvider implements CustomizerProvider
+public class YouTubeChannelCustomizerProvider implements CustomizerProvider
 {
-    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-domain-project/Customizer";
-    
-    private final DomainProject project;
+    public final YouTubeChannelProject project;
 
-    public DomainProjectCustomizerProvider(DomainProject project)
+    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-youtube-project/Customizer";
+
+    public YouTubeChannelCustomizerProvider(YouTubeChannelProject project)
     {
         this.project = project;
     }
@@ -50,10 +50,7 @@ public class DomainProjectCustomizerProvider implements CustomizerProvider
         @Override
         public void actionPerformed(ActionEvent e) 
         {
-            if(project.batchUpdate())
-            {
-                StatusDisplayer.getDefault().setStatusText("Modifying OpenPKM Domain Project: " + project.getTitle());                
-            }
+            StatusDisplayer.getDefault().setStatusText("OK button clicked for " + project.getProjectDirectory().getName() + " customizer!");
         }
     }     
 }

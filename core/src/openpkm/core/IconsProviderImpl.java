@@ -40,28 +40,63 @@ public class IconsProviderImpl implements IconsProvider
     private static final String ICON_PICTURES = "openpkm/core/resources/images.png";  
     
     @StaticResource()
-    private static final String ICON_VIDEOS = "openpkm/core/resources/television.png";     
+    private static final String ICON_VIDEOS = "openpkm/core/resources/television.png"; 
+
+    @StaticResource()
+    public static final String ICON_YOUTUBE_VIDEO = "openpkm/core/resources/youtube_video.png";  
+    
+    @StaticResource()
+    public static final String ICON_YOUTUBE_CHANNEL = "openpkm/core/resources/youtube_channel.png";  
+
+    @StaticResource()
+    public static final String ICON_BULLET_RED = "openpkm/core/resources/bullet_red.png";  
+
+    @StaticResource()
+    public static final String ICON_BULLET_GREEN = "openpkm/core/resources/bullet_green.png"; 
+    
+    @StaticResource()
+    public static final String ICON_BULLET_BLUE = "openpkm/core/resources/bullet_blue.png";     
+    
+    @StaticResource()
+    public static final String ICON_BULLET_BELL = "openpkm/core/resources/bullet_bell.png";     
+    
+    @StaticResource()
+    public static final String ICON_BULLET_STAR = "openpkm/core/resources/bullet_star.png";     
 
     private String getResource(ICON icon)
     {
         switch(icon)
         {
-            case ICON.DOMAINS:
+            case DOMAINS:
             return ICON_DOMAINS;
-            case ICON.NOTES:
+            case NOTES:
             return ICON_NOTES;   
-            case ICON.BOOKS:
+            case BOOKS:
             return ICON_BOOKS;    
-            case ICON.ARTICLES:
+            case ARTICLES:
             return ICON_ARTICLES;  
-            case ICON.DOCUMENTS:
+            case DOCUMENTS:
             return ICON_DOCUMENTS; 
-            case ICON.LINKS:
+            case LINKS:
             return ICON_LINKS;   
-            case ICON.PICTURES:
+            case PICTURES:
             return ICON_PICTURES;   
-            case ICON.VIDEOS:
-            return ICON_VIDEOS;             
+            case VIDEOS:
+            return ICON_VIDEOS;  
+            case YOUTUBE_VIDEO:
+            return ICON_YOUTUBE_VIDEO;
+            case YOUTUBE_CHANNEL:
+            return ICON_YOUTUBE_CHANNEL; 
+            case BULLET_RED:
+            return ICON_BULLET_BLUE;             
+            case BULLET_BLUE:
+            return ICON_BULLET_RED;  
+            case BULLET_GREEN:
+            return ICON_BULLET_GREEN; 
+            case BULLET_BELL:
+            return ICON_BULLET_BELL; 
+            case BULLET_STAR:
+            return ICON_BULLET_STAR;             
         }  
         return null;
     }

@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
 import openpkm.base.IconProvider;
+import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
@@ -41,7 +42,6 @@ import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
-import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
@@ -382,7 +382,8 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         @Override
         public Image getIcon() 
         {    
-            return ImageUtilities.loadImage(ICON); 
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.YOUTUBE_VIDEO);
         }     
 
         @Override

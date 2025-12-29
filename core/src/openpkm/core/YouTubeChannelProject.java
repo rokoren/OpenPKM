@@ -4,13 +4,21 @@
  */
 package openpkm.core;
 
+import com.google.api.client.util.DateTime;
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.ChannelListResponse;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,19 +26,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.StringJoiner;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.Action;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
+import openpkm.base.BulletIconProvider;
 import openpkm.base.DataGroupProvider;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
+import openpkm.base.Domain;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
@@ -41,21 +52,19 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
-import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
-import openpkm.rss.Domain;
-import openpkm.rss.DomainsProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.SavableImpl;
 import openpkm.utils.Utils;
+import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeService;
 import openpkm.youtube.YouTubeSourceProvider;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
-import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectManager;
@@ -64,7 +73,7 @@ import org.netbeans.api.project.Sources;
 import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
-import org.netbeans.spi.project.ui.*;
+import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -74,8 +83,8 @@ import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
-import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
+import org.openide.util.NbPreferences;
 import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
@@ -84,12 +93,10 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public class DomainProject implements Project, Domain, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
-{ 
-    @StaticResource()
-    public static final String ICON = "openpkm/core/resources/home_page.png";      
-    
-    public static final String PROP_LAST_SOURCE = "last.source";                
+public class YouTubeChannelProject implements Domain, YouTubeChannel, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+{    
+    public static final String PROP_LAST_SOURCE      = "last.source";
+    public static final String PROP_LAST_VIDEO_COUNT = "last.video.count"; 
     
     private static final String DATA_FOLDER = "data";    
     
@@ -101,9 +108,9 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
     private static final int POSITION_PICTURES  = 600;    
     private static final int POSITION_VIDEOS    = 700;
 
-    private static final Logger LOG = Logger.getLogger(DomainProject.class.getName());        
+    private static final Logger LOG = Logger.getLogger(YouTubeChannelProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(DomainProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(YouTubeChannelProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();      
@@ -121,7 +128,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
      
     private RequestProcessor.Task task;     
     
-    public DomainProject(FileObject projectDir, ProjectState state, Properties props) 
+    public YouTubeChannelProject(FileObject projectDir, ProjectState state, Properties props) 
     {
         this.projectDir = projectDir; 
         this.state = state;
@@ -139,8 +146,8 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         {
             SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
             sources.put(videos.getName(), videos);                       
-        }                 
-    }     
+        }  
+    }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -203,11 +210,13 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
     }  
     
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(listener);
     }
     
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.removePropertyChangeListener(listener);
@@ -255,12 +264,13 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
             list.add(this);
             list.add(new Info());
             list.add(new IconProviderImpl());
+            list.add(new BulletIconProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
 
-            list.add(new DomainProjectLogicalView(this));
-            list.add(new DomainProjectCustomizerProvider(this));  
+            list.add(new YouTubeChannelLogicalView(this));
+            list.add(new YouTubeChannelCustomizerProvider(this));  
 
             list.add(new HtmlFilesProviderImpl());                                  
 
@@ -283,90 +293,361 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
     @Override
     public String getDomainID() 
     {
-        return props.getProperty(PROP_DOMAIN_ID);
+        return getChannelID();
     }    
     
     @Override
-    public String getHomePage() 
+    public String getAppID() 
     {
-        return props.getProperty(PROP_HOME_PAGE);
+        return props.getProperty(PROP_APP_ID);
+    }   
+    
+// YouTubeChannel 
+    
+    @Override
+    public String getChannelID() 
+    {
+        return props.getProperty(PROP_CHANNEL_ID);
+    }   
+    
+    @Override
+    public String getThumbnail() 
+    {
+        return props.getProperty(PROP_THUMBNAIL);
     }
 
     @Override
-    public void setHomePage(String homePage) 
+    public void setThumbnail(String thumbnail) 
     {
-        if(homePage == null)
+        if(thumbnail == null)
         {
-            Object oldValue = props.remove(PROP_HOME_PAGE);
-            propertyChangeSupport.firePropertyChange(PROP_HOME_PAGE, oldValue, homePage);
+            Object oldValue = props.remove(PROP_THUMBNAIL);
+            propertyChangeSupport.firePropertyChange(PROP_THUMBNAIL, oldValue, thumbnail);
         }
         else        
         {
-            Object oldValue = props.setProperty(PROP_HOME_PAGE, homePage);  
-            propertyChangeSupport.firePropertyChange(PROP_HOME_PAGE, oldValue, homePage);
-        }   
+            Object oldValue = props.setProperty(PROP_THUMBNAIL, thumbnail);  
+            propertyChangeSupport.firePropertyChange(PROP_THUMBNAIL, oldValue, thumbnail);
+        } 
+    }
+    
+    @Override
+    public DateTime getPublishedAt()
+    {
+        String publishedAt = props.getProperty(PROP_PUBLISHED_AT);
+        if(publishedAt != null)
+        {
+            return new DateTime(publishedAt);
+        }
+        return null;        
+    }
+    
+    @Override
+    public void setPublishedAt(DateTime time) 
+    {
+        if(time == null)
+        {
+            Object oldValue = props.remove(PROP_PUBLISHED_AT);
+            propertyChangeSupport.firePropertyChange(PROP_PUBLISHED_AT, oldValue, time);            
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_PUBLISHED_AT, time.toStringRfc3339());
+            if(oldValue != null)
+            {
+                oldValue = new DateTime(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_PUBLISHED_AT, oldValue, time);
+        }
+    } 
+    
+    @Override
+    public String getCustomUrl() 
+    {
+        return props.getProperty(PROP_CUSTOM_URL);
+    }
+
+    @Override
+    public void setCustomUrl(String url) 
+    {
+        if(url == null)
+        {
+            Object oldValue = props.remove(PROP_CUSTOM_URL);
+            propertyChangeSupport.firePropertyChange(PROP_CUSTOM_URL, oldValue, url);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_CUSTOM_URL, url);  
+            propertyChangeSupport.firePropertyChange(PROP_CUSTOM_URL, oldValue, url);
+        } 
+    } 
+    
+    @Override
+    public String getCountry() 
+    {
+        return props.getProperty(PROP_COUNTRY);
+    }
+
+    @Override
+    public void setCountry(String country) 
+    {
+        if(country == null)
+        {
+            Object oldValue = props.remove(PROP_COUNTRY);
+            propertyChangeSupport.firePropertyChange(PROP_COUNTRY, oldValue, country);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_COUNTRY, country);  
+            propertyChangeSupport.firePropertyChange(PROP_COUNTRY, oldValue, country);
+        } 
     }  
     
     @Override
-    public String getYouTubeChannel() 
+    public String getLocalizedTitle() 
     {
-        return props.getProperty(PROP_YOUTUBE_CHANNEL);
+        return props.getProperty(PROP_LOCALIZED_TITLE);
     }
 
     @Override
-    public void setYouTubeChannel(String channelID) 
+    public void setLocalizedTitle(String localizedTitle) 
     {
-        if(channelID == null)
+        if(localizedTitle == null)
         {
-            Object oldValue = props.remove(PROP_YOUTUBE_CHANNEL);
-            propertyChangeSupport.firePropertyChange(PROP_YOUTUBE_CHANNEL, oldValue, channelID);
+            Object oldValue = props.remove(PROP_LOCALIZED_TITLE);
+            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_TITLE, oldValue, localizedTitle);
         }
         else        
         {
-            Object oldValue = props.setProperty(PROP_YOUTUBE_CHANNEL, channelID);  
-            propertyChangeSupport.firePropertyChange(PROP_YOUTUBE_CHANNEL, oldValue, channelID);
-        }   
+            Object oldValue = props.setProperty(PROP_LOCALIZED_TITLE, localizedTitle);  
+            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_TITLE, oldValue, localizedTitle);
+        } 
     } 
 
     @Override
-    public String getGitHub() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public String getLocalizedDescription() 
+    {
+        return props.getProperty(PROP_LOCALIZED_DESCRIPTION);
     }
 
     @Override
-    public void setGitHub(String github) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public void setLocalizedDescription(String localizedDescription) 
+    {
+        if(localizedDescription == null)
+        {
+            Object oldValue = props.remove(PROP_LOCALIZED_DESCRIPTION);
+            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_DESCRIPTION, oldValue, localizedDescription);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_LOCALIZED_DESCRIPTION, localizedDescription);  
+            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_DESCRIPTION, oldValue, localizedDescription);
+        } 
+    } 
+
+    @Override
+    public Long getViewCount()
+    {
+        String viewCount = props.getProperty(PROP_VIDEO_COUNT);
+        if(viewCount != null)
+        {
+            return Long.parseLong(viewCount);
+        }
+        return null;        
+    }
+    
+    @Override
+    public void setViewCount(Long viewCount) 
+    {
+        if(viewCount == null)
+        {
+            Object oldValue = props.remove(PROP_VIDEO_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, viewCount);            
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_VIDEO_COUNT, viewCount.toString());
+            if(oldValue != null)
+            {
+                oldValue = Long.getLong(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, viewCount);
+        }
+    }  
+    
+    @Override
+    public Long getSubscriberCount()
+    {
+        String subscriberCount = props.getProperty(PROP_SUBSCRIBER_COUNT);
+        if(subscriberCount != null)
+        {
+            return Long.parseLong(subscriberCount);
+        }
+        return null;        
+    }
+    
+    @Override
+    public void setSubscriberCount(Long subscriberCount) 
+    {
+        if(subscriberCount == null)
+        {
+            Object oldValue = props.remove(PROP_SUBSCRIBER_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_SUBSCRIBER_COUNT, oldValue, subscriberCount);            
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_SUBSCRIBER_COUNT, subscriberCount.toString());
+            if(oldValue != null)
+            {
+                oldValue = Long.getLong(oldValue.toString());
+            }            
+            propertyChangeSupport.firePropertyChange(PROP_SUBSCRIBER_COUNT, oldValue, subscriberCount);
+        }
+    }  
+    
+    @Override
+    public Long getVideoCount()
+    {
+        String videoCount = props.getProperty(PROP_VIDEO_COUNT);
+        if(videoCount != null)
+        {
+            return Long.parseLong(videoCount);
+        }
+        return null;        
+    }
+    
+    @Override
+    public void setVideoCount(Long videoCount) 
+    {
+        if(videoCount == null)
+        {
+            Object oldValue = props.remove(PROP_VIDEO_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, videoCount);            
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_VIDEO_COUNT, videoCount.toString());
+            if(oldValue != null)
+            {
+                oldValue = Long.getLong(oldValue.toString());
+            }              
+            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, videoCount);
+        }
+    }  
+    
+    @Override
+    public Long getCommentCount()
+    {
+        String commentCount = props.getProperty(PROP_COMMENT_COUNT);
+        if(commentCount != null)
+        {
+            return Long.parseLong(commentCount);
+        }
+        return null;        
+    }
+    
+    @Override
+    public void setCommentCount(Long commentCount) 
+    {
+        if(commentCount == null)
+        {
+            Object oldValue = props.remove(PROP_COMMENT_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_COMMENT_COUNT, oldValue, commentCount);            
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_COMMENT_COUNT, commentCount.toString());
+            if(oldValue != null)
+            {
+                oldValue = Long.getLong(oldValue.toString());
+            }             
+            propertyChangeSupport.firePropertyChange(PROP_COMMENT_COUNT, oldValue, commentCount);
+        }
+    }  
+    
+    @Override
+    public List<String> getTopicCategories() 
+    {
+        String topicCategories = props.getProperty(PROP_TOPIC_CATEGORIES);
+        if(topicCategories != null)
+        {
+            return List.of(topicCategories.split(","));                   
+        }                
+        return Collections.EMPTY_LIST;
+    }  
+    
+    @Override
+    public void setTopicCategories(List<String> topicCategories)
+    {
+        if(topicCategories == null)
+        {
+            Object oldValue = props.remove(PROP_TOPIC_CATEGORIES);
+            propertyChangeSupport.firePropertyChange(PROP_TOPIC_CATEGORIES, oldValue, topicCategories);            
+        }
+        else
+        {
+            StringJoiner joiner = new StringJoiner(",");
+            for(String topicCategory : topicCategories)
+            {
+                joiner.add(topicCategory);
+            }
+            Object oldValue = props.setProperty(PROP_TOPIC_CATEGORIES, joiner.toString());
+            if(oldValue != null)
+            {
+                oldValue = List.of(oldValue.toString().split(","));
+            }             
+            propertyChangeSupport.firePropertyChange(PROP_TOPIC_CATEGORIES, oldValue, topicCategories);
+        }        
+    }
+    
+    @Override
+    public String getPrivacyStatus() 
+    {
+        return props.getProperty(PROP_PRIVACY_STATUS);
     }
 
     @Override
-    public String getFacebook() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public void setPrivacyStatus(String privacyStatus) 
+    {
+        if(privacyStatus == null)
+        {
+            Object oldValue = props.remove(PROP_PRIVACY_STATUS);
+            propertyChangeSupport.firePropertyChange(PROP_PRIVACY_STATUS, oldValue, privacyStatus);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_PRIVACY_STATUS, privacyStatus);  
+            propertyChangeSupport.firePropertyChange(PROP_PRIVACY_STATUS, oldValue, privacyStatus);
+        } 
     }
-
-    @Override
-    public String getInstagram() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    
+    public Long getLastVideoCount()
+    {
+        String videoCount = props.getProperty(PROP_LAST_VIDEO_COUNT);
+        if(videoCount != null)
+        {
+            return Long.parseLong(videoCount);
+        }
+        return null;        
     }
-
-    @Override
-    public String getLinkedIn() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
-    public String getTwitter() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
-    public String getTelegram() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
-    public String getRSS() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }    
+    
+    public void setLastVideoCount(Long videoCount) 
+    {
+        if(videoCount == null)
+        {
+            Object oldValue = props.remove(PROP_LAST_VIDEO_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_LAST_VIDEO_COUNT, oldValue, videoCount);            
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_LAST_VIDEO_COUNT, videoCount.toString());
+            if(oldValue != null)
+            {
+                oldValue = Long.getLong(oldValue.toString());
+            }              
+            propertyChangeSupport.firePropertyChange(PROP_LAST_VIDEO_COUNT, oldValue, videoCount);
+        }
+    }         
     
 // TODO TitleProvider  
     
@@ -447,12 +728,12 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
     
 // TODO ProjectOpenedHook    
     
-    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener
+    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener, Runnable
     {
         @Override
         protected void projectOpened() 
         {  
-            //task = RP.create(raindrops);  
+            task = RP.create(this);  
             task.schedule(60000);    
             propertyChangeSupport.addPropertyChangeListener(this);
         }
@@ -472,7 +753,69 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
             {
                 propertyChangeSupport.firePropertyChange(ProjectInformation.PROP_DISPLAY_NAME, evt.getOldValue(), evt.getNewValue());
             }
-        }         
+        }  
+        
+        @Override
+        public void run()
+        {  
+            String googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
+            if(googleKey != null)
+            {
+                try
+                {
+                    YouTube youtubeService = YouTubeService.getDeafult().getService();
+                    YouTube.Channels.List request = youtubeService.channels().list("snippet, statistics, topicDetails, status, brandingSettings");
+                    request.setKey(googleKey);
+                    ChannelListResponse response = request.setId(getChannelID()).execute();  
+                    if(response.getItems() != null && !response.isEmpty())
+                    {                   
+                        String channelID = response.getItems().get(0).getId();
+                        String title = response.getItems().get(0).getSnippet().getTitle();
+                        String description = response.getItems().get(0).getSnippet().getDescription();
+                        String thumbnail = response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();  
+                        DateTime publishedAt = response.getItems().get(0).getSnippet().getPublishedAt();
+                        String customUrl = response.getItems().get(0).getSnippet().getCustomUrl();
+                        String country = response.getItems().get(0).getSnippet().getCountry();
+                        String localizedTitle = response.getItems().get(0).getSnippet().getLocalized().getTitle();
+                        String localizedDescription = response.getItems().get(0).getSnippet().getLocalized().getDescription();  
+                        BigInteger viewCount = response.getItems().get(0).getStatistics().getViewCount(); 
+                        BigInteger subscriberCount = response.getItems().get(0).getStatistics().getSubscriberCount(); 
+                        BigInteger videoCount = response.getItems().get(0).getStatistics().getVideoCount(); 
+                        BigInteger commentCount = response.getItems().get(0).getStatistics().getCommentCount(); 
+                        String privacyStatus = response.getItems().get(0).getStatus().getPrivacyStatus();
+                        List<String> topicCategories = response.getItems().get(0).getTopicDetails().getTopicCategories(); 
+
+                        setTitle(title);
+                        setDescription(description);
+                        setThumbnail(thumbnail);
+                        setPublishedAt(publishedAt);
+                        setCustomUrl(customUrl);
+                        setCountry(country);
+                        setLocalizedTitle(localizedTitle);
+                        setLocalizedDescription(localizedDescription);
+                        setViewCount(viewCount.longValue());
+                        setSubscriberCount(subscriberCount.longValue());         
+                        setVideoCount(videoCount.longValue());
+                        if(commentCount != null)
+                        {
+                            setCommentCount(commentCount.longValue());                    
+                        }
+                        setTopicCategories(topicCategories);
+                        setPrivacyStatus(privacyStatus);  
+                        setVideoCount(videoCount.longValue());
+                    }                 
+                    task.schedule(100000);
+                }
+                catch (IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }  
+                catch (GeneralSecurityException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }
+        }          
     }
     
 // TODO ProjectInformation 
@@ -481,8 +824,9 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
     {                     
         @Override
         public Icon getIcon()
-        {                    
-            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        {  
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getIcon(IconsProvider.ICON.YOUTUBE_CHANNEL);
         }
 
         @Override
@@ -512,7 +856,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Project getProject() 
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }
     }     
   
@@ -537,7 +881,8 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
                 isLoading = true;                
                 RP.post(this);                
             }
-            return ImageUtilities.loadImage(ICON);
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.YOUTUBE_CHANNEL);
         }
 
         @Override
@@ -555,31 +900,117 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public void run() 
         {
-            /*
-            RaindropCollection collection = getRaindropCollection();
-            try 
-            {               
-                BufferedImage image = collection.getImage();                                              
-                if(image != null)
+            String thumbnail = getThumbnail();
+            if(thumbnail != null)
+            {
+                try
                 {
-                    icon = Utils.resizeImage(image, 16, 16);                  
-                }                
-                if(icon != null)
-                {
+                    URL url = new URL(thumbnail);
+                    BufferedImage image = ImageIO.read(url);  
+                    icon = Utils.resizeImage(image, 16, 16); 
                     changeSupport.fireChange();
                 }
-            } 
-            catch (IOException ex) 
-            {
-                LOG.warning(ex.getMessage());
+                catch(MalformedURLException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                } 
+                finally
+                {
+                    isLoading = false;
+                }                
             }
-            finally
-            {
-                isLoading = false;
-            }
-            */
         }                
     } 
+    
+// TODO BulletIconProvider    
+    
+    private final class BulletIconProviderImpl implements BulletIconProvider, PropertyChangeListener, Runnable
+    {                
+        private final ChangeSupport changeSupport = new ChangeSupport(this); 
+
+        public BulletIconProviderImpl() 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_VIDEO_COUNT, this);
+            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, this);
+            if(!hasVideos())
+            {
+                RP.post(this);
+            }
+        }                
+
+        private boolean hasVideos()
+        {
+            Long lastVideoCount = getLastVideoCount();
+            if(lastVideoCount != null && !lastVideoCount.equals(getVideoCount()))
+            {
+                return true;
+            }            
+            return false;
+        }
+        
+        @Override
+        public synchronized Image getBullet()
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+            if(hasVideos())
+            {
+                return provider.getImage(IconsProvider.ICON.BULLET_RED);
+            }
+            return null;
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }        
+        
+        @Override
+        public void run() 
+        {
+            String googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
+            if(googleKey != null)
+            {
+                try
+                {
+                    YouTube youtubeService = YouTubeService.getDeafult().getService();
+                    YouTube.Channels.List request = youtubeService.channels().list("statistics");
+                    request.setKey(googleKey);
+                    ChannelListResponse response = request.setId(getChannelID()).execute();  
+                    if(response.getItems() != null && !response.isEmpty())
+                    { 
+                        BigInteger videoCount = response.getItems().get(0).getStatistics().getVideoCount();        
+                        setLastVideoCount(videoCount.longValue());                  
+                    }
+                }
+                catch (IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }  
+                catch (GeneralSecurityException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            } 
+        }                
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            state.markModified();             
+            changeSupport.fireChange();
+        }
+    }     
 
 // TODO RootProjectProvider     
 
@@ -588,7 +1019,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(DomainProject.this);
+            return Utils.getRootProject(YouTubeChannelProject.this);
         }         
     }
     
@@ -659,7 +1090,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }         
         
         @Override
@@ -750,7 +1181,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }         
         
         @Override
@@ -841,7 +1272,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }         
         
         @Override
@@ -932,7 +1363,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }        
         
         @Override
@@ -1023,7 +1454,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }        
         
         @Override
@@ -1114,7 +1545,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }        
         
         @Override
@@ -1196,7 +1627,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }  
         
         @Override
@@ -1392,7 +1823,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider()
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         } 
         
         @Override
@@ -1708,7 +2139,7 @@ public class DomainProject implements Project, Domain, TitleProvider, Descriptio
         @Override
         public Lookup.Provider getProvider() 
         {
-            return DomainProject.this;
+            return YouTubeChannelProject.this;
         }                 
     }     
 }

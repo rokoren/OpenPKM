@@ -205,7 +205,6 @@
                 <package>javax.servlet</package>
                 <package>javax.servlet.http</package>
                 <package>openpkm.youtube</package>
-                <package>openpkm.youtube.resources</package>
                 <package>org.apache.http</package>
                 <package>org.apache.http.entity</package>
                 <package>org.apache.http.impl</package>

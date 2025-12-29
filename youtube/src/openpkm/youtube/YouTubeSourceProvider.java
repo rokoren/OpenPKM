@@ -6,11 +6,11 @@ package openpkm.youtube;
 
 import java.util.Map;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
+import openpkm.base.IconsProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -53,7 +53,8 @@ public abstract class YouTubeSourceProvider implements SourceProvider
     @Override
     public Icon getIcon(boolean bln) 
     {
-        return new ImageIcon(ImageUtilities.loadImage(YouTubeVideo.ICON));
+        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+        return provider.getIcon(IconsProvider.ICON.YOUTUBE_VIDEO);
     }
 
     @Override
