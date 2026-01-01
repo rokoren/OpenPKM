@@ -6,8 +6,14 @@ package openpkm.core;
 
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.Activity;
+import com.google.api.services.youtube.model.ActivityListResponse;
 import com.google.api.services.youtube.model.ChannelListResponse;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.Image;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -30,10 +36,17 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
+import openpkm.base.AsciiDocSupport;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
@@ -54,6 +67,7 @@ import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
+import openpkm.base.WatchLater;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
@@ -74,6 +88,7 @@ import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
+import org.openide.awt.NotificationDisplayer;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -83,6 +98,7 @@ import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
 import org.openide.util.RequestProcessor;
@@ -96,17 +112,18 @@ import org.openide.util.lookup.Lookups;
 public class YouTubeChannelProject implements Domain, YouTubeChannel, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 {    
     public static final String PROP_LAST_SOURCE      = "last.source";
-    public static final String PROP_LAST_VIDEO_COUNT = "last.video.count"; 
+    public static final String PROP_LAST_UPLOAD_TIME = "last.upload.time";    
     
     private static final String DATA_FOLDER = "data";    
     
-    private static final int POSITION_NOTES     = 100;
-    private static final int POSITION_DOCUMENTS = 200;
-    private static final int POSITION_ARTICLES  = 300;
-    private static final int POSITION_BOOKS     = 400;
-    private static final int POSITION_LINKS     = 500;
-    private static final int POSITION_PICTURES  = 600;    
-    private static final int POSITION_VIDEOS    = 700;
+    private static final int POSITION_NOTES       = 100;
+    private static final int POSITION_DOCUMENTS   = 200;
+    private static final int POSITION_ARTICLES    = 300;
+    private static final int POSITION_BOOKS       = 400;
+    private static final int POSITION_LINKS       = 500;
+    private static final int POSITION_PICTURES    = 600;    
+    private static final int POSITION_VIDEOS      = 700;
+    private static final int POSITION_WATCH_LATER = 800;
 
     private static final Logger LOG = Logger.getLogger(YouTubeChannelProject.class.getName());        
     
@@ -124,9 +141,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private Source lastSource; 
-     
-    private RequestProcessor.Task task;     
+    private Source lastSource;     
     
     public YouTubeChannelProject(FileObject projectDir, ProjectState state, Properties props) 
     {
@@ -146,7 +161,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
             sources.put(videos.getName(), videos);                       
-        }  
+        } 
     }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -264,7 +279,6 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(this);
             list.add(new Info());
             list.add(new IconProviderImpl());
-            list.add(new BulletIconProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
@@ -282,6 +296,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
             list.add(new VideoDataGroupProviderImpl());             
+            list.add(new WatchLaterDataGroupProviderImpl()); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -621,33 +636,33 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
     }
     
-    public Long getLastVideoCount()
+    public DateTime getLastUploadTime()
     {
-        String videoCount = props.getProperty(PROP_LAST_VIDEO_COUNT);
-        if(videoCount != null)
+        String string = props.getProperty(PROP_LAST_UPLOAD_TIME);
+        if(string != null)
         {
-            return Long.parseLong(videoCount);
+            return new DateTime(string);
         }
-        return null;        
+        return null;
     }
-    
-    public void setLastVideoCount(Long videoCount) 
+
+    public void setLastUploadTime(DateTime time)
     {
-        if(videoCount == null)
+        if(time == null)
         {
-            Object oldValue = props.remove(PROP_LAST_VIDEO_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_LAST_VIDEO_COUNT, oldValue, videoCount);            
+            Object oldValue = props.remove(PROP_LAST_UPLOAD_TIME);
+            propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
         }
         else
         {
-            Object oldValue = props.setProperty(PROP_LAST_VIDEO_COUNT, videoCount.toString());
+            Object oldValue = props.setProperty(PROP_LAST_UPLOAD_TIME, time.toStringRfc3339());  
             if(oldValue != null)
             {
-                oldValue = Long.getLong(oldValue.toString());
-            }              
-            propertyChangeSupport.firePropertyChange(PROP_LAST_VIDEO_COUNT, oldValue, videoCount);
+                oldValue = new DateTime(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
         }
-    }         
+    }      
     
 // TODO TitleProvider  
     
@@ -730,30 +745,26 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     
     private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener, Runnable
     {
+        private RequestProcessor.Task task;          
+        
         @Override
         protected void projectOpened() 
         {  
-            task = RP.create(this);  
-            task.schedule(60000);    
+            task = RP.create(this);    
             propertyChangeSupport.addPropertyChangeListener(this);
+            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
+            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
+            task.schedule(1000);             
         }
 
         @Override
         protected void projectClosed() 
         { 
-            propertyChangeSupport.removePropertyChangeListener(this);
             task.cancel();
+            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
+            propertyChangeSupport.removePropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
+            propertyChangeSupport.removePropertyChangeListener(this);            
         } 
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            state.markModified(); 
-            if(evt.getPropertyName().equals(PROP_TITLE))
-            {
-                propertyChangeSupport.firePropertyChange(ProjectInformation.PROP_DISPLAY_NAME, evt.getOldValue(), evt.getNewValue());
-            }
-        }  
         
         @Override
         public void run()
@@ -794,7 +805,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         setLocalizedTitle(localizedTitle);
                         setLocalizedDescription(localizedDescription);
                         setViewCount(viewCount.longValue());
-                        setSubscriberCount(subscriberCount.longValue());         
+                        setSubscriberCount(subscriberCount.longValue());     
                         setVideoCount(videoCount.longValue());
                         if(commentCount != null)
                         {
@@ -802,9 +813,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         }
                         setTopicCategories(topicCategories);
                         setPrivacyStatus(privacyStatus);  
-                        setVideoCount(videoCount.longValue());
                     }                 
-                    task.schedule(100000);
                 }
                 catch (IOException e)
                 {
@@ -813,9 +822,23 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 catch (GeneralSecurityException e)
                 {
                     LOG.warning(e.getMessage());
-                }                 
+                }  
+                finally
+                {
+                    task.schedule(100000);
+                }
             }
-        }          
+        }         
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            state.markModified(); 
+            if(evt.getPropertyName().equals(PROP_TITLE))
+            {
+                propertyChangeSupport.firePropertyChange(ProjectInformation.PROP_DISPLAY_NAME, evt.getOldValue(), evt.getNewValue());
+            }
+        }                   
     }
     
 // TODO ProjectInformation 
@@ -924,93 +947,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 }                
             }
         }                
-    } 
-    
-// TODO BulletIconProvider    
-    
-    private final class BulletIconProviderImpl implements BulletIconProvider, PropertyChangeListener, Runnable
-    {                
-        private final ChangeSupport changeSupport = new ChangeSupport(this); 
-
-        public BulletIconProviderImpl() 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_VIDEO_COUNT, this);
-            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, this);
-            if(!hasVideos())
-            {
-                RP.post(this);
-            }
-        }                
-
-        private boolean hasVideos()
-        {
-            Long lastVideoCount = getLastVideoCount();
-            if(lastVideoCount != null && !lastVideoCount.equals(getVideoCount()))
-            {
-                return true;
-            }            
-            return false;
-        }
-        
-        @Override
-        public synchronized Image getBullet()
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
-            if(hasVideos())
-            {
-                return provider.getImage(IconsProvider.ICON.BULLET_RED);
-            }
-            return null;
-        }
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }        
-        
-        @Override
-        public void run() 
-        {
-            String googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
-            if(googleKey != null)
-            {
-                try
-                {
-                    YouTube youtubeService = YouTubeService.getDeafult().getService();
-                    YouTube.Channels.List request = youtubeService.channels().list("statistics");
-                    request.setKey(googleKey);
-                    ChannelListResponse response = request.setId(getChannelID()).execute();  
-                    if(response.getItems() != null && !response.isEmpty())
-                    { 
-                        BigInteger videoCount = response.getItems().get(0).getStatistics().getVideoCount();        
-                        setLastVideoCount(videoCount.longValue());                  
-                    }
-                }
-                catch (IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }  
-                catch (GeneralSecurityException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                 
-            } 
-        }                
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            state.markModified();             
-            changeSupport.fireChange();
-        }
-    }     
+    }    
 
 // TODO RootProjectProvider     
 
@@ -1068,6 +1005,117 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     }        
     
 // TODO DataGroup     
+
+    private final class WatchLaterDataGroupProviderImpl implements DataGroupProvider, BulletIconProvider, PropertyChangeListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public WatchLaterDataGroupProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        } 
+        
+        @Override
+        public List<Action> getActions() 
+        {        
+            return Collections.EMPTY_LIST;
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return YouTubeChannelProject.this;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_WATCH_LATER;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public FileObject getRootFolder() throws IOException
+        {
+            return getDataDirectory();
+        }
+
+        @Override
+        public String getName() 
+        {
+            return "watch_later";
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Watch Later";
+        }
+
+        @Override
+        public Image getIcon(boolean hasChildren) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.WATCH_LATER);
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
+                if(watchLater != null)
+                {
+                    return watchLater.isWatchLater();
+                } 
+            }                                  
+            return false;
+        }
+        
+        @Override
+        public Image getBullet()
+        {
+            try
+            {
+                for(FileObject file : getRootFolder().getChildren())
+                {
+                    DataObject data = DataObject.find(file);
+                    if(contains(data))
+                    {
+                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                        provider.getImage(IconsProvider.ICON.BULLET_BLUE);
+                    }
+                }
+            }
+            catch(IOException e)                
+            {
+                LOG.warning(e.getMessage());
+            }
+            return null;
+        }        
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            if(getLastSource() instanceof WatchLater)
+            {
+                changeSupport.fireChange();
+            }
+        }
+    } 
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
@@ -1693,7 +1741,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
         
         @Override
-        public boolean createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
             Reference reference = provider.getReference(props);
             if(reference != null)
@@ -1701,7 +1749,8 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 try
                 {
                     String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
+                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(primaryFile, true);
                     file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                     file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
                     
@@ -1711,7 +1760,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         if(fileTypeProvider instanceof ArticleProvider)
                         {
                             ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                            OutputStream output = file.getOutputStream();
+                            OutputStream output = primaryFile.getOutputStream();
                             output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
                             output.close();
                         }                         
@@ -1722,7 +1771,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         if(fileTypeProvider instanceof BookProvider)
                         {
                             BookProvider bookProvider = (BookProvider)fileTypeProvider;
-                            OutputStream output = file.getOutputStream();
+                            OutputStream output = primaryFile.getOutputStream();
                             output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
                             output.close();
                         }                         
@@ -1734,7 +1783,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         OutputStream os = folder.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
                         reference.save(os, "New Reference Created");
                         os.close();  
-                        return true;
+                        return primaryFile;
                     }                                                          
                 }
                 catch(IOException e)
@@ -1742,7 +1791,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     LOG.warning(e.getMessage());
                 }
             } 
-            return true;
+            return null;
         }          
         
         @Override
@@ -1813,7 +1862,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
     }  
     
-    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener
+    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener, PropertyChangeListener, Runnable
     {
         public YouTubeSourceProviderImpl(YouTubeVideoProvider provider) 
         {
@@ -1888,7 +1937,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
         
         @Override
-        public boolean createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
         {
             YouTubeVideo video = provider.getVideo(props);
             if(video != null)
@@ -1896,14 +1945,15 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 try
                 {
                     String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
+                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(primaryFile, true);
                     file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
                     file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
                     
                     if(fileTypeProvider instanceof ArticleProvider)
                     {
                         ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = file.getOutputStream();
+                        OutputStream output = primaryFile.getOutputStream();
                         output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
                         output.close();
                     }                     
@@ -1914,7 +1964,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
                         video.save(os, "New YouTube Video Created");
                         os.close();  
-                        return true;
+                        return primaryFile;
                     }                                                          
                 }
                 catch(IOException e)
@@ -1922,7 +1972,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     LOG.warning(e.getMessage());
                 }
             }                           
-            return true;
+            return null;
         }          
         
         @Override
@@ -1982,7 +2032,169 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }         
+        }
+        
+        private static Properties getProperties(Activity activity)
+        {
+            String videoID = activity.getContentDetails().getUpload().getVideoId();
+            String videoTitle = activity.getSnippet().getTitle();
+            String channelID = activity.getSnippet().getChannelId(); 
+            String channelTitle = activity.getSnippet().getChannelTitle(); 
+            String description = activity.getSnippet().getDescription();
+            DateTime publishedAt = activity.getSnippet().getPublishedAt(); 
+            String thumbnailDefault = activity.getSnippet().getThumbnails().getDefault().getUrl();
+            String thumbnailMedium = activity.getSnippet().getThumbnails().getMedium().getUrl();
+            String thumbnailHigh = activity.getSnippet().getThumbnails().getHigh().getUrl();
+            String thumbnailStandard = activity.getSnippet().getThumbnails().getStandard().getUrl(); 
+
+            Properties props = new Properties();
+            props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString());
+            props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID);
+            props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, videoTitle);
+            props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, channelID); 
+            props.setProperty(YouTubeVideo.PROP_CHANNEL_TITLE, channelTitle);
+            if (publishedAt != null)
+            {
+                props.setProperty(YouTubeVideo.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());  
+            }
+            if (description != null)
+            {
+                props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description);            
+            }
+            if(thumbnailDefault != null)
+            {
+                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT, thumbnailDefault);
+            }
+            if(thumbnailHigh != null)
+            {
+                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH, thumbnailHigh);
+            } 
+            if(thumbnailMedium != null)
+            {
+                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM, thumbnailMedium);
+            }
+            if(thumbnailStandard != null)
+            {
+                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);
+            } 
+            return props;
+        }        
+
+        @Override
+        public void run()
+        {
+            AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
+            String googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
+            if(fileTypeProvider != null && googleKey != null)
+            {
+                DateTime lastUploadTime = getLastUploadTime();
+                try
+                {
+                    YouTube youtubeService = YouTubeService.getDeafult().getService();
+                    YouTube.Activities.List request = youtubeService.activities().list("contentDetails,snippet");
+                    request.setKey(googleKey);
+                    ActivityListResponse response = request.setChannelId(getChannelID()).execute(); 
+                    if(response.getItems() != null && !response.isEmpty())
+                    {                                           
+                        DateTime publishedAtMax = null;
+                        for (Activity activity : response.getItems())
+                        {
+                            DateTime publishedAt = activity.getSnippet().getPublishedAt();
+                            String type = activity.getSnippet().getType();                    
+                            if (type.equals(YouTubeService.ACTIVITY_TYPE_UPLOAD) && (lastUploadTime == null || publishedAt.getValue() > lastUploadTime.getValue()))
+                            {
+                                String videoID = activity.getContentDetails().getUpload().getVideoId();
+                                String title = activity.getSnippet().getTitle();
+                                String description = activity.getSnippet().getDescription();
+                                String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
+                                  
+                                FileObject file = createSource(getProperties(activity), fileTypeProvider);
+                                if(file != null)
+                                {
+                                    String text = getTitle() + ": " + title;
+                                    IconProvider iconProvider = getLookup().lookup(IconProvider.class);
+                                    Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon());                           
+
+                                    URL url = new URL(thumbnail);
+                                    BufferedImage image = ImageIO.read(url);                          
+                             
+                                    JLabel baloonDetails = new JLabel();
+                                    baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
+                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                    JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+
+                                    //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
+                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                                      
+                                }
+
+                                if (publishedAtMax == null || publishedAt.getValue() > publishedAtMax.getValue())
+                                {
+                                    publishedAtMax = publishedAt;
+                                }
+                            }
+                        }
+                        if(publishedAtMax != null && (lastUploadTime == null || publishedAtMax.getValue() > lastUploadTime.getValue()))
+                        {
+                            setLastUploadTime(publishedAtMax);                      
+                        } 
+                    }   
+                }
+                catch (IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }  
+                catch (GeneralSecurityException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }                                    
+        }
+        
+        private static String getDescription(String desc, int max)
+        {
+            if(desc.length() > max)
+            {
+                return desc.substring(0, max) + "...";
+            }  
+            return desc;
+        }          
+        
+        private static JComponent createDetails(String text, ActionListener action, Icon icon) 
+        {
+            if (null == action) 
+            {
+                return new JLabel(text);
+            }   
+
+            JButton btn = new JButton(Utils.convertStringToHtml(text, 50));
+            btn.setFocusable(false);
+            btn.setBorder(BorderFactory.createEmptyBorder());
+            btn.setBorderPainted(false);
+            btn.setFocusPainted(false);
+            btn.setOpaque(false);
+            btn.setContentAreaFilled(false);
+            btn.setFont(btn.getFont().deriveFont(btn.getFont().getSize() + 2));
+            btn.addActionListener(action);
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            Color c = UIManager.getColor("nb.html.link.foreground"); //NOI18N
+            if (c != null) {
+                btn.setForeground(c);
+            }
+            btn.setIcon(icon);
+            btn.setIconTextGap(10);        
+            btn.setVerticalTextPosition(SwingConstants.TOP);
+            btn.setHorizontalTextPosition(SwingConstants.LEFT);
+            btn.setVerticalAlignment(SwingConstants.CENTER);
+            btn.setHorizontalAlignment(SwingConstants.LEFT);
+            return btn;
+        }        
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            RP.post(this);
+        }
     }           
 
 // TODO HtmlFilesProvider        

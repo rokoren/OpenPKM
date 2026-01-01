@@ -34,7 +34,7 @@ public class YouTubeChannelNode extends FilterNode implements ChangeListener, Pr
     {  
         super(node, NodeFactorySupport.createCompositeChildren(
                 project,
-                "Projects/openpkm-youtube-project/Nodes"),
+                "Projects/openpkm-project/Nodes"),
                 new ProxyLookup(
                         new Lookup[]{
                             Lookups.singleton(project),

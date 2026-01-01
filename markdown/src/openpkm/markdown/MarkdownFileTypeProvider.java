@@ -7,12 +7,16 @@ package openpkm.markdown;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.MarkdownSupport;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.util.lookup.ServiceProviders;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=FileTypeProvider.class)
+@ServiceProviders({
+@ServiceProvider(service = MarkdownSupport.class),    
+@ServiceProvider(service = FileTypeProvider.class)    
+})
 public class MarkdownFileTypeProvider implements MarkdownSupport
 {    
     @Override

@@ -5,19 +5,22 @@
 package openpkm.asciidoc;
 
 import openpkm.base.ArticleProvider;
+import openpkm.base.AsciiDocSupport;
 import openpkm.base.BookProvider;
 import openpkm.base.FileTypeProvider;
 import org.openide.util.lookup.ServiceProvider;
+import org.openide.util.lookup.ServiceProviders;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=FileTypeProvider.class)
-public class AsciiDocFileTypeProvider implements FileTypeProvider, ArticleProvider, BookProvider
-{
-    public static final String EXTENSION = "adoc";
-    
+@ServiceProviders({
+@ServiceProvider(service = AsciiDocSupport.class),    
+@ServiceProvider(service = FileTypeProvider.class)    
+})
+public class AsciiDocFileTypeProvider implements AsciiDocSupport, ArticleProvider, BookProvider
+{    
     @Override
     public String getExtension() 
     {

@@ -27,6 +27,7 @@ public interface IconsProvider
         PICTURES,
         YOUTUBE_VIDEO,
         YOUTUBE_CHANNEL,
+        WATCH_LATER,
         BULLET_RED,
         BULLET_GREEN,
         BULLET_BLUE,        

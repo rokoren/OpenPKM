@@ -30,6 +30,7 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.base.WatchLater;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
@@ -61,7 +62,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return new YouTubeVideoImpl(props);
     }
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, WatchLater, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -377,7 +378,24 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
             {
                 props.setProperty(PROP_THUMBNAIL_STANDARD, thumbnail);
             }
-        }     
+        } 
+        
+        @Override
+        public boolean isWatchLater()
+        {
+            String string = props.getProperty(PROP_WATCH_LATER);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return false;
+        }
+        
+        @Override
+        public void setWatchLater(boolean watchLater)
+        {
+            props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater));          
+        }
 
         @Override
         public Image getIcon() 

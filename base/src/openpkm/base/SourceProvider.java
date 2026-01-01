@@ -6,6 +6,7 @@ package openpkm.base;
 
 import java.util.Properties;
 import org.netbeans.api.project.SourceGroup;
+import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
 
 /**
@@ -15,6 +16,6 @@ import org.openide.util.Lookup;
 public interface SourceProvider extends SourceGroup 
 {    
     Source getSource(String sourceID);
-    boolean createSource(Properties props, FileTypeProvider fileTypeProvider);
+    FileObject createSource(Properties props, FileTypeProvider fileTypeProvider);
     Lookup.Provider getProvider();
 }

@@ -25,9 +25,6 @@ import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
 import openpkm.youtube.YouTubeProjectWizardPanel2;
 import openpkm.youtube.YouTubeService;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
-import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
@@ -112,7 +109,10 @@ public class YouTubeChannelAction implements ActionListener
             props.setProperty(YouTubeChannel.PROP_THUMBNAIL, thumbnail);
             props.setProperty(YouTubeChannel.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());
             props.setProperty(YouTubeChannel.PROP_CUSTOM_URL, customUrl);
-            props.setProperty(YouTubeChannel.PROP_COUNTRY, country);
+            if(country != null)
+            {
+                props.setProperty(YouTubeChannel.PROP_COUNTRY, country);                
+            }
             props.setProperty(YouTubeChannel.PROP_LOCALIZED_TITLE, localizedTitle);
             props.setProperty(YouTubeChannel.PROP_LOCALIZED_DESCRIPTION, localizedDescription);
             props.setProperty(YouTubeChannel.PROP_VIEW_COUNT, viewCount.toString());
@@ -152,14 +152,7 @@ public class YouTubeChannelAction implements ActionListener
                 props.store(os, "OpenPKM YouTube Channel Project"); 
                 os.close();                
 
-                StatusDisplayer.getDefault().setStatusText("OpenPKM YouTube Channel Project saved: " + title);  
-                
-                Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                if(project != null)
-                {
-                    Project[] projects = {project};
-                    OpenProjects.getDefault().open(projects, false);                             
-                }                 
+                StatusDisplayer.getDefault().setStatusText("OpenPKM YouTube Channel Project saved: " + title);                 
             }
             catch(IOException e) 
             {
