@@ -1096,7 +1096,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     if(contains(data))
                     {
                         IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
-                        provider.getImage(IconsProvider.ICON.BULLET_BLUE);
+                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
                     }
                 }
             }

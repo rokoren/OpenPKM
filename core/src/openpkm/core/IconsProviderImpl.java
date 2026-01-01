@@ -93,9 +93,9 @@ public class IconsProviderImpl implements IconsProvider
             case WATCH_LATER:
             return ICON_WATCH_LATER;             
             case BULLET_RED:
-            return ICON_BULLET_BLUE;             
+            return ICON_BULLET_RED;             
             case BULLET_BLUE:
-            return ICON_BULLET_RED;  
+            return ICON_BULLET_BLUE;  
             case BULLET_GREEN:
             return ICON_BULLET_GREEN; 
             case BULLET_BELL:

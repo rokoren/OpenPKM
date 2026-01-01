@@ -80,7 +80,7 @@ public class ProjectNode extends AbstractNode implements ChangeListener
             Image bullet = provider.getBullet();
             if(bullet != null)
             {
-                return ImageUtilities.mergeImages(ImageUtilities.icon2Image(info.getIcon()), bullet, 8, -4);                
+                return ImageUtilities.mergeImages(ImageUtilities.icon2Image(info.getIcon()), bullet, 7, -4);                
             }
         }        
         return ImageUtilities.icon2Image(info.getIcon());                        
