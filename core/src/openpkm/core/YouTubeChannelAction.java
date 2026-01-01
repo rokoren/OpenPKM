@@ -18,6 +18,7 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
@@ -25,6 +26,8 @@ import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
 import openpkm.youtube.YouTubeProjectWizardPanel2;
 import openpkm.youtube.YouTubeService;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
@@ -150,9 +153,23 @@ public class YouTubeChannelAction implements ActionListener
 
                 OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
                 props.store(os, "OpenPKM YouTube Channel Project"); 
-                os.close();                
+                os.close(); 
+                                
+                StatusDisplayer.getDefault().setStatusText("OpenPKM YouTube Channel Project saved: " + title); 
 
-                StatusDisplayer.getDefault().setStatusText("OpenPKM YouTube Channel Project saved: " + title);                 
+                Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                if(project != null)
+                {
+                    Domain domain = project.getLookup().lookup(Domain.class);
+                    if(domain != null)
+                    {
+                        provider.addDomain(domain);
+                        /*
+                        Project[] projects = {domain};
+                        OpenProjects.getDefault().open(projects, false);   
+                        */
+                    }
+                }                  
             }
             catch(IOException e) 
             {

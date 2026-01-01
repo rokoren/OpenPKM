@@ -20,13 +20,14 @@ import org.openide.util.Lookup;
 public interface DomainsProvider 
 {
     FileObject getRootDirectory() throws IOException;    
-    Collection<Domain> getDomains();    
+    Collection<Domain> getDomains();  
+    void addDomain(Domain domain);
+    void removeDomain(String domainID);
     Lookup.Provider getProvider();
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener); 
     List<Action> getActions();
     String getName();
     String getDisplayName();
-    Image getIcon(boolean hasChildren); 
-    boolean contains(Lookup.Provider provider);   
+    Image getIcon(boolean hasChildren);  
 }

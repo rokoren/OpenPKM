@@ -123,7 +123,6 @@ import openpkm.utils.SavableImpl;
 import openpkm.youtube.YouTubeSourceProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
-import org.openide.loaders.DataFolder;
 import org.openide.util.Utilities;
 
 /**
@@ -792,7 +791,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
   
 // TODO DomainsProvider
 
-    private final class DomainsProviderImpl implements DomainsProvider, FileChangeListener
+    private final class DomainsProviderImpl implements DomainsProvider
     {                        
         private static final String ROOT_FOLDER = "domain";          
         
@@ -864,6 +863,23 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public void addDomain(Domain domain)
+        {
+            getDomainsById().put(domain.getDomainID(), domain);
+            changeSupport.fireChange();            
+        }
+        
+        @Override
+        public void removeDomain(String domainID)
+        {
+            Domain domain = getDomainsById().remove(domainID);
+            if(domain != null)
+            {
+                changeSupport.fireChange();                            
+            }
+        }        
+        
+        @Override
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
@@ -906,107 +922,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.DOMAINS);
-        }
-
-        @Override
-        public boolean contains(Lookup.Provider provider) 
-        {
-            if(provider != null)
-            {
-                Domain domain = provider.getLookup().lookup(Domain.class);
-                if(domain != null)
-                {
-                    return true;
-                }                 
-            }                                    
-            return false;
-        }
-        
-        @Override
-        public void fileFolderCreated(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            DataFolder data = DataFolder.findFolder(file);
-            Domain domain = data.getLookup().lookup(Domain.class);
-            if(domain != null)
-            {
-                getDomainsById().put(domain.getDomainID(), domain);
-                changeSupport.fireChange();
-            }
-        }
-
-        @Override
-        public void fileDataCreated(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            try
-            {
-                DataObject data = DataObject.find(file);
-                Domain domain = data.getLookup().lookup(Domain.class);
-                if(domain != null)
-                {
-                    getDomainsById().put(domain.getDomainID(), domain);
-                    changeSupport.fireChange();
-                }              
-            }           
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }             
-        }
-
-        @Override
-        public void fileChanged(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-        }
-
-        @Override
-        public void fileDeleted(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            if(file.isFolder())
-            {
-                DataFolder data = DataFolder.findFolder(file);
-                Domain domain = data.getLookup().lookup(Domain.class);
-                if(domain != null)
-                {
-                    if(getDomainsById().remove(domain.getDomainID()) != null)
-                    {
-                        changeSupport.fireChange();                        
-                    }
-                }                
-            }
-            else
-            {
-                try
-                {
-                    DataObject data = DataObject.find(file);
-                    Domain domain = data.getLookup().lookup(Domain.class);
-                    if(domain != null)
-                    {
-                        if(getDomainsById().remove(domain.getDomainID()) != null)
-                        {
-                            changeSupport.fireChange();                        
-                        }
-                    }              
-                }           
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                 
-            }
-        }
-
-        @Override
-        public void fileRenamed(FileRenameEvent fre) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileAttributeChanged(FileAttributeEvent fae) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        }               
     }     
     
 // TODO DataGroup    
