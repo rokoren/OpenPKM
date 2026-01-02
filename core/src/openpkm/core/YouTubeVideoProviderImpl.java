@@ -30,7 +30,6 @@ import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.utils.DateTimeUtils;
@@ -64,7 +63,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return new YouTubeVideoImpl(props);
     }
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;

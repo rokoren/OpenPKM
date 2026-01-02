@@ -75,15 +75,13 @@ public class WatchLaterAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Watch YouTube Videos");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-        { 
-            for(WizardDescriptor.Panel panel : panels)
+        boolean isFinish = DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION;
+        for(WizardDescriptor.Panel panel : panels)
+        {
+            if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
             {
-                if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
-                {
-                    watchLaterPanel.finish();
-                }           
-            }                                                        
-        }        
+                watchLaterPanel.finish(isFinish);
+            }           
+        }                                                             
     }      
 }

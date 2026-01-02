@@ -6,7 +6,6 @@ package openpkm.core;
 
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
-import openpkm.base.TitleProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.cef.browser.CefBrowser;
@@ -37,9 +36,9 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
         this.video = video;
     }  
     
-    public void finish()
+    public void finish(boolean isFinish)
     {
-        video.setWatchLater(false);
+        if(isFinish) video.setWatchLater(false);
         if(browser != null)
         {
             browser.close(true);
@@ -53,27 +52,24 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     @Override
     public WatchLaterVisualPanel getComponent() 
     {
-        if (component == null) 
+        if(browser == null)
         {
             YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
             if(provider != null)
             {
                 try
                 {
-                    CefBrowser browser = provider.getBrowser(video);   
-                    if(browser != null)
-                    {
-                        if(video instanceof TitleProvider title)
-                        {
-                            component = new WatchLaterVisualPanel(title, browser);                
-                        }                        
-                    }
+                    browser = provider.getBrowser(video);                     
                 }
                 catch(Exception e)
                 {
                     LOG.warning(e.getMessage());
-                }                
-            }                         
+                }                   
+            }
+        }        
+        if (component == null) 
+        {
+            component = new WatchLaterVisualPanel(video, browser);                                   
         }
         return component;
     }
