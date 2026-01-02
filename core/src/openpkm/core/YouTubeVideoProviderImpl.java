@@ -6,6 +6,8 @@ package openpkm.core;
 
 import com.google.api.client.util.DateTime;
 import java.awt.Image;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -19,9 +21,11 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -394,7 +398,12 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         @Override
         public void setWatchLater(boolean watchLater)
         {
-            props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater));          
+            Object oldValue = props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater)); 
+            if(oldValue != null)
+            {
+                oldValue = Boolean.parseBoolean(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_WATCH_LATER, oldValue, watchLater);
         }
 
         @Override
@@ -460,15 +469,16 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         }          
     }
     
-    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
+    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement, ItemListener
     {
         private CefBrowser browser; 
+        private JToolBar toolbar;
         
         private transient MultiViewElementCallback callback;  
         
-        private final YouTubeVideo video;
+        private final YouTubeVideoImpl video;
 
-        public MultiViewElementImpl(YouTubeVideo video) 
+        public MultiViewElementImpl(YouTubeVideoImpl video) 
         {
             this.video = video;
             setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
@@ -520,7 +530,16 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         @Override
         public JComponent getToolbarRepresentation() 
         {
-            return new JToolBar();
+            if(toolbar == null)
+            {
+                toolbar = new JToolBar();
+                JCheckBox watchLater = new JCheckBox("Watch Later");
+                watchLater.setFocusable(false);
+                watchLater.setSelected(video.isWatchLater());
+                watchLater.addItemListener(this);
+                toolbar.add(watchLater);
+            }
+            return toolbar;
         }
 
         @Override
@@ -572,6 +591,13 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public void componentDeactivated() 
         {
             
+        }
+
+        @Override
+        public void itemStateChanged(ItemEvent evt) 
+        {
+            boolean isWatchLater = evt.getStateChange() == ItemEvent.SELECTED;
+            video.setWatchLater(isWatchLater);
         }
     }
 }

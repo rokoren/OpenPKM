@@ -1889,6 +1889,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         try
                         {
                             YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
+                            video.addPropertyChangeListener(this);
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -1992,6 +1993,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             try
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
+                video.addPropertyChangeListener(this);
                 getVideos().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
@@ -2008,7 +2010,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             YouTubeVideo video = getVideos().get(file.getName());  
             if(video != null)
             {
-                
+                setLastSource(video);
             }
         }
 
@@ -2019,6 +2021,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             YouTubeVideo video = getVideos().remove(file.getName());  
             if(video != null)
             {
+                video.removePropertyChangeListener(this);                
                 video.setDeleted();
                 setLastSource(video);
             }
@@ -2193,7 +2196,14 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            RP.post(this);
+            if(evt.getSource() == getProvider())
+            {
+                RP.post(this);                
+            }
+            else
+            {
+                new SavableImpl(this, evt);                
+            }
         }
     }           
 
