@@ -24,6 +24,8 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     
     private final YouTubeVideo video;
     
+    private CefBrowser browser;
+    
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
@@ -33,7 +35,16 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     public WatchLaterWizardPanel(YouTubeVideo video) 
     {
         this.video = video;
-    }        
+    }  
+    
+    public void finish()
+    {
+        video.setWatchLater(false);
+        if(browser != null)
+        {
+            browser.close(true);
+        }
+    }
 
     // Get the visual component for the panel. In this template, the component
     // is kept separate. This can be more efficient: if the wizard is created
@@ -44,10 +55,25 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     {
         if (component == null) 
         {
-            if(video instanceof TitleProvider provider)
+            YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+            if(provider != null)
             {
-                component = new WatchLaterVisualPanel(provider);                
-            }
+                try
+                {
+                    CefBrowser browser = provider.getBrowser(video);   
+                    if(browser != null)
+                    {
+                        if(video instanceof TitleProvider title)
+                        {
+                            component = new WatchLaterVisualPanel(title, browser);                
+                        }                        
+                    }
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }                         
         }
         return component;
     }
@@ -79,32 +105,10 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     }   
 
     @Override
-    public void readSettings(WizardDescriptor wiz) 
-    {
-        if(getComponent().getBrowser() == null)
-        {
-            YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
-            if(provider != null)
-            {
-                try
-                {
-                    CefBrowser browser = provider.getBrowser(video);   
-                    if(browser != null)
-                    {
-                        component.setBrowser(browser);
-                    }
-                }
-                catch(Exception e)
-                {
-                    LOG.warning(e.getMessage());
-                }                
-            }             
-        }     
+    public void readSettings(WizardDescriptor wiz) {  
     }
 
     @Override
-    public void storeSettings(WizardDescriptor descriptor) 
-    {
-        video.setWatchLater(false); 
+    public void storeSettings(WizardDescriptor descriptor) {
     }     
 }

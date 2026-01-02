@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.youtube.YouTubeSourceProvider;
 import openpkm.youtube.YouTubeVideo;
-import org.cef.browser.CefBrowser;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
@@ -82,11 +81,7 @@ public class WatchLaterAction implements ActionListener
             {
                 if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
                 {
-                    CefBrowser browser = watchLaterPanel.getComponent().getBrowser();
-                    if(browser != null)
-                    {
-                        browser.close(true);
-                    }
+                    watchLaterPanel.finish();
                 }           
             }                                                        
         }        

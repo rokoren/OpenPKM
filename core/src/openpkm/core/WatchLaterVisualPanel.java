@@ -15,15 +15,14 @@ public class WatchLaterVisualPanel extends javax.swing.JPanel
 { 
     private final TitleProvider provider;
     
-    private CefBrowser browser;
-    
     /**
      * Creates new form WatchLaterVisualPanel
      */
-    public WatchLaterVisualPanel(TitleProvider provider) 
+    public WatchLaterVisualPanel(TitleProvider provider, CefBrowser browser) 
     {
         this.provider = provider;
-        initComponents();      
+        initComponents(); 
+        add(browser.getUIComponent());        
     }
     
     @Override
@@ -31,17 +30,6 @@ public class WatchLaterVisualPanel extends javax.swing.JPanel
     {
         return provider.getTitle();
     } 
-    
-    public CefBrowser getBrowser()
-    {
-        return browser;
-    }
-
-    public void setBrowser(CefBrowser browser)
-    {
-        this.browser = browser;
-        add(browser.getUIComponent());
-    }
 
     /**
      * This method is called from within the constructor to initialize the form.
