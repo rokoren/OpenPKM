@@ -2262,7 +2262,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public synchronized Map<String, YouTubeVideo> getVideos()
+        public synchronized Map<String, YouTubeVideo> getVideosById()
         {
             if(videos == null)
             {
@@ -2378,7 +2378,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
-                getVideos().put(video.getSourceID(), video);                                                              
+                getVideosById().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
             catch(IOException e)
@@ -2391,7 +2391,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            YouTubeVideo video = getVideos().get(file.getName());  
+            YouTubeVideo video = getVideosById().get(file.getName());  
             if(video != null)
             {
                 
@@ -2402,7 +2402,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            YouTubeVideo video = getVideos().remove(file.getName());  
+            YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
                 video.setDeleted();

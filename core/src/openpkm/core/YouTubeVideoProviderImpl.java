@@ -25,7 +25,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -34,7 +33,6 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WatchLater;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
@@ -66,7 +64,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return new YouTubeVideoImpl(props);
     }
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, WatchLater, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, TitleProvider, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -476,7 +474,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         
         private transient MultiViewElementCallback callback;  
         
-        private final YouTubeVideoImpl video;
+        private final YouTubeVideo video;
 
         public MultiViewElementImpl(YouTubeVideoImpl video) 
         {

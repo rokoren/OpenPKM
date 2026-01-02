@@ -4,6 +4,8 @@
  */
 package openpkm.youtube;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
 import openpkm.base.IconsProvider;
@@ -30,12 +32,17 @@ public abstract class YouTubeSourceProvider implements SourceProvider
         this.provider = provider;
     } 
     
-    public abstract Map<String, YouTubeVideo> getVideos();
+    protected abstract Map<String, YouTubeVideo> getVideosById();
+    
+    public Collection<YouTubeVideo> getVideos()
+    {
+        return Collections.unmodifiableCollection(getVideosById().values());
+    }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getVideos().get(sourceID);
+        return getVideosById().get(sourceID);
     }                                  
 
     @Override
@@ -60,6 +67,6 @@ public abstract class YouTubeSourceProvider implements SourceProvider
     @Override
     public boolean contains(FileObject file) 
     {
-        return getVideos().containsKey(file.getName());
+        return getVideosById().containsKey(file.getName());
     }    
 }

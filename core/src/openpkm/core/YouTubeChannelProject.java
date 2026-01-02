@@ -1019,7 +1019,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public List<Action> getActions() 
         {        
-            return Collections.EMPTY_LIST;
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/WatchLater"));         
+            return actions;
         }        
         
         @Override
@@ -1876,7 +1878,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
         
         @Override
-        public synchronized Map<String, YouTubeVideo> getVideos()
+        public synchronized Map<String, YouTubeVideo> getVideosById()
         {
             if(videos == null)
             {
@@ -1994,7 +1996,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
                 video.addPropertyChangeListener(this);
-                getVideos().put(video.getSourceID(), video);                                                              
+                getVideosById().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
             catch(IOException e)
@@ -2007,7 +2009,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            YouTubeVideo video = getVideos().get(file.getName());  
+            YouTubeVideo video = getVideosById().get(file.getName());  
             if(video != null)
             {
                 setLastSource(video);
@@ -2018,7 +2020,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            YouTubeVideo video = getVideos().remove(file.getName());  
+            YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
                 video.removePropertyChangeListener(this);                
