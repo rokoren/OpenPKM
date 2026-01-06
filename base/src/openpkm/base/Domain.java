@@ -5,6 +5,7 @@
 package openpkm.base;
 
 import java.beans.PropertyChangeListener;
+import java.time.LocalDateTime;
 import org.netbeans.api.project.Project;
 
 /**
@@ -13,10 +14,12 @@ import org.netbeans.api.project.Project;
  */
 public interface Domain extends Project 
 {
-    String PROP_APP_ID = "app.id";    
+    String PROP_APP_ID = "app.id";   
+    String PROP_TIME_CREATED = "time.created"; 
     
     String getDomainID();
-    String getAppID();    
+    String getAppID(); 
+    LocalDateTime getTimeCreated();     
     void addPropertyChangeListener(PropertyChangeListener listener);
     void removePropertyChangeListener(PropertyChangeListener listener);    
 }

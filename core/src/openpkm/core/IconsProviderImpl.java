@@ -19,7 +19,10 @@ import org.openide.util.lookup.ServiceProvider;
 public class IconsProviderImpl implements IconsProvider
 {
     @StaticResource()
-    private static final String ICON_DOMAINS = "openpkm/core/resources/domain.png";    
+    private static final String ICON_DOMAINS = "openpkm/core/resources/domain.png"; 
+    
+    @StaticResource()
+    private static final String ICON_HOME_PAGE = "openpkm/core/resources/home_page.png";      
     
     @StaticResource()
     private static final String ICON_NOTES = "openpkm/core/resources/notes_pin.png";
@@ -72,6 +75,8 @@ public class IconsProviderImpl implements IconsProvider
         {
             case DOMAINS:
             return ICON_DOMAINS;
+            case HOME_PAGE:
+            return ICON_HOME_PAGE;            
             case NOTES:
             return ICON_NOTES;   
             case BOOKS:

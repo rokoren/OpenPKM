@@ -19,6 +19,7 @@ public interface IconsProvider
     public enum ICON 
     {
         DOMAINS,
+        HOME_PAGE,
         NOTES,
         ARTICLES,
         BOOKS,

@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -86,6 +88,8 @@ public class YouTubeChannelAction implements ActionListener
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
+            LocalDateTime now = LocalDateTime.now();            
+            
             String channelID = (String) wiz.getProperty(YouTubeChannel.PROP_CHANNEL_ID);
             String title = (String) wiz.getProperty(YouTubeChannel.PROP_TITLE);
             String description = (String) wiz.getProperty(YouTubeChannel.PROP_DESCRIPTION);            
@@ -106,6 +110,7 @@ public class YouTubeChannelAction implements ActionListener
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
             
             Properties props = new Properties();
+            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(YouTubeChannel.PROP_CHANNEL_ID, channelID); 
             props.setProperty(YouTubeChannel.PROP_TITLE, title);       
             props.setProperty(YouTubeChannel.PROP_DESCRIPTION, description);

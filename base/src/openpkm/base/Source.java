@@ -15,9 +15,9 @@ import javax.swing.event.ChangeListener;
  * @author Rok Koren
  */
 public interface Source
-{      
-    String PROP_TIME_CREATED = "time.created";    
+{        
     String PROP_APP_ID       = "app.id";        
+    String PROP_TIME_CREATED = "time.created";      
     
     String getSourceID();
     String getAppID();
