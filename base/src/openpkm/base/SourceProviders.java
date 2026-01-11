@@ -12,6 +12,8 @@ import org.openide.filesystems.FileObject;
  */
 public interface SourceProviders 
 {
+    String PROP_LAST_SOURCE = "last.source";       
+    
     String ATTR_SOURCE_ID       = "source.id";
     String ATTR_SOURCE_PROVIDER = "source.provider";     
     

@@ -27,13 +27,13 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
-import openpkm.base.BulletIconProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
@@ -51,13 +51,16 @@ import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
-import openpkm.base.WatchLater;
+import openpkm.base.WebPage;
+import openpkm.base.WebPageProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.SavableImpl;
 import openpkm.utils.Utils;
+import openpkm.utils.WebSourceProvider;
+import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectManager;
@@ -76,6 +79,7 @@ import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
@@ -86,9 +90,7 @@ import org.openide.util.lookup.Lookups;
  * @author Rok Koren
  */
 public class HomePageProject implements Domain, HomePage, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
-{
-    public static final String PROP_LAST_SOURCE = "last.source";  
-    
+{    
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -116,7 +118,7 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private Source lastSource;     
+    private Source lastSource;   
     
     public HomePageProject(FileObject projectDir, ProjectState state, Properties props) 
     {
@@ -124,6 +126,13 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         this.state = state;
         this.props = props;
        
+        WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
+        if(webPageProvider != null)
+        {          
+            SourceProvider links = new WebSourceProviderImpl(webPageProvider);
+            sources.put(links.getName(), links);            
+        }        
+        
         ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
         if(referenceProvider != null)
         {          
@@ -255,6 +264,7 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
             list.add(new HomePageLogicalView(this));
             list.add(new HomePageCustomizerProvider(this));  
 
+            list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
@@ -265,7 +275,6 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
             list.add(new VideoDataGroupProviderImpl());             
-            list.add(new WatchLaterDataGroupProviderImpl()); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -289,10 +298,10 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
     @Override
     public LocalDateTime getTimeCreated() 
     {
-        String created = props.getProperty(PROP_TIME_CREATED);
-        if(created != null)
+        String string = props.getProperty(PROP_TIME_CREATED);
+        if(string != null)
         {
-            return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
     }
@@ -309,13 +318,13 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
     public String getUrl() 
     {
         return props.getProperty(PROP_URL);
-    }  
+    }     
     
     @Override
     public String getFavicon() 
     {
         return props.getProperty(PROP_FAVICON);
-    }     
+    }         
     
 // TODO TitleProvider  
     
@@ -396,37 +405,19 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
     
 // TODO ProjectOpenedHook    
     
-    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener, Runnable
-    {
-        //private RequestProcessor.Task task;          
-        
+    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener
+    {                
         @Override
         protected void projectOpened() 
-        { 
-            /*
-            task = RP.create(this);    
-            propertyChangeSupport.addPropertyChangeListener(this);
-            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
-            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
-            task.schedule(1000);             
-            */
+        {  
+            propertyChangeSupport.addPropertyChangeListener(this);           
         }
 
         @Override
         protected void projectClosed() 
-        { 
-            /*
-            task.cancel();
-            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
-            propertyChangeSupport.removePropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
+        {          
             propertyChangeSupport.removePropertyChangeListener(this);            
-            */
-        } 
-        
-        @Override
-        public void run()
-        {  
-        }         
+        }                  
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
@@ -600,25 +591,103 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         {
             return getProject(getProjectDirectory());
         }          
-    }        
+    }  
     
-// TODO DataGroup     
+// TODO DomainsProvider
 
-    private final class WatchLaterDataGroupProviderImpl implements DataGroupProvider, BulletIconProvider, PropertyChangeListener
-    {        
-        private final ChangeSupport changeSupport; 
+    private final class DomainsProviderImpl implements DomainsProvider
+    {                        
+        private static final String ROOT_FOLDER = "domain";          
+        
+        private Map<String, Domain> domains; 
+        private FileObject rootDir;            
+        
+        private final ChangeSupport changeSupport;              
 
-        public WatchLaterDataGroupProviderImpl()
+        public DomainsProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public synchronized FileObject getRootDirectory() throws IOException
+        {
+            if(rootDir == null)
+            {
+                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                if(rootDir == null)
+                {
+                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                    LOG.info("Domain dir created: " + rootDir.getPath());                        
+                }                 
+            }                           
+            return rootDir;       
+        }         
+        
+        private synchronized Map<String, Domain> getDomainsById()
+        {
+            if(domains == null)
+            {
+                domains = new HashMap<>();
+                try
+                {
+                    for (FileObject fo : getRootDirectory().getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            Project project = ProjectManager.getDefault().findProject(fo);
+                            if(project instanceof Domain domain)
+                            {
+                                domains.put(domain.getDomainID(), domain);
+                            }                                                                                    
+                        }
+                        else
+                        {
+                            DataObject data = DataObject.find(fo);
+                            Domain domain = data.getLookup().lookup(Domain.class);
+                            if(domain != null)
+                            {
+                                domains.put(domain.getDomainID(), domain);
+                            }                            
+                        }                                                                                                                                            
+                    }                      
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                              
+            }
+            return domains;
+        }  
+
+        @Override
+        public Collection<Domain> getDomains()
+        {
+            return Collections.unmodifiableCollection(getDomainsById().values());
+        }
+        
+        @Override
+        public void addDomain(Domain domain)
+        {
+            getDomainsById().put(domain.getDomainID(), domain);
+            changeSupport.fireChange();            
+        }
+        
+        @Override
+        public void removeDomain(String domainID)
+        {
+            Domain domain = getDomainsById().remove(domainID);
+            if(domain != null)
+            {
+                changeSupport.fireChange();                            
+            }
+        }        
+        
+        @Override
         public List<Action> getActions() 
-        {        
+        {
             List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/WatchLater"));         
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Domain"));         
             return actions;
         }        
         
@@ -626,13 +695,7 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         public Lookup.Provider getProvider()
         {
             return HomePageProject.this;
-        }         
-        
-        @Override
-        public Integer getPosition() 
-        {
-            return POSITION_WATCH_LATER;
-        }                  
+        }                        
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -647,75 +710,26 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
-        {
-            return getDataDirectory();
-        }
-
-        @Override
         public String getName() 
         {
-            return "watch_later";
+            return "domain";
         }
 
         @Override
         public String getDisplayName() 
         {
-            return "Watch Later";
+            return "Domains";
         }
 
         @Override
         public Image getIcon(boolean hasChildren) 
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.WATCH_LATER);
-        }
-
-        @Override
-        public boolean contains(DataObject data) 
-        {
-            if(data != null)
-            {
-                WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
-                if(watchLater != null)
-                {
-                    return watchLater.isWatchLater();
-                } 
-            }                                  
-            return false;
-        }
-        
-        @Override
-        public Image getBullet()
-        {
-            try
-            {
-                for(FileObject file : getRootFolder().getChildren())
-                {
-                    DataObject data = DataObject.find(file);
-                    if(contains(data))
-                    {
-                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
-                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
-                    }
-                }
-            }
-            catch(IOException e)                
-            {
-                LOG.warning(e.getMessage());
-            }
-            return null;
-        }        
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof WatchLater)
-            {
-                changeSupport.fireChange();
-            }
-        }
-    } 
+            return provider.getImage(IconsProvider.ICON.DOMAINS);
+        }               
+    }     
+    
+// TODO DataGroup
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
@@ -1264,6 +1278,201 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
     }    
     
 // TODO SourceGroup
+   
+    private final class WebSourceProviderImpl extends WebSourceProvider implements FileChangeListener, PropertyChangeListener
+    {  
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/www_page.png";         
+        
+        public WebSourceProviderImpl(WebPageProvider provider) 
+        {
+            super(provider);
+        }               
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        } 
+        
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
+        @Override
+        public synchronized Map<String, WebPage> getLinks()
+        {
+            if(links == null)
+            {
+                links = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                            webPage.addPropertyChangeListener(this);
+                            links.put(webPage.getSourceID(), webPage);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return links;
+        }                
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Content root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            WebPage webPage = provider.getWebPage(props);
+            if(webPage != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(primaryFile, true);
+                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    file.setAttribute(ATTR_SOURCE_ID, webPage.getSourceID());  
+                    
+                    if(webPage instanceof Article)
+                    {
+                        Article article = (Article)webPage;
+                        if(fileTypeProvider instanceof ArticleProvider)
+                        {
+                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                            OutputStream output = primaryFile.getOutputStream();
+                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                            output.close();
+                        }                         
+                    }
+                    
+                    FileObject folder = getRootFolder();
+                    if(folder != null)
+                    {  
+                        OutputStream os = folder.createAndOpen(webPage.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                        webPage.save(os, "New Content Created");
+                        os.close();  
+                        return primaryFile;
+                    }                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            } 
+            return null;
+        }           
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            setLastData(data);
+            */
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                webPage.addPropertyChangeListener(this);
+                getLinks().put(webPage.getSourceID(), webPage);               
+                setLastSource(webPage);                
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            WebPage webPage = getLinks().get(file.getName());  
+            if(webPage != null)
+            {
+                
+            }
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            WebPage webPage = getLinks().remove(file.getName());  
+            if(webPage != null)
+            {
+                webPage.removePropertyChangeListener(this);
+                webPage.setDeleted();
+                setLastSource(webPage);
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }          
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            new SavableImpl(this, evt);            
+        }
+    }     
     
     private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener, PropertyChangeListener
     {               
@@ -1331,13 +1540,13 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
 
         @Override
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
         
         @Override

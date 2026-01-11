@@ -23,17 +23,17 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public class HomePageVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
-{  
-    private final ExplorerManager explorerManager = new ExplorerManager();    
+public class RssChannelVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
+{
+    private final ExplorerManager explorerManager = new ExplorerManager();
     
     /**
-     * Creates new form HomePageVisualPanel1
+     * Creates new form RssChannelVisualPanel1
      */
-    public HomePageVisualPanel1() 
+    public RssChannelVisualPanel1() 
     {
         initComponents();
-    } 
+    }
     
     @Override
     public String getName() 
@@ -41,12 +41,17 @@ public class HomePageVisualPanel1 extends javax.swing.JPanel implements Explorer
         return "URL";
     }  
     
-    public String getHomePageUrl()
+    public String getRssUrl()
     {
         return jTextField1.getText().trim();
-    }       
+    }   
+
+    public boolean isRssFile()
+    {
+        return jCheckBox1.isSelected();
+    }
     
-    public List<Topic> getHomePageTopics()
+    public List<Topic> getRssChannelTopics()
     {
         Node[] nodes = explorerManager.getSelectedNodes();
         if(nodes.length > 0)
@@ -121,7 +126,7 @@ public class HomePageVisualPanel1 extends javax.swing.JPanel implements Explorer
         {
             return new Node[] {new TopicNode(provider, topic)};
         }           
-    }     
+    }    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -135,13 +140,15 @@ public class HomePageVisualPanel1 extends javax.swing.JPanel implements Explorer
 
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
+        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel2 = new javax.swing.JLabel();
         iconView1 = new org.openide.explorer.view.IconView();
-        filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jCheckBox1 = new javax.swing.JCheckBox();
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
 
         setLayout(new java.awt.GridBagLayout());
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(HomePageVisualPanel1.class, "HomePageVisualPanel1.jLabel1.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(RssChannelVisualPanel1.class, "RssChannelVisualPanel1.jLabel1.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -156,33 +163,49 @@ public class HomePageVisualPanel1 extends javax.swing.JPanel implements Explorer
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField1, gridBagConstraints);
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(HomePageVisualPanel1.class, "HomePageVisualPanel1.jLabel2.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler1, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(RssChannelVisualPanel1.class, "RssChannelVisualPanel1.jLabel2.text") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel2, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         add(iconView1, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, org.openide.util.NbBundle.getMessage(RssChannelVisualPanel1.class, "RssChannelVisualPanel1.jCheckBox1.text")); // NOI18N
+        jCheckBox1.setFocusable(false);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jCheckBox1, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler3, gridBagConstraints);
+        add(filler2, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.Box.Filler filler3;
+    private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler2;
     private org.openide.explorer.view.IconView iconView1;
+    private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JTextField jTextField1;

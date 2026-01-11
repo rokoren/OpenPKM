@@ -138,9 +138,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
     public static final String PROP_NEO4J_INSTANCE_ID   = "neo4j.instance.id";   
     public static final String PROP_TRELLO_USERNAME     = "trello.username"; 
-    public static final String PROP_TRELLO_WORKSPACE_ID = "trello.workspace.id";  
-    
-    public static final String PROP_LAST_SOURCE = "last.source";           
+    public static final String PROP_TRELLO_WORKSPACE_ID = "trello.workspace.id";                
     
     private static final String RAINDROP_FEED_URL = "https://raindrop.io/collection/";   
     
@@ -1643,13 +1641,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
 
         @Override
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
         
         @Override
@@ -1840,13 +1838,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
 
         @Override
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
         
         @Override
@@ -2031,13 +2029,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
 
         @Override
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
         
         @Override
@@ -2313,13 +2311,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
 
         @Override
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
         
         @Override

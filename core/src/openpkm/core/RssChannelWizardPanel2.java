@@ -4,11 +4,11 @@
  */
 package openpkm.core;
 
+import com.rometools.rome.feed.synd.SyndFeed;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.TitleProvider;
-import org.jsoup.nodes.Document;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -17,9 +17,9 @@ import org.openide.util.HelpCtx;
  *
  * @author Rok Koren
  */
-public class HomePageWizardPanel2 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
+public class RssChannelWizardPanel2 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
-    private static final Logger LOG = Logger.getLogger(HomePageWizardPanel2.class.getName());
+    private static final Logger LOG = Logger.getLogger(RssChannelWizardPanel2.class.getName());
     
     /**
      * The visual component that displays this panel. If you need to access the
@@ -69,10 +69,9 @@ public class HomePageWizardPanel2 implements WizardDescriptor.ValidatingPanel<Wi
     public void readSettings(WizardDescriptor descriptor) 
     {
         // use wiz.getProperty to retrieve previous panel state
-        Document document = (Document)descriptor.getProperty("document");
-        String description = document.select("meta[name=description]").attr("content");
-        getComponent().setDomainTitle(document.title());
-        getComponent().setDomainDescription(description);                
+        SyndFeed feed = (SyndFeed)descriptor.getProperty("feed");
+        getComponent().setDomainTitle(feed.getTitle());
+        getComponent().setDomainDescription(feed.getDescription());                
     }
 
     @Override
@@ -89,5 +88,5 @@ public class HomePageWizardPanel2 implements WizardDescriptor.ValidatingPanel<Wi
         {
             throw new WizardValidationException(null, "Title can not be empty", null);
         }              
-    }    
+    }  
 }

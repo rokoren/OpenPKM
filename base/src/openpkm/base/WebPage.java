@@ -4,13 +4,13 @@
  */
 package openpkm.base;
 
+import java.io.IOException;
+
 /**
  *
  * @author Rok Koren
  */
-public interface Link
-{
-    String PROP_LINK = "link";
-    
-    String getLink();
+public interface WebPage extends Source
+{        
+    org.jsoup.nodes.Document getDocument(String userAgent) throws IOException;
 }

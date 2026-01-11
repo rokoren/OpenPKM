@@ -8,12 +8,12 @@ package openpkm.core;
  *
  * @author Rok Koren
  */
-public class HomePageVisualPanel2 extends javax.swing.JPanel 
+public class DomainVisualPanel2 extends javax.swing.JPanel 
 {
     /**
      * Creates new form HomePageVisualPanel2
      */
-    public HomePageVisualPanel2() {
+    public DomainVisualPanel2() {
         initComponents();
     }
     
@@ -23,22 +23,22 @@ public class HomePageVisualPanel2 extends javax.swing.JPanel
         return "General";
     }   
     
-    public String getHomePageTitle()
+    public String getDomainTitle()
     {
         return jTextField1.getText().trim();
     }
     
-    public void setHomePageTitle(String title)
+    public void setDomainTitle(String title)
     {
         jTextField1.setText(title);
     }
     
-    public String getHomePageDescription()
+    public String getDomainDescription()
     {
         return jTextArea1.getText().trim();
     }
     
-    public void setHomePageDescription(String description)
+    public void setDomainDescription(String description)
     {
         jTextArea1.setText(description);
     }
@@ -55,14 +55,14 @@ public class HomePageVisualPanel2 extends javax.swing.JPanel
 
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
-        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 5), new java.awt.Dimension(0, 5), new java.awt.Dimension(32767, 5));
         jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
 
         setLayout(new java.awt.GridBagLayout());
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(HomePageVisualPanel2.class, "HomePageVisualPanel2.jLabel1.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(DomainVisualPanel2.class, "DomainVisualPanel2.jLabel1.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -77,14 +77,8 @@ public class HomePageVisualPanel2 extends javax.swing.JPanel
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler1, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(HomePageVisualPanel2.class, "HomePageVisualPanel2.jLabel2.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(DomainVisualPanel2.class, "DomainVisualPanel2.jLabel2.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
@@ -104,11 +98,17 @@ public class HomePageVisualPanel2 extends javax.swing.JPanel
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         add(jScrollPane1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler2, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
