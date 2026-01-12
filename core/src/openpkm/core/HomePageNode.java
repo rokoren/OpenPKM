@@ -5,8 +5,10 @@
 package openpkm.core;
 
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -92,7 +94,18 @@ public class HomePageNode extends FilterNode implements ChangeListener, Property
             CommonProjectActions.customizeProjectAction(),
             CommonProjectActions.closeProjectAction()
         };
-    }  
+    } 
+    
+    @Override
+    public Action getPreferredAction() 
+    {
+        TopComponentProvider provider = project.getLookup().lookup(TopComponentProvider.class);
+        if(provider != null)
+        {
+            return new OpenTopComponentAction(provider);
+        }
+        return null;
+    }     
 
     @Override
     public void stateChanged(ChangeEvent e) 
@@ -111,5 +124,28 @@ public class HomePageNode extends FilterNode implements ChangeListener, Property
         {
             fireShortDescriptionChange((String)evt.getOldValue(), (String)evt.getNewValue());
         }        
+    } 
+
+    private static final class OpenTopComponentAction extends AbstractAction 
+    {
+        private final TopComponentProvider provider;
+
+        public OpenTopComponentAction(TopComponentProvider provider) 
+        {
+            super("Open in browser");
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            /*
+            SwingUtilities.invokeLater(() -> 
+            {
+                getTopComponent().open();   
+            });
+            */
+            provider.getTopComponent().open();
+        }          
     }     
 }
