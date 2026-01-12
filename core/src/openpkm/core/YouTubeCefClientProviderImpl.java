@@ -6,6 +6,7 @@ package openpkm.core;
 
 import openpkm.jcef.CefAppProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
+import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeVideo;
 import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
@@ -39,6 +40,18 @@ public class YouTubeCefClientProviderImpl implements YouTubeCefClientProvider
         }
         return null;
     }
+    
+    @Override
+    public CefBrowser getBrowser(YouTubeChannel channel) throws Exception
+    {
+        String url = YouTubeChannel.YOUTUBE_CHANNEL_URL + channel.getChannelID();
+        CefClient client = getCefClient();
+        if(client != null)
+        {
+            return client.createBrowser(url, false, false);            
+        }
+        return null;
+    }    
 
     @Override
     public CefClient getCefClient() throws Exception 

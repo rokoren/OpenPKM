@@ -14,7 +14,9 @@ import openpkm.base.TitleProvider;
  * @author Rok Koren
  */
 public interface YouTubeChannel extends TitleProvider, DescriptionProvider
-{        
+{  
+    String YOUTUBE_CHANNEL_URL = "https://www.youtube.com/channel/";    
+    
     String PROP_CHANNEL_ID            = "channel.id";
     String PROP_THUMBNAIL             = "thumbnail";
     String PROP_PUBLISHED_AT          = "published.at";

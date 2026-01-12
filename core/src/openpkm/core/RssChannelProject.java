@@ -712,6 +712,14 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             propertyChangeSupport.removePropertyChangeListener(this);            
         } 
         
+        private static void rssFile(SyndFeed feed, FileObject file) throws IOException, FeedException
+        {
+            Writer writer = new OutputStreamWriter(file.getOutputStream());
+            SyndFeedOutput output = new SyndFeedOutput();  
+            output.output(feed, writer);
+            writer.close();              
+        }
+        
         @Override
         public void run()
         {  
@@ -749,11 +757,12 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                     if(file == null)
                     {
                         file = getProjectDirectory().getFileObject(RssChannelProjectFactory.PROJECT_FOLDER).createData(RSS_FILE);
+                        rssFile(feed, file);
                     }
-                    Writer writer = new OutputStreamWriter(file.getOutputStream());
-                    SyndFeedOutput output = new SyndFeedOutput();  
-                    output.output(feed, writer);
-                    writer.close();                     
+                    else if(DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate()).isAfter(getPublishedDate()))
+                    {
+                        rssFile(feed, file);
+                    }                   
                 }                               
                 
                 LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());

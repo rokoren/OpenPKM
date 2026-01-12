@@ -14,4 +14,5 @@ import org.cef.browser.CefBrowser;
 public interface YouTubeCefClientProvider extends CefClientProvider
 {
     CefBrowser getBrowser(YouTubeVideo video) throws Exception;
+    CefBrowser getBrowser(YouTubeChannel channel) throws Exception;
 }
