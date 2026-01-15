@@ -20,7 +20,6 @@ import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
-import org.openide.util.NbPreferences;
 
 public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
@@ -32,7 +31,6 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
      */
     private YouTubeProjectVisualPanel1 component;
     private ChannelListResponse response;
-    private String googleKey;
 
     // Get the visual component for the panel. In this template, the component
     // is kept separate. This can be more efficient: if the wizard is created
@@ -67,6 +65,11 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
     @Override
     public void validate() throws WizardValidationException 
     {
+        GooglePasswordProvider provider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+        if(provider == null) 
+        {
+            throw new WizardValidationException(getComponent(), "Google Key not found.", null);
+        }         
         if(getComponent().getChannelID().equals("")) 
         {
             throw new WizardValidationException(getComponent(), "Channel ID can not be empty", null);
@@ -74,12 +77,8 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         try
         {
             YouTube youtubeService = YouTubeService.getDeafult().getService();
-            YouTube.Channels.List request = youtubeService.channels().list("snippet, statistics, topicDetails, status, brandingSettings");            
-            if(googleKey == null)
-            {
-                throw new WizardValidationException(getComponent(), "Google Key not found", null);                
-            }            
-            request.setKey(googleKey);
+            YouTube.Channels.List request = youtubeService.channels().list("snippet, statistics, topicDetails, status, brandingSettings");                       
+            request.setKey(provider.getKey());
             response = request.setId(getComponent().getChannelID()).execute();  
             if(response.getItems() == null || response.isEmpty())
             {   
@@ -108,7 +107,6 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
     public void readSettings(WizardDescriptor descriptor) 
     {
         // use wiz.getProperty to retrieve previous panel state
-        googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
         Lookup.Provider provider = (Project)descriptor.getProperty("provider");
         if(provider != null)
         {
@@ -155,9 +153,7 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         descriptor.putProperty(YouTubeChannel.PROP_VIDEO_COUNT, videoCount);
         descriptor.putProperty(YouTubeChannel.PROP_COMMENT_COUNT, commentCount);
         descriptor.putProperty(YouTubeChannel.PROP_PRIVACY_STATUS, privacyStatus);
-        descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);
-        
-        descriptor.putProperty(YouTubeService.PROP_GOOGLE_KEY, googleKey);             
+        descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);                    
         descriptor.putProperty(TopicsProvider.PROP_TOPICS, getComponent().getChannelTopics());         
     }
 }

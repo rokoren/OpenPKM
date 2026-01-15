@@ -28,6 +28,8 @@ public interface IconsProvider
         PICTURES,
         YOUTUBE_VIDEO,
         YOUTUBE_CHANNEL,
+        GITHUB,
+        GITLAB,        
         RSS_CHANNEL,
         WATCH_LATER,
         BULLET_RED,

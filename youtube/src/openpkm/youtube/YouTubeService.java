@@ -29,10 +29,7 @@ import java.util.Collection;
  * @author Rok Koren
  */
 public class YouTubeService 
-{
-    public static final String PROP_GOOGLE_KEY = "google.key"; 
-    public static final String PROP_DATA_DIR   = "data.dir";    
-    
+{    
     public static final String ACTIVITY_TYPE_UPLOAD = "upload";    
     
     private static final String CLIENT_SECRETS = "client_secret.json";

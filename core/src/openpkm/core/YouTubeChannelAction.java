@@ -27,7 +27,6 @@ import openpkm.base.TopicsProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
 import openpkm.youtube.YouTubeProjectWizardPanel2;
-import openpkm.youtube.YouTubeService;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
@@ -104,9 +103,7 @@ public class YouTubeChannelAction implements ActionListener
             BigInteger videoCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_VIDEO_COUNT);
             BigInteger commentCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_COMMENT_COUNT);    
             String privacyStatus = (String) wiz.getProperty(YouTubeChannel.PROP_PRIVACY_STATUS);
-            List<String> topicCategories = (List<String>) wiz.getProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES);
-            
-            String googleKey = (String) wiz.getProperty(YouTubeService.PROP_GOOGLE_KEY);
+            List<String> topicCategories = (List<String>) wiz.getProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES);            
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
             
             Properties props = new Properties();

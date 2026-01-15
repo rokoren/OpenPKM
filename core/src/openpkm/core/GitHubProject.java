@@ -4,16 +4,7 @@
  */
 package openpkm.core;
 
-import com.google.api.client.util.DateTime;
-import com.google.api.services.youtube.YouTube;
-import com.google.api.services.youtube.model.Activity;
-import com.google.api.services.youtube.model.ActivityListResponse;
-import com.google.api.services.youtube.model.ChannelListResponse;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.Image;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -21,10 +12,8 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -34,28 +23,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
-import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
-import javax.swing.JButton;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
-import openpkm.base.AsciiDocSupport;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
-import openpkm.base.BulletIconProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
@@ -72,21 +54,18 @@ import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
-import openpkm.base.WatchLater;
+import openpkm.base.WebPage;
+import openpkm.base.WebPageProvider;
+import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.SavableImpl;
 import openpkm.utils.Utils;
-import openpkm.youtube.GooglePasswordProvider;
-import openpkm.youtube.YouTubeCefClientProvider;
-import openpkm.youtube.YouTubeChannel;
-import openpkm.youtube.YouTubeService;
-import openpkm.youtube.YouTubeSourceProvider;
-import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeVideoProvider;
+import openpkm.utils.WebSourceProvider;
 import org.cef.browser.CefBrowser;
+import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectManager;
@@ -101,7 +80,6 @@ import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
-import org.openide.awt.NotificationDisplayer;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
@@ -119,15 +97,14 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
+import openpkm.github.GitHubUser;
 
 /**
  *
  * @author Rok Koren
  */
-public class YouTubeChannelProject implements Domain, YouTubeChannel, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
-{    
-    public static final String PROP_LAST_UPLOAD_TIME = "last.upload.time";    
-    
+public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+{
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -139,9 +116,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_WATCH_LATER = 800;
 
-    private static final Logger LOG = Logger.getLogger(YouTubeChannelProject.class.getName());        
+    private static final Logger LOG = Logger.getLogger(GitHubProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(YouTubeChannelProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(GitHubProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();      
@@ -155,14 +132,21 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private Source lastSource;    
+    private Source lastSource;   
     
-    public YouTubeChannelProject(FileObject projectDir, ProjectState state, Properties props) 
+    public GitHubProject(FileObject projectDir, ProjectState state, Properties props) 
     {
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-       
+
+        WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
+        if(webPageProvider != null)
+        {          
+            SourceProvider links = new WebSourceProviderImpl(webPageProvider);
+            sources.put(links.getName(), links);            
+        }        
+        
         ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
         if(referenceProvider != null)
         {          
@@ -170,12 +154,6 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             sources.put(references.getName(), references);            
         }
 
-        YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
-        if(youtubeProvider != null)
-        {
-            SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
-            sources.put(videos.getName(), videos);                       
-        } 
     }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -249,7 +227,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     public void removePropertyChangeListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.removePropertyChangeListener(listener);
-    }     
+    } 
     
 // TODO Sources    
     
@@ -298,9 +276,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
 
-            list.add(new YouTubeChannelLogicalView(this));
-            list.add(new YouTubeChannelCustomizerProvider(this));  
+            list.add(new GitHubLogicalView(this));
+            list.add(new GitHubCustomizerProvider(this));  
 
+            list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
@@ -311,7 +290,6 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
             list.add(new VideoDataGroupProviderImpl());             
-            list.add(new WatchLaterDataGroupProviderImpl()); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -323,371 +301,163 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     @Override
     public String getDomainID() 
     {
-        return getChannelID();
+        return getUserID();
     }    
     
     @Override
     public String getAppID() 
     {
         return props.getProperty(PROP_APP_ID);
-    }
+    }   
     
     @Override
     public LocalDateTime getTimeCreated() 
     {
-        String created = props.getProperty(PROP_TIME_CREATED);
-        if(created != null)
+        String string = props.getProperty(PROP_TIME_CREATED);
+        if(string != null)
         {
-            return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }      
+    }
     
-// YouTubeChannel 
+// TODO GitHubUser    
     
     @Override
-    public String getChannelID() 
+    public String getUserID() 
     {
-        return props.getProperty(PROP_CHANNEL_ID);
+        return props.getProperty(PROP_USER_ID);
+    }  
+
+    @Override
+    public String getUserName() 
+    {
+        return props.getProperty(PROP_USER_NAME);
+    } 
+    
+    @Override
+    public LocalDateTime getCreatedAt() 
+    {
+        String string = props.getProperty(PROP_CREATED_AT);
+        if(string != null)
+        {
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+        }
+        return null;
+    }    
+    
+    @Override
+    public String getAvatarUrl() 
+    {
+        return props.getProperty(PROP_AVATAR_URL);
+    } 
+    
+    @Override
+    public String getHtmlUrl() 
+    {
+        return props.getProperty(PROP_HTML_URL);
     }   
     
     @Override
-    public String getThumbnail() 
+    public Integer getFollowersCount()
     {
-        return props.getProperty(PROP_THUMBNAIL);
-    }
-
-    @Override
-    public void setThumbnail(String thumbnail) 
-    {
-        if(thumbnail == null)
-        {
-            Object oldValue = props.remove(PROP_THUMBNAIL);
-            propertyChangeSupport.firePropertyChange(PROP_THUMBNAIL, oldValue, thumbnail);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_THUMBNAIL, thumbnail);  
-            propertyChangeSupport.firePropertyChange(PROP_THUMBNAIL, oldValue, thumbnail);
-        } 
-    }
-    
-    @Override
-    public DateTime getPublishedAt()
-    {
-        String publishedAt = props.getProperty(PROP_PUBLISHED_AT);
-        if(publishedAt != null)
-        {
-            return new DateTime(publishedAt);
-        }
-        return null;        
-    }
-    
-    @Override
-    public void setPublishedAt(DateTime time) 
-    {
-        if(time == null)
-        {
-            Object oldValue = props.remove(PROP_PUBLISHED_AT);
-            propertyChangeSupport.firePropertyChange(PROP_PUBLISHED_AT, oldValue, time);            
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_PUBLISHED_AT, time.toStringRfc3339());
-            if(oldValue != null)
-            {
-                oldValue = new DateTime(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_PUBLISHED_AT, oldValue, time);
-        }
-    } 
-    
-    @Override
-    public String getCustomUrl() 
-    {
-        return props.getProperty(PROP_CUSTOM_URL);
-    }
-
-    @Override
-    public void setCustomUrl(String url) 
-    {
-        if(url == null)
-        {
-            Object oldValue = props.remove(PROP_CUSTOM_URL);
-            propertyChangeSupport.firePropertyChange(PROP_CUSTOM_URL, oldValue, url);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_CUSTOM_URL, url);  
-            propertyChangeSupport.firePropertyChange(PROP_CUSTOM_URL, oldValue, url);
-        } 
-    } 
-    
-    @Override
-    public String getCountry() 
-    {
-        return props.getProperty(PROP_COUNTRY);
-    }
-
-    @Override
-    public void setCountry(String country) 
-    {
-        if(country == null)
-        {
-            Object oldValue = props.remove(PROP_COUNTRY);
-            propertyChangeSupport.firePropertyChange(PROP_COUNTRY, oldValue, country);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_COUNTRY, country);  
-            propertyChangeSupport.firePropertyChange(PROP_COUNTRY, oldValue, country);
-        } 
-    }  
-    
-    @Override
-    public String getLocalizedTitle() 
-    {
-        return props.getProperty(PROP_LOCALIZED_TITLE);
-    }
-
-    @Override
-    public void setLocalizedTitle(String localizedTitle) 
-    {
-        if(localizedTitle == null)
-        {
-            Object oldValue = props.remove(PROP_LOCALIZED_TITLE);
-            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_TITLE, oldValue, localizedTitle);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_LOCALIZED_TITLE, localizedTitle);  
-            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_TITLE, oldValue, localizedTitle);
-        } 
-    } 
-
-    @Override
-    public String getLocalizedDescription() 
-    {
-        return props.getProperty(PROP_LOCALIZED_DESCRIPTION);
-    }
-
-    @Override
-    public void setLocalizedDescription(String localizedDescription) 
-    {
-        if(localizedDescription == null)
-        {
-            Object oldValue = props.remove(PROP_LOCALIZED_DESCRIPTION);
-            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_DESCRIPTION, oldValue, localizedDescription);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_LOCALIZED_DESCRIPTION, localizedDescription);  
-            propertyChangeSupport.firePropertyChange(PROP_LOCALIZED_DESCRIPTION, oldValue, localizedDescription);
-        } 
-    } 
-
-    @Override
-    public Long getViewCount()
-    {
-        String viewCount = props.getProperty(PROP_VIDEO_COUNT);
-        if(viewCount != null)
-        {
-            return Long.parseLong(viewCount);
-        }
-        return null;        
-    }
-    
-    @Override
-    public void setViewCount(Long viewCount) 
-    {
-        if(viewCount == null)
-        {
-            Object oldValue = props.remove(PROP_VIDEO_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, viewCount);            
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_VIDEO_COUNT, viewCount.toString());
-            if(oldValue != null)
-            {
-                oldValue = Long.getLong(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, viewCount);
-        }
-    }  
-    
-    @Override
-    public Long getSubscriberCount()
-    {
-        String subscriberCount = props.getProperty(PROP_SUBSCRIBER_COUNT);
-        if(subscriberCount != null)
-        {
-            return Long.parseLong(subscriberCount);
-        }
-        return null;        
-    }
-    
-    @Override
-    public void setSubscriberCount(Long subscriberCount) 
-    {
-        if(subscriberCount == null)
-        {
-            Object oldValue = props.remove(PROP_SUBSCRIBER_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_SUBSCRIBER_COUNT, oldValue, subscriberCount);            
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_SUBSCRIBER_COUNT, subscriberCount.toString());
-            if(oldValue != null)
-            {
-                oldValue = Long.getLong(oldValue.toString());
-            }            
-            propertyChangeSupport.firePropertyChange(PROP_SUBSCRIBER_COUNT, oldValue, subscriberCount);
-        }
-    }  
-    
-    @Override
-    public Long getVideoCount()
-    {
-        String videoCount = props.getProperty(PROP_VIDEO_COUNT);
-        if(videoCount != null)
-        {
-            return Long.parseLong(videoCount);
-        }
-        return null;        
-    }
-    
-    @Override
-    public void setVideoCount(Long videoCount) 
-    {
-        if(videoCount == null)
-        {
-            Object oldValue = props.remove(PROP_VIDEO_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, videoCount);            
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_VIDEO_COUNT, videoCount.toString());
-            if(oldValue != null)
-            {
-                oldValue = Long.getLong(oldValue.toString());
-            }              
-            propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, videoCount);
-        }
-    }  
-    
-    @Override
-    public Long getCommentCount()
-    {
-        String commentCount = props.getProperty(PROP_COMMENT_COUNT);
-        if(commentCount != null)
-        {
-            return Long.parseLong(commentCount);
-        }
-        return null;        
-    }
-    
-    @Override
-    public void setCommentCount(Long commentCount) 
-    {
-        if(commentCount == null)
-        {
-            Object oldValue = props.remove(PROP_COMMENT_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_COMMENT_COUNT, oldValue, commentCount);            
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_COMMENT_COUNT, commentCount.toString());
-            if(oldValue != null)
-            {
-                oldValue = Long.getLong(oldValue.toString());
-            }             
-            propertyChangeSupport.firePropertyChange(PROP_COMMENT_COUNT, oldValue, commentCount);
-        }
-    }  
-    
-    @Override
-    public List<String> getTopicCategories() 
-    {
-        String topicCategories = props.getProperty(PROP_TOPIC_CATEGORIES);
-        if(topicCategories != null)
-        {
-            return List.of(topicCategories.split(","));                   
-        }                
-        return Collections.EMPTY_LIST;
-    }  
-    
-    @Override
-    public void setTopicCategories(List<String> topicCategories)
-    {
-        if(topicCategories == null)
-        {
-            Object oldValue = props.remove(PROP_TOPIC_CATEGORIES);
-            propertyChangeSupport.firePropertyChange(PROP_TOPIC_CATEGORIES, oldValue, topicCategories);            
-        }
-        else
-        {
-            StringJoiner joiner = new StringJoiner(",");
-            for(String topicCategory : topicCategories)
-            {
-                joiner.add(topicCategory);
-            }
-            Object oldValue = props.setProperty(PROP_TOPIC_CATEGORIES, joiner.toString());
-            if(oldValue != null)
-            {
-                oldValue = List.of(oldValue.toString().split(","));
-            }             
-            propertyChangeSupport.firePropertyChange(PROP_TOPIC_CATEGORIES, oldValue, topicCategories);
-        }        
-    }
-    
-    @Override
-    public String getPrivacyStatus() 
-    {
-        return props.getProperty(PROP_PRIVACY_STATUS);
-    }
-
-    @Override
-    public void setPrivacyStatus(String privacyStatus) 
-    {
-        if(privacyStatus == null)
-        {
-            Object oldValue = props.remove(PROP_PRIVACY_STATUS);
-            propertyChangeSupport.firePropertyChange(PROP_PRIVACY_STATUS, oldValue, privacyStatus);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_PRIVACY_STATUS, privacyStatus);  
-            propertyChangeSupport.firePropertyChange(PROP_PRIVACY_STATUS, oldValue, privacyStatus);
-        } 
-    }
-    
-    public DateTime getLastUploadTime()
-    {
-        String string = props.getProperty(PROP_LAST_UPLOAD_TIME);
+        String string = props.getProperty(PROP_FOLLOWERS_COUNT);
         if(string != null)
         {
-            return new DateTime(string);
+            return Integer.parseInt(string);
         }
         return null;
     }
-
-    public void setLastUploadTime(DateTime time)
+    
+    @Override
+    public void setFollowersCount(Integer count)
     {
-        if(time == null)
+        if(count == null)
         {
-            Object oldValue = props.remove(PROP_LAST_UPLOAD_TIME);
-            propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
+            Object oldValue = props.remove(PROP_FOLLOWERS_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);
         }
         else
         {
-            Object oldValue = props.setProperty(PROP_LAST_UPLOAD_TIME, time.toStringRfc3339());  
+            Object oldValue = props.setProperty(PROP_FOLLOWERS_COUNT, count.toString()); 
             if(oldValue != null)
             {
-                oldValue = new DateTime(oldValue.toString());
+                oldValue = Integer.parseInt(oldValue.toString());
             }
-            propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
+            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);            
         }
+    }
+    
+    @Override
+    public Integer getPublicReposCount()
+    {
+        String string = props.getProperty(PROP_PUBLIC_REPOS_COUNT);
+        if(string != null)
+        {
+            return Integer.parseInt(string);
+        }
+        return null;
+    }
+    
+    @Override
+    public void setPublicReposCount(Integer count)
+    {
+        if(count == null)
+        {
+            Object oldValue = props.remove(PROP_PUBLIC_REPOS_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_PUBLIC_REPOS_COUNT, count.toString()); 
+            if(oldValue != null)
+            {
+                oldValue = Integer.parseInt(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);            
+        }
+    } 
+    
+    @Override
+    public String getLocation() 
+    {
+        return props.getProperty(PROP_LOCATION);
+    }
+
+    @Override
+    public void setLocation(String location) 
+    {
+        if(location == null)
+        {
+            Object oldValue = props.remove(PROP_LOCATION);
+            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_LOCATION, location);  
+            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
+        } 
+    } 
+
+    @Override
+    public String getCompany() 
+    {
+        return props.getProperty(PROP_COMPANY);
+    }
+
+    @Override
+    public void setCompany(String company) 
+    {
+        if(company == null)
+        {
+            Object oldValue = props.remove(PROP_COMPANY);
+            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_COMPANY, company);  
+            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
+        } 
     }      
     
 // TODO TitleProvider  
@@ -765,8 +535,8 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
         cookies.clear();
         return true;
-    }        
-   
+    }  
+    
 // TODO TopComponentProvider
     
     private final class TopComponentProviderImpl extends JPanel implements TopComponentProvider, MultiViewDescription, MultiViewElement
@@ -798,7 +568,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public String preferredID() 
         {
-            return "youtube";
+            return "github";
         }         
         
         @Override
@@ -816,7 +586,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public String getDisplayName() 
         {
-            return "YouTube";
+            return "GitHub";
         }   
         
         @Override
@@ -855,12 +625,12 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             if(browser == null)
             {
-                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
                 if(provider != null)
                 {
                     try
                     {
-                        browser = provider.getBrowser(YouTubeChannelProject.this);   
+                        browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false);      ;   
                         if(browser != null)
                         {
                             add(browser.getUIComponent());
@@ -894,13 +664,12 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup getLookup() 
         {
-            return YouTubeChannelProject.this.getLookup();
+            return GitHubProject.this.getLookup();
         }        
 
         @Override
         public void componentOpened() 
-        {
-            
+        {            
         }
 
         @Override
@@ -933,96 +702,23 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         public void componentDeactivated() 
         {            
         }        
-    }    
+    }     
     
 // TODO ProjectOpenedHook    
     
-    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener, Runnable
-    {
-        private RequestProcessor.Task task;        
-        
+    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener
+    {                
         @Override
         protected void projectOpened() 
-        {             
-            task = RP.create(this);    
-            propertyChangeSupport.addPropertyChangeListener(this);
-            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
-            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
-            task.schedule(1000);            
+        {  
+            propertyChangeSupport.addPropertyChangeListener(this);           
         }
 
         @Override
         protected void projectClosed() 
-        {              
-            task.cancel();
-            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
-            propertyChangeSupport.removePropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
-            propertyChangeSupport.removePropertyChangeListener(this);             
-        }                   
-        
-        @Override
-        public void run()
-        {  
-            GooglePasswordProvider googlePasswordProvider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
-            if(googlePasswordProvider != null)
-            {
-                try
-                {
-                    YouTube youtubeService = YouTubeService.getDeafult().getService();
-                    YouTube.Channels.List request = youtubeService.channels().list("snippet, statistics, topicDetails, status, brandingSettings");
-                    request.setKey(googlePasswordProvider.getKey());
-                    ChannelListResponse response = request.setId(getChannelID()).execute();  
-                    if(response.getItems() != null && !response.isEmpty())
-                    {                   
-                        String channelID = response.getItems().get(0).getId();
-                        String title = response.getItems().get(0).getSnippet().getTitle();
-                        String description = response.getItems().get(0).getSnippet().getDescription();
-                        String thumbnail = response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();  
-                        DateTime publishedAt = response.getItems().get(0).getSnippet().getPublishedAt();
-                        String customUrl = response.getItems().get(0).getSnippet().getCustomUrl();
-                        String country = response.getItems().get(0).getSnippet().getCountry();
-                        String localizedTitle = response.getItems().get(0).getSnippet().getLocalized().getTitle();
-                        String localizedDescription = response.getItems().get(0).getSnippet().getLocalized().getDescription();  
-                        BigInteger viewCount = response.getItems().get(0).getStatistics().getViewCount(); 
-                        BigInteger subscriberCount = response.getItems().get(0).getStatistics().getSubscriberCount(); 
-                        BigInteger videoCount = response.getItems().get(0).getStatistics().getVideoCount(); 
-                        BigInteger commentCount = response.getItems().get(0).getStatistics().getCommentCount(); 
-                        String privacyStatus = response.getItems().get(0).getStatus().getPrivacyStatus();
-                        List<String> topicCategories = response.getItems().get(0).getTopicDetails().getTopicCategories(); 
-
-                        setTitle(title);
-                        setDescription(description);
-                        setThumbnail(thumbnail);
-                        setPublishedAt(publishedAt);
-                        setCustomUrl(customUrl);
-                        setCountry(country);
-                        setLocalizedTitle(localizedTitle);
-                        setLocalizedDescription(localizedDescription);
-                        setViewCount(viewCount.longValue());
-                        setSubscriberCount(subscriberCount.longValue());     
-                        setVideoCount(videoCount.longValue());
-                        if(commentCount != null)
-                        {
-                            setCommentCount(commentCount.longValue());                    
-                        }
-                        setTopicCategories(topicCategories);
-                        setPrivacyStatus(privacyStatus);  
-                    }                 
-                }
-                catch (IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }  
-                catch (GeneralSecurityException e)
-                {
-                    LOG.warning(e.getMessage());
-                }  
-                finally
-                {
-                    task.schedule(100000);
-                }
-            }
-        }         
+        {          
+            propertyChangeSupport.removePropertyChangeListener(this);            
+        }                  
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
@@ -1033,7 +729,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 propertyChangeSupport.firePropertyChange(ProjectInformation.PROP_DISPLAY_NAME, evt.getOldValue(), evt.getNewValue());
             }
         }                   
-    }   
+    }
     
 // TODO ProjectInformation 
     
@@ -1043,7 +739,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         public Icon getIcon()
         {  
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getIcon(IconsProvider.ICON.YOUTUBE_CHANNEL);
+            return provider.getIcon(IconsProvider.ICON.GITHUB);
         }
 
         @Override
@@ -1073,7 +769,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Project getProject() 
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }
     }     
   
@@ -1117,12 +813,12 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public void run() 
         {
-            String thumbnail = getThumbnail();
-            if(thumbnail != null)
+            String avatar = getAvatarUrl();
+            if(avatar != null)
             {
                 try
                 {
-                    URL url = new URL(thumbnail);
+                    URL url = new URL(avatar);
                     BufferedImage image = ImageIO.read(url);  
                     icon = Utils.resizeImage(image, 16, 16); 
                     changeSupport.fireChange();
@@ -1150,7 +846,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(YouTubeChannelProject.this);
+            return Utils.getRootProject(GitHubProject.this);
         }         
     }
     
@@ -1196,39 +892,111 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getProject(getProjectDirectory());
         }          
-    }        
+    }  
     
-// TODO DataGroup     
+// TODO DomainsProvider
 
-    private final class WatchLaterDataGroupProviderImpl implements DataGroupProvider, BulletIconProvider, PropertyChangeListener
-    {        
-        private final ChangeSupport changeSupport; 
+    private final class DomainsProviderImpl implements DomainsProvider
+    {                        
+        private static final String ROOT_FOLDER = "domain";          
+        
+        private Map<String, Domain> domains; 
+        private FileObject rootDir;            
+        
+        private final ChangeSupport changeSupport;              
 
-        public WatchLaterDataGroupProviderImpl()
+        public DomainsProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
+        public synchronized FileObject getRootDirectory() throws IOException
+        {
+            if(rootDir == null)
+            {
+                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                if(rootDir == null)
+                {
+                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                    LOG.info("Domain dir created: " + rootDir.getPath());                        
+                }                 
+            }                           
+            return rootDir;       
+        }         
+        
+        private synchronized Map<String, Domain> getDomainsById()
+        {
+            if(domains == null)
+            {
+                domains = new HashMap<>();
+                try
+                {
+                    for (FileObject fo : getRootDirectory().getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            Project project = ProjectManager.getDefault().findProject(fo);
+                            if(project instanceof Domain domain)
+                            {
+                                domains.put(domain.getDomainID(), domain);
+                            }                                                                                    
+                        }
+                        else
+                        {
+                            DataObject data = DataObject.find(fo);
+                            Domain domain = data.getLookup().lookup(Domain.class);
+                            if(domain != null)
+                            {
+                                domains.put(domain.getDomainID(), domain);
+                            }                            
+                        }                                                                                                                                            
+                    }                      
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                              
+            }
+            return domains;
+        }  
+
+        @Override
+        public Collection<Domain> getDomains()
+        {
+            return Collections.unmodifiableCollection(getDomainsById().values());
+        }
+        
+        @Override
+        public void addDomain(Domain domain)
+        {
+            getDomainsById().put(domain.getDomainID(), domain);
+            changeSupport.fireChange();            
+        }
+        
+        @Override
+        public void removeDomain(String domainID)
+        {
+            Domain domain = getDomainsById().remove(domainID);
+            if(domain != null)
+            {
+                changeSupport.fireChange();                            
+            }
+        }        
+        
+        @Override
         public List<Action> getActions() 
-        {        
+        {
             List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/WatchLater"));         
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Domain"));         
             return actions;
         }        
         
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
-        }         
-        
-        @Override
-        public Integer getPosition() 
-        {
-            return POSITION_WATCH_LATER;
-        }                  
+            return GitHubProject.this;
+        }                        
 
         @Override
         public void addChangeListener(ChangeListener listener) 
@@ -1243,75 +1011,26 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
-        {
-            return getDataDirectory();
-        }
-
-        @Override
         public String getName() 
         {
-            return "watch_later";
+            return "domain";
         }
 
         @Override
         public String getDisplayName() 
         {
-            return "Watch Later";
+            return "Domains";
         }
 
         @Override
         public Image getIcon(boolean hasChildren) 
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.WATCH_LATER);
-        }
-
-        @Override
-        public boolean contains(DataObject data) 
-        {
-            if(data != null)
-            {
-                WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
-                if(watchLater != null)
-                {
-                    return watchLater.isWatchLater();
-                } 
-            }                                  
-            return false;
-        }
-        
-        @Override
-        public Image getBullet()
-        {
-            try
-            {
-                for(FileObject file : getRootFolder().getChildren())
-                {
-                    DataObject data = DataObject.find(file);
-                    if(contains(data))
-                    {
-                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
-                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
-                    }
-                }
-            }
-            catch(IOException e)                
-            {
-                LOG.warning(e.getMessage());
-            }
-            return null;
-        }        
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof WatchLater)
-            {
-                changeSupport.fireChange();
-            }
-        }
-    } 
+            return provider.getImage(IconsProvider.ICON.DOMAINS);
+        }               
+    }     
+    
+// TODO DataGroup
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
@@ -1334,7 +1053,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }         
         
         @Override
@@ -1425,7 +1144,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }         
         
         @Override
@@ -1516,7 +1235,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }         
         
         @Override
@@ -1607,7 +1326,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }        
         
         @Override
@@ -1698,7 +1417,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }        
         
         @Override
@@ -1789,7 +1508,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }        
         
         @Override
@@ -1860,6 +1579,201 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     }    
     
 // TODO SourceGroup
+   
+    private final class WebSourceProviderImpl extends WebSourceProvider implements FileChangeListener, PropertyChangeListener
+    {  
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/www_page.png";         
+        
+        public WebSourceProviderImpl(WebPageProvider provider) 
+        {
+            super(provider);
+        }               
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return GitHubProject.this;
+        } 
+        
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
+        @Override
+        public synchronized Map<String, WebPage> getLinks()
+        {
+            if(links == null)
+            {
+                links = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                            webPage.addPropertyChangeListener(this);
+                            links.put(webPage.getSourceID(), webPage);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return links;
+        }                
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Content root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            WebPage webPage = provider.getWebPage(props);
+            if(webPage != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(primaryFile, true);
+                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+                    file.setAttribute(ATTR_SOURCE_ID, webPage.getSourceID());  
+                    
+                    if(webPage instanceof Article)
+                    {
+                        Article article = (Article)webPage;
+                        if(fileTypeProvider instanceof ArticleProvider)
+                        {
+                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                            OutputStream output = primaryFile.getOutputStream();
+                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                            output.close();
+                        }                         
+                    }
+                    
+                    FileObject folder = getRootFolder();
+                    if(folder != null)
+                    {  
+                        OutputStream os = folder.createAndOpen(webPage.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                        webPage.save(os, "New Content Created");
+                        os.close();  
+                        return primaryFile;
+                    }                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            } 
+            return null;
+        }           
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            setLastData(data);
+            */
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                webPage.addPropertyChangeListener(this);
+                getLinks().put(webPage.getSourceID(), webPage);               
+                setLastSource(webPage);                
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            WebPage webPage = getLinks().get(file.getName());  
+            if(webPage != null)
+            {
+                
+            }
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            WebPage webPage = getLinks().remove(file.getName());  
+            if(webPage != null)
+            {
+                webPage.removePropertyChangeListener(this);
+                webPage.setDeleted();
+                setLastSource(webPage);
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }          
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            new SavableImpl(this, evt);            
+        }
+    }     
     
     private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener, PropertyChangeListener
     {               
@@ -1871,7 +1785,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider()
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }  
         
         @Override
@@ -2056,351 +1970,6 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             new SavableImpl(this, evt);
         }
-    }  
-    
-    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener, PropertyChangeListener, Runnable
-    {
-        public YouTubeSourceProviderImpl(YouTubeVideoProvider provider) 
-        {
-            super(provider);
-        }          
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return YouTubeChannelProject.this;
-        } 
-        
-        @Override
-        public synchronized Map<String, YouTubeVideo> getVideosById()
-        {
-            if(videos == null)
-            {
-                videos = new HashMap<>();
-                FileObject folder = getRootFolder();
-                if(folder !=  null)
-                {
-                    for (FileObject file : folder.getChildren()) 
-                    {
-                        try
-                        {
-                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
-                            video.addPropertyChangeListener(this);
-                            videos.put(video.getSourceID(), video);
-                        }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                                                                                                                                             
-                    }                     
-                }                
-            }
-            return videos;
-        }        
-
-        @Override
-        public synchronized FileObject getRootFolder() 
-        {
-            if(rootDir == null)
-            {
-                try
-                {                
-                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
-                    if(rootDir == null)
-                    {
-                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("YouTube root folder created: " + rootDir.getPath());                        
-                    } 
-                    rootDir.addFileChangeListener(this);                                        
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                
-            }
-            return rootDir;
-        }          
-
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
-        {
-            YouTubeVideo video = provider.getVideo(props);
-            if(video != null)
-            {
-                try
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    
-                    if(fileTypeProvider instanceof ArticleProvider)
-                    {
-                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = primaryFile.getOutputStream();
-                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
-                        output.close();
-                    }                     
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                        video.save(os, "New YouTube Video Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }                           
-            return null;
-        }          
-        
-        @Override
-        public void fileFolderCreated(FileEvent evt) 
-        {
-            /*
-            FileObject file = evt.getFile();
-            DataFolder data = DataFolder.findFolder(file);
-            setLastData(data);
-            */
-        }
-
-        @Override
-        public void fileDataCreated(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            try
-            {
-                YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
-                video.addPropertyChangeListener(this);
-                getVideosById().put(video.getSourceID(), video);                                                              
-                setLastSource(video);                
-            }           
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }             
-        }
-
-        @Override
-        public void fileChanged(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            YouTubeVideo video = getVideosById().get(file.getName());  
-            if(video != null)
-            {
-                setLastSource(video);
-            }
-        }
-
-        @Override
-        public void fileDeleted(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            YouTubeVideo video = getVideosById().remove(file.getName());  
-            if(video != null)
-            {
-                video.removePropertyChangeListener(this);                
-                video.setDeleted();
-                setLastSource(video);
-            }
-        }
-
-        @Override
-        public void fileRenamed(FileRenameEvent fre) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileAttributeChanged(FileAttributeEvent fae) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-        
-        private static Properties getProperties(Activity activity)
-        {
-            String videoID = activity.getContentDetails().getUpload().getVideoId();
-            String videoTitle = activity.getSnippet().getTitle();
-            String channelID = activity.getSnippet().getChannelId(); 
-            String channelTitle = activity.getSnippet().getChannelTitle(); 
-            String description = activity.getSnippet().getDescription();
-            DateTime publishedAt = activity.getSnippet().getPublishedAt(); 
-            String thumbnailDefault = activity.getSnippet().getThumbnails().getDefault().getUrl();
-            String thumbnailMedium = activity.getSnippet().getThumbnails().getMedium().getUrl();
-            String thumbnailHigh = activity.getSnippet().getThumbnails().getHigh().getUrl();
-            String thumbnailStandard = activity.getSnippet().getThumbnails().getStandard().getUrl(); 
-
-            Properties props = new Properties();
-            props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString());
-            props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID);
-            props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, videoTitle);
-            props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, channelID); 
-            props.setProperty(YouTubeVideo.PROP_CHANNEL_TITLE, channelTitle);
-            if (publishedAt != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());  
-            }
-            if (description != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description);            
-            }
-            if(thumbnailDefault != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT, thumbnailDefault);
-            }
-            if(thumbnailHigh != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH, thumbnailHigh);
-            } 
-            if(thumbnailMedium != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM, thumbnailMedium);
-            }
-            if(thumbnailStandard != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);
-            } 
-            return props;
-        }        
-
-        @Override
-        public void run()
-        {
-            AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
-            GooglePasswordProvider googlePasswordProvider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
-            if(fileTypeProvider != null && googlePasswordProvider != null)
-            {
-                DateTime lastUploadTime = getLastUploadTime();
-                try
-                {
-                    YouTube youtubeService = YouTubeService.getDeafult().getService();
-                    YouTube.Activities.List request = youtubeService.activities().list("contentDetails,snippet");
-                    request.setKey(googlePasswordProvider.getKey());
-                    ActivityListResponse response = request.setChannelId(getChannelID()).execute(); 
-                    if(response.getItems() != null && !response.isEmpty())
-                    {                                           
-                        DateTime publishedAtMax = null;
-                        for (Activity activity : response.getItems())
-                        {
-                            DateTime publishedAt = activity.getSnippet().getPublishedAt();
-                            String type = activity.getSnippet().getType();                    
-                            if (type.equals(YouTubeService.ACTIVITY_TYPE_UPLOAD) && (lastUploadTime == null || publishedAt.getValue() > lastUploadTime.getValue()))
-                            {
-                                String videoID = activity.getContentDetails().getUpload().getVideoId();
-                                String title = activity.getSnippet().getTitle();
-                                String description = activity.getSnippet().getDescription();
-                                String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
-                                  
-                                FileObject file = createSource(getProperties(activity), fileTypeProvider);
-                                if(file != null)
-                                {
-                                    String text = getTitle() + ": " + title;
-                                    IconProvider iconProvider = getLookup().lookup(IconProvider.class);
-                                    Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon());                           
-
-                                    URL url = new URL(thumbnail);
-                                    BufferedImage image = ImageIO.read(url);                          
-                             
-                                    JLabel baloonDetails = new JLabel();
-                                    baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
-                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
-                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                                    JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
-
-                                    //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
-                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                                      
-                                }
-
-                                if (publishedAtMax == null || publishedAt.getValue() > publishedAtMax.getValue())
-                                {
-                                    publishedAtMax = publishedAt;
-                                }
-                            }
-                        }
-                        if(publishedAtMax != null && (lastUploadTime == null || publishedAtMax.getValue() > lastUploadTime.getValue()))
-                        {
-                            setLastUploadTime(publishedAtMax);                      
-                        } 
-                    }   
-                }
-                catch (IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }  
-                catch (GeneralSecurityException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                 
-            }                                    
-        }
-        
-        private static String getDescription(String desc, int max)
-        {
-            if(desc.length() > max)
-            {
-                return desc.substring(0, max) + "...";
-            }  
-            return desc;
-        }          
-        
-        private static JComponent createDetails(String text, ActionListener action, Icon icon) 
-        {
-            if (null == action) 
-            {
-                return new JLabel(text);
-            }   
-
-            JButton btn = new JButton(Utils.convertStringToHtml(text, 50));
-            btn.setFocusable(false);
-            btn.setBorder(BorderFactory.createEmptyBorder());
-            btn.setBorderPainted(false);
-            btn.setFocusPainted(false);
-            btn.setOpaque(false);
-            btn.setContentAreaFilled(false);
-            btn.setFont(btn.getFont().deriveFont(btn.getFont().getSize() + 2));
-            btn.addActionListener(action);
-            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            Color c = UIManager.getColor("nb.html.link.foreground"); //NOI18N
-            if (c != null) {
-                btn.setForeground(c);
-            }
-            btn.setIcon(icon);
-            btn.setIconTextGap(10);        
-            btn.setVerticalTextPosition(SwingConstants.TOP);
-            btn.setHorizontalTextPosition(SwingConstants.LEFT);
-            btn.setVerticalAlignment(SwingConstants.CENTER);
-            btn.setHorizontalAlignment(SwingConstants.LEFT);
-            return btn;
-        }        
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(evt.getSource() == getProvider())
-            {
-                RP.post(this);                
-            }
-            else
-            {
-                new SavableImpl(this, evt);                
-            }
-        }
     }           
 
 // TODO HtmlFilesProvider        
@@ -2557,7 +2126,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public Lookup.Provider getProvider() 
         {
-            return YouTubeChannelProject.this;
+            return GitHubProject.this;
         }                 
     }     
 }

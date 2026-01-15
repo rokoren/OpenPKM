@@ -53,7 +53,13 @@ public class IconsProviderImpl implements IconsProvider
     
     @StaticResource()
     public static final String ICON_YOUTUBE_CHANNEL = "openpkm/core/resources/youtube_channel.png";  
+            
+    @StaticResource()
+    public static final String ICON_GITHUB = "openpkm/core/resources/github.png";      
     
+    @StaticResource()
+    public static final String ICON_GITLAB = "openpkm/core/resources/gitlab.png";      
+            
     @StaticResource()
     public static final String ICON_RSS_CHANNEL = "openpkm/core/resources/feed.png";     
 
@@ -97,7 +103,11 @@ public class IconsProviderImpl implements IconsProvider
             case YOUTUBE_VIDEO:
             return ICON_YOUTUBE_VIDEO;
             case YOUTUBE_CHANNEL:
-            return ICON_YOUTUBE_CHANNEL; 
+            return ICON_YOUTUBE_CHANNEL;             
+            case GITHUB:
+            return ICON_GITHUB; 
+            case GITLAB:
+            return ICON_GITLAB;                          
             case RSS_CHANNEL:
             return ICON_RSS_CHANNEL;             
             case WATCH_LATER:

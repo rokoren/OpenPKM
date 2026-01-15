@@ -32,7 +32,6 @@ import org.openide.WizardValidationException;
 import org.openide.util.Exceptions;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
-import org.openide.util.NbPreferences;
 
 public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
@@ -76,15 +75,15 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     @Override
     public void validate() throws WizardValidationException 
     {
+        GooglePasswordProvider provider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+        if(provider == null) 
+        {
+            throw new WizardValidationException(getComponent(), "Google Key not found.", null);
+        }          
         if (getComponent().getVideoFileType() == null) 
         {
             throw new WizardValidationException(null, "File Type can not be empty", null);
-        }          
-        String googleKey = NbPreferences.forModule(YouTubeService.class).get(YouTubeService.PROP_GOOGLE_KEY, null);
-        if (googleKey == null) 
-        {
-            throw new WizardValidationException(null, "Set Google Key in Settings", null);
-        }        
+        }                 
         if (getComponent().getVideoID().equals("")) 
         {
             throw new WizardValidationException(null, "Video ID can not be empty", null);
@@ -94,7 +93,7 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
         {         
             YouTube youtubeService = YouTubeService.getDeafult().getService();
             YouTube.Videos.List request = youtubeService.videos().list("snippet,contentDetails,statistics,topicDetails");
-            request.setKey(googleKey);
+            request.setKey(provider.getKey());
             response = request.setId(getComponent().getVideoID()).execute();  
             if(response.getItems() == null || response.getItems().isEmpty())
             {   

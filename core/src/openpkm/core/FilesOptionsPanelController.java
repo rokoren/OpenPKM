@@ -18,13 +18,14 @@ import org.openide.util.Lookup;
         keywords = "#AdvancedOption_Keywords_Files",
         keywordsCategory = "OpenPKM/Files"
 )
-@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_Files=Files", "AdvancedOption_Keywords_Files=book document picture pdf"})
+@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_Files=Folders", "AdvancedOption_Keywords_Files=book document picture pdf"})
 public final class FilesOptionsPanelController extends OptionsPanelController {
 
     private FilesPanel panel;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     private boolean changed;
 
+    @Override
     public void update() {
         getPanel().load();
         changed = false;

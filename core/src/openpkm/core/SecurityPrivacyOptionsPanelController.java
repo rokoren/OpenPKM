@@ -14,14 +14,14 @@ import org.openide.util.Lookup;
 
 @OptionsPanelController.SubRegistration(
         location = "OpenPKM",
-        displayName = "#AdvancedOption_DisplayName_YouTube",
-        keywords = "#AdvancedOption_Keywords_YouTube",
-        keywordsCategory = "OpenPKM/YouTube"
+        displayName = "#AdvancedOption_DisplayName_SecurityPrivacy",
+        keywords = "#AdvancedOption_Keywords_SecurityPrivacy",
+        keywordsCategory = "OpenPKM/SecurityPrivacy"
 )
-@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_YouTube=YouTube", "AdvancedOption_Keywords_YouTube=youtube"})
-public final class YouTubeOptionsPanelController extends OptionsPanelController {
+@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_SecurityPrivacy=Privacy & Security", "AdvancedOption_Keywords_SecurityPrivacy=privacy security password secret key"})
+public final class SecurityPrivacyOptionsPanelController extends OptionsPanelController {
 
-    private YouTubePanel panel;
+    private SecurityPrivacyPanel panel;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     private boolean changed;
 
@@ -31,7 +31,6 @@ public final class YouTubeOptionsPanelController extends OptionsPanelController 
         changed = false;
     }
 
-    @Override
     public void applyChanges() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -42,44 +41,37 @@ public final class YouTubeOptionsPanelController extends OptionsPanelController 
         });
     }
 
-    @Override
     public void cancel() {
         // need not do anything special, if no changes have been persisted yet
     }
 
-    @Override
     public boolean isValid() {
         return getPanel().valid();
     }
 
-    @Override
     public boolean isChanged() {
         return changed;
     }
 
-    @Override
     public HelpCtx getHelpCtx() {
         return null; // new HelpCtx("...ID") if you have a help set
     }
 
-    @Override
     public JComponent getComponent(Lookup masterLookup) {
         return getPanel();
     }
 
-    @Override
     public void addPropertyChangeListener(PropertyChangeListener l) {
         pcs.addPropertyChangeListener(l);
     }
 
-    @Override
     public void removePropertyChangeListener(PropertyChangeListener l) {
         pcs.removePropertyChangeListener(l);
     }
 
-    private YouTubePanel getPanel() {
+    private SecurityPrivacyPanel getPanel() {
         if (panel == null) {
-            panel = new YouTubePanel(this);
+            panel = new SecurityPrivacyPanel(this);
         }
         return panel;
     }
