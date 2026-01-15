@@ -146,6 +146,7 @@ public class HomePageNode extends FilterNode implements ChangeListener, Property
             });
             */
             provider.getTopComponent().open();
+            provider.getTopComponent().requestActive();            
         }          
     }     
 }

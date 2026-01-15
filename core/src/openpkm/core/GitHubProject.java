@@ -4,6 +4,7 @@
  */
 package openpkm.core;
 
+import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
@@ -26,7 +27,6 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
-import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -539,18 +539,13 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     
 // TODO TopComponentProvider
     
-    private final class TopComponentProviderImpl extends JPanel implements TopComponentProvider, MultiViewDescription, MultiViewElement
+    private final class TopComponentProviderImpl implements TopComponentProvider, MultiViewDescription, MultiViewElement
     {
         private TopComponent tc;           
-        private CefBrowser browser; 
         private JToolBar toolbar;
+        CefBrowser browser;
         
-        private transient MultiViewElementCallback callback;          
-        
-        public TopComponentProviderImpl() 
-        {
-            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-        }         
+        private transient MultiViewElementCallback callback;                         
         
         @Override
         public TopComponent getTopComponent()
@@ -623,26 +618,22 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public JComponent getVisualRepresentation() 
         {
-            if(browser == null)
+            CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+            if(provider != null)
             {
-                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-                if(provider != null)
+                try
                 {
-                    try
-                    {
-                        browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false);      ;   
-                        if(browser != null)
-                        {
-                            add(browser.getUIComponent());
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
+                    browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false);      ;   
+                    JPanel panel = new JPanel(new BorderLayout());
+                    panel.add(browser.getUIComponent(), BorderLayout.CENTER);
+                    return panel;
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
                 }
             }
-            return this;
+            return null;
         }
 
         @Override
@@ -675,12 +666,10 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public void componentClosed() 
         {
-            /*
             if(browser != null)
             {
                 browser.close(true);
             }
-            */
         }
 
         @Override

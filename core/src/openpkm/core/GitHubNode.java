@@ -146,6 +146,7 @@ public class GitHubNode extends FilterNode implements ChangeListener, PropertyCh
             });
             */
             provider.getTopComponent().open();
+            provider.getTopComponent().requestActive(); 
         }          
     }     
 }

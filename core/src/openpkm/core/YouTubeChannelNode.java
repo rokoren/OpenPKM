@@ -146,6 +146,7 @@ public class YouTubeChannelNode extends FilterNode implements ChangeListener, Pr
             });
             */
             provider.getTopComponent().open();
+            provider.getTopComponent().requestActive(); 
         }          
     } 
 }

@@ -438,9 +438,21 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         {
             if(tc == null)
             {
-                MultiViewDescription[] mvds = new MultiViewDescription[1];
-                mvds[0] = this;
-                tc = MultiViewFactory.createMultiView(mvds, this);
+                List<MultiViewDescription> list = new ArrayList<>();
+                list.add(this);
+                DomainsProvider provider = getLookup().lookup(DomainsProvider.class);
+                if(provider != null)
+                {
+                    for(Domain domain : provider.getDomains())
+                    {
+                        MultiViewDescription mvd = domain.getLookup().lookup(MultiViewDescription.class);
+                        if(mvd != null)
+                        {
+                            list.add(mvd);
+                        }
+                    }
+                }
+                tc = MultiViewFactory.createMultiView(list.toArray(new MultiViewDescription[list.size()]), this);
                 tc.setDisplayName(getTitle());
             }
             return tc;
