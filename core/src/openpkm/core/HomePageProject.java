@@ -23,7 +23,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
 import javax.swing.BoxLayout;
@@ -80,6 +82,7 @@ import org.netbeans.core.spi.multiview.MultiViewFactory;
 import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
+import org.netbeans.spi.project.SubprojectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
@@ -440,12 +443,12 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
             {
                 List<MultiViewDescription> list = new ArrayList<>();
                 list.add(this);
-                DomainsProvider provider = getLookup().lookup(DomainsProvider.class);
+                SubprojectProvider provider = getLookup().lookup(SubprojectProvider.class);
                 if(provider != null)
                 {
-                    for(Domain domain : provider.getDomains())
+                    for(Project project : provider.getSubprojects())
                     {
-                        MultiViewDescription mvd = domain.getLookup().lookup(MultiViewDescription.class);
+                        MultiViewDescription mvd = project.getLookup().lookup(MultiViewDescription.class);
                         if(mvd != null)
                         {
                             list.add(mvd);
@@ -790,7 +793,7 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
     
 // TODO DomainsProvider
 
-    private final class DomainsProviderImpl implements DomainsProvider
+    private final class DomainsProviderImpl implements DomainsProvider, SubprojectProvider
     {                        
         private static final String ROOT_FOLDER = "domain";          
         
@@ -922,6 +925,12 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.DOMAINS);
         }               
+
+        @Override
+        public Set<? extends Project> getSubprojects() 
+        {
+            return getDomains().stream().collect(Collectors.toUnmodifiableSet());
+        }
     }     
     
 // TODO DataGroup

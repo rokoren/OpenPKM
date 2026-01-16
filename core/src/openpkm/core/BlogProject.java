@@ -36,6 +36,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
+import openpkm.base.Blog;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.DataGroupProvider;
@@ -97,13 +98,12 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
-import openpkm.github.GitHubUser;
 
 /**
  *
  * @author Rok Koren
  */
-public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 {
     private static final String DATA_FOLDER = "data";    
     
@@ -116,9 +116,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_WATCH_LATER = 800;
 
-    private static final Logger LOG = Logger.getLogger(GitHubProject.class.getName());        
+    private static final Logger LOG = Logger.getLogger(BlogProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(GitHubProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(BlogProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();      
@@ -134,7 +134,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     private LocalFileSystem fileSystem;
     private Source lastSource;   
     
-    public GitHubProject(FileObject projectDir, ProjectState state, Properties props) 
+    public BlogProject(FileObject projectDir, ProjectState state, Properties props) 
     {
         this.projectDir = projectDir; 
         this.state = state;
@@ -276,8 +276,8 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
 
-            list.add(new GitHubLogicalView(this));
-            list.add(new GitHubCustomizerProvider(this));  
+            list.add(new BlogLogicalView(this));
+            list.add(new BlogCustomizerProvider(this));  
 
             list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
@@ -301,7 +301,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     @Override
     public String getDomainID() 
     {
-        return getUserID();
+        return getBlogID();
     }    
     
     @Override
@@ -321,144 +321,25 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         return null;
     }
     
-// TODO GitHubUser    
+// TODO Blog    
     
     @Override
-    public String getUserID() 
+    public String getBlogID() 
     {
-        return props.getProperty(PROP_USER_ID);
+        return props.getProperty(PROP_BLOG_ID);
     }  
 
     @Override
-    public String getUserName() 
+    public String getUrl() 
     {
-        return props.getProperty(PROP_USER_NAME);
-    } 
+        return props.getProperty(PROP_URL);
+    }     
     
     @Override
-    public LocalDateTime getCreatedAt() 
+    public String getFavicon() 
     {
-        String string = props.getProperty(PROP_CREATED_AT);
-        if(string != null)
-        {
-            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
-        }
-        return null;
-    }    
-    
-    @Override
-    public String getAvatarUrl() 
-    {
-        return props.getProperty(PROP_AVATAR_URL);
-    } 
-    
-    @Override
-    public String getHtmlUrl() 
-    {
-        return props.getProperty(PROP_HTML_URL);
-    }   
-    
-    @Override
-    public Integer getFollowersCount()
-    {
-        String string = props.getProperty(PROP_FOLLOWERS_COUNT);
-        if(string != null)
-        {
-            return Integer.parseInt(string);
-        }
-        return null;
-    }
-    
-    @Override
-    public void setFollowersCount(Integer count)
-    {
-        if(count == null)
-        {
-            Object oldValue = props.remove(PROP_FOLLOWERS_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_FOLLOWERS_COUNT, count.toString()); 
-            if(oldValue != null)
-            {
-                oldValue = Integer.parseInt(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);            
-        }
-    }
-    
-    @Override
-    public Integer getPublicReposCount()
-    {
-        String string = props.getProperty(PROP_PUBLIC_REPOS_COUNT);
-        if(string != null)
-        {
-            return Integer.parseInt(string);
-        }
-        return null;
-    }
-    
-    @Override
-    public void setPublicReposCount(Integer count)
-    {
-        if(count == null)
-        {
-            Object oldValue = props.remove(PROP_PUBLIC_REPOS_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_PUBLIC_REPOS_COUNT, count.toString()); 
-            if(oldValue != null)
-            {
-                oldValue = Integer.parseInt(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);            
-        }
-    } 
-    
-    @Override
-    public String getLocation() 
-    {
-        return props.getProperty(PROP_LOCATION);
-    }
-
-    @Override
-    public void setLocation(String location) 
-    {
-        if(location == null)
-        {
-            Object oldValue = props.remove(PROP_LOCATION);
-            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_LOCATION, location);  
-            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
-        } 
-    } 
-
-    @Override
-    public String getCompany() 
-    {
-        return props.getProperty(PROP_COMPANY);
-    }
-
-    @Override
-    public void setCompany(String company) 
-    {
-        if(company == null)
-        {
-            Object oldValue = props.remove(PROP_COMPANY);
-            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_COMPANY, company);  
-            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
-        } 
-    }      
+        return props.getProperty(PROP_FAVICON);
+    }         
     
 // TODO TitleProvider  
     
@@ -563,7 +444,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public String preferredID() 
         {
-            return "github";
+            return "blog";
         }         
         
         @Override
@@ -581,7 +462,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public String getDisplayName() 
         {
-            return "GitHub";
+            return "Blog";
         }   
         
         @Override
@@ -623,7 +504,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             {
                 try
                 {
-                    browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false);      ;   
+                    browser = provider.getCefClient().createBrowser(getUrl(), false, false);      ;   
                     JPanel panel = new JPanel(new BorderLayout());
                     panel.add(browser.getUIComponent(), BorderLayout.CENTER);
                     return panel;
@@ -655,7 +536,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup getLookup() 
         {
-            return GitHubProject.this.getLookup();
+            return BlogProject.this.getLookup();
         }        
 
         @Override
@@ -691,7 +572,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public void componentDeactivated() 
         {            
         }        
-    }     
+    }      
     
 // TODO ProjectOpenedHook    
     
@@ -728,7 +609,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public Icon getIcon()
         {  
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getIcon(IconsProvider.ICON.GITHUB);
+            return provider.getIcon(IconsProvider.ICON.BLOG);
         }
 
         @Override
@@ -758,7 +639,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Project getProject() 
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }
     }     
   
@@ -784,7 +665,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                 RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.YOUTUBE_CHANNEL);
+            return provider.getImage(IconsProvider.ICON.BLOG);
         }
 
         @Override
@@ -802,12 +683,12 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public void run() 
         {
-            String avatar = getAvatarUrl();
-            if(avatar != null)
+            String favicon = getFavicon();
+            if(favicon != null)
             {
                 try
                 {
-                    URL url = new URL(avatar);
+                    URL url = new URL(favicon);
                     BufferedImage image = ImageIO.read(url);  
                     icon = Utils.resizeImage(image, 16, 16); 
                     changeSupport.fireChange();
@@ -835,7 +716,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(GitHubProject.this);
+            return Utils.getRootProject(BlogProject.this);
         }         
     }
     
@@ -984,7 +865,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }                        
 
         @Override
@@ -1042,7 +923,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }         
         
         @Override
@@ -1133,7 +1014,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }         
         
         @Override
@@ -1224,7 +1105,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }         
         
         @Override
@@ -1315,7 +1196,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }        
         
         @Override
@@ -1406,7 +1287,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }        
         
         @Override
@@ -1497,7 +1378,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }        
         
         @Override
@@ -1582,7 +1463,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         } 
         
         @Override
@@ -1774,7 +1655,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }  
         
         @Override
@@ -2115,7 +1996,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider() 
         {
-            return GitHubProject.this;
+            return BlogProject.this;
         }                 
-    }     
+    }  
 }

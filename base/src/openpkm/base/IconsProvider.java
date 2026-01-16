@@ -20,6 +20,7 @@ public interface IconsProvider
     {
         DOMAINS,
         HOME_PAGE,
+        BLOG,
         NOTES,
         ARTICLES,
         BOOKS,
