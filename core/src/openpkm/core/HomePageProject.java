@@ -692,7 +692,7 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
                 RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.YOUTUBE_CHANNEL);
+            return provider.getImage(IconsProvider.ICON.HOME_PAGE);
         }
 
         @Override
