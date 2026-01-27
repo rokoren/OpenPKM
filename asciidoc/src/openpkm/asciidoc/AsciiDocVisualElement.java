@@ -13,7 +13,6 @@ import javax.swing.Action;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import openpkm.base.SourceProviders;
 import openpkm.utils.AbstractVisualElement;

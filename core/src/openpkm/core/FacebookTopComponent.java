@@ -31,11 +31,11 @@ import org.openide.util.NbBundle.Messages;
 @ActionID(category = "Window", id = "openpkm.core.FacebookTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
-        displayName = "#CTL_FacebookAction",
+        displayName = "#CTL_FacebookWindowAction",
         preferredID = "FacebookTopComponent"
 )
 @Messages({
-    "CTL_FacebookAction=Facebook",
+    "CTL_FacebookWindowAction=Facebook",
     "CTL_FacebookTopComponent=Facebook Window",
     "HINT_FacebookTopComponent=This is a Facebook window"
 })

@@ -31,11 +31,11 @@ import org.openide.util.NbBundle.Messages;
 @ActionID(category = "Window", id = "openpkm.core.LinkedInTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
-        displayName = "#CTL_LinkedInAction",
+        displayName = "#CTL_LinkedInWindowAction",
         preferredID = "LinkedInTopComponent"
 )
 @Messages({
-    "CTL_LinkedInAction=LinkedIn",
+    "CTL_LinkedInWindowAction=LinkedIn",
     "CTL_LinkedInTopComponent=LinkedIn Window",
     "HINT_LinkedInTopComponent=This is a LinkedIn window"
 })

@@ -623,7 +623,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             {
                 try
                 {
-                    browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false);      ;   
+                    browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false); 
                     JPanel panel = new JPanel(new BorderLayout());
                     panel.add(browser.getUIComponent(), BorderLayout.CENTER);
                     return panel;

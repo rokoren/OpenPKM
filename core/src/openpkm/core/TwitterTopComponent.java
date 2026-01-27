@@ -7,6 +7,7 @@ package openpkm.core;
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
 import openpkm.jcef.CefClientProvider;
+import openpkm.twitter.TwitterUser;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.awt.ActionID;
@@ -31,18 +32,16 @@ import org.openide.util.NbBundle.Messages;
 @ActionID(category = "Window", id = "openpkm.core.TwitterTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
-        displayName = "#CTL_TwitterAction",
+        displayName = "#CTL_TwitterWindowAction",
         preferredID = "TwitterTopComponent"
 )
 @Messages({
-    "CTL_TwitterAction=Twitter",
+    "CTL_TwitterWindowAction=Twitter",
     "CTL_TwitterTopComponent=Twitter Window",
     "HINT_TwitterTopComponent=This is a Twitter window"
 })
 public final class TwitterTopComponent extends TopComponent 
-{
-    public static final String X_URL = "https://x.com";
-    
+{    
     private static final Logger LOG = Logger.getLogger(TwitterTopComponent.class.getName());     
     
     private CefBrowser browser; 
@@ -58,7 +57,7 @@ public final class TwitterTopComponent extends TopComponent
         {
             try
             {
-                browser = provider.getCefClient().createBrowser(X_URL, false, false);  
+                browser = provider.getCefClient().createBrowser(TwitterUser.X_URL, false, false);  
                 add(browser.getUIComponent(), BorderLayout.CENTER);
             }
             catch(Exception e)

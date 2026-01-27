@@ -18,3 +18,6 @@
 /dist/
 /reference/build/
 /github/build/
+/facebook/build/
+/twitter/build/
+/twitter/nbproject/private/
