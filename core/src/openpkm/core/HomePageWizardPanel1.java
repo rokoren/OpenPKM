@@ -7,7 +7,6 @@ package openpkm.core;
 import java.io.IOException;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
-import openpkm.base.HomePage;
 import openpkm.base.TopicsProvider;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -84,7 +83,7 @@ public class HomePageWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wi
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {        
-        descriptor.putProperty(HomePage.PROP_URL, getComponent().getHomePageUrl());  
+        descriptor.putProperty(HomePageProject.PROP_URL, getComponent().getHomePageUrl());  
         descriptor.putProperty(TopicsProvider.PROP_TOPICS, getComponent().getHomePageTopics());
         descriptor.putProperty("document", document);         
     }

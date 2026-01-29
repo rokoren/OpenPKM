@@ -17,7 +17,6 @@ import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.DataGroupProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.TitleProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
@@ -28,12 +27,13 @@ import org.openide.nodes.Children;
 import org.openide.nodes.FilterNode;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.NodeSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public class DataGroupNode extends AbstractNode implements NodeProvider
+public class DataGroupNode extends AbstractNode implements NodeSupport
 {    
     private static final Logger LOG = Logger.getLogger(DataGroupNode.class.getName());    
     

@@ -132,7 +132,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         String userID = props.getProperty(PROPS_RAINDROP_USER_ID);
         if(userID != null)
         {
-            RaindropAccount account = RaindropService.getDeafult().getAccount(Integer.parseInt(userID));   
+            RaindropAccount account = RaindropService.getDefault().getAccount(Integer.parseInt(userID));   
             return account.getUser();
         }                    
         return null;
@@ -144,7 +144,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         String creatorID = props.getProperty(PROPS_RAINDROP_CREATOR_ID);
         if(creatorID != null)
         {
-            RaindropAccount account = RaindropService.getDeafult().getAccount(Integer.parseInt(creatorID));   
+            RaindropAccount account = RaindropService.getDefault().getAccount(Integer.parseInt(creatorID));   
             return account.getUser();
         }                    
         return null;
@@ -157,7 +157,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         String collectionID = props.getProperty(PROPS_RAINDROP_COLLECTION_ID);
         if(userID != null && collectionID != null)
         {
-            RaindropAccount account = RaindropService.getDeafult().getAccount(Integer.parseInt(userID)); 
+            RaindropAccount account = RaindropService.getDefault().getAccount(Integer.parseInt(userID)); 
             try
             {
                 return account.getCollection(Integer.parseInt(collectionID));                

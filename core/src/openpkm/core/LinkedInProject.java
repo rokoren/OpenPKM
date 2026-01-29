@@ -39,6 +39,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
@@ -52,6 +53,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
+import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WebPage;
@@ -102,8 +104,12 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class LinkedInProject implements Domain, LinkedInUser, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class LinkedInProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 {    
+    public static final String PROP_USER_NAME = "user.name"; 
+    
+    private static final String LINKEDIN_URL = "https://www.linkedin.com/in/";
+    
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -153,7 +159,12 @@ public class LinkedInProject implements Domain, LinkedInUser, PropertiesProvider
             sources.put(references.getName(), references);            
         }
 
-    }   
+    }  
+    
+    public String getUserName() 
+    {
+        return props.getProperty(PROP_USER_NAME);
+    }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -318,15 +329,7 @@ public class LinkedInProject implements Domain, LinkedInUser, PropertiesProvider
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }
-    
-// TODO LinkedInUser    
-    
-    @Override
-    public String getUserName() 
-    {
-        return props.getProperty(PROP_USER_NAME);
-    }     
+    }    
     
 // TODO TitleProvider  
     

@@ -59,7 +59,7 @@ public class RaindropNode extends AbstractNode
     {        
         public RaindropChildren()
         {
-            RaindropService.getDeafult().addChangeListener(this);
+            RaindropService.getDefault().addChangeListener(this);
         }  
 
         @Override        
@@ -74,7 +74,7 @@ public class RaindropNode extends AbstractNode
                 public void run() 
                 {                   
                     SortedSet<RaindropAccount> subModules = new TreeSet<RaindropAccount>(RaindropAccount.titleComparator());
-                    subModules.addAll(RaindropService.getDeafult().getAccounts());           
+                    subModules.addAll(RaindropService.getDefault().getAccounts());           
                     setKeys(subModules);                   
                 }
             });
@@ -82,7 +82,7 @@ public class RaindropNode extends AbstractNode
 
         protected @Override void removeNotify() 
         { 
-            RaindropService.getDeafult().removeChangeListener(this);                              
+            RaindropService.getDefault().removeChangeListener(this);                              
             setKeys(Collections.<RaindropAccount>emptySet());
         }
 
@@ -136,8 +136,8 @@ public class RaindropNode extends AbstractNode
                 RaindropUser user = (RaindropUser) wiz.getProperty("user");
                 RaindropAccount account = new RaindropAccount(token, user);  
                 account.setTitle(title);
-                RaindropService.getDeafult().addAccount(account);
-                RaindropService.getDeafult().store(account);                
+                RaindropService.getDefault().addAccount(account);
+                RaindropService.getDefault().store(account);                
             }
         }
     }     

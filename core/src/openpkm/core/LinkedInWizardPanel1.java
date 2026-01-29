@@ -78,7 +78,7 @@ public class LinkedInWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wi
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {        
-        descriptor.putProperty(LinkedInUser.PROP_USER_NAME, getComponent().getLinkedInUsername());  
+        descriptor.putProperty(LinkedInProject.PROP_USER_NAME, getComponent().getLinkedInUsername());  
         descriptor.putProperty(TopicsProvider.PROP_TOPICS, getComponent().getLinkedInTopics());      
     }
 

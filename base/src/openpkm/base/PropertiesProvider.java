@@ -14,5 +14,5 @@ public interface PropertiesProvider
 {
     String EXTENSION = "properties";    
     
-    Properties getProperties();
+    Properties getProperties();  
 }

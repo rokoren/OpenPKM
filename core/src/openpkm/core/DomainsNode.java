@@ -17,19 +17,19 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.TitleProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.NodeSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public class DomainsNode extends AbstractNode implements NodeProvider
+public class DomainsNode extends AbstractNode implements NodeSupport
 {
     private static final Logger LOG = Logger.getLogger(DomainsNode.class.getName());    
     

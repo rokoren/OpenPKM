@@ -41,11 +41,11 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.HomePage;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -55,6 +55,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
+import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WebPage;
@@ -106,8 +107,12 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Domain, HomePage, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
-{    
+public class HomePageProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+{  
+    public static final String PROP_HOME_PAGE_ID = "home.page.id";
+    public static final String PROP_URL          = "url"; 
+    public static final String PROP_FAVICON      = "favicon";     
+    
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -158,6 +163,21 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
         }
 
     }
+    
+    public String getHomePageID() 
+    {
+        return props.getProperty(PROP_HOME_PAGE_ID);
+    }  
+
+    public String getUrl() 
+    {
+        return props.getProperty(PROP_URL);
+    }     
+    
+    public String getFavicon() 
+    {
+        return props.getProperty(PROP_FAVICON);
+    }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -322,27 +342,7 @@ public class HomePageProject implements Domain, HomePage, PropertiesProvider, So
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }
-    
-// TODO HomePage    
-    
-    @Override
-    public String getHomePageID() 
-    {
-        return props.getProperty(PROP_HOME_PAGE_ID);
-    }  
-
-    @Override
-    public String getUrl() 
-    {
-        return props.getProperty(PROP_URL);
-    }     
-    
-    @Override
-    public String getFavicon() 
-    {
-        return props.getProperty(PROP_FAVICON);
-    }         
+    }            
     
 // TODO TitleProvider  
     

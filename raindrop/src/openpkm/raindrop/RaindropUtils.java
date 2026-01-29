@@ -422,7 +422,7 @@ public class RaindropUtils
                 RaindropUser creator = null; 
                 JSONObject json2 = json1.getJSONObject("creatorRef");
                 int creatorID = json2.getInt("_id");
-                RaindropAccount creatorAccount = RaindropService.getDeafult().getAccount(creatorID);
+                RaindropAccount creatorAccount = RaindropService.getDefault().getAccount(creatorID);
                 if(creatorAccount != null)
                 {
                     creator = creatorAccount.getUser();

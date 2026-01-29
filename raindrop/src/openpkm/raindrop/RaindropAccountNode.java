@@ -123,7 +123,7 @@ public class RaindropAccountNode extends AbstractNode
                 {
                     account.getPreferences().removeNode(); 
                     account.getPreferences().flush();
-                    RaindropService.getDeafult().removeAccount(account);
+                    RaindropService.getDefault().removeAccount(account);
                 }
                 catch(BackingStoreException e)
                 {

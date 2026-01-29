@@ -5,7 +5,6 @@
 package openpkm.raindrop;
 
 import java.util.logging.Logger;
-import openpkm.base.NodeProvider;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
@@ -13,6 +12,7 @@ import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
+import openpkm.base.NodeSupport;
 
 /**
  *
@@ -55,7 +55,7 @@ public class RaindropProjectLogicalView implements LogicalViewProvider
     {
         for(Node child : root.getChildren().getNodes(true))
         {
-            NodeProvider provider = child.getLookup().lookup(NodeProvider.class);
+            NodeSupport provider = child.getLookup().lookup(NodeSupport.class);
             if(provider != null)
             {
                 Node node = provider.findNode(child, target);

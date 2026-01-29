@@ -4,11 +4,11 @@
  */
 package openpkm.core;
 
-import openpkm.base.NodeProvider;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
 import org.openide.nodes.Node;
+import openpkm.base.NodeSupport;
 
 /**
  *
@@ -39,7 +39,7 @@ public class YouTubeChannelLogicalView implements LogicalViewProvider
     {
         for(Node child : root.getChildren().getNodes(true))
         {
-            NodeProvider provider = child.getLookup().lookup(NodeProvider.class);
+            NodeSupport provider = child.getLookup().lookup(NodeSupport.class);
             if(provider != null)
             {
                 Node node = provider.findNode(child, target);

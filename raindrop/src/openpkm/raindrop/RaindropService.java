@@ -123,7 +123,7 @@ public class RaindropService
         }        
     }    
     
-    public static synchronized RaindropService getDeafult()
+    public static synchronized RaindropService getDefault()
     {
         if(service == null)
         {

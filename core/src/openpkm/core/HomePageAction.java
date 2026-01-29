@@ -24,7 +24,6 @@ import javax.swing.JComponent;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
-import openpkm.base.HomePage;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
@@ -100,7 +99,7 @@ public class HomePageAction implements ActionListener
             LocalDateTime now = LocalDateTime.now();
             String domainID = null;
             
-            String url = (String) wiz.getProperty(HomePage.PROP_URL);
+            String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
             String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
@@ -134,11 +133,11 @@ public class HomePageAction implements ActionListener
             }            
 
             Properties props = new Properties();
-            props.setProperty(HomePage.PROP_HOME_PAGE_ID, domainID);
+            props.setProperty(HomePageProject.PROP_HOME_PAGE_ID, domainID);
             props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(HomePage.PROP_TITLE, title);       
-            props.setProperty(HomePage.PROP_DESCRIPTION, description);            
-            props.setProperty(HomePage.PROP_URL, url);  
+            props.setProperty(TitleProvider.PROP_TITLE, title);       
+            props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
+            props.setProperty(HomePageProject.PROP_URL, url);  
             
             String favicon = getFavicon(document);
             if(favicon == null)
@@ -148,7 +147,7 @@ public class HomePageAction implements ActionListener
             
             if(favicon != null)
             {
-                props.setProperty(HomePage.PROP_FAVICON, favicon);
+                props.setProperty(HomePageProject.PROP_FAVICON, favicon);
             }
             
             if(topics != null)

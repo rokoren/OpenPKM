@@ -453,7 +453,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             String string = props.getProperty(PROP_RAINDROP_COLLECTION_ROOT);
             if (userID != null && collectionID != null && string != null)
             {
-                RaindropAccount account = RaindropService.getDeafult().getAccount(Integer.parseInt(userID));
+                RaindropAccount account = RaindropService.getDefault().getAccount(Integer.parseInt(userID));
                 if(account != null)
                 {
                     boolean isRoot= Boolean.parseBoolean(string);                        

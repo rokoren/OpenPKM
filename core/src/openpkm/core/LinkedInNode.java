@@ -12,7 +12,9 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.DescriptionProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.TitleProvider;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;
@@ -116,11 +118,11 @@ public class LinkedInNode extends FilterNode implements ChangeListener, Property
     @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
-        if(evt.getPropertyName().equals(YouTubeChannelProject.PROP_TITLE))
+        if(evt.getPropertyName().equals(TitleProvider.PROP_TITLE))
         {
             fireDisplayNameChange((String)evt.getOldValue(), (String)evt.getNewValue());
         }
-        else if(evt.getPropertyName().equals(YouTubeChannelProject.PROP_DESCRIPTION))
+        else if(evt.getPropertyName().equals(DescriptionProvider.PROP_DESCRIPTION))
         {
             fireShortDescriptionChange((String)evt.getOldValue(), (String)evt.getNewValue());
         }        

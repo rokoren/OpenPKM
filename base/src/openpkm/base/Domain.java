@@ -14,7 +14,7 @@ import org.netbeans.api.project.Project;
  */
 public interface Domain extends Project 
 {
-    String PROP_APP_ID = "app.id";   
+    String PROP_APP_ID       = "app.id";   
     String PROP_TIME_CREATED = "time.created"; 
     
     String getDomainID();

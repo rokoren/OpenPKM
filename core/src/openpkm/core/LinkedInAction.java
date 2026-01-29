@@ -91,14 +91,14 @@ public class LinkedInAction implements ActionListener
         { 
             LocalDateTime now = LocalDateTime.now();
             
-            String username = (String) wiz.getProperty(LinkedInUser.PROP_USER_NAME);
+            String username = (String) wiz.getProperty(LinkedInProject.PROP_USER_NAME);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
             String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);              
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                  
                        
             Properties props = new Properties();
             props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));            
-            props.setProperty(LinkedInUser.PROP_USER_NAME, username);
+            props.setProperty(LinkedInProject.PROP_USER_NAME, username);
             props.setProperty(TitleProvider.PROP_TITLE, title);       
             props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);   
             
