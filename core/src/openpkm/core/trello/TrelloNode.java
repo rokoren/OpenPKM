@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -15,6 +15,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.TitleProvider;
+import openpkm.core.TopComponentProvider;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;

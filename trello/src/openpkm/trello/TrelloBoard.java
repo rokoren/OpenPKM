@@ -17,6 +17,7 @@ public interface TrelloBoard
     TrelloAccount getAccount();
     String getBoardID();
     String getUrl();
+    String getShortUrl();
     String getTitle();
     void setTitle(String title);
     String getDescription();

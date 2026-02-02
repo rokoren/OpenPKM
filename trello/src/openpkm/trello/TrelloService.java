@@ -4,7 +4,6 @@
  */
 package openpkm.trello;
 
-import com.julienvey.trello.domain.Attachment;
 import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.CheckItem;
@@ -19,7 +18,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -264,6 +262,12 @@ public class TrelloService
         {
             return board.getUrl();
         }
+        
+        @Override
+        public String getShortUrl()
+        {
+            return board.getShortUrl();
+        }        
 
         @Override
         public String getTitle() 
@@ -417,155 +421,7 @@ public class TrelloService
         {
             card.delete();
         }
-    } 
-    
-    private static final class TrelloCheckListImpl implements TrelloCheckList
-    {
-        private final CheckList checkList;
-
-        private Map<String, TrelloCheckListItem> items = new HashMap<>();;
-
-        public TrelloCheckListImpl(CheckList checkList) 
-        {
-            this.checkList = checkList;
-            for(CheckItem item : checkList.getCheckItems())
-            {
-                TrelloCheckListItem trelloCheckListItem = new TrelloCheckListItemImpl(this, item);            
-                items.put(trelloCheckListItem.getCheckListItemID(), trelloCheckListItem);
-            }        
-        }
-
-        @Override
-        public String getCardID() 
-        {
-            return checkList.getIdCard();
-        }
-
-        @Override
-        public String getCheckListID()
-        {
-            return checkList.getId();
-        }   
-
-        @Override
-        public String getTitle() 
-        {
-            return checkList.getName();
-        }
-
-        @Override
-        public int getPosition() 
-        {
-            return checkList.getPos();
-        }
-
-        @Override
-        public Collection<TrelloCheckListItem> getItems() 
-        {
-            return items.values();
-        }
-
-        @Override
-        public TrelloCheckListItem getItem(String itemID) 
-        {
-            return items.get(itemID);
-        }
-
-        @Override
-        public TrelloCheckListItem addItem(String title, int position)
-        {
-            CheckItem item = new CheckItem();
-            item.setId(System.currentTimeMillis() + "");
-            item.setName(title);
-            item.setState(TrelloCheckListItem.State.INCOMPLETE.toString().toLowerCase());
-            item.setPos(position);
-            CheckItem item1 = TrelloService.createCheckListItem(getCheckListID(), item);
-            TrelloCheckListItem trelloItem = new TrelloCheckListItemImpl(this, item1);
-            items.put(trelloItem.getCheckListItemID(), trelloItem);
-            return trelloItem;
-        }   
-    } 
-    
-    private static final class TrelloCheckListItemImpl implements TrelloCheckListItem
-    {
-        private final TrelloCheckList checkList;
-        private final CheckItem item;
-
-        public TrelloCheckListItemImpl(TrelloCheckList checkList, CheckItem item) 
-        {
-            this.checkList = checkList;
-            this.item = item;
-        }
-
-        @Override
-        public TrelloCheckList getCheckList() 
-        {
-            return checkList;
-        }
-
-        @Override
-        public String getCheckListItemID() 
-        {
-            return item.getId();
-        }
-
-        @Override
-        public String getTitle() 
-        {
-            return item.getName();
-        }
-
-        @Override
-        public int getPosition() 
-        {
-            return item.getPos();
-        }  
-
-        @Override
-        public State getState() 
-        {
-            Optional<State> optional = State.get(item.getState());
-            if(optional.isPresent())
-            {
-                return optional.get();
-            }
-            return null;
-        }
-
-        @Override
-        public void setState(State state)
-        {
-            item.setState(state.toString().toLowerCase());
-        }    
-    } 
-    
-    private static final class TrelloAttachmentImpl implements TrelloAttachment
-    {
-        private final Attachment attachment;
-
-        public TrelloAttachmentImpl(Attachment attachment) 
-        {
-            this.attachment = attachment;
-        }
-
-        @Override
-        public String getAttachmentID() 
-        {
-            return attachment.getId();
-        }   
-
-        @Override
-        public String getUrl() 
-        {
-            return attachment.getUrl();
-        }
-
-        @Override
-        public String getName() 
-        {
-            return attachment.getName();
-        }   
-    }       
+    }     
     
     private static CheckItem getCheckListItem(CheckList checkList, int position)
     {

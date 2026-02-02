@@ -13,12 +13,12 @@ import java.util.Optional;
  */
 public interface TrelloCheckListItem 
 {
-    TrelloCheckList getCheckList();
+    String getCheckListID();
     String getCheckListItemID();
-    String getTitle();
-    int getPosition(); 
-    State getState();
-    void setState(State state);
+    String getCheckListItemName();
+    Integer getCheckListItemPosition(); 
+    State getCheckListItemState();
+    void setCheckListItemState(State state);
     
     public enum State 
     {

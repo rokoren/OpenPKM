@@ -4,13 +4,15 @@
  */
 package openpkm.trello;
 
+import com.julienvey.trello.domain.Attachment;
+import java.util.Properties;
+
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCardAction 
+public interface TrelloAttachmentProvider 
 {
-    String getCardID(); 
-    String getCardName();
-    String getListID(); 
+    TrelloAttachment getAttachment(Properties props);
+    TrelloAttachment createAttachment(Attachment attachment);     
 }

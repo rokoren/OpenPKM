@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -18,9 +18,14 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloService;
+import openpkm.trello.TrelloWizardPanel1;
+import openpkm.trello.TrelloWizardPanel2;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.core.ide.ServicesTabNodeRegistration;
-import org.openide.*;
+import org.openide.DialogDisplayer;
+import org.openide.WizardDescriptor;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
@@ -30,13 +35,13 @@ import org.openide.util.ImageUtilities;
  *
  * @author Rok Koren
  */
-@ServicesTabNodeRegistration(name="trello", displayName="Trello", iconResource = "openpkm/trello/resources/trello.png")
-public class ServiceNode extends AbstractNode
+@ServicesTabNodeRegistration(name="trello", displayName="Trello", iconResource = "openpkm/core/resources/trello.png")
+public class TrelloServiceNode extends AbstractNode
 {
     @StaticResource()
-    public static final String ICON = "openpkm/trello/resources/trello.png";    
+    public static final String ICON = "openpkm/core/resources/trello.png";    
     
-    public ServiceNode() 
+    public TrelloServiceNode() 
     {
         super(new TrelloChildren());
         setName("trello");

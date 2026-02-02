@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import java.awt.EventQueue;
 import java.awt.Image;
@@ -15,6 +15,9 @@ import java.util.prefs.BackingStoreException;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
+import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloBoard;
+import openpkm.trello.TrelloService;
 import openpkm.utils.RoundRectIcon;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
@@ -33,7 +36,7 @@ import org.openide.util.lookup.Lookups;
 public class TrelloAccountNode extends AbstractNode
 {
     @StaticResource()
-    public static final String ICON = "openpkm/trello/resources/account.png";      
+    public static final String ICON = "openpkm/core/resources/account.png";      
     
     private final TrelloAccount account;
     

@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import com.julienvey.trello.domain.TList;
 import java.awt.Image;
@@ -15,6 +15,9 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.trello.TrelloCard;
+import openpkm.trello.TrelloList;
+import openpkm.trello.TrelloListProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.ServiceProvider;
@@ -53,7 +56,7 @@ public class TrelloListProviderImpl implements TrelloListProvider
     private static final class TrelloListImpl implements TrelloList, NodeProvider, PropertiesProvider
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/trello/resources/application_view_list.png";  
+        private static final String ICON = "openpkm/core/resources/application_view_list.png";  
         
         private final Properties props; 
         

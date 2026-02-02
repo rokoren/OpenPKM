@@ -5,6 +5,7 @@
 package openpkm.trello;
 
 import com.julienvey.trello.domain.Action;
+import java.util.Properties;
 
 /**
  *
@@ -12,5 +13,6 @@ import com.julienvey.trello.domain.Action;
  */
 public interface TrelloActionProvider 
 {
-    TrelloAction getAction(Action action);
+    TrelloAction getAction(Properties props);
+    TrelloAction createAction(Action action);     
 }

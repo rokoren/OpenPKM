@@ -131,8 +131,18 @@
                         <specification-version>9.39</specification-version>
                     </run-dependency>
                 </dependency>
+                <dependency>
+                    <code-name-base>org.openide.windows</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>6.107</specification-version>
+                    </run-dependency>
+                </dependency>
             </module-dependencies>
-            <public-packages/>
+            <public-packages>
+                <package>openpkm.trello</package>
+            </public-packages>
             <class-path-extension>
                 <runtime-relative-path>ext/httpcore-nio-4.4.13.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/httpcore-nio-4.4.13.jar</binary-origin>

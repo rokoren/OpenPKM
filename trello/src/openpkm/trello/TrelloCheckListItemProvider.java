@@ -4,13 +4,15 @@
  */
 package openpkm.trello;
 
+import com.julienvey.trello.domain.CheckItem;
+import java.util.Properties;
+
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCardAction 
+public interface TrelloCheckListItemProvider 
 {
-    String getCardID(); 
-    String getCardName();
-    String getListID(); 
+    TrelloCheckListItem getCheckListItem(Properties props);
+    TrelloCheckListItem createCheckListItem(CheckItem item);     
 }

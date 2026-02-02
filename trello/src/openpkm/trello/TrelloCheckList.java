@@ -12,10 +12,9 @@ import java.util.Collection;
  */
 public interface TrelloCheckList 
 {
-    String getCardID();
     String getCheckListID();
-    String getTitle();
-    int getPosition();
+    String getCheckListName();
+    Integer getCheckListPosition();
     Collection<TrelloCheckListItem> getItems();
     TrelloCheckListItem getItem(String itemID);
     TrelloCheckListItem addItem(String title, int position);     

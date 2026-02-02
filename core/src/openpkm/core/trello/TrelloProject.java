@@ -2,11 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.impl.TrelloImpl;
 import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
@@ -49,8 +50,28 @@ import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
+import openpkm.core.TopComponentProvider;
+import openpkm.jcef.CefClientProvider;
+import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAction;
+import openpkm.trello.TrelloActionProvider;
+import openpkm.trello.TrelloActionSourceGroup;
+import openpkm.trello.TrelloBoard;
+import openpkm.trello.TrelloCard;
+import openpkm.trello.TrelloCardsProvider;
+import openpkm.trello.TrelloLabel;
+import openpkm.trello.TrelloLabelProvider;
+import openpkm.trello.TrelloLabelSourceGroup;
+import openpkm.trello.TrelloList;
+import openpkm.trello.TrelloListProvider;
+import openpkm.trello.TrelloListSourceGroup;
+import openpkm.trello.TrelloMember;
+import openpkm.trello.TrelloMemberProvider;
+import openpkm.trello.TrelloMemberSourceGroup;
+import openpkm.trello.TrelloService;
 import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
+import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -63,6 +84,7 @@ import org.netbeans.spi.project.RootProjectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
+import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -70,11 +92,14 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
+import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
+import org.openide.windows.TopComponent;
 
 /**
  *
@@ -87,15 +112,14 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";
     
     @StaticResource()
-    public static final String ICON = "openpkm/trello/resources/trello.png";     
-    
-    private static final String LINKEDIN_URL = "https://www.linkedin.com/in/";
+    public static final String ICON = "openpkm/core/resources/trello.png";     
     
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_LISTS   = 100;
-    private static final int POSITION_LABELS  = 200;
-    private static final int POSITION_MEMBERS = 300;
+    private static final int POSITION_ACTIONS = 200;    
+    private static final int POSITION_LABELS  = 300;
+    private static final int POSITION_MEMBERS = 400;
 
     private static final Logger LOG = Logger.getLogger(TrelloProject.class.getName());        
     
@@ -333,11 +357,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
-            list.add(new ParentProjectProviderImpl());              
+            list.add(new ParentProjectProviderImpl());
 
             list.add(new TrelloLogicalView(this));
             list.add(new TrelloCustomizerProvider(this));  
             
+            list.add(new TrelloCardsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
@@ -354,7 +379,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         return lkp;
     }      
 
-// TODO Boars  
+// TODO Board  
     
     @Override
     public String getBoardID() 
@@ -458,38 +483,43 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     
 // TODO TopComponentProvider
     
-    private final class TopComponentProviderImpl implements TopComponentProvider, MultiViewDescription, MultiViewElement
-    {
-        private TopComponent tc;           
-        private JToolBar toolbar;
-        private CefBrowser browser;
-        
-        private transient MultiViewElementCallback callback;                         
+    private final class TopComponentProviderImpl extends TopComponent implements TopComponentProvider
+    {        
+        private CefBrowser browser; 
+
+        public TopComponentProviderImpl() 
+        {
+            setLayout(new BorderLayout());
+        }                
         
         @Override
         public TopComponent getTopComponent()
         {
-            if(tc == null)
+            if(browser == null)
             {
-                MultiViewDescription[] mvds = new MultiViewDescription[1];
-                mvds[0] = this;
-                tc = MultiViewFactory.createMultiView(mvds, this);
-                tc.setDisplayName(getTitle());
+                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+                TrelloBoard board = getTrelloBoard();
+                if(provider != null && board != null)
+                {
+                    try
+                    {
+                        browser = provider.getCefClient().createBrowser(board.getShortUrl(), false, false);   
+                        add(browser.getUIComponent(), BorderLayout.CENTER);
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
             }
-            return tc;
+            return this;
         }        
         
         @Override
         public String preferredID() 
         {
-            return "linkedin";
+            return "trello";
         }         
-        
-        @Override
-        public MultiViewElement createElement() 
-        {
-            return this;
-        } 
 
         @Override
         public HelpCtx getHelpCtx() 
@@ -500,7 +530,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         @Override
         public String getDisplayName() 
         {
-            return "LinkedIn";
+            return "Trello";
         }   
         
         @Override
@@ -523,49 +553,6 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         }
 
         @Override
-        public void setMultiViewCallback(MultiViewElementCallback callback) 
-        {
-            this.callback = callback;
-        }
-
-        @Override
-        public CloseOperationState canCloseElement() 
-        {
-            return CloseOperationState.STATE_OK;
-        } 
-        
-        @Override
-        public JComponent getVisualRepresentation() 
-        {
-            CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-            if(provider != null)
-            {
-                try
-                {
-                    browser = provider.getCefClient().createBrowser(LINKEDIN_URL + getUserName(), false, false);   
-                    JPanel panel = new JPanel(new BorderLayout());
-                    panel.add(browser.getUIComponent(), BorderLayout.CENTER);
-                    return panel;
-                }
-                catch(Exception e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public JComponent getToolbarRepresentation() 
-        {
-            if(toolbar == null)
-            {
-                toolbar = new JToolBar();
-            }
-            return toolbar;
-        }
-
-        @Override
         public Action[] getActions() 
         {
             return new Action[0];
@@ -574,7 +561,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         @Override
         public Lookup getLookup() 
         {
-            return LinkedInProject.this.getLookup();
+            return TrelloProject.this.getLookup();
         }        
 
         @Override
@@ -770,14 +757,297 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         }          
     }      
     
-// TODO DataGroup
+// TODO TrelloCardsProvider
+    
+    private final class TrelloCardsProviderImpl implements TrelloCardsProvider
+    {                        
+        private static final String ROOT_FOLDER = "cards";          
+        
+        private Map<String, TrelloCard> cards; 
+        private FileObject rootDir;            
+        
+        private final ChangeSupport changeSupport;              
+
+        public TrelloCardsProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+        } 
+        
+        @Override
+        public synchronized FileObject getRootDirectory() throws IOException
+        {
+            if(rootDir == null)
+            {
+                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                if(rootDir == null)
+                {
+                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                    LOG.info("Cards dir created: " + rootDir.getPath());                        
+                }                 
+            }                           
+            return rootDir;       
+        }         
+        
+        private synchronized Map<String, TrelloCard> getCardsById()
+        {
+            if(cards == null)
+            {
+                cards = new HashMap<>();
+                try
+                {
+                    for (FileObject fo : getRootDirectory().getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            Project project = ProjectManager.getDefault().findProject(fo);
+                            if(project instanceof TrelloCard card)
+                            {
+                                cards.put(card.getCardID(), card);
+                            }                                                                                    
+                        }
+                        else
+                        {
+                            DataObject data = DataObject.find(fo);
+                            TrelloCard card = data.getLookup().lookup(TrelloCard.class);
+                            if(card != null)
+                            {
+                                cards.put(card.getCardID(), card);
+                            }                            
+                        }                                                                                                                                            
+                    }                      
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                              
+            }
+            return cards;
+        }  
+
+        @Override
+        public Collection<TrelloCard> getCards()
+        {
+            return Collections.unmodifiableCollection(getCardsById().values());
+        }
+        
+        @Override
+        public void addCard(TrelloCard card)
+        {
+            getCardsById().put(card.getCardID(), card);
+            changeSupport.fireChange();            
+        }
+        
+        @Override
+        public void removeCard(String cardID)
+        {
+            TrelloCard card = getCardsById().remove(cardID);
+            if(card != null)
+            {
+                changeSupport.fireChange();                            
+            }
+        }        
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddCard(this));         
+            return actions;
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return TrelloProject.this;
+        }                        
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+    }      
     
 // TODO SourceGroup
-          
+
+    private final class TrelloActionSourceGroupImpl extends TrelloActionSourceGroup implements NodeGroup, FileChangeListener
+    {                        
+        public TrelloActionSourceGroupImpl(TrelloActionProvider provider) 
+        {
+            super(provider);            
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return TrelloProject.this;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_ACTIONS;
+        }  
+
+        @Override
+        public Image getIcon(boolean isEmpty, boolean isOpen)
+        {
+            return ImageUtilities.loadImage(ICON);
+        }
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddComment(this));         
+            return actions;
+        } 
+        
+        @Override
+        public SortedSet<NodeProvider> getNodes()
+        {
+            List<NodeProvider> list = getActivity().values().stream()
+                    .filter(NodeProvider.class::isInstance)
+                    .map(NodeProvider.class::cast)
+                    .toList();        
+            
+            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
+            sorted.addAll(list);
+            
+            return sorted;
+        }
+        
+        @Override
+        protected synchronized Map<String, TrelloAction> getActivity()
+        {
+            if(activity == null)
+            {
+                activity = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            TrelloAction action = provider.getAction(Utils.getProperties(file)); 
+                            activity.put(action.getActionID(), action);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return activity;
+        }                
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Reference root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }        
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                TrelloAction action = provider.getAction(Utils.getProperties(file)); 
+                getActivity().put(action.getActionID(), action);               
+                changeSupport.fireChange();
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            TrelloLabel label = getLabels().get(file.getName());  
+            if(label != null)
+            {
+                
+            }
+            */
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            TrelloAction action = getActivity().remove(file.getName());  
+            if(action != null)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }          
+    }      
+    
     private final class TrelloLabelSourceGroupImpl extends TrelloLabelSourceGroup implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/trello/resources/palette.png";         
+        private static final String ICON = "openpkm/core/resources/palette.png";         
                 
         public TrelloLabelSourceGroupImpl(TrelloLabelProvider provider) 
         {
@@ -948,7 +1218,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     private final class TrelloMemberSourceGroupImpl extends TrelloMemberSourceGroup implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/trello/resources/group.png";         
+        private static final String ICON = "openpkm/core/resources/group.png";         
                 
         public TrelloMemberSourceGroupImpl(TrelloMemberProvider provider) 
         {
@@ -1485,6 +1755,146 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             }
         }
     }     
+
+    private static final class AddCard extends AbstractAction
+    {                          
+        private final TrelloCardsProvider provider;            
+
+        public AddCard(TrelloCardsProvider provider) 
+        {
+            super("Add Card");
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+            panels.add(new HomePageWizardPanel1());
+            panels.add(new HomePageWizardPanel2());
+            String[] steps = new String[panels.size()];
+            for (int i = 0; i < panels.size(); i++) 
+            {
+                Component c = panels.get(i).getComponent();
+                // Default step name to component name of panel.
+                steps[i] = c.getName();
+                if (c instanceof JComponent) { // assume Swing components
+                    JComponent jc = (JComponent) c;
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+                }
+            }
+            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
+            wiz.setTitleFormat(new MessageFormat("{0}"));
+            wiz.setTitle("Add Home Page");  
+            //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+            wiz.putProperty("provider", provider.getProvider());
+            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+            { 
+                LocalDateTime now = LocalDateTime.now();
+                String domainID = null;
+
+                String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
+                String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
+                String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
+                List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
+
+                Document document = (Document) wiz.getProperty("document"); 
+                String canonical = document.select("link[rel=canonical]").attr("href");
+                if(canonical != null && !canonical.isBlank())
+                {
+                    domainID = canonical;
+                }
+                else
+                { 
+                    String signature = getSignature(document, url);  
+
+                    try
+                    {
+                        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                        byte[] hash = digest.digest(signature.getBytes(StandardCharsets.UTF_8));
+
+                        StringBuilder hex = new StringBuilder();
+                        for (byte b : hash) {
+                            hex.append(String.format("%02x", b));
+                        }
+
+                        domainID = hex.toString();                      
+                    } 
+                    catch(NoSuchAlgorithmException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }            
+
+                Properties props = new Properties();
+                props.setProperty(HomePageProject.PROP_HOME_PAGE_ID, domainID);
+                props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+                props.setProperty(TitleProvider.PROP_TITLE, title);       
+                props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
+                props.setProperty(HomePageProject.PROP_URL, url);  
+
+                String favicon = getFavicon(document);
+                if(favicon == null)
+                {
+                    favicon = getFaviconGoogle(document);
+                }
+
+                if(favicon != null)
+                {
+                    props.setProperty(HomePageProject.PROP_FAVICON, favicon);
+                }
+
+                if(topics != null)
+                {
+                    KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                    if(knowledgeGraphProvider != null)
+                    {
+                        StringJoiner joiner = new StringJoiner(",");
+                        for(Topic topic : topics)
+                        {
+                            joiner.add(knowledgeGraphProvider.getTreeID(topic));
+                        }
+                        props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
+                    }
+                }  
+
+                try
+                {  
+                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), domainID);           
+                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
+
+                    OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
+                    props.store(os, "OpenPKM Home Page Project"); 
+                    os.close(); 
+
+                    StatusDisplayer.getDefault().setStatusText("OpenPKM Home Page Project saved: " + title); 
+
+                    Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                    if(project != null)
+                    {
+                        Domain domain = project.getLookup().lookup(Domain.class);
+                        if(domain != null)
+                        {
+                            provider.addDomain(domain);
+                            /*
+                            Project[] projects = {domain};
+                            OpenProjects.getDefault().open(projects, false);   
+                            */
+                        }
+                    }                  
+                }
+                catch(IOException e) 
+                {
+                    LOG.warning(e.getMessage());
+                }                                              
+            } 
+        }
+    } 
     
     private static final class AddLabel extends AbstractAction
     {                          

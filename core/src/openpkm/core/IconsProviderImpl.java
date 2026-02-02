@@ -76,6 +76,12 @@ public class IconsProviderImpl implements IconsProvider
     public static final String ICON_RSS_CHANNEL = "openpkm/core/resources/feed.png";     
 
     @StaticResource()
+    public static final String ICON_CHECK = "openpkm/core/resources/check_box.png";     
+            
+    @StaticResource()
+    public static final String ICON_UNCHECK = "openpkm/core/resources/check_box_uncheck.png";       
+    
+    @StaticResource()
     public static final String ICON_BULLET_RED = "openpkm/core/resources/bullet_red.png";  
 
     @StaticResource()
@@ -131,7 +137,11 @@ public class IconsProviderImpl implements IconsProvider
             case RSS_CHANNEL:
             return ICON_RSS_CHANNEL;             
             case WATCH_LATER:
-            return ICON_WATCH_LATER;             
+            return ICON_WATCH_LATER;               
+            case CHECK:
+            return ICON_CHECK;
+            case UNCHECK:
+            return ICON_UNCHECK;            
             case BULLET_RED:
             return ICON_BULLET_RED;             
             case BULLET_BLUE:

@@ -36,6 +36,8 @@ public interface IconsProvider
         LINKEDIN,
         RSS_CHANNEL,
         WATCH_LATER,
+        CHECK,
+        UNCHECK,
         BULLET_RED,
         BULLET_GREEN,
         BULLET_BLUE,        

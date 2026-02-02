@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Member;
 import java.awt.Color;
@@ -12,6 +12,8 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.trello.TrelloMember;
+import openpkm.trello.TrelloMemberProvider;
 import openpkm.utils.UserIcon;
 import org.openide.util.lookup.ServiceProvider;
 

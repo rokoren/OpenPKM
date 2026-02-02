@@ -11,6 +11,7 @@ package openpkm.trello;
 public interface TrelloAttachment 
 {
     String getAttachmentID();
-    String getUrl();
-    String getName();    
+    String getAttachmentUrl();
+    String getAttachmentName();    
+    String getAttachmentMimeType(); 
 }

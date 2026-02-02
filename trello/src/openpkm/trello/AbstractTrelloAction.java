@@ -4,15 +4,43 @@
  */
 package openpkm.trello;
 
-import com.julienvey.trello.domain.Action;
-import java.util.Date;
+import java.awt.Color;
+import java.awt.Image;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import openpkm.base.NodeProvider;
+import openpkm.base.PropertiesProvider;
+import openpkm.utils.UserIcon;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractTrelloAction implements TrelloAction
+public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider, PropertiesProvider
 {
+    public static final String PROP_ACTION_ID        = "action.id";
+    public static final String PROP_ACTION_TYPE      = "action.type";    
+    public static final String PROP_ACTION_DATE      = "action.date";
+    public static final String PROP_MEMBER_ID        = "member.id";
+    public static final String PROP_MEMBER_FULL_NAME = "member.full.name";   
+    
+    public static final String PROP_CARD_ID         = "card.id";
+    public static final String PROP_CARD_NAME       = "card.name";
+    public static final String PROP_LIST_ID         = "list.id";       
+    public static final String PROP_LIST_NAME       = "list.name"; 
+    public static final String PROP_LIST_BEFORE     = "list.before";
+    public static final String PROP_LIST_AFTER      = "list.after";      
+    public static final String PROP_CHECKLIST_ID    = "checklist.id";    
+    public static final String PROP_CHECKLIST_NAME  = "checklist.name"; 
+    public static final String PROP_CHECKITEM_ID    = "checkitem.id";
+    public static final String PROP_CHECKITEM_NAME  = "checkitem.name";
+    public static final String PROP_CHECKITEM_STATE = "checkitem.state";
+    public static final String PROP_ATTACHMENT_ID   = "attachment.id";
+    public static final String PROP_ATTACHMENT_NAME = "attachment.name";
+    public static final String PROP_COMMENT_TEXT    = "comment.text";
+    
     public static final String TYPE_CREATE_CARD              = "createCard";
     public static final String TYPE_DELETE_CARD              = "deleteCard";
     public static final String TYPE_COMMENT_CARD             = "commentCard";
@@ -24,183 +52,237 @@ public abstract class AbstractTrelloAction implements TrelloAction
     public static final String TYPE_REMOVE_CHECKLIST_TO_CARD = "removeChecklistFromCard";
     public static final String TYPE_UPDATE_ITEM_STATE        = "updateCheckItemStateOnCard";        
 
-    protected final Action action;   
+    protected final Properties props;   
 
-    public AbstractTrelloAction(Action action) 
+    public AbstractTrelloAction(Properties props) 
     {
-        this.action = action;
+        this.props = props;
     }
 
+// TODO TrelloAction    
+    
     @Override
     public String getActionID()
     {
-        return action.getId();
+        return props.getProperty(PROP_ACTION_ID);
     }
     
     @Override
-    public String getType() 
+    public String getActionType() 
     {
-        return action.getType();
+        return props.getProperty(PROP_ACTION_TYPE);
     }        
 
     @Override
-    public Date getDate() 
+    public LocalDateTime getActionDate() 
     {
-        return action.getDate();
+        String string = props.getProperty(PROP_ACTION_DATE);
+        if(string != null)
+        {
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+        }
+        return null;
     } 
     
     @Override
     public String getMemberID()
     {
-        return action.getIdMemberCreator();
+        return props.getProperty(PROP_MEMBER_ID);
     }
     
-    public static AbstractTrelloAction getTrelloAction(Action action)
+    @Override
+    public String getMemberFullName()
     {
-        if(action.getType().equalsIgnoreCase(TYPE_CARD_UPDATE))
-        {
-            return new CardUpdate(action);
-        }
-        else if(action.getType().equalsIgnoreCase(TYPE_ADD_CHECKLIST_TO_CARD))
-        {
-            return new AddChecklistToCard(action);
-        }
-        else if(action.getType().equalsIgnoreCase(TYPE_ADD_ATTACHMENT_TO_CARD))
-        {
-            return new AddAttachmentToCard(action);
-        }        
-        else if(action.getType().equalsIgnoreCase(TYPE_REMOVE_CHECKLIST_TO_CARD))
-        {
-            return new RemoveChecklistFromCard(action);
-        }   
-        else if(action.getType().equalsIgnoreCase(TYPE_CREATE_BOARD))
-        {
-            return new CreateBoard(action);
-        }  
-        else if(action.getType().equalsIgnoreCase(TYPE_CREATE_CARD))
-        {
-            return new CreateCard(action);
-        } 
-        else if(action.getType().equalsIgnoreCase(TYPE_DELETE_CARD))
-        {
-            return new DeleteCard(action);
-        }         
-        else if(action.getType().equalsIgnoreCase(TYPE_CREATE_LIST))
-        {
-            return new CreateList(action);
-        } 
-        else if(action.getType().equalsIgnoreCase(TYPE_COMMENT_CARD))
-        {
-            return new CommentCard(action);
-        }    
-        else if(action.getType().equalsIgnoreCase(TYPE_UPDATE_ITEM_STATE))
-        {
-            return new UpdateCheckListItemState(action);
-        }          
-        return null;        
+        return props.getProperty(PROP_MEMBER_FULL_NAME);
+    }    
+    
+// TODO PropertiesProvider        
+        
+    @Override
+    public Properties getProperties()
+    {
+        return props;
+    }                  
+
+// TODO NodeProvider         
+
+    @Override
+    public String getName() 
+    {
+        return getActionID();
     }
+
+    @Override
+    public String getDisplayName()
+    {
+        return toString();
+    }        
+
+    @Override
+    public Image getIcon(boolean opened) 
+    {
+        StringTokenizer st = new StringTokenizer(getMemberFullName());
+        return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
+    }                  
     
     public static final class CardUpdate extends AbstractTrelloAction implements TrelloCardAction
-    {
-        public CardUpdate(Action action) 
+    {        
+        public CardUpdate(Properties props) 
         {
-            super(action);
+            super(props);
         } 
         
         @Override
         public String getCardID()
         {
-            return action.getData().getCard().getId();
+            return props.getProperty(PROP_CARD_ID);
         }
         
+        @Override
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
+        }                
+        
+        @Override
         public String getListID()
         {
-            return action.getData().getList().getId();
-        }       
+            return props.getProperty(PROP_LIST_ID);
+        }     
         
-        public String getDesc()
+        public String getListBefore()
         {
-            return action.getData().getCard().getDesc();
-        }        
+            return props.getProperty(PROP_LIST_BEFORE);
+        }   
+        
+        public String getListAfter()
+        {
+            return props.getProperty(PROP_LIST_AFTER);
+        }         
         
         public boolean isListChanged()
         {
-            if(action.getData().getListBefore() != null && action.getData().getListAfter() != null)
+            if(getListBefore() != null && getListAfter() != null)
             {
-                if(action.getData().getListBefore().getId() != action.getData().getListAfter().getId())
-                {
-                    return true;
-                }                
+                return getListBefore().equals(getListAfter());
             }
             return false;
         }        
-        
-        public boolean isDescriptionChanged()
-        {
-            if(action.getData().getCard().getDesc() != null && action.getData().getOld().getDesc() != null)
-            {
-                if(!action.getData().getCard().getDesc().equals(action.getData().getOld().getDesc()))
-                {
-                    return true;
-                }                
-            }
-            return false;
-        }
                 
         @Override
         public String toString()
         {
-            return "Update card " + action.getData().getCard().getName().toUpperCase();            
+            return "Update card " + getCardName().toUpperCase();            
         }
     }
     
-    private static final class AddChecklistToCard extends AbstractTrelloAction
+    public static final class AddChecklistToCard extends AbstractTrelloAction
     {
-        public AddChecklistToCard(Action action) 
+        public AddChecklistToCard(Properties props) 
         {
-            super(action);
-        }       
+            super(props);
+        } 
+
+        public String getChecklistID()
+        {
+            return props.getProperty(PROP_CHECKLIST_ID);
+        }
+        
+        public String getChecklistName()
+        {
+            return props.getProperty(PROP_CHECKLIST_NAME);
+        }        
+        
+        public String getCardID()
+        {
+            return props.getProperty(PROP_CARD_ID);
+        }
+        
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
+        }          
         
         @Override
         public String toString()
         {
-            return "Add checklist to card " + action.getData().getCard().getName().toUpperCase();
+            return "Add checklist to card " + getCardName().toUpperCase();
         }
     }   
     
-    private static final class AddAttachmentToCard extends AbstractTrelloAction
+    public static final class AddAttachmentToCard extends AbstractTrelloAction
     {
-        public AddAttachmentToCard(Action action) 
+        public AddAttachmentToCard(Properties props) 
         {
-            super(action);
+            super(props);
         }       
+        
+        public String getAttachmentID()
+        {
+            return props.getProperty(PROP_ATTACHMENT_ID);
+        }
+        
+        public String getAttachmentName()
+        {
+            return props.getProperty(PROP_ATTACHMENT_NAME);
+        }        
+        
+        public String getCardID()
+        {
+            return props.getProperty(PROP_CARD_ID);
+        }
+        
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
+        }          
         
         @Override
         public String toString()
         {
-            return "Add attachment to card " + action.getData().getCard().getName().toUpperCase();
+            return "Add attachment to card " + getCardName().toUpperCase();
         }
     }     
     
-    private static final class RemoveChecklistFromCard extends AbstractTrelloAction
+    public static final class RemoveChecklistFromCard extends AbstractTrelloAction
     {
-        public RemoveChecklistFromCard(Action action) 
+        public RemoveChecklistFromCard(Properties props) 
         {
-            super(action);
+            super(props);
+        } 
+
+        public String getChecklistID()
+        {
+            return props.getProperty(PROP_CHECKLIST_ID);
+        }
+        
+        public String getChecklistName()
+        {
+            return props.getProperty(PROP_CHECKLIST_NAME);
+        }          
+        
+        public String getCardID()
+        {
+            return props.getProperty(PROP_CARD_ID);
+        }
+        
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
         }         
         
         @Override
         public String toString()
         {
-            return "Remove checklist from card " + action.getData().getCard().getName().toUpperCase();
+            return "Remove checklist from card " + getCardName().toUpperCase();
         }
     } 
 
-    private static final class CreateBoard extends AbstractTrelloAction
+    public static final class CreateBoard extends AbstractTrelloAction
     {
-        public CreateBoard(Action action) 
+        public CreateBoard(Properties props) 
         {
-            super(action);
+            super(props);
         } 
                 
         @Override
@@ -211,109 +293,158 @@ public abstract class AbstractTrelloAction implements TrelloAction
     } 
     
     public static final class CreateCard extends AbstractTrelloAction implements TrelloCardAction
-    {
-        public CreateCard(Action action) 
+    {        
+        public CreateCard(Properties props) 
         {
-            super(action);
+            super(props);
         } 
 
         @Override
         public String getCardID()
         {
-            return action.getData().getCard().getId();
+            return props.getProperty(PROP_CARD_ID);
         }
         
+        @Override
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
+        }                
+        
+        @Override
         public String getListID()
         {
-            return action.getData().getList().getId();
-        }        
+            return props.getProperty(PROP_LIST_ID);
+        }         
         
         @Override
         public String toString()
         {
-            return "Create card " + action.getData().getCard().getName().toUpperCase();
+            return "Create card " + getCardName().toUpperCase();
         }
     }  
     
     public static final class DeleteCard extends AbstractTrelloAction implements TrelloCardAction
     {
-        public DeleteCard(Action action) 
+        public DeleteCard(Properties props) 
         {
-            super(action);
+            super(props);
         } 
 
         @Override
         public String getCardID()
         {
-            return action.getData().getCard().getId();
+            return props.getProperty(PROP_CARD_ID);
         }
         
+        @Override
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
+        }                 
+        
+        @Override
         public String getListID()
         {
-            return action.getData().getList().getId();
-        }        
+            return props.getProperty(PROP_LIST_ID);
+        }       
         
         @Override
         public String toString()
         {
-            return "Delete card (" + action.getData().getCard().getId() + ")";
+            return "Delete card (" + getCardID() + ")";
         }
     }      
     
-    private static final class CreateList extends AbstractTrelloAction
+    public static final class CreateList extends AbstractTrelloAction
     {
-        public CreateList(Action action) 
+        public CreateList(Properties props) 
         {
-            super(action);
+            super(props);
         } 
+        
+        public String getListID()
+        {
+            return props.getProperty(PROP_LIST_ID);
+        }   
+        
+        public String getListName()
+        {
+            return props.getProperty(PROP_LIST_NAME);
+        }         
                 
         @Override
         public String toString()
         {
-            return "Create list " + action.getData().getList().getName().toUpperCase();
+            return "Create list " + getListName().toUpperCase();
         }
     }  
     
-    private static final class UpdateCheckListItemState extends AbstractTrelloAction
+    public static final class UpdateCheckListItemState extends AbstractTrelloAction
     {
-        public UpdateCheckListItemState(Action action) 
+        public UpdateCheckListItemState(Properties props) 
         {
-            super(action);
+            super(props);
         } 
+        
+        public String getChecklistID()
+        {
+            return props.getProperty(PROP_CHECKLIST_ID);
+        }  
+        
+        public String getCheckitemID()
+        {
+            return props.getProperty(PROP_CHECKITEM_ID);
+        }    
+        
+        public String getCheckitemName()
+        {
+            return props.getProperty(PROP_CHECKITEM_NAME);
+        }    
+        
+        public String getCheckitemState()
+        {
+            return props.getProperty(PROP_CHECKITEM_STATE);
+        }         
                 
         @Override
         public String toString()
         {
-            return "Update checklist item " + action.getData().getCheckItem().getName() + " as " + action.getData().getCheckItem().getState();
+            return "Update checklist item " + getCheckitemName() + " as " + getCheckitemState();
         }        
     }
     
     public static final class CommentCard extends AbstractTrelloAction
     {
-        public CommentCard(Action action) 
+        public CommentCard(Properties props) 
         {
-            super(action);
+            super(props);
         } 
         
         public String getCardID()
         {
-            return action.getData().getCard().getId();
+            return props.getProperty(PROP_CARD_ID);
         }
+        
+        public String getCardName()
+        {
+            return props.getProperty(PROP_CARD_NAME);
+        }        
         
         public String getListID()
         {
-            return action.getData().getList().getId();
-        }         
+            return props.getProperty(PROP_LIST_ID);
+        }        
         
-        public String getText() 
+        public String getCommentText() 
         {
-            return action.getData().getText();
+            return props.getProperty(PROP_COMMENT_TEXT);
         }  
              
         @Override
         public String toString()
         {
-            return "Comment card " + action.getData().getCard().getName().toUpperCase();
+            return "Comment card " + getCardName().toUpperCase();
         }
     }      
 }

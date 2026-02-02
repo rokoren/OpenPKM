@@ -4,7 +4,7 @@
  */
 package openpkm.trello;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  *
@@ -13,7 +13,8 @@ import java.util.Date;
 public interface TrelloAction 
 {
     String getActionID();
-    String getType();
-    Date getDate();
+    String getActionType();
+    LocalDateTime getActionDate();
     String getMemberID();     
+    String getMemberFullName(); 
 }

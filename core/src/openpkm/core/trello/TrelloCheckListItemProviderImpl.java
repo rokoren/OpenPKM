@@ -1,0 +1,161 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package openpkm.core.trello;
+
+import com.julienvey.trello.domain.CheckItem;
+import java.awt.Image;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.logging.Logger;
+import openpkm.base.IconsProvider;
+import openpkm.base.NodeProvider;
+import openpkm.base.PropertiesProvider;
+import openpkm.trello.TrelloCheckListItem;
+import openpkm.trello.TrelloCheckListItemProvider;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.ServiceProvider;
+
+/**
+ *
+ * @author Rok Koren
+ */
+@ServiceProvider(service=TrelloCheckListItemProvider.class)
+public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvider
+{
+    private static final String PROP_CHECKLIST_ID            = "checklist.id";
+    private static final String PROP_CHECKLIST_ITEM_ID       = "checklist.item.id";
+    private static final String PROP_CHECKLIST_ITEM_NAME     = "checklist.item.name";        
+    private static final String PROP_CHECKLIST_ITEM_POSITION = "checklist.item.position"; 
+    private static final String PROP_CHECKLIST_ITEM_STATE    = "checklist.item.state"; 
+    
+    private static final Logger LOG = Logger.getLogger(TrelloCheckListItemProvider.class.getName());    
+
+    @Override
+    public TrelloCheckListItem getCheckListItem(Properties props) 
+    {
+        return new TrelloCheckListItemImpl(props);
+    }
+    
+    @Override
+    public TrelloCheckListItem createCheckListItem(CheckItem item) 
+    {
+        Properties props = new Properties();               
+        props.setProperty(PROP_CHECKLIST_ITEM_ID, item.getId());
+        props.setProperty(PROP_CHECKLIST_ITEM_NAME, item.getName());          
+        props.setProperty(PROP_CHECKLIST_ITEM_POSITION, item.getPos() + ""); 
+        props.setProperty(PROP_CHECKLIST_ITEM_STATE, item.getState()); 
+        return getCheckListItem(props);
+    } 
+    
+    private static final class TrelloCheckListItemImpl implements TrelloCheckListItem, NodeProvider, PropertiesProvider
+    {         
+        private final Properties props;     
+        
+        public TrelloCheckListItemImpl(Properties props)
+        {
+            this.props = props;              
+        }     
+
+// TODO TrelloCheckListItem        
+
+        @Override
+        public String getCheckListID() 
+        {
+            return props.getProperty(PROP_CHECKLIST_ID);
+        } 
+        
+        @Override
+        public String getCheckListItemID() 
+        {
+            return props.getProperty(PROP_CHECKLIST_ITEM_ID);
+        } 
+        
+        @Override
+        public String getCheckListItemName() 
+        {
+            return props.getProperty(PROP_CHECKLIST_ITEM_NAME);
+        }         
+                
+        @Override
+        public Integer getCheckListItemPosition() 
+        {
+            String string = props.getProperty(PROP_CHECKLIST_ITEM_POSITION);
+            if(string != null)
+            {
+                try
+                {
+                    return Integer.parseInt(string);
+                }
+                catch(NumberFormatException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }
+            return null;
+        } 
+        
+        @Override
+        public State getCheckListItemState() 
+        {
+            String string = props.getProperty(PROP_CHECKLIST_ITEM_STATE);
+            if(string != null)
+            {
+                Optional<State> state = State.get(string);
+                if(state.isPresent())
+                {
+                    return state.get();
+                }
+            }
+            return State.INCOMPLETE;
+        }  
+        
+        @Override
+        public void setCheckListItemState(State state) 
+        {
+            if(state == null)
+            {
+                props.remove(PROP_CHECKLIST_ITEM_STATE);
+            }
+            else
+            {
+                props.put(PROP_CHECKLIST_ITEM_STATE, state.toString());
+            }
+        }         
+        
+// TODO PropertiesProvider        
+        
+        @Override
+        public Properties getProperties()
+        {
+            return props;
+        }                  
+
+// TODO NodeProvider         
+
+        @Override
+        public String getName() 
+        {
+            return getCheckListItemID();
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return getCheckListItemName();
+        }
+        
+        @Override
+        public Image getIcon(boolean opened) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            State state = getCheckListItemState();
+            if(state != null && state == State.COMPLETE)
+            {
+                return provider.getImage(IconsProvider.ICON.CHECK);
+            }
+            return provider.getImage(IconsProvider.ICON.UNCHECK);
+        }         
+    }      
+}
