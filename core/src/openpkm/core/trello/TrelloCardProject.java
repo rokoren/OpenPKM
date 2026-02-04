@@ -14,6 +14,8 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +32,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
+import javax.ws.rs.NotSupportedException;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.HtmlFilesProvider;
@@ -94,10 +97,15 @@ import org.openide.windows.TopComponent;
  */
 public class TrelloCardProject implements Project, TrelloCard, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 {
-    public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
-    public static final String PROP_TRELLO_LIST_ID  = "trello.list.id";
-    public static final String PROP_TRELLO_CARD_ID  = "trello.card.id";
-    public static final String PROP_TRELLO_ACTIVITY = "trello.activity";
+    public static final String PROP_APP_ID       = "app.id";   
+    public static final String PROP_TIME_CREATED = "time.created";      
+    
+    public static final String PROP_BOARD_ID         = "board.id";
+    public static final String PROP_LIST_ID          = "list.id";
+    public static final String PROP_CARD_ID          = "card.id";
+    public static final String PROP_CARD_NAME        = "card.name";
+    public static final String PROP_CARD_DESCRIPTION = "card.description";
+    public static final String PROP_TRELLO_ACTIVITY  = "trello.activity";       
     
     @StaticResource()
     public static final String ICON = "openpkm/core/resources/panel.png";
@@ -159,6 +167,21 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         } 
         
     }  
+    
+    public String getAppID() 
+    {
+        return props.getProperty(PROP_APP_ID);
+    }   
+    
+    public LocalDateTime getTimeCreated() 
+    {
+        String string = props.getProperty(PROP_TIME_CREATED);
+        if(string != null)
+        {
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+        }
+        return null;
+    }    
    
     public TrelloAccount getTrelloAccount()
     {
@@ -372,53 +395,45 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     @Override
     public String getBoardID() 
     {
-        return props.getProperty(PROP_TRELLO_BOARD_ID);
+        return props.getProperty(PROP_BOARD_ID);
     }    
     
     @Override
     public String getListID() 
     {
-        return props.getProperty(PROP_TRELLO_LIST_ID);
+        return props.getProperty(PROP_LIST_ID);
     } 
     
     @Override
     public String getCardID() 
     {
-        return props.getProperty(PROP_TRELLO_CARD_ID);
+        return props.getProperty(PROP_CARD_ID);
+    }   
+    
+    @Override
+    public String getCardName() 
+    {
+        return props.getProperty(PROP_CARD_NAME);
     }     
     
     @Override
-    public LocalDateTime getTimeCreated() 
+    public String getCardDescription() 
     {
-        String string = props.getProperty(PROP_TIME_CREATED);
-        if(string != null)
-        {
-            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
-        }
-        return null;
-    }    
+        return props.getProperty(PROP_CARD_DESCRIPTION);
+    }        
     
 // TODO TitleProvider  
     
     @Override
     public String getTitle() 
     {
-        return props.getProperty(PROP_TITLE);
+        return getCardName();
     }
 
     @Override
     public void setTitle(String title) 
     {
-        if(title == null)
-        {
-            Object oldValue = props.remove(PROP_TITLE);
-            propertyChangeSupport.firePropertyChange(PROP_TITLE, oldValue, title);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_TITLE, title);  
-            propertyChangeSupport.firePropertyChange(PROP_TITLE, oldValue, title);
-        } 
+        throw new NotSupportedException();
     } 
     
 // TODO DescriptionProvider  
@@ -426,22 +441,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     @Override
     public String getDescription() 
     {
-        return props.getProperty(PROP_DESCRIPTION);
+        return getCardDescription();
     }
 
     @Override
     public void setDescription(String desc) 
     {
-        if(desc == null)
-        {
-            Object oldValue = props.remove(PROP_DESCRIPTION);
-            propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, desc);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_DESCRIPTION, desc);  
-            propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, desc);
-        }   
+        throw new NotSupportedException();  
     }     
 
 // TODO PropertiesProvider

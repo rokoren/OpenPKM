@@ -16,8 +16,8 @@ public interface TrelloCard
     String getBoardID();
     String getListID();
     String getCardID();
-    String getTitle();
-    String getDescription();
+    String getCardName();
+    String getCardDescription();
     LocalDate getDueDate();
     List<TrelloLabel> getLabels();
     int getPosition();  

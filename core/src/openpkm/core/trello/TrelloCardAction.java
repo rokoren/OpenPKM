@@ -4,10 +4,20 @@
  */
 package openpkm.core.trello;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.JComponent;
 import openpkm.trello.TrelloCardsProvider;
+import org.openide.DialogDisplayer;
+import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.NbBundle.Messages;
@@ -40,8 +50,8 @@ public class TrelloCardAction implements ActionListener
     public void actionPerformed(ActionEvent e) 
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new GitHubWizardPanel1());
-        panels.add(new GitHubWizardPanel2());
+        panels.add(new TrelloCardWizardPanel1());
+        panels.add(new TrelloCardWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -60,24 +70,23 @@ public class TrelloCardAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add GitHub");  
+        wiz.setTitle("Add Card");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
+                     
+            String name = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_NAME);
+            String description = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_DESCRIPTION); 
+            //List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
 
-            GHUser user = (GHUser) wiz.getProperty("user"); 
-            String userID = user.getId() + "";                       
-            String userName = (String) wiz.getProperty(GitHubUser.PROP_USER_NAME);
-            String followersCount = (String) wiz.getProperty(GitHubUser.PROP_FOLLOWERS_COUNT);
-            String reposCount = (String) wiz.getProperty(GitHubUser.PROP_PUBLIC_REPOS_COUNT);
-            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-            String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
-
+            
+            
             Properties props = new Properties();
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(TrelloCardProject.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            
+            
             props.setProperty(GitHubUser.PROP_USER_ID, userID);
             props.setProperty(GitHubUser.PROP_USER_NAME, userName);                        
             props.setProperty(TitleProvider.PROP_TITLE, title);       
