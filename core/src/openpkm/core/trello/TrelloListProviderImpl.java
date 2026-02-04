@@ -6,20 +6,18 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.TList;
 import java.awt.Image;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloList;
 import openpkm.trello.TrelloListProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Utilities;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -58,9 +56,7 @@ public class TrelloListProviderImpl implements TrelloListProvider
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_list.png";  
         
-        private final Properties props; 
-        
-        private Map<String, TrelloCard> cards;         
+        private final Properties props;                 
         
         public TrelloListImpl(Properties props)
         {
@@ -131,81 +127,14 @@ public class TrelloListProviderImpl implements TrelloListProvider
         public Image getIcon(boolean opened) 
         {
             return ImageUtilities.loadImage(ICON);
-        }         
+        } 
 
-        private synchronized Map<String, TrelloCard> getCardsMap()
+        @Override
+        public List<Action> getActions() 
         {
-            if (cards == null)
-            {
-                cards = new HashMap<>();
-                List<TrelloCard> list = TrelloService.getCards(this);
-                for (TrelloCard trelloCard : list)
-                {
-                    cards.put(trelloCard.getCardID(), trelloCard);
-                }  
-            }
-            return cards;
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Card"));         
+            return actions;
         }      
-
-        @Override
-        public Collection<TrelloCard> getCards()
-        {
-            return getCardsMap().values();
-        }  
-
-        @Override
-        public TrelloCard getCard(String cardID)
-        {      
-            return getCardsMap().get(cardID);
-        } 
-
-        @Override
-        public TrelloCard addLink(String url)
-        {
-            try
-            {
-                Card card = TrelloService.createLink(getListID(), url);
-                TrelloCard trelloCard = new TrelloCardImpl(card);
-                getCardsMap().put(trelloCard.getCardID(), trelloCard);
-                return trelloCard;    
-            }
-            catch(UnirestException e)
-            {
-                LOG.warning(e.getMessage());
-            }
-            return null;
-        }   
-
-        @Override
-        public TrelloCard addCard(String title, String desc, LocalDate dueDate, int position)
-        {
-            Card card = new Card();
-            card.setName(title);
-            if(desc != null)
-            {
-                card.setDesc(desc);            
-            }
-            card.setIdList(getListID());
-            card.setIdBoard(getBoardID());
-            card.setPos(position);
-            if(dueDate != null)
-            {
-                card.setDue(Date.from(dueDate.atStartOfDay(ZoneId.systemDefault()).toInstant()));
-            }
-            Card card1 = TrelloService.createCard(getListID(), card);
-            TrelloCard trelloCard = new TrelloCardImpl(card1);
-            getCardsMap().put(trelloCard.getCardID(), trelloCard);
-            return trelloCard;
-        } 
-
-        @Override    
-        public void deleteCard(String cardID)
-        {
-            TrelloCard card = getCardsMap().remove(cardID);
-            if(card != null)
-            {
-                card.delete();
-            }
-        }
-    }     
+    } 
 }

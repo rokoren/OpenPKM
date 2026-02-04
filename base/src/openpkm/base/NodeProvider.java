@@ -6,6 +6,8 @@ package openpkm.base;
 
 import java.awt.Image;
 import java.util.Comparator;
+import java.util.List;
+import javax.swing.Action;
 
 /**
  *
@@ -16,6 +18,7 @@ public interface NodeProvider
     String getName();
     String getDisplayName();
     Image getIcon(boolean opened);
+    List<Action> getActions();
     
     public static Comparator<NodeProvider> displayNameComparator() 
     {

@@ -4,9 +4,6 @@
  */
 package openpkm.trello;
 
-import java.time.LocalDate;
-import java.util.Collection;
-
 /**
  *
  * @author Rok Koren
@@ -16,10 +13,5 @@ public interface TrelloList
     String getBoardID();  
     String getListID();
     String getListName();
-    Integer getListPosition();   
-    Collection<TrelloCard> getCards();  
-    TrelloCard getCard(String cardID);
-    TrelloCard addLink(String url);      
-    TrelloCard addCard(String title, String desc, LocalDate dueDate, int position);  
-    void deleteCard(String cardID);    
+    Integer getListPosition();      
 }

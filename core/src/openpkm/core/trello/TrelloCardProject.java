@@ -5,14 +5,18 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,14 +29,24 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.event.ChangeListener;
+import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DescriptionProvider;
+import openpkm.base.HtmlFilesProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
+import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
+import openpkm.core.TopComponentProvider;
+import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAction;
+import openpkm.trello.TrelloActionProvider;
+import openpkm.trello.TrelloActionSourceGroup;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.trello.TrelloAttachmentSourceGroup;
@@ -46,12 +60,20 @@ import openpkm.trello.TrelloCheckListItemSourceGroup;
 import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloCheckListSourceGroup;
 import openpkm.utils.Utils;
+import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectInformation;
+import org.netbeans.api.project.ProjectManager;
 import org.netbeans.api.project.SourceGroup;
+import org.netbeans.api.project.Sources;
+import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
+import org.netbeans.spi.project.RootProjectProvider;
+import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
+import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -59,10 +81,12 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
+import org.openide.windows.TopComponent;
 
 /**
  *
@@ -70,8 +94,9 @@ import org.openide.util.lookup.Lookups;
  */
 public class TrelloCardProject implements Project, TrelloCard, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 {
-    public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
+    public static final String PROP_TRELLO_LIST_ID  = "trello.list.id";
+    public static final String PROP_TRELLO_CARD_ID  = "trello.card.id";
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";
     
     @StaticResource()
@@ -82,6 +107,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     private static final int POSITION_CHECK_LISTS      = 100;
     private static final int POSITION_CHECK_LIST_ITEMS = 200;    
     private static final int POSITION_ATTACHMENTS      = 300;
+    private static final int POSITION_ACTIONS          = 400;
 
     private static final Logger LOG = Logger.getLogger(TrelloCardProject.class.getName());        
     
@@ -250,7 +276,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         }  
         return null;
     }
-
+č2
     private Source getLastSource() 
     {
         return lastSource;
@@ -325,7 +351,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             list.add(new TrelloLogicalView(this));
             list.add(new TrelloCustomizerProvider(this));  
             
-            list.add(new TrelloCardsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
@@ -351,10 +376,16 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     }    
     
     @Override
-    public String getAppID() 
+    public String getListID() 
     {
-        return props.getProperty(PROP_APP_ID);
-    }   
+        return props.getProperty(PROP_TRELLO_LIST_ID);
+    } 
+    
+    @Override
+    public String getCardID() 
+    {
+        return props.getProperty(PROP_TRELLO_CARD_ID);
+    }     
     
     @Override
     public LocalDateTime getTimeCreated() 
@@ -524,7 +555,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         @Override
         public Lookup getLookup() 
         {
-            return TrelloProject.this.getLookup();
+            return TrelloCardProject.this.getLookup();
         }        
 
         @Override
@@ -626,7 +657,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         @Override
         public Project getProject() 
         {
-            return TrelloProject.this;
+            return TrelloCardProject.this;
         }
     }     
   
@@ -672,7 +703,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(TrelloProject.this);
+            return Utils.getRootProject(TrelloCardProject.this);
         }         
     }
     
@@ -690,7 +721,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
                     try
                     {
                         Project project = ProjectManager.getDefault().findProject(parent);
-                        BoardsProvider provider = project.getLookup().lookup(BoardsProvider.class);
+                        TrelloCardsProvider provider = project.getLookup().lookup(TrelloCardsProvider.class);
                         if(provider != null)
                         {
                             return project;                        
@@ -718,124 +749,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         {
             return getProject(getProjectDirectory());
         }          
-    }      
-    
-// TODO TrelloCardsProvider
-    
-    private final class TrelloCardsProviderImpl implements TrelloCardsProvider
-    {                        
-        private static final String ROOT_FOLDER = "cards";          
-        
-        private Map<String, TrelloCard> cards; 
-        private FileObject rootDir;            
-        
-        private final ChangeSupport changeSupport;              
-
-        public TrelloCardsProviderImpl()
-        {
-            changeSupport = new ChangeSupport(this); 
-        } 
-        
-        @Override
-        public synchronized FileObject getRootDirectory() throws IOException
-        {
-            if(rootDir == null)
-            {
-                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
-                if(rootDir == null)
-                {
-                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                    LOG.info("Cards dir created: " + rootDir.getPath());                        
-                }                 
-            }                           
-            return rootDir;       
-        }         
-        
-        private synchronized Map<String, TrelloCard> getCardsById()
-        {
-            if(cards == null)
-            {
-                cards = new HashMap<>();
-                try
-                {
-                    for (FileObject fo : getRootDirectory().getChildren()) 
-                    {
-                        if(fo.isFolder())
-                        {
-                            Project project = ProjectManager.getDefault().findProject(fo);
-                            if(project instanceof TrelloCard card)
-                            {
-                                cards.put(card.getCardID(), card);
-                            }                                                                                    
-                        }
-                        else
-                        {
-                            DataObject data = DataObject.find(fo);
-                            TrelloCard card = data.getLookup().lookup(TrelloCard.class);
-                            if(card != null)
-                            {
-                                cards.put(card.getCardID(), card);
-                            }                            
-                        }                                                                                                                                            
-                    }                      
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                              
-            }
-            return cards;
-        }  
-
-        @Override
-        public Collection<TrelloCard> getCards()
-        {
-            return Collections.unmodifiableCollection(getCardsById().values());
-        }
-        
-        @Override
-        public void addCard(TrelloCard card)
-        {
-            getCardsById().put(card.getCardID(), card);
-            changeSupport.fireChange();            
-        }
-        
-        @Override
-        public void removeCard(String cardID)
-        {
-            TrelloCard card = getCardsById().remove(cardID);
-            if(card != null)
-            {
-                changeSupport.fireChange();                            
-            }
-        }        
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddCard(this));         
-            return actions;
-        }        
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return TrelloProject.this;
-        }                        
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }   
-    }      
+    }           
     
 // TODO SourceGroup
 
@@ -849,7 +763,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         @Override
         public Lookup.Provider getProvider()
         {
-            return TrelloProject.this;
+            return TrelloCardProject.this;
         }         
         
         @Override
@@ -923,7 +837,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
                     if(rootDir == null)
                     {
                         rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Reference root folder created: " + rootDir.getPath());                        
+                        LOG.info("Actions root folder created: " + rootDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
                 }
@@ -1100,7 +1014,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
                     if(rootDir == null)
                     {
                         rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Attachment root folder created: " + rootDir.getPath());                        
+                        LOG.info("Attachments root folder created: " + rootDir.getPath());                        
                     } 
                     rootDir.addFileChangeListener(this);                                        
                 }
@@ -1204,7 +1118,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         public Integer getPosition() 
         {
             return POSITION_CHECK_LISTS;
-        }  
+        } 
+        
+        @Override
+        public Icon getIcon(boolean isOpen)
+        {
+            return ImageUtilities.image2Icon(getIcon(false, isOpen));
+        }        
 
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
@@ -1377,6 +1297,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             return POSITION_CHECK_LIST_ITEMS;
         }  
 
+        @Override
+        public Icon getIcon(boolean isOpen)
+        {
+            return ImageUtilities.image2Icon(getIcon(false, isOpen));
+        }         
+        
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
         {
@@ -1680,7 +1606,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         @Override
         public Lookup.Provider getProvider() 
         {
-            return TrelloProject.this;
+            return TrelloCardProject.this;
         }                 
     } 
 
