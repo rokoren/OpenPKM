@@ -6,9 +6,12 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Label;
 import java.awt.Image;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloLabel;
@@ -110,6 +113,12 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
                 color.get().getIcon();
             }
             return null;
-        }        
+        }  
+        
+        @Override
+        public List<Action> getActions() 
+        {       
+            return Collections.EMPTY_LIST;
+        }          
     }      
 }

@@ -15,7 +15,6 @@ import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
@@ -45,9 +44,6 @@ import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.Source;
-import openpkm.base.SourceProvider;
-import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.core.TopComponentProvider;
@@ -90,8 +86,6 @@ import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
-import org.openide.filesystems.FileUtil;
-import org.openide.filesystems.LocalFileSystem;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
@@ -105,7 +99,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Board, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class TrelloProject implements Board, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, BatchUpdateSupport
 {
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -134,11 +128,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     private final ProjectState state;
     private final Properties props;   
     
-    private Lookup lkp;  
-    private FileObject dataDir;
-    private LocalFileSystem fileSystem;
-    private Source lastSource; 
-    
+    private Lookup lkp;      
     private TrelloAccount trelloAccount;
     private Trello trelloApi;    
     private TrelloBoard trelloBoard;
@@ -148,7 +138,14 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-
+                        
+        TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
+        if(actionProvider != null)
+        {
+            SourceGroup actions = new TrelloActionSourceGroupImpl(actionProvider);
+            sources.put(actions.getName(), actions);              
+        }
+        
         TrelloListProvider listProvider = Lookup.getDefault().lookup(TrelloListProvider.class);
         if(listProvider != null)
         {          
@@ -237,68 +234,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             Object oldValue = props.setProperty(PROP_TRELLO_ACTIVITY, activity);  
             propertyChangeSupport.firePropertyChange(PROP_TRELLO_ACTIVITY, oldValue, activity); 
         }
-    }    
-    
-    private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
-    {
-        if(fileSystem == null)
-        {
-            fileSystem = new LocalFileSystem();
-            fileSystem.setRootDirectory(FileUtil.toFile(getDataDirectory()));            
-        }
-        return fileSystem;
-    }
-    
-    @Override
-    public SourceProvider getSourceProvider(String folder)
-    {
-        return sources.get(folder);
-    }
-    
-    private synchronized FileObject getDataDirectory() throws IOException
-    {
-        if(dataDir == null)
-        {
-            dataDir = getProjectDirectory().getFileObject(DATA_FOLDER);
-            if(dataDir == null)
-            {
-                dataDir = getProjectDirectory().createFolder(DATA_FOLDER);
-                LOG.info("Data dir created: " + dataDir.getPath());                        
-            }                 
-        }                           
-        return dataDir;       
-    } 
-    
-    @Override
-    public FileObject getFileWithAttrs(FileObject file, boolean refresh)
-    {
-        try
-        {
-            if(refresh) getFileSystem().getRoot().refresh();
-            return getFileSystem().getRoot().getFileObject(file.getName(), file.getExt());            
-        }
-        catch(IOException e)
-        {
-            LOG.warning(e.getMessage());
-        }
-        catch(PropertyVetoException e)
-        {
-            LOG.warning(e.getMessage());
-        }  
-        return null;
-    }
-
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }  
+    }     
     
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener)
@@ -360,19 +296,10 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             list.add(new ParentProjectProviderImpl());
 
             list.add(new TrelloLogicalView(this));
-            list.add(new TrelloCustomizerProvider(this));  
-            
-            list.add(new TrelloCardsProviderImpl()); 
-            list.add(new HtmlFilesProviderImpl());                                  
+            list.add(new TrelloCustomizerProvider(this));              
+            list.add(new TrelloCardsProviderImpl());                                  
 
-            list.addAll(sources.values());
-
-            list.add(new BookDataGroupProviderImpl()); 
-            list.add(new ArticleDataGroupProviderImpl()); 
-            list.add(new DocumentDataGroupProviderImpl()); 
-            list.add(new LinkDataGroupProviderImpl());                
-            list.add(new PictureDataGroupProviderImpl()); 
-            list.add(new VideoDataGroupProviderImpl());             
+            list.addAll(sources.values());          
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -851,7 +778,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.add(new AddCard(this));         
+            //actions.add(new AddCard(this));         
             return actions;
         }        
         
@@ -905,7 +832,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.add(new AddComment(this));         
+            //actions.add(new AddComment(this));         
             return actions;
         } 
         

@@ -7,9 +7,12 @@ package openpkm.core.trello;
 import com.julienvey.trello.domain.Member;
 import java.awt.Color;
 import java.awt.Image;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloMember;
@@ -134,6 +137,12 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         {
             StringTokenizer st = new StringTokenizer(getMemberFullName());
             return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
-        }         
+        }  
+        
+        @Override
+        public List<Action> getActions() 
+        {       
+            return Collections.EMPTY_LIST;
+        }          
     }     
 }

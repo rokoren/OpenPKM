@@ -4,8 +4,6 @@
  */
 package openpkm.trello;
 
-import java.util.Collection;
-
 /**
  *
  * @author Rok Koren
@@ -14,8 +12,5 @@ public interface TrelloCheckList
 {
     String getCheckListID();
     String getCheckListName();
-    Integer getCheckListPosition();
-    Collection<TrelloCheckListItem> getItems();
-    TrelloCheckListItem getItem(String itemID);
-    TrelloCheckListItem addItem(String title, int position);     
+    Integer getCheckListPosition();   
 }

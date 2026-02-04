@@ -6,14 +6,18 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.CheckList;
 import java.awt.Image;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Utilities;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -115,6 +119,14 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public Image getIcon(boolean opened) 
         {
             return ImageUtilities.loadImage(ICON);
-        }         
+        }  
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Checklist"));         
+            return actions;
+        }        
     }     
 }

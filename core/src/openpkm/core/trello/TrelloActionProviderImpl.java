@@ -2,13 +2,16 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Action;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.logging.Logger;
+import openpkm.trello.AbstractTrelloAction;
+import openpkm.trello.TrelloAction;
+import openpkm.trello.TrelloActionProvider;
 import openpkm.utils.DateTimeUtils;
 import org.openide.util.lookup.ServiceProvider;
 

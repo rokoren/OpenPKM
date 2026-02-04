@@ -105,6 +105,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     public static final String PROP_CARD_ID          = "card.id";
     public static final String PROP_CARD_NAME        = "card.name";
     public static final String PROP_CARD_DESCRIPTION = "card.description";
+    public static final String PROP_CARD_POSITION    = "card.position";
     public static final String PROP_TRELLO_ACTIVITY  = "trello.activity";       
     
     @StaticResource()
@@ -371,19 +372,10 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
 
-            list.add(new TrelloLogicalView(this));
-            list.add(new TrelloCustomizerProvider(this));  
-            
-            list.add(new HtmlFilesProviderImpl());                                  
+            list.add(new TrelloCardLogicalView(this));
+            list.add(new TrelloCardCustomizerProvider(this));                                 
 
-            list.addAll(sources.values());
-
-            list.add(new BookDataGroupProviderImpl()); 
-            list.add(new ArticleDataGroupProviderImpl()); 
-            list.add(new DocumentDataGroupProviderImpl()); 
-            list.add(new LinkDataGroupProviderImpl());                
-            list.add(new PictureDataGroupProviderImpl()); 
-            list.add(new VideoDataGroupProviderImpl());             
+            list.addAll(sources.values());         
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -420,7 +412,25 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     public String getCardDescription() 
     {
         return props.getProperty(PROP_CARD_DESCRIPTION);
-    }        
+    }  
+    
+    @Override
+    public Integer getCardPosition() 
+    {
+        String string = props.getProperty(PROP_CARD_POSITION);
+        if(string != null)
+        {
+            try
+            {
+                return Integer.parseInt(string);                    
+            }
+            catch(NumberFormatException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+        }
+        return null;
+    }    
     
 // TODO TitleProvider  
     

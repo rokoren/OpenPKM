@@ -20,7 +20,7 @@ public interface TrelloCard
     String getCardDescription();
     LocalDate getDueDate();
     List<TrelloLabel> getLabels();
-    int getPosition();  
+    Integer getCardPosition();  
     boolean isClosed();
     boolean isSubscribed();
     boolean isDueComplete();

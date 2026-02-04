@@ -6,8 +6,11 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Attachment;
 import java.awt.Image;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAttachment;
@@ -111,6 +114,12 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         public Image getIcon(boolean opened) 
         {
             return ImageUtilities.loadImage(ICON);
-        }         
+        } 
+
+        @Override
+        public List<Action> getActions() 
+        {       
+            return Collections.EMPTY_LIST;
+        }  
     }      
 }

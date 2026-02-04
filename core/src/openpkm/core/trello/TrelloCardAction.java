@@ -7,6 +7,8 @@ package openpkm.core.trello;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,11 +17,17 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardsProvider;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -47,7 +55,7 @@ public class TrelloCardAction implements ActionListener
     }    
 
     @Override
-    public void actionPerformed(ActionEvent e) 
+    public void actionPerformed(ActionEvent evt) 
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new TrelloCardWizardPanel1());
@@ -77,26 +85,23 @@ public class TrelloCardAction implements ActionListener
         { 
             LocalDateTime now = LocalDateTime.now();
                      
+            String cardID = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_ID);
+            String boardID = (String) wiz.getProperty(TrelloCardProject.PROP_BOARD_ID);
+            String listID = (String) wiz.getProperty(TrelloCardProject.PROP_LIST_ID);
             String name = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_NAME);
             String description = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_DESCRIPTION); 
+            String position = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_POSITION); 
             //List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
-
-            
-            
+                        
             Properties props = new Properties();
             props.setProperty(TrelloCardProject.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            
-            
-            props.setProperty(GitHubUser.PROP_USER_ID, userID);
-            props.setProperty(GitHubUser.PROP_USER_NAME, userName);                        
-            props.setProperty(TitleProvider.PROP_TITLE, title);       
-            props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
-            
-            props.setProperty(GitHubUser.PROP_AVATAR_URL, user.getAvatarUrl());  
-            props.setProperty(GitHubUser.PROP_HTML_URL, user.getHtmlUrl().toString());  
-            props.setProperty(GitHubUser.PROP_FOLLOWERS_COUNT, followersCount);
-            props.setProperty(GitHubUser.PROP_PUBLIC_REPOS_COUNT, reposCount);            
-            
+            props.setProperty(TrelloCardProject.PROP_BOARD_ID, boardID);
+            props.setProperty(TrelloCardProject.PROP_LIST_ID, listID);
+            props.setProperty(TrelloCardProject.PROP_CARD_ID, cardID);
+            props.setProperty(TrelloCardProject.PROP_CARD_NAME, name);
+            props.setProperty(TrelloCardProject.PROP_CARD_DESCRIPTION, description);
+            props.setProperty(TrelloCardProject.PROP_CARD_POSITION, position);          
+            /*
             if(topics != null)
             {
                 KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
@@ -110,25 +115,25 @@ public class TrelloCardAction implements ActionListener
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
             }  
-
+            */
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), userID);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, GitHubProjectFactory.PROJECT_FOLDER);                   
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), cardID);           
+                FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
 
-                OutputStream os = projectFolder.createAndOpen(GitHubProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM GitHub Project"); 
+                OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
+                props.store(os, "OpenPKM Trello Card Project"); 
                 os.close(); 
                                 
-                StatusDisplayer.getDefault().setStatusText("OpenPKM GitHub Project saved: " + title); 
+                StatusDisplayer.getDefault().setStatusText("OpenPKM Trello Card Project saved: " + name); 
 
                 Project project = ProjectManager.getDefault().findProject(projectDirectory);
                 if(project != null)
                 {
-                    Domain domain = project.getLookup().lookup(Domain.class);
-                    if(domain != null)
+                    TrelloCard card = project.getLookup().lookup(TrelloCard.class);
+                    if(card != null)
                     {
-                        provider.addDomain(domain);
+                        provider.addCard(card);
                         /*
                         Project[] projects = {domain};
                         OpenProjects.getDefault().open(projects, false);   
