@@ -6,24 +6,28 @@ package openpkm.trello;
 
 import java.time.LocalDate;
 import java.util.List;
+import openpkm.base.DataSource;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCard 
+public interface TrelloCard extends DataSource
 {
     String getBoardID();
     String getListID();
     String getCardID();
     String getCardName();
-    String getCardDescription();
+    Integer getCardPosition(); 
+    boolean isCardLink();
+    /*
+    String getCardDescription();    
     LocalDate getDueDate();
-    List<TrelloLabel> getLabels();
-    Integer getCardPosition();  
+    List<TrelloLabel> getLabels();    
     boolean isClosed();
     boolean isSubscribed();
     boolean isDueComplete();
     void setDueComplete(boolean complete); 
     void delete();    
+    */
 }

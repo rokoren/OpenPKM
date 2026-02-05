@@ -96,16 +96,7 @@ import org.openide.windows.TopComponent;
  * @author Rok Koren
  */
 public class TrelloCardProject implements Project, TrelloCard, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
-{
-    public static final String PROP_APP_ID       = "app.id";   
-    public static final String PROP_TIME_CREATED = "time.created";      
-    
-    public static final String PROP_BOARD_ID         = "board.id";
-    public static final String PROP_LIST_ID          = "list.id";
-    public static final String PROP_CARD_ID          = "card.id";
-    public static final String PROP_CARD_NAME        = "card.name";
-    public static final String PROP_CARD_DESCRIPTION = "card.description";
-    public static final String PROP_CARD_POSITION    = "card.position";
+{       
     public static final String PROP_TRELLO_ACTIVITY  = "trello.activity";       
     
     @StaticResource()
@@ -167,22 +158,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             sources.put(checkListItems.getName(), checkListItems);            
         } 
         
-    }  
-    
-    public String getAppID() 
-    {
-        return props.getProperty(PROP_APP_ID);
-    }   
-    
-    public LocalDateTime getTimeCreated() 
-    {
-        String string = props.getProperty(PROP_TIME_CREATED);
-        if(string != null)
-        {
-            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
-        }
-        return null;
-    }    
+    }                 
    
     public TrelloAccount getTrelloAccount()
     {
@@ -300,7 +276,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         }  
         return null;
     }
-č2
+    
     private Source getLastSource() 
     {
         return lastSource;
@@ -383,6 +359,23 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     }      
 
 // TODO TrelloCard  
+    
+    @Override
+    public String getAppID() 
+    {
+        return props.getProperty(PROP_APP_ID);
+    }   
+    
+    @Override
+    public LocalDateTime getTimeCreated() 
+    {
+        String string = props.getProperty(PROP_TIME_CREATED);
+        if(string != null)
+        {
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+        }
+        return null;
+    }     
     
     @Override
     public String getBoardID() 

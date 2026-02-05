@@ -15,6 +15,7 @@ import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
@@ -38,7 +39,11 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Board;
 import openpkm.base.BoardsProvider;
+import openpkm.base.DataProvider;
+import openpkm.base.DataProviders;
+import openpkm.base.DataSource;
 import openpkm.base.DescriptionProvider;
+import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
@@ -54,6 +59,7 @@ import openpkm.trello.TrelloActionProvider;
 import openpkm.trello.TrelloActionSourceGroup;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
+import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
@@ -65,6 +71,7 @@ import openpkm.trello.TrelloMember;
 import openpkm.trello.TrelloMemberProvider;
 import openpkm.trello.TrelloMemberSourceGroup;
 import openpkm.trello.TrelloService;
+import openpkm.utils.FileUtils;
 import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
 import org.cef.browser.CefBrowser;
@@ -86,6 +93,8 @@ import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
+import org.openide.filesystems.FileUtil;
+import org.openide.filesystems.LocalFileSystem;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
@@ -99,7 +108,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Board, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, BatchUpdateSupport
+public class TrelloProject implements Board, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
 {
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -120,6 +129,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     private static final RequestProcessor RP = new RequestProcessor(TrelloProject.class);   
     
     private final Map<String, SourceGroup> sources = new HashMap();  
+    private final Map<String, DataProvider> dataProviders = new HashMap();
     private final List<UpdateCookie> cookies = new ArrayList();      
     private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
     private final ChangeSupport changeSupport = new ChangeSupport(this);
@@ -128,7 +138,11 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     private final ProjectState state;
     private final Properties props;   
     
-    private Lookup lkp;      
+    private Lookup lkp; 
+    private FileObject dataDir;
+    private LocalFileSystem fileSystem;
+    private DataSource dataSource;   
+    
     private TrelloAccount trelloAccount;
     private Trello trelloApi;    
     private TrelloBoard trelloBoard;
@@ -138,7 +152,14 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-                        
+          
+        TrelloCardProvider cardProvider = Lookup.getDefault().lookup(TrelloCardProvider.class);
+        if(cardProvider != null)
+        {
+            DataProvider cards = new TrelloCardsProviderImpl(cardProvider);
+            dataProviders.put(cards.getName(), cards);    
+        }
+        
         TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
         if(actionProvider != null)
         {
@@ -166,7 +187,31 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             SourceGroup members = new TrelloMemberSourceGroupImpl(memberProvider);
             sources.put(members.getName(), members);            
         }         
-    }  
+    } 
+    
+    private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
+    {
+        if(fileSystem == null)
+        {
+            fileSystem = new LocalFileSystem();
+            fileSystem.setRootDirectory(FileUtil.toFile(getDataDirectory()));            
+        }
+        return fileSystem;
+    }
+    
+    private synchronized FileObject getDataDirectory() throws IOException
+    {
+        if(dataDir == null)
+        {
+            dataDir = getProjectDirectory().getFileObject(DATA_FOLDER);
+            if(dataDir == null)
+            {
+                dataDir = getProjectDirectory().createFolder(DATA_FOLDER);
+                LOG.info("Data dir created: " + dataDir.getPath());                        
+            }                 
+        }                           
+        return dataDir;       
+    }     
    
     public TrelloAccount getTrelloAccount()
     {
@@ -270,7 +315,48 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     public void removeChangeListener(ChangeListener listener) 
     {
         changeSupport.removeChangeListener(listener);
-    }      
+    } 
+    
+// TODO DataProviders
+
+    @Override
+    public DataProvider getDataProvider(String name)
+    {
+        return dataProviders.get(name);
+    }    
+    
+    @Override
+    public FileObject getFileWithAttrs(FileObject file, boolean refresh)
+    {
+        try
+        {
+            if(refresh) getFileSystem().getRoot().refresh();
+            return getFileSystem().getRoot().getFileObject(file.getName(), file.getExt());            
+        }
+        catch(IOException e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        catch(PropertyVetoException e)
+        {
+            LOG.warning(e.getMessage());
+        }  
+        return null;
+    }
+    
+    @Override
+    public DataSource getDataSource() 
+    {
+        return dataSource;
+    }
+
+    @Override
+    public void setDataSource(DataSource newValue) 
+    {
+        DataSource oldValue = dataSource;
+        dataSource = newValue;
+        propertyChangeSupport.firePropertyChange(PROP_DATA_SOURCE, oldValue, newValue);
+    }    
     
 // TODO Project
     
@@ -296,10 +382,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             list.add(new ParentProjectProviderImpl());
 
             list.add(new TrelloLogicalView(this));
-            list.add(new TrelloCustomizerProvider(this));              
-            list.add(new TrelloCardsProviderImpl());                                  
+            list.add(new TrelloCustomizerProvider(this));                 
+            
+            list.add(new HtmlFilesProviderImpl());   
 
-            list.addAll(sources.values());          
+            list.addAll(sources.values()); 
+            list.addAll(dataProviders.values());    
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -686,19 +774,61 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     
 // TODO TrelloCardsProvider
     
-    private final class TrelloCardsProviderImpl implements TrelloCardsProvider
+    private final class TrelloCardsProviderImpl implements TrelloCardsProvider, FileChangeListener
     {                        
         private static final String ROOT_FOLDER = "cards";          
         
         private Map<String, TrelloCard> cards; 
         private FileObject rootDir;            
         
+        private final TrelloCardProvider provider;
         private final ChangeSupport changeSupport;              
 
-        public TrelloCardsProviderImpl()
+        public TrelloCardsProviderImpl(TrelloCardProvider provider)
         {
+            this.provider = provider;
             changeSupport = new ChangeSupport(this); 
         } 
+        
+        @Override
+        public String getName()
+        {
+            return ROOT_FOLDER;
+        }
+        
+        @Override
+        public TrelloCardProvider getCardProvider()
+        {
+            return provider;
+        }
+        
+        @Override
+        public DataSource getSource(String sourceID)
+        {
+            return getCardsById().get(sourceID);
+        }
+        
+        @Override
+        public FileObject createData(Properties props, FileTypeProvider fileTypeProvider)     
+        {
+            TrelloCard card = provider.createCard(props, this);
+            if(card != null)
+            {
+                try
+                {
+                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+                    FileObject file = getFileWithAttrs(primaryFile, true);
+                    file.setAttribute(ATTR_DATA_PROVIDER, getName());
+                    file.setAttribute(ATTR_DATA_SOURCE_ID, card.getSourceID());                                                          
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            } 
+            return null;
+        }          
         
         @Override
         public synchronized FileObject getRootDirectory() throws IOException
@@ -710,7 +840,8 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
                 {
                     rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
                     LOG.info("Cards dir created: " + rootDir.getPath());                        
-                }                 
+                }  
+                rootDir.addFileChangeListener(this);            
             }                           
             return rootDir;       
         }         
@@ -798,13 +929,65 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         public void removeChangeListener(ChangeListener listener) 
         {
             changeSupport.removeChangeListener(listener);
-        }   
+        } 
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            TrelloCard card = provider.getCard(evt.getFile());
+            if(card != null)
+            {
+                getCardsById().put(card.getCardID(), card);
+                setDataSource(card);    
+            }
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            TrelloCard card = provider.getCard(evt.getFile());
+            if(card != null)
+            {
+                getCardsById().put(card.getCardID(), card);
+                setDataSource(card);    
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            TrelloCard card = provider.getCard(evt.getFile());
+            if(card != null)
+            {
+                getCardsById().remove(card.getCardID());
+                setDataSource(card);    
+            }              
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
     }      
     
 // TODO SourceGroup
 
     private final class TrelloActionSourceGroupImpl extends TrelloActionSourceGroup implements NodeGroup, FileChangeListener
-    {                        
+    { 
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/action_log.png";          
+        
         public TrelloActionSourceGroupImpl(TrelloActionProvider provider) 
         {
             super(provider);            
@@ -822,6 +1005,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             return POSITION_ACTIONS;
         }  
 
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
         {

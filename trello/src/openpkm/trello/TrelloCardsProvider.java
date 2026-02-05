@@ -9,20 +9,20 @@ import java.util.Collection;
 import java.util.List;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
+import openpkm.base.DataProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCardsProvider 
+public interface TrelloCardsProvider extends DataProvider
 {
+    TrelloCardProvider getCardProvider();
     FileObject getRootDirectory() throws IOException;    
     Collection<TrelloCard> getCards();  
     void addCard(TrelloCard card);
     void removeCard(String cardID);
-    Lookup.Provider getProvider();
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener); 
     List<Action> getActions();     

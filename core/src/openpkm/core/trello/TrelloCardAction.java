@@ -17,8 +17,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.MarkdownSupport;
 import openpkm.trello.TrelloCard;
+import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
+import openpkm.utils.Utils;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
@@ -26,8 +29,12 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -85,22 +92,22 @@ public class TrelloCardAction implements ActionListener
         { 
             LocalDateTime now = LocalDateTime.now();
                      
-            String cardID = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_ID);
-            String boardID = (String) wiz.getProperty(TrelloCardProject.PROP_BOARD_ID);
-            String listID = (String) wiz.getProperty(TrelloCardProject.PROP_LIST_ID);
-            String name = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_NAME);
-            String description = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_DESCRIPTION); 
-            String position = (String) wiz.getProperty(TrelloCardProject.PROP_CARD_POSITION); 
+            String cardID = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_ID);
+            String boardID = (String) wiz.getProperty(TrelloCardProvider.PROP_BOARD_ID);
+            String listID = (String) wiz.getProperty(TrelloCardProvider.PROP_LIST_ID);
+            String name = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_NAME);
+            String description = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION); 
+            String position = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_POSITION); 
             //List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
                         
             Properties props = new Properties();
-            props.setProperty(TrelloCardProject.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(TrelloCardProject.PROP_BOARD_ID, boardID);
-            props.setProperty(TrelloCardProject.PROP_LIST_ID, listID);
-            props.setProperty(TrelloCardProject.PROP_CARD_ID, cardID);
-            props.setProperty(TrelloCardProject.PROP_CARD_NAME, name);
-            props.setProperty(TrelloCardProject.PROP_CARD_DESCRIPTION, description);
-            props.setProperty(TrelloCardProject.PROP_CARD_POSITION, position);          
+            props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
+            props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(TrelloCardProvider.PROP_BOARD_ID, boardID);
+            props.setProperty(TrelloCardProvider.PROP_LIST_ID, listID);
+            props.setProperty(TrelloCardProvider.PROP_CARD_ID, cardID);
+            props.setProperty(TrelloCardProvider.PROP_CARD_NAME, name);
+            props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, position);          
             /*
             if(topics != null)
             {
@@ -116,6 +123,29 @@ public class TrelloCardAction implements ActionListener
                 }
             }  
             */
+            
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+            if(markdown != null)
+            {
+                FileObject file = provider.createData(props, markdown);
+                if(file != null)  
+                {
+                    StatusDisplayer.getDefault().setStatusText("OpenPKM Trello Card Project saved: " + name);                     
+                    try
+                    {
+                        DataObject data = DataObject.find(file);
+                        OpenCookie open = data.getCookie(OpenCookie.class);
+                        open.open();                           
+                    }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
+            }
+            
+
+            
             try
             {  
                 FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), cardID);           
