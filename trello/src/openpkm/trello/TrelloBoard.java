@@ -6,7 +6,6 @@ package openpkm.trello;
 
 import java.awt.Color;
 import java.util.Comparator;
-import org.openide.util.RequestProcessor;
 
 /**
  *
@@ -14,29 +13,24 @@ import org.openide.util.RequestProcessor;
  */
 public interface TrelloBoard 
 {
+    String getWorkspaceID();     
     TrelloAccount getAccount();
     String getBoardID();
+    String getName();
+    String getDescription();    
     String getUrl();
-    String getShortUrl();
-    String getTitle();
-    void setTitle(String title);
-    String getDescription();
-    void setDescription(String desc);
+    String getShortUrl();  
     Color getBackground();
     void setBackground(Color color);
-    String getWorkspaceID();            
-    RequestProcessor getRequestProcessor();  
     
-    public static Comparator<TrelloBoard> titleComparator() 
+    public static Comparator<TrelloBoard> nameComparator() 
     {
         return new Comparator<TrelloBoard>() 
         {
             @Override
             public int compare(TrelloBoard board1, TrelloBoard board2) 
             {
-                String title1 = board1.getTitle();
-                String title2 = board2.getTitle();
-                return title1.compareTo(title2);
+                return board1.getName().compareTo(board2.getName());
             }
         };
     }     

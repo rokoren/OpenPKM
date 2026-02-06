@@ -42,7 +42,14 @@ public interface IconsProvider
         BULLET_GREEN,
         BULLET_BLUE,        
         BULLET_BELL,
-        BULLET_STAR,
+        BULLET_STAR,        
+        TAG_YELLOW,
+        TAG_PURPLE,
+        TAG_BLUE,
+        TAG_RED,
+        TAG_GREEN,
+        TAG_ORANGE,
+        TAG_PINK,        
         VIDEOS;    
     }     
 }

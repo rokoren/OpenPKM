@@ -54,23 +54,23 @@ import openpkm.base.UpdateCookie;
 import openpkm.core.TopComponentProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
-import openpkm.trello.TrelloActionSourceGroup;
+import openpkm.trello.TrelloActionsProvider;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
-import openpkm.trello.TrelloLabelSourceGroup;
+import openpkm.trello.TrelloLabelsProvider;
 import openpkm.trello.TrelloList;
 import openpkm.trello.TrelloListProvider;
-import openpkm.trello.TrelloListSourceGroup;
+import openpkm.trello.TrelloListsProvider;
 import openpkm.trello.TrelloMember;
 import openpkm.trello.TrelloMemberProvider;
-import openpkm.trello.TrelloMemberSourceGroup;
-import openpkm.trello.TrelloService;
+import openpkm.trello.TrelloMembersProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
@@ -163,28 +163,28 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
         if(actionProvider != null)
         {
-            SourceGroup actions = new TrelloActionSourceGroupImpl(actionProvider);
+            SourceGroup actions = new TrelloActionsProviderImpl(actionProvider);
             sources.put(actions.getName(), actions);              
         }
         
         TrelloListProvider listProvider = Lookup.getDefault().lookup(TrelloListProvider.class);
         if(listProvider != null)
         {          
-            SourceGroup lists = new TrelloListSourceGroupImpl(listProvider);
+            SourceGroup lists = new TrelloListsProviderImpl(listProvider);
             sources.put(lists.getName(), lists);            
         }  
         
         TrelloLabelProvider labelProvider = Lookup.getDefault().lookup(TrelloLabelProvider.class);
         if(labelProvider != null)
         {          
-            SourceGroup labels = new TrelloLabelSourceGroupImpl(labelProvider);
+            SourceGroup labels = new TrelloLabelsProviderImpl(labelProvider);
             sources.put(labels.getName(), labels);            
         }  
         
         TrelloMemberProvider memberProvider = Lookup.getDefault().lookup(TrelloMemberProvider.class);
         if(memberProvider != null)
         {          
-            SourceGroup members = new TrelloMemberSourceGroupImpl(memberProvider);
+            SourceGroup members = new TrelloMembersProviderImpl(memberProvider);
             sources.put(members.getName(), members);            
         }         
     } 
@@ -220,7 +220,11 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             String username = props.getProperty(PROP_TRELLO_USERNAME);
             if (username != null)
             {
-                trelloAccount = TrelloService.getDefault().getAccount(username);           
+                TrelloAccountsProvider provider = Lookup.getDefault().lookup(TrelloAccountsProvider.class);
+                if(provider != null)
+                {
+                    trelloAccount = provider.getAccount(username);                      
+                }         
             }                        
         }
         return trelloAccount;
@@ -690,7 +694,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
 
         @Override
         public synchronized Image getIcon()
-        {            
+        { 
             TrelloBoard board = getTrelloBoard();
             if(board != null)
             {
@@ -983,12 +987,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionSourceGroupImpl extends TrelloActionSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png";          
         
-        public TrelloActionSourceGroupImpl(TrelloActionProvider provider) 
+        public TrelloActionsProviderImpl(TrelloActionProvider provider) 
         {
             super(provider);            
         }          
@@ -1160,12 +1164,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         }          
     }      
     
-    private final class TrelloLabelSourceGroupImpl extends TrelloLabelSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png";         
                 
-        public TrelloLabelSourceGroupImpl(TrelloLabelProvider provider) 
+        public TrelloLabelsProviderImpl(TrelloLabelProvider provider) 
         {
             super(provider);            
         }          
@@ -1182,6 +1186,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             return POSITION_LABELS;
         }  
 
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
         {
@@ -1331,12 +1341,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         }          
     }  
     
-    private final class TrelloMemberSourceGroupImpl extends TrelloMemberSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/group.png";         
+        private static final String ICON = "openpkm/core/resources/group.png";                  
                 
-        public TrelloMemberSourceGroupImpl(TrelloMemberProvider provider) 
+        public TrelloMembersProviderImpl(TrelloMemberProvider provider) 
         {
             super(provider);            
         }          
@@ -1353,6 +1363,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             return POSITION_MEMBERS;
         }  
 
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
         {
@@ -1502,9 +1518,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         }          
     }      
 
-    private final class TrelloListSourceGroupImpl extends TrelloListSourceGroup implements NodeGroup, FileChangeListener
-    {                 
-        public TrelloListSourceGroupImpl(TrelloListProvider provider) 
+    private final class TrelloListsProviderImpl extends TrelloListsProvider implements NodeGroup, FileChangeListener
+    {  
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/application_view_columns.png";          
+        
+        public TrelloListsProviderImpl(TrelloListProvider provider) 
         {
             super(provider);            
         }          
@@ -1521,6 +1540,12 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
             return POSITION_LISTS;
         }  
 
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
         {
@@ -1830,9 +1855,9 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
 
     private static final class AddList extends AbstractAction
     {                         
-        protected final TrelloListSourceGroup sourceGroup;            
+        protected final TrelloListsProvider sourceGroup;            
 
-        public AddList(TrelloListSourceGroup sourceGroup) 
+        public AddList(TrelloListsProvider sourceGroup) 
         {
             super("Add List");
             this.sourceGroup = sourceGroup;
@@ -1874,9 +1899,9 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
     
     private static final class AddLabel extends AbstractAction
     {                          
-        private final TrelloLabelSourceGroup sourceGroup;            
+        private final TrelloLabelsProvider sourceGroup;            
 
-        public AddLabel(TrelloLabelSourceGroup sourceGroup) 
+        public AddLabel(TrelloLabelsProvider sourceGroup) 
         {
             super("Add Label");
             this.sourceGroup = sourceGroup;
@@ -1919,9 +1944,9 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
 
     private static final class AddMember extends AbstractAction
     {                          
-        protected final TrelloMemberSourceGroup sourceGroup;            
+        protected final TrelloMembersProvider sourceGroup;            
 
-        public AddMember(TrelloMemberSourceGroup sourceGroup) 
+        public AddMember(TrelloMembersProvider sourceGroup) 
         {
             super("Add Member");
             this.sourceGroup = sourceGroup;

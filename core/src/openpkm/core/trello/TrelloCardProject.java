@@ -6,12 +6,14 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
@@ -34,7 +36,9 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import javax.ws.rs.NotSupportedException;
 import openpkm.base.BatchUpdateSupport;
-import openpkm.base.DescriptionProvider;
+import openpkm.base.DataProvider;
+import openpkm.base.DataProviders;
+import openpkm.base.DataSource;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
@@ -49,19 +53,21 @@ import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
-import openpkm.trello.TrelloActionSourceGroup;
+import openpkm.trello.TrelloActionsProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
-import openpkm.trello.TrelloAttachmentSourceGroup;
+import openpkm.trello.TrelloAttachmentsProvider;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
+import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItemProvider;
-import openpkm.trello.TrelloCheckListItemSourceGroup;
+import openpkm.trello.TrelloCheckListItemsProvider;
 import openpkm.trello.TrelloCheckListProvider;
-import openpkm.trello.TrelloCheckListSourceGroup;
+import openpkm.trello.TrelloCheckListsProvider;
+import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -82,6 +88,7 @@ import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
+import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
@@ -95,7 +102,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
 {       
     public static final String PROP_TRELLO_ACTIVITY  = "trello.activity";       
     
@@ -113,7 +120,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     
     private static final RequestProcessor RP = new RequestProcessor(TrelloCardProject.class);   
     
-    private final Map<String, SourceGroup> sources = new HashMap();  
+    private final Map<String, SourceGroup> sources = new HashMap(); 
+    private final Map<String, DataProvider> dataProviders = new HashMap();
     private final List<UpdateCookie> cookies = new ArrayList();      
     private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
     private final ChangeSupport changeSupport = new ChangeSupport(this);
@@ -125,7 +133,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private Source lastSource; 
+    private DataSource dataSource;
     
     private TrelloAccount trelloAccount;
     private Trello trelloApi;    
@@ -137,54 +145,35 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         this.state = state;
         this.props = props;
 
+        TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
+        if(actionProvider != null)
+        {          
+            SourceGroup actions = new TrelloActionsProviderImpl(actionProvider);
+            sources.put(actions.getName(), actions);            
+        }         
+        
         TrelloAttachmentProvider attachmentProvider = Lookup.getDefault().lookup(TrelloAttachmentProvider.class);
         if(attachmentProvider != null)
         {          
-            SourceGroup attachments = new TrelloAttachmentSourceGroupImpl(attachmentProvider);
+            SourceGroup attachments = new TrelloAttachmentsProviderImpl(attachmentProvider);
             sources.put(attachments.getName(), attachments);            
         }  
         
         TrelloCheckListProvider checkListProvider = Lookup.getDefault().lookup(TrelloCheckListProvider.class);
         if(checkListProvider != null)
         {          
-            SourceGroup checkLists = new TrelloCheckListSourceGroupImpl(checkListProvider);
+            SourceGroup checkLists = new TrelloCheckListsProviderImpl(checkListProvider);
             sources.put(checkLists.getName(), checkLists);            
         }  
 
         TrelloCheckListItemProvider checkListItemProvider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
         if(checkListItemProvider != null)
         {          
-            SourceGroup checkListItems = new TrelloCheckListItemSourceGroupImpl(checkListItemProvider);
+            SourceGroup checkListItems = new TrelloCheckListItemsProviderImpl(checkListItemProvider);
             sources.put(checkListItems.getName(), checkListItems);            
         } 
         
-    }                 
-   
-    public TrelloAccount getTrelloAccount()
-    {
-        if(trelloAccount == null)
-        {
-            String username = props.getProperty(PROP_TRELLO_USERNAME);
-            if (username != null)
-            {
-                trelloAccount = TrelloService.getDefault().getAccount(username);           
-            }                        
-        }
-        return trelloAccount;
-    }     
-    
-    public Trello getTrelloApi()
-    {
-        if(trelloApi == null)
-        {
-            TrelloAccount account = getTrelloAccount();
-            if(account != null)
-            {
-                trelloApi = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
-            }            
-        }
-        return trelloApi;
-    }
+    }        
     
     public TrelloBoard getTrelloBoard()
     {
@@ -237,11 +226,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         }
         return fileSystem;
     }
+   
+// DataProviders    
     
     @Override
-    public SourceProvider getSourceProvider(String folder)
+    public DataProvider getDataProvider(String name)
     {
-        return sources.get(folder);
+        return dataProviders.get(name);
     }
     
     private synchronized FileObject getDataDirectory() throws IOException
@@ -277,16 +268,18 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         return null;
     }
     
-    private Source getLastSource() 
+    @Override
+    public DataSource getDataSource() 
     {
-        return lastSource;
+        return dataSource;
     }
 
-    private void setLastSource(Source source) 
+    @Override
+    public void setDataSource(DataSource newValue) 
     {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
+        DataSource oldValue = dataSource;
+        dataSource = newValue;
+        propertyChangeSupport.firePropertyChange(PROP_DATA_SOURCE, oldValue, newValue);
     }  
     
     @Override
@@ -352,6 +345,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             list.add(new TrelloCardCustomizerProvider(this));                                 
 
             list.addAll(sources.values());         
+            list.addAll(dataProviders.values());    
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -363,54 +357,54 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     @Override
     public String getAppID() 
     {
-        return props.getProperty(PROP_APP_ID);
+        return props.getProperty(TrelloCardProvider.PROP_APP_ID);
     }   
     
     @Override
     public LocalDateTime getTimeCreated() 
     {
-        String string = props.getProperty(PROP_TIME_CREATED);
+        String string = props.getProperty(TrelloCardProvider.PROP_TIME_CREATED);
         if(string != null)
         {
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }     
+    } 
+
+    @Override
+    public String getSourceID()
+    {
+        return getCardID();
+    }
     
     @Override
     public String getBoardID() 
     {
-        return props.getProperty(PROP_BOARD_ID);
+        return props.getProperty(TrelloCardProvider.PROP_BOARD_ID);
     }    
     
     @Override
     public String getListID() 
     {
-        return props.getProperty(PROP_LIST_ID);
+        return props.getProperty(TrelloCardProvider.PROP_LIST_ID);
     } 
     
     @Override
     public String getCardID() 
     {
-        return props.getProperty(PROP_CARD_ID);
+        return props.getProperty(TrelloCardProvider.PROP_CARD_ID);
     }   
     
     @Override
     public String getCardName() 
     {
-        return props.getProperty(PROP_CARD_NAME);
-    }     
-    
-    @Override
-    public String getCardDescription() 
-    {
-        return props.getProperty(PROP_CARD_DESCRIPTION);
-    }  
+        return props.getProperty(TrelloCardProvider.PROP_CARD_NAME);
+    }      
     
     @Override
     public Integer getCardPosition() 
     {
-        String string = props.getProperty(PROP_CARD_POSITION);
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_POSITION);
         if(string != null)
         {
             try
@@ -423,7 +417,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             }
         }
         return null;
-    }    
+    }  
+    
+    @Override
+    public boolean isCardLink()
+    {
+        return false;
+    }
     
 // TODO TitleProvider  
     
@@ -437,20 +437,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     public void setTitle(String title) 
     {
         throw new NotSupportedException();
-    } 
-    
-// TODO DescriptionProvider  
-    
-    @Override
-    public String getDescription() 
-    {
-        return getCardDescription();
-    }
-
-    @Override
-    public void setDescription(String desc) 
-    {
-        throw new NotSupportedException();  
     }     
 
 // TODO PropertiesProvider
@@ -762,9 +748,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
     
 // TODO SourceGroup
 
-    private final class TrelloActionSourceGroupImpl extends TrelloActionSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements NodeGroup, FileChangeListener
     {                        
-        public TrelloActionSourceGroupImpl(TrelloActionProvider provider) 
+        public TrelloActionsProviderImpl(TrelloActionProvider provider) 
         {
             super(provider);            
         }          
@@ -781,6 +767,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             return POSITION_ACTIONS;
         }  
 
+        @Override
+        public Icon getIcon(boolean open)
+        {
+            return ImageUtilities.loadIcon(ICON);
+        }        
+        
         @Override
         public Image getIcon(boolean isEmpty, boolean isOpen)
         {
@@ -930,12 +922,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         }          
     }      
     
-    private final class TrelloAttachmentSourceGroupImpl extends TrelloAttachmentSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/attach.png";         
                 
-        public TrelloAttachmentSourceGroupImpl(TrelloAttachmentProvider provider) 
+        public TrelloAttachmentsProviderImpl(TrelloAttachmentProvider provider) 
         {
             super(provider);            
         }          
@@ -1107,12 +1099,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         }          
     }  
     
-    private final class TrelloCheckListSourceGroupImpl extends TrelloCheckListSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/date_task.png";         
                 
-        public TrelloCheckListSourceGroupImpl(TrelloCheckListProvider provider) 
+        public TrelloCheckListsProviderImpl(TrelloCheckListProvider provider) 
         {
             super(provider);            
         }          
@@ -1284,12 +1276,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         }          
     }      
 
-    private final class TrelloCheckListItemSourceGroupImpl extends TrelloCheckListItemSourceGroup implements NodeGroup, FileChangeListener
+    private final class TrelloCheckListItemsProviderImpl extends TrelloCheckListItemsProvider implements NodeGroup, FileChangeListener
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/date_task.png";         
                 
-        public TrelloCheckListItemSourceGroupImpl(TrelloCheckListItemProvider provider) 
+        public TrelloCheckListItemsProviderImpl(TrelloCheckListItemProvider provider) 
         {
             super(provider);            
         }          
@@ -1618,67 +1610,25 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             return TrelloCardProject.this;
         }                 
     } 
+    
+    private static final class AddCheckList extends AbstractAction
+    {  
+        @StaticResource()
+        public static final String BANNER = "openpkm/core/resources/banner.png";          
+        
+        protected final TrelloCheckListsProvider provider;            
 
-    private static final class AddList extends AbstractAction
-    {                         
-        protected final TrelloListSourceGroup sourceGroup;            
-
-        public AddList(TrelloListSourceGroup sourceGroup) 
+        public AddCheckList(TrelloCheckListsProvider provider) 
         {
-            super("Add List");
-            this.sourceGroup = sourceGroup;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new ThoughtWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
-            {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add List"); 
-            /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("project", provider.getProject());
-            */
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {                      
-            }
-        }
-    }     
-
-    private static final class AddCard extends AbstractAction
-    {                          
-        private final TrelloCardsProvider provider;            
-
-        public AddCard(TrelloCardsProvider provider) 
-        {
-            super("Add Card");
+            super("Add Checklist");
             this.provider = provider;
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
-        {
+        {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new HomePageWizardPanel1());
-            panels.add(new HomePageWizardPanel2());
+            panels.add(new AttachmentWizardPanel1());
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) 
             {
@@ -1697,111 +1647,22 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
             WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
             // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
             wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Home Page");  
-            //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("provider", provider.getProvider());
+            wiz.setTitle("Add Checklist");  
+            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+            wiz.putProperty("project", provider.getProject());
+            wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             { 
-                LocalDateTime now = LocalDateTime.now();
-                String domainID = null;
-
-                String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
-                String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-                String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
-                List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
-
-                Document document = (Document) wiz.getProperty("document"); 
-                String canonical = document.select("link[rel=canonical]").attr("href");
-                if(canonical != null && !canonical.isBlank())
+                TrelloAttachment trelloAttachment = (TrelloAttachment) wiz.getProperty("attachment");
+                if(trelloAttachment != null)
                 {
-                    domainID = canonical;
+                    Attachment attachment = new AttachmentImpl(trelloAttachment);
+                    provider.addAttachment(attachment);
+                    StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
                 }
-                else
-                { 
-                    String signature = getSignature(document, url);  
-
-                    try
-                    {
-                        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                        byte[] hash = digest.digest(signature.getBytes(StandardCharsets.UTF_8));
-
-                        StringBuilder hex = new StringBuilder();
-                        for (byte b : hash) {
-                            hex.append(String.format("%02x", b));
-                        }
-
-                        domainID = hex.toString();                      
-                    } 
-                    catch(NoSuchAlgorithmException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                }            
-
-                Properties props = new Properties();
-                props.setProperty(HomePageProject.PROP_HOME_PAGE_ID, domainID);
-                props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-                props.setProperty(TitleProvider.PROP_TITLE, title);       
-                props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
-                props.setProperty(HomePageProject.PROP_URL, url);  
-
-                String favicon = getFavicon(document);
-                if(favicon == null)
-                {
-                    favicon = getFaviconGoogle(document);
-                }
-
-                if(favicon != null)
-                {
-                    props.setProperty(HomePageProject.PROP_FAVICON, favicon);
-                }
-
-                if(topics != null)
-                {
-                    KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
-                    if(knowledgeGraphProvider != null)
-                    {
-                        StringJoiner joiner = new StringJoiner(",");
-                        for(Topic topic : topics)
-                        {
-                            joiner.add(knowledgeGraphProvider.getTreeID(topic));
-                        }
-                        props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
-                    }
-                }  
-
-                try
-                {  
-                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), domainID);           
-                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
-
-                    OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
-                    props.store(os, "OpenPKM Home Page Project"); 
-                    os.close(); 
-
-                    StatusDisplayer.getDefault().setStatusText("OpenPKM Home Page Project saved: " + title); 
-
-                    Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                    if(project != null)
-                    {
-                        Domain domain = project.getLookup().lookup(Domain.class);
-                        if(domain != null)
-                        {
-                            provider.addDomain(domain);
-                            /*
-                            Project[] projects = {domain};
-                            OpenProjects.getDefault().open(projects, false);   
-                            */
-                        }
-                    }                  
-                }
-                catch(IOException e) 
-                {
-                    LOG.warning(e.getMessage());
-                }                                              
-            } 
+            }
         }
-    } 
+    }     
     
     private static final class AddLabel extends AbstractAction
     {                          
@@ -1853,12 +1714,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, De
         @StaticResource()
         public static final String BANNER = "openpkm/core/resources/banner.png";          
         
-        protected final TrelloAttachmentSourceGroup sourceGroup;            
+        protected final TrelloAttachmentsProvider provider;            
 
-        public AddAttachment(TrelloAttachmentSourceGroup sourceGroup) 
+        public AddAttachment(TrelloAttachmentsProvider provider) 
         {
             super("Add Attachment");
-            this.sourceGroup = sourceGroup;
+            this.provider = provider;
         }
 
         @Override

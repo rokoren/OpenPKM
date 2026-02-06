@@ -14,23 +14,23 @@ import org.openide.util.ChangeSupport;
  *
  * @author Rok Koren
  */
-public abstract class TrelloCheckListSourceGroup implements SourceGroup
-{
-    protected static final String ROOT_FOLDER = "check_lists";       
+public abstract class TrelloAttachmentsProvider implements SourceGroup
+{        
+    protected static final String ROOT_FOLDER = "attachments";       
 
-    protected Map<String, TrelloCheckList> checkLists; 
+    protected Map<String, TrelloAttachment> attachments; 
     protected FileObject rootDir; 
 
-    protected final TrelloCheckListProvider provider;
+    protected final TrelloAttachmentProvider provider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloCheckListSourceGroup(TrelloCheckListProvider provider) 
+    public TrelloAttachmentsProvider(TrelloAttachmentProvider provider) 
     {
         this.provider = provider;
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloCheckList> getCheckLists();
+    protected abstract Map<String, TrelloAttachment> getAttachments();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -42,9 +42,9 @@ public abstract class TrelloCheckListSourceGroup implements SourceGroup
         changeSupport.removeChangeListener(listener);
     }     
 
-    public TrelloCheckList getCheckList(String checkListID) 
+    public TrelloAttachment getAttachment(String attachmentID) 
     {
-        return getCheckLists().get(checkListID);
+        return getAttachments().get(attachmentID);
     }                                  
 
     @Override
@@ -56,12 +56,12 @@ public abstract class TrelloCheckListSourceGroup implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Checklists";
+        return "Attachments";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getCheckLists().containsKey(file.getName());
-    }      
+        return getAttachments().containsKey(file.getName());
+    }       
 }

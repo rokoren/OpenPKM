@@ -4,6 +4,7 @@
  */
 package openpkm.base;
 
+import java.beans.PropertyChangeListener;
 import org.openide.filesystems.FileObject;
 
 /**
@@ -20,5 +21,7 @@ public interface DataProviders
     DataSource getDataSource();
     void setDataSource(DataSource source);
     DataProvider getDataProvider(String name);
-    FileObject getFileWithAttrs(FileObject file, boolean refresh);    
+    FileObject getFileWithAttrs(FileObject file, boolean refresh);   
+    void addPropertyChangeListener(PropertyChangeListener listener);
+    void removePropertyChangeListener(PropertyChangeListener listener);
 }

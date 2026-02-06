@@ -5,39 +5,32 @@
 package openpkm.trello;
 
 import java.util.Map;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.event.ChangeListener;
-import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
-import org.openide.util.ImageUtilities;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class TrelloListSourceGroup implements SourceGroup
-{
-    @StaticResource()
-    public static final String ICON = "openpkm/trello/resources/application_view_columns.png";      
-    
-    protected static final String ROOT_FOLDER = "lists";       
+public abstract class TrelloLabelsProvider implements SourceGroup
+{    
+    protected static final String ROOT_FOLDER = "labels";       
 
-    protected Map<String, TrelloList> lists; 
+    protected Map<String, TrelloLabel> labels; 
     protected FileObject rootDir; 
 
-    protected final TrelloListProvider provider;
+    protected final TrelloLabelProvider provider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloListSourceGroup(TrelloListProvider provider) 
+    public TrelloLabelsProvider(TrelloLabelProvider provider) 
     {
         this.provider = provider;
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloList> getLists();
+    protected abstract Map<String, TrelloLabel> getLabels();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -49,9 +42,9 @@ public abstract class TrelloListSourceGroup implements SourceGroup
         changeSupport.removeChangeListener(listener);
     }     
 
-    public TrelloList getList(String listID) 
+    public TrelloLabel getLabel(String labelID) 
     {
-        return getLists().get(listID);
+        return getLabels().get(labelID);
     }                                  
 
     @Override
@@ -63,18 +56,12 @@ public abstract class TrelloListSourceGroup implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Lists";
-    }
-
-    @Override
-    public Icon getIcon(boolean bln) 
-    {
-        return new ImageIcon(ImageUtilities.loadImage(ICON));
+        return "Labels";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getLists().containsKey(file.getName());
+        return getLabels().containsKey(file.getName());
     }     
 }

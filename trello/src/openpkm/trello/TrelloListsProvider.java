@@ -14,23 +14,23 @@ import org.openide.util.ChangeSupport;
  *
  * @author Rok Koren
  */
-public abstract class TrelloCheckListItemSourceGroup implements SourceGroup
-{
-    protected static final String ROOT_FOLDER = "items";       
+public abstract class TrelloListsProvider implements SourceGroup
+{    
+    protected static final String ROOT_FOLDER = "lists";       
 
-    protected Map<String, TrelloCheckListItem> checkListItems; 
+    protected Map<String, TrelloList> lists; 
     protected FileObject rootDir; 
 
-    protected final TrelloCheckListItemProvider provider;
+    protected final TrelloListProvider provider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloCheckListItemSourceGroup(TrelloCheckListItemProvider provider) 
+    public TrelloListsProvider(TrelloListProvider provider) 
     {
         this.provider = provider;
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloCheckListItem> getCheckListItems();
+    protected abstract Map<String, TrelloList> getLists();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -42,9 +42,9 @@ public abstract class TrelloCheckListItemSourceGroup implements SourceGroup
         changeSupport.removeChangeListener(listener);
     }     
 
-    public TrelloCheckListItem getCheckListItem(String itemID) 
+    public TrelloList getList(String listID) 
     {
-        return getCheckListItems().get(itemID);
+        return getLists().get(listID);
     }                                  
 
     @Override
@@ -56,12 +56,12 @@ public abstract class TrelloCheckListItemSourceGroup implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Checklist Items";
+        return "Lists";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getCheckListItems().containsKey(file.getName());
+        return getLists().containsKey(file.getName());
     }     
 }

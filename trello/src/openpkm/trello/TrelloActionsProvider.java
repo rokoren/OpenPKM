@@ -14,23 +14,23 @@ import org.openide.util.ChangeSupport;
  *
  * @author Rok Koren
  */
-public abstract class TrelloAttachmentSourceGroup implements SourceGroup
-{        
-    protected static final String ROOT_FOLDER = "attachments";       
+public abstract class TrelloActionsProvider implements SourceGroup
+{    
+    protected static final String ROOT_FOLDER = "actions";       
 
-    protected Map<String, TrelloAttachment> attachments; 
+    protected Map<String, TrelloAction> activity; 
     protected FileObject rootDir; 
 
-    protected final TrelloAttachmentProvider provider;
+    protected final TrelloActionProvider provider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloAttachmentSourceGroup(TrelloAttachmentProvider provider) 
+    public TrelloActionsProvider(TrelloActionProvider provider) 
     {
         this.provider = provider;
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloAttachment> getAttachments();
+    protected abstract Map<String, TrelloAction> getActivity();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -42,9 +42,9 @@ public abstract class TrelloAttachmentSourceGroup implements SourceGroup
         changeSupport.removeChangeListener(listener);
     }     
 
-    public TrelloAttachment getAttachment(String attachmentID) 
+    public TrelloAction getAction(String actionID) 
     {
-        return getAttachments().get(attachmentID);
+        return getActivity().get(actionID);
     }                                  
 
     @Override
@@ -56,12 +56,12 @@ public abstract class TrelloAttachmentSourceGroup implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Attachments";
+        return "Actions";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getAttachments().containsKey(file.getName());
-    }       
+        return getActivity().containsKey(file.getName());
+    }     
 }

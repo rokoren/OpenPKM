@@ -31,15 +31,15 @@ import org.openide.util.lookup.ProxyLookup;
  *
  * @author Rok Koren
  */
-public class TrelloNode extends FilterNode implements ChangeListener, PropertyChangeListener
+public class TrelloCardNode extends FilterNode implements ChangeListener, PropertyChangeListener
 {
-    private final TrelloProject project;
+    private final TrelloCardProject project;
     
-    public TrelloNode(Node node, TrelloProject project) 
+    public TrelloCardNode(Node node, TrelloCardProject project) 
     {  
         super(node, NodeFactorySupport.createCompositeChildren(
                 project,
-                "Projects/openpkm-trello-project/Nodes"),
+                "Projects/openpkm-trello-card-project/Nodes"),
                 new ProxyLookup(
                         new Lookup[]{
                             Lookups.singleton(project),
@@ -61,12 +61,6 @@ public class TrelloNode extends FilterNode implements ChangeListener, PropertyCh
     public String getDisplayName() 
     {
         return project.getTitle();
-    } 
-    
-    @Override
-    public String getShortDescription()
-    {
-        return project.getDescription();
     }    
     
     @Override
@@ -151,5 +145,5 @@ public class TrelloNode extends FilterNode implements ChangeListener, PropertyCh
             provider.getTopComponent().open();
             provider.getTopComponent().requestActive(); 
         }          
-    }      
+    }     
 }

@@ -8,8 +8,11 @@ import java.awt.Color;
 import java.awt.Image;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.utils.UserIcon;
@@ -94,7 +97,13 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
     public String getMemberFullName()
     {
         return props.getProperty(PROP_MEMBER_FULL_NAME);
-    }    
+    }  
+    
+    @Override
+    public List<Action> getActions() 
+    {       
+        return Collections.EMPTY_LIST;
+    }      
     
 // TODO PropertiesProvider        
         

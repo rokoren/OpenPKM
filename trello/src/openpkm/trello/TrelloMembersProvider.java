@@ -5,39 +5,32 @@
 package openpkm.trello;
 
 import java.util.Map;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.event.ChangeListener;
-import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
-import org.openide.util.ImageUtilities;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class TrelloLabelSourceGroup implements SourceGroup
-{
-    @StaticResource()
-    private static final String ICON = "openpkm/trello/resources/layer_label.png";      
-    
-    protected static final String ROOT_FOLDER = "labels";       
+public abstract class TrelloMembersProvider implements SourceGroup
+{    
+    protected static final String ROOT_FOLDER = "members";       
 
-    protected Map<String, TrelloLabel> labels; 
+    protected Map<String, TrelloMember> members; 
     protected FileObject rootDir; 
 
-    protected final TrelloLabelProvider provider;
+    protected final TrelloMemberProvider provider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloLabelSourceGroup(TrelloLabelProvider provider) 
+    public TrelloMembersProvider(TrelloMemberProvider provider) 
     {
         this.provider = provider;
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloLabel> getLabels();
+    protected abstract Map<String, TrelloMember> getMembers();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -49,9 +42,9 @@ public abstract class TrelloLabelSourceGroup implements SourceGroup
         changeSupport.removeChangeListener(listener);
     }     
 
-    public TrelloLabel getLabel(String labelID) 
+    public TrelloMember getMember(String memberID) 
     {
-        return getLabels().get(labelID);
+        return getMembers().get(memberID);
     }                                  
 
     @Override
@@ -63,18 +56,12 @@ public abstract class TrelloLabelSourceGroup implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Labels";
-    }
-
-    @Override
-    public Icon getIcon(boolean bln) 
-    {
-        return new ImageIcon(ImageUtilities.loadImage(ICON));
+        return "Members";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getLabels().containsKey(file.getName());
-    }     
+        return getMembers().containsKey(file.getName());
+    }      
 }

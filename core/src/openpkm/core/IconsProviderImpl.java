@@ -94,7 +94,28 @@ public class IconsProviderImpl implements IconsProvider
     public static final String ICON_BULLET_BELL = "openpkm/core/resources/bullet_bell.png";     
     
     @StaticResource()
-    public static final String ICON_BULLET_STAR = "openpkm/core/resources/bullet_star.png";     
+    public static final String ICON_BULLET_STAR = "openpkm/core/resources/bullet_star.png";  
+    
+    @StaticResource()
+    public static final String ICON_TAG_YELLOW = "openpkm/core/resources/tag_yellow.png";    
+    
+    @StaticResource()
+    public static final String ICON_TAG_PURPLE = "openpkm/core/resources/tag_purple.png";  
+    
+    @StaticResource()
+    public static final String ICON_TAG_BLUE = "openpkm/core/resources/tag_blue.png";  
+    
+    @StaticResource()
+    public static final String ICON_TAG_RED = "openpkm/core/resources/tag_red.png";  
+    
+    @StaticResource()
+    public static final String ICON_TAG_GREEN = "openpkm/core/resources/tag_green.png";  
+    
+    @StaticResource()
+    public static final String ICON_TAG_ORANGE = "openpkm/core/resources/tag_orange.png";  
+
+    @StaticResource()
+    public static final String ICON_TAG_PINK = "openpkm/core/resources/tag_pink.png";        
 
     private String getResource(ICON icon)
     {
@@ -151,7 +172,21 @@ public class IconsProviderImpl implements IconsProvider
             case BULLET_BELL:
             return ICON_BULLET_BELL; 
             case BULLET_STAR:
-            return ICON_BULLET_STAR;             
+            return ICON_BULLET_STAR; 
+            case TAG_YELLOW:
+            return ICON_TAG_YELLOW;                                      
+            case TAG_PURPLE:
+            return ICON_TAG_PURPLE;  
+            case TAG_BLUE:
+            return ICON_TAG_BLUE;  
+            case TAG_RED:
+            return ICON_TAG_RED;  
+            case TAG_GREEN:
+            return ICON_TAG_GREEN; 
+            case TAG_ORANGE:
+            return ICON_TAG_ORANGE; 
+            case TAG_PINK:
+            return ICON_TAG_PINK; 
         }  
         return null;
     }

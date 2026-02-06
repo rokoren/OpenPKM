@@ -16,8 +16,8 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloBoard;
-import openpkm.trello.TrelloService;
 import openpkm.utils.RoundRectIcon;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
@@ -27,6 +27,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 
 /**
@@ -53,10 +54,15 @@ public class TrelloAccountNode extends AbstractNode
     @Override
     public Action[] getActions(boolean context) 
     {
-        return new Action[]
+        TrelloAccountsProvider provider = Lookup.getDefault().lookup(TrelloAccountsProvider.class);
+        if(provider != null)
         {
-            new RemoveTrello(account)
-        };
+            return new Action[]
+            {
+                new RemoveTrello(account, provider)
+            };            
+        }
+        return new Action[0];
     }  
     
     static final class TrelloAccountChildren extends Children.Keys<TrelloBoard>
@@ -80,7 +86,7 @@ public class TrelloAccountNode extends AbstractNode
                 public void run() 
                 { 
                     Collection<TrelloBoard> boards = account.getBoards();
-                    SortedSet<TrelloBoard> sorted = new TreeSet<TrelloBoard>(TrelloBoard.titleComparator());
+                    SortedSet<TrelloBoard> sorted = new TreeSet<TrelloBoard>(TrelloBoard.nameComparator());
                     sorted.addAll(boards);           
                     setKeys(sorted);                      
                 }
@@ -102,11 +108,13 @@ public class TrelloAccountNode extends AbstractNode
     private static final class RemoveTrello extends AbstractAction
     {
         private final TrelloAccount account;
+        private final TrelloAccountsProvider provider;
 
-        public RemoveTrello(TrelloAccount account) 
+        public RemoveTrello(TrelloAccount account, TrelloAccountsProvider provider) 
         {
             super("Remove Account");
             this.account = account;
+            this.provider = provider;
         }
 
         @Override
@@ -125,7 +133,7 @@ public class TrelloAccountNode extends AbstractNode
                 {
                     account.getPreferences().removeNode(); 
                     account.getPreferences().flush();
-                    TrelloService.getDefault().removeAccount(account);
+                    provider.removeAccount(account);
                 }
                 catch(BackingStoreException e)
                 {
@@ -143,7 +151,7 @@ public class TrelloAccountNode extends AbstractNode
         {
             super(Children.LEAF);
             setName(board.getBoardID());
-            setDisplayName(board.getTitle());
+            setDisplayName(board.getName());
             setShortDescription(board.getDescription());
             this.board = board;
         } 

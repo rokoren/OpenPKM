@@ -19,7 +19,7 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.trello.TrelloAccount;
-import openpkm.trello.TrelloService;
+import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloWizardPanel1;
 import openpkm.trello.TrelloWizardPanel2;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -30,6 +30,7 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -43,7 +44,7 @@ public class TrelloServiceNode extends AbstractNode
     
     public TrelloServiceNode() 
     {
-        super(new TrelloChildren());
+        super(new TrelloChildren(Lookup.getDefault().lookup(TrelloAccountsProvider.class)));
         setName("trello");
         setDisplayName("Trello");
         setShortDescription("Work Management Tool");    
@@ -55,15 +56,18 @@ public class TrelloServiceNode extends AbstractNode
     {
         return new Action[]
         {
-            new AddTrello()
+            new AddTrello(Lookup.getDefault().lookup(TrelloAccountsProvider.class))
         };
     }  
     
     static final class TrelloChildren extends Children.Keys<TrelloAccount> implements ChangeListener 
-    {        
-        public TrelloChildren()
+    { 
+        private TrelloAccountsProvider provider;
+        
+        public TrelloChildren(TrelloAccountsProvider provider)
         {
-            TrelloService.getDefault().addListener(this);
+            this.provider = provider;
+            provider.addListener(this);
         }  
 
         protected @Override void addNotify() 
@@ -78,7 +82,7 @@ public class TrelloServiceNode extends AbstractNode
                 public void run() 
                 {                     
                     SortedSet<TrelloAccount> subModules = new TreeSet<TrelloAccount>(TrelloAccount.titleComparator());
-                    subModules.addAll(TrelloService.getDefault().getAccounts());           
+                    subModules.addAll(provider.getAccounts());           
                     setKeys(subModules);                   
                 }
             });
@@ -86,7 +90,7 @@ public class TrelloServiceNode extends AbstractNode
 
         protected @Override void removeNotify() 
         {
-            TrelloService.getDefault().removeListener(this);                              
+            provider.removeListener(this);                              
             setKeys(Collections.<TrelloAccount>emptySet());
         }
 
@@ -104,9 +108,12 @@ public class TrelloServiceNode extends AbstractNode
     
     private static final class AddTrello extends AbstractAction
     {
-        public AddTrello() 
+        private TrelloAccountsProvider provider;
+        
+        public AddTrello(TrelloAccountsProvider provider) 
         {
             super("Add Account");
+            this.provider = provider;            
         }
 
         @Override
@@ -140,10 +147,10 @@ public class TrelloServiceNode extends AbstractNode
                 String username = (String) wiz.getProperty(TrelloAccount.PROPS_USERNAME);
                 String apiKey = (String) wiz.getProperty(TrelloAccount.PROPS_API_KEY);
                 String accessToken = (String) wiz.getProperty(TrelloAccount.PROPS_ACCESS_TOKEN);
-                TrelloAccount account = new TrelloService.TrelloAccountImpl(username, apiKey, accessToken);  
+                TrelloAccount account = new TrelloAccountsProviderImpl.TrelloAccountImpl(username, apiKey, accessToken);  
                 account.setTitle(title);
-                TrelloService.getDefault().addAccount(account);
-                TrelloService.getDefault().store(account);
+                provider.addAccount(account);
+                provider.store(account);
             }
         }
     }     
