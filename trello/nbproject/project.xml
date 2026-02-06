@@ -141,6 +141,13 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
+                <package>com.julienvey.trello</package>
+                <package>com.julienvey.trello.domain</package>
+                <package>com.julienvey.trello.exception</package>
+                <package>com.julienvey.trello.impl</package>
+                <package>com.julienvey.trello.impl.domaininternal</package>
+                <package>com.julienvey.trello.impl.http</package>
+                <package>com.julienvey.trello.utils</package>
                 <package>openpkm.trello</package>
             </public-packages>
             <class-path-extension>

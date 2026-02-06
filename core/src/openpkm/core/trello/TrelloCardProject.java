@@ -36,7 +36,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
-import javax.ws.rs.NotSupportedException;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataProvider;
 import openpkm.base.DataProviders;
@@ -469,7 +468,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     @Override
     public void setTitle(String title) 
     {
-        throw new NotSupportedException();
+        throw new UnsupportedOperationException();
     }     
 
 // TODO PropertiesProvider
