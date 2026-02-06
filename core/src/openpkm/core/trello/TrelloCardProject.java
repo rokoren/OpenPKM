@@ -5,6 +5,8 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
+import com.julienvey.trello.impl.TrelloImpl;
+import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -44,13 +46,12 @@ import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.Source;
-import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.core.TopComponentProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
 import openpkm.trello.TrelloActionsProvider;
@@ -103,8 +104,10 @@ import org.openide.windows.TopComponent;
  * @author Rok Koren
  */
 public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
-{       
-    public static final String PROP_TRELLO_ACTIVITY  = "trello.activity";       
+{ 
+    public static final String PROP_TRELLO_USERNAME = "trello.username";
+    public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
+    public static final String PROP_TRELLO_ACTIVITY = "trello.activity";         
     
     @StaticResource()
     public static final String ICON = "openpkm/core/resources/panel.png";
@@ -175,6 +178,36 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         
     }        
     
+    public TrelloAccount getTrelloAccount()
+    {
+        if(trelloAccount == null)
+        {
+            String username = props.getProperty(PROP_TRELLO_USERNAME);
+            if (username != null)
+            {
+                TrelloAccountsProvider provider = Lookup.getDefault().lookup(TrelloAccountsProvider.class);
+                if(provider != null)
+                {
+                    trelloAccount = provider.getAccount(username);                      
+                }         
+            }                        
+        }
+        return trelloAccount;
+    }     
+    
+    public Trello getTrelloApi()
+    {
+        if(trelloApi == null)
+        {
+            TrelloAccount account = getTrelloAccount();
+            if(account != null)
+            {
+                trelloApi = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
+            }            
+        }
+        return trelloApi;
+    }
+    
     public TrelloBoard getTrelloBoard()
     {
         if(trelloBoard == null)
@@ -190,7 +223,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             }                       
         }
         return trelloBoard;
-    }     
+    }      
     
     public LocalDateTime getTrelloActivity()
     {
@@ -1314,7 +1347,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.add(new AddCheckList(this));         
+            actions.add(new AddCheckListItem(this));         
             return actions;
         } 
         
@@ -1628,7 +1661,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public void actionPerformed(ActionEvent evt) 
         {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new AttachmentWizardPanel1());
+            //panels.add(new AttachmentWizardPanel1());
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) 
             {
@@ -1649,36 +1682,33 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             wiz.setTitleFormat(new MessageFormat("{0}"));
             wiz.setTitle("Add Checklist");  
             wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("project", provider.getProject());
-            wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
+            //wiz.putProperty("provider", provider.getProject());
+            //wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             { 
-                TrelloAttachment trelloAttachment = (TrelloAttachment) wiz.getProperty("attachment");
-                if(trelloAttachment != null)
-                {
-                    Attachment attachment = new AttachmentImpl(trelloAttachment);
-                    provider.addAttachment(attachment);
-                    StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
-                }
+                //StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
             }
         }
-    }     
+    }  
     
-    private static final class AddLabel extends AbstractAction
-    {                          
-        private final TrelloLabelSourceGroup sourceGroup;            
+    private static final class AddCheckListItem extends AbstractAction
+    {  
+        @StaticResource()
+        public static final String BANNER = "openpkm/core/resources/banner.png";          
+        
+        protected final TrelloCheckListItemsProvider provider;            
 
-        public AddLabel(TrelloLabelSourceGroup sourceGroup) 
+        public AddCheckListItem(TrelloCheckListItemsProvider provider) 
         {
-            super("Add Label");
-            this.sourceGroup = sourceGroup;
+            super("Add Checklist");
+            this.provider = provider;
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
-        {
+        {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new MemberWizardPanel1());
+            //panels.add(new AttachmentWizardPanel1());
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) 
             {
@@ -1697,17 +1727,16 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
             // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
             wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Label");  
-            /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));  
-            wiz.putProperty("project", provider.getProject());
-            */
+            wiz.setTitle("Add Checklist");  
+            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+            //wiz.putProperty("provider", provider.getProject());
+            //wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {  
-                //sourceGroup.getRootFolder();
+            { 
+                //StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
             }
         }
-    } 
+    }    
 
     private static final class AddAttachment extends AbstractAction
     {  
@@ -1726,7 +1755,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public void actionPerformed(ActionEvent evt) 
         {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new AttachmentWizardPanel1());
+            //panels.add(new AttachmentWizardPanel1());
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) 
             {
@@ -1747,18 +1776,59 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             wiz.setTitleFormat(new MessageFormat("{0}"));
             wiz.setTitle("Add Attachment");  
             wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("project", provider.getProject());
-            wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
+            //wiz.putProperty("provider", provider.getProject());
+            //wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             { 
-                TrelloAttachment trelloAttachment = (TrelloAttachment) wiz.getProperty("attachment");
-                if(trelloAttachment != null)
-                {
-                    Attachment attachment = new AttachmentImpl(trelloAttachment);
-                    provider.addAttachment(attachment);
-                    StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
-                }
+                //StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
             }
         }
-    }    
+    }  
+    
+    private static final class AddComment extends AbstractAction
+    {  
+        @StaticResource()
+        public static final String BANNER = "openpkm/core/resources/banner.png";          
+        
+        protected final TrelloActionsProvider provider;            
+
+        public AddComment(TrelloActionsProvider provider) 
+        {
+            super("Add Comment");
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {            
+            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+            //panels.add(new AttachmentWizardPanel1());
+            String[] steps = new String[panels.size()];
+            for (int i = 0; i < panels.size(); i++) 
+            {
+                Component c = panels.get(i).getComponent();
+                // Default step name to component name of panel.
+                steps[i] = c.getName();
+                if (c instanceof JComponent) { // assume Swing components
+                    JComponent jc = (JComponent) c;
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+                }
+            }
+            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
+            wiz.setTitleFormat(new MessageFormat("{0}"));
+            wiz.setTitle("Add Comment");  
+            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+            //wiz.putProperty("provider", provider.get());
+            //wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
+            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+            { 
+                //StatusDisplayer.getDefault().setStatusText("Trello comment added: " + attachment.getDisplayName());
+            }
+        }
+    }     
 }
