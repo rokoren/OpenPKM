@@ -124,6 +124,8 @@ import openpkm.youtube.YouTubeSourceProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
+import openpkm.base.NotebooksProvider;
+import openpkm.base.Notebook;
 
 /**
  *
@@ -345,6 +347,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 */
                 
                 list.add(new DomainsProviderImpl()); 
+                list.add(new NotebooksProviderImpl()); 
                 list.add(new HtmlFilesProviderImpl());                                 
                 list.add(new KnowledgeGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
@@ -920,6 +923,142 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.DOMAINS);
+        }               
+    } 
+
+// TODO BoardsProvider
+
+    private final class NotebooksProviderImpl implements NotebooksProvider
+    {                        
+        private static final String ROOT_FOLDER = "notebook";          
+        
+        private Map<String, Notebook> notebooks; 
+        private FileObject rootDir;            
+        
+        private final ChangeSupport changeSupport;              
+
+        public NotebooksProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+        } 
+        
+        @Override
+        public synchronized FileObject getRootDirectory() throws IOException
+        {
+            if(rootDir == null)
+            {
+                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                if(rootDir == null)
+                {
+                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                    LOG.info("Notebook dir created: " + rootDir.getPath());                        
+                }                 
+            }                           
+            return rootDir;       
+        }         
+        
+        private synchronized Map<String, Notebook> getNotebooksById()
+        {
+            if(notebooks == null)
+            {
+                notebooks = new HashMap<>();
+                try
+                {
+                    for (FileObject fo : getRootDirectory().getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            Project project = ProjectManager.getDefault().findProject(fo);
+                            if(project instanceof Notebook notebook)
+                            {
+                                notebooks.put(notebook.getNotebookID(), notebook);
+                            }                                                                                    
+                        }
+                        else
+                        {
+                            DataObject data = DataObject.find(fo);
+                            Notebook notebook = data.getLookup().lookup(Notebook.class);
+                            if(notebook != null)
+                            {
+                                notebooks.put(notebook.getNotebookID(), notebook);
+                            }                            
+                        }                                                                                                                                            
+                    }                      
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                              
+            }
+            return notebooks;
+        }  
+
+        @Override
+        public Collection<Notebook> getNotebooks()
+        {
+            return Collections.unmodifiableCollection(getNotebooksById().values());
+        }
+        
+        @Override
+        public void addNotebook(Notebook notebook)
+        {
+            getNotebooksById().put(notebook.getNotebookID(), notebook);
+            changeSupport.fireChange();            
+        }
+        
+        @Override
+        public void removeNotebook(String motebookID)
+        {
+            Notebook notebook = getNotebooksById().remove(motebookID);
+            if(notebook != null)
+            {
+                changeSupport.fireChange();                            
+            }
+        }        
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Notebook"));         
+            return actions;
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }                        
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public String getName() 
+        {
+            return "notebook";
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Notebooks";
+        }
+
+        @Override
+        public Image getIcon(boolean hasChildren) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.NOTEBOOKS);
         }               
     }     
     

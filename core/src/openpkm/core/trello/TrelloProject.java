@@ -37,8 +37,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
-import openpkm.base.Board;
-import openpkm.base.BoardsProvider;
 import openpkm.base.DataProvider;
 import openpkm.base.DataProviders;
 import openpkm.base.DataSource;
@@ -103,12 +101,14 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
+import openpkm.base.NotebooksProvider;
+import openpkm.base.Notebook;
 
 /**
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Board, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
+public class TrelloProject implements Notebook, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
 {
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -398,12 +398,17 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
         return lkp;
     }      
 
-// TODO Board  
+// TODO Notebook  
     
     @Override
-    public String getBoardID() 
+    public String getNotebookID() 
     {
-        return props.getProperty(PROP_TRELLO_BOARD_ID);
+        TrelloBoard board = getTrelloBoard();
+        if(board != null)
+        {
+            return board.getBoardID();
+        }
+        return null;
     }    
     
     @Override
@@ -746,7 +751,7 @@ public class TrelloProject implements Board, TitleProvider, DescriptionProvider,
                     try
                     {
                         Project project = ProjectManager.getDefault().findProject(parent);
-                        BoardsProvider provider = project.getLookup().lookup(BoardsProvider.class);
+                        NotebooksProvider provider = project.getLookup().lookup(NotebooksProvider.class);
                         if(provider != null)
                         {
                             return project;                        

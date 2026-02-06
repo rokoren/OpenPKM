@@ -15,8 +15,6 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import openpkm.base.Board;
-import openpkm.base.BoardsProvider;
 import openpkm.base.NodeSupport;
 import openpkm.base.TitleProvider;
 import org.openide.filesystems.FileObject;
@@ -24,18 +22,20 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.NotebooksProvider;
+import openpkm.base.Notebook;
 
 /**
  *
  * @author Rok Koren
  */
-public class BoardsNode extends AbstractNode implements NodeSupport
+public class NotebooksNode extends AbstractNode implements NodeSupport
 {
-    private static final Logger LOG = Logger.getLogger(BoardsNode.class.getName());    
+    private static final Logger LOG = Logger.getLogger(NotebooksNode.class.getName());    
     
-    private final BoardsProvider provider;
+    private final NotebooksProvider provider;
     
-    public BoardsNode(BoardsProvider provider) 
+    public NotebooksNode(NotebooksProvider provider) 
     {
         super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
         setName(provider.getName());
@@ -91,11 +91,11 @@ public class BoardsNode extends AbstractNode implements NodeSupport
         */
     } 
     
-    private static final class ChildrenImpl extends Children.Keys<Board> implements ChangeListener 
+    private static final class ChildrenImpl extends Children.Keys<Notebook> implements ChangeListener 
     {
-        private final BoardsProvider provider;            
+        private final NotebooksProvider provider;            
 
-        public ChildrenImpl(BoardsProvider provider)
+        public ChildrenImpl(NotebooksProvider provider)
         {
             this.provider = provider;   
             provider.addChangeListener(this);             
@@ -109,8 +109,8 @@ public class BoardsNode extends AbstractNode implements NodeSupport
 
         private void updateKeys() 
         { 
-            SortedSet<Board> sorted = new TreeSet<Board>(titleComparator());
-            sorted.addAll(provider.getBoards());
+            SortedSet<Notebook> sorted = new TreeSet<Notebook>(titleComparator());
+            sorted.addAll(provider.getNotebooks());
             setKeys(sorted); 
             
             /*
@@ -127,11 +127,11 @@ public class BoardsNode extends AbstractNode implements NodeSupport
         protected void removeNotify()
         {
             provider.removeChangeListener(this);            
-            setKeys(Collections.<Board>emptySet());
+            setKeys(Collections.<Notebook>emptySet());
         }
 
         @Override
-        protected Node[] createNodes(Board board) 
+        protected Node[] createNodes(Notebook board) 
         {
             return new Node[] {new ProjectNode(board)};
         }          
@@ -143,12 +143,12 @@ public class BoardsNode extends AbstractNode implements NodeSupport
         }                 
     }  
     
-    private static Comparator<Board> titleComparator() 
+    private static Comparator<Notebook> titleComparator() 
     {
-        return new Comparator<Board>() 
+        return new Comparator<Notebook>() 
         {
             @Override
-            public int compare(Board board1, Board board2) 
+            public int compare(Notebook board1, Notebook board2) 
             {
                 TitleProvider provider1 = board1.getLookup().lookup(TitleProvider.class);
                 TitleProvider provider2 = board2.getLookup().lookup(TitleProvider.class);

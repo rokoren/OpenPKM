@@ -12,12 +12,12 @@ import org.netbeans.api.project.Project;
  *
  * @author Rok Koren
  */
-public interface Board extends Project
+public interface Notebook extends Project
 {
     String PROP_APP_ID       = "app.id";   
     String PROP_TIME_CREATED = "time.created"; 
     
-    String getBoardID();
+    String getNotebookID();
     String getAppID(); 
     LocalDateTime getTimeCreated();     
     void addPropertyChangeListener(PropertyChangeListener listener);

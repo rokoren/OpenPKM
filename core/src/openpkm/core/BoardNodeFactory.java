@@ -5,11 +5,11 @@
 package openpkm.core;
 
 import java.util.logging.Logger;
-import openpkm.base.BoardsProvider;
 import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 import org.netbeans.spi.project.ui.support.NodeList;
+import openpkm.base.NotebooksProvider;
 
 /**
  *
@@ -25,10 +25,10 @@ public class BoardNodeFactory implements NodeFactory
     {
         assert project != null;
         
-        BoardsProvider provider = project.getLookup().lookup(BoardsProvider.class);
+        NotebooksProvider provider = project.getLookup().lookup(NotebooksProvider.class);
         if(provider != null)
         {
-            return NodeFactorySupport.fixedNodeList(new BoardsNode(provider));             
+            return NodeFactorySupport.fixedNodeList(new NotebooksNode(provider));             
         }
                  
         return NodeFactorySupport.fixedNodeList();
