@@ -6,13 +6,14 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.domain.Board;
-import com.julienvey.trello.impl.TrelloImpl;
-import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
+import com.julienvey.trello.domain.TList;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloBoard;
+import openpkm.trello.TrelloList;
+import openpkm.trello.TrelloListProvider;
 import openpkm.trello.TrelloService;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -24,17 +25,28 @@ import org.openide.util.lookup.ServiceProvider;
 public class TrelloServiceImpl implements TrelloService
 {
     @Override
-    public List<TrelloBoard> getBoards(TrelloAccount account)
+    public List<TrelloBoard> getBoards(TrelloAccount account, Trello trello)
     {
-        List<TrelloBoard> list = new ArrayList();
-        Trello trelloApi = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());
-        List<Board> boards = trelloApi.getMemberBoards(account.getUsername());
+        List<TrelloBoard> list = new ArrayList();      
+        List<Board> boards = trello.getMemberBoards(account.getUsername());
         for(Board board : boards)
         {
             list.add(new TrelloBoardImpl(account, board));
         }                    
         return list;        
     }
+    
+    @Override
+    public List<TrelloList> getLists(TrelloBoard board, TrelloListProvider provider, Trello trello)
+    {
+        List<TrelloList> all = new ArrayList();   
+        List<TList> lists = trello.getBoardLists(board.getBoardID());
+        for(TList list : lists)                
+        {
+            all.add(provider.createList(list));
+        }                     
+        return all;        
+    }     
 
     private static final class TrelloBoardImpl implements TrelloBoard
     {

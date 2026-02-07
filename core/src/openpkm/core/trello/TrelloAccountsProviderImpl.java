@@ -4,6 +4,9 @@
  */
 package openpkm.core.trello;
 
+import com.julienvey.trello.Trello;
+import com.julienvey.trello.impl.TrelloImpl;
+import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -167,7 +170,8 @@ public class TrelloAccountsProviderImpl implements TrelloAccountsProvider
                 TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
                 if(service != null)
                 {
-                    List<TrelloBoard> list = service.getBoards(this);
+                    Trello trello = new TrelloImpl(getApiKey(), getAccessToken(), new JDKTrelloHttpClient());                      
+                    List<TrelloBoard> list = service.getBoards(this, trello);
                     for (TrelloBoard board : list)
                     {
                         boards.put(board.getBoardID(), board);

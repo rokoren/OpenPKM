@@ -80,7 +80,7 @@ public class TrelloListProviderImpl implements TrelloListProvider
         @Override
         public String getListName() 
         {
-            return props.getProperty(PROP_LIST_ID);
+            return props.getProperty(PROP_LIST_NAME);
         }
 
         @Override

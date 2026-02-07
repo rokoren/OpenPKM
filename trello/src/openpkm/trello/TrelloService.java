@@ -4,6 +4,7 @@
  */
 package openpkm.trello;
 
+import com.julienvey.trello.Trello;
 import java.util.List;
 
 /**
@@ -12,5 +13,6 @@ import java.util.List;
  */
 public interface TrelloService 
 {
-    List<TrelloBoard> getBoards(TrelloAccount account);    
+    List<TrelloBoard> getBoards(TrelloAccount account, Trello trello); 
+    List<TrelloList> getLists(TrelloBoard trelloBoard, TrelloListProvider provider, Trello trello);
 }

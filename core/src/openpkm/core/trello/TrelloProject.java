@@ -17,6 +17,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -103,6 +104,7 @@ import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
+import openpkm.trello.TrelloService;
 
 /**
  *
@@ -151,7 +153,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
     private DataSource dataSource;   
     
     private TrelloAccount trelloAccount;
-    private Trello trelloApi;    
+    private Trello trello;    
     private TrelloBoard trelloBoard;
     
     public TrelloProject(FileObject projectDir, ProjectState state, Properties props) 
@@ -237,17 +239,17 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         return trelloAccount;
     }     
     
-    public Trello getTrelloApi()
+    public Trello getTrello()
     {
-        if(trelloApi == null)
+        if(trello == null)
         {
             TrelloAccount account = getTrelloAccount();
             if(account != null)
             {
-                trelloApi = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
+                trello = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
             }            
         }
-        return trelloApi;
+        return trello;
     }
     
     public TrelloBoard getTrelloBoard()
@@ -1582,14 +1584,20 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         }          
     }      
 
-    private final class TrelloListsProviderImpl extends TrelloListsProvider implements NodeGroup, FileChangeListener
+    private final class TrelloListsProviderImpl extends TrelloListsProvider implements NodeGroup, FileChangeListener, Runnable
     {  
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/application_view_columns.png";          
+        private static final String ICON = "openpkm/core/resources/application_view_columns.png"; 
+        
+        private static final String PROP_TRELLO_SYNC_LISTS = "trello.sync.lists";        
         
         public TrelloListsProviderImpl(TrelloListProvider provider) 
         {
-            super(provider);            
+            super(provider);  
+            if(getLastSync() == null)
+            {
+                RP.post(this);                
+            }
         }          
         
         @Override
@@ -1756,7 +1764,70 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        } 
+        
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_LISTS);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_LISTS);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_LISTS, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_ACTIVITY, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_ACTIVITY, oldValue, time); 
+            }
+        }         
+        
+        @Override
+        public void run()
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                List<TrelloList> lists = service.getLists(TrelloProject.this, provider, getTrello());
+                for(TrelloList list : lists)
+                {
+                    if(!getLists().containsKey(list.getListID()))
+                    {
+                        if(list instanceof PropertiesProvider properties)
+                        {
+                            try
+                            {
+                                OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);                            
+                                properties.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                                os.close();
+                                LOG.info("Trello list saved: " + list.getListID());                              
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                            
+                        }
+                    }
+                }
+                setLastSync(LocalDateTime.now());
+            }
+        }
     }     
     
 // TODO HtmlFilesProvider        
