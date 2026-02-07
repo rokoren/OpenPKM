@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/wizardPanel.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Member;
 import javax.swing.event.ChangeListener;

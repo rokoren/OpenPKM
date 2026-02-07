@@ -766,7 +766,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
             Color color = getBoardBackground();
             if(color != null)
             {
-                Icon icon = new RoundRectIcon(16, 16, color);
+                Icon icon = new RoundRectIcon(14, 14, color);
                 return ImageUtilities.icon2Image(icon);
             }
             return ImageUtilities.loadImage(ICON);

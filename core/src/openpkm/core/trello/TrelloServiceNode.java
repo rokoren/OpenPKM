@@ -20,8 +20,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
-import openpkm.trello.TrelloWizardPanel1;
-import openpkm.trello.TrelloWizardPanel2;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.core.ide.ServicesTabNodeRegistration;
 import org.openide.DialogDisplayer;
