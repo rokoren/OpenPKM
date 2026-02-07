@@ -28,12 +28,12 @@ public interface NodeGroup
     Lookup.Provider getProvider(); 
     SortedSet<NodeProvider> getNodes();
     
-    public static Comparator<DataGroupProvider> positionComparator() 
+    public static Comparator<NodeGroup> positionComparator() 
     {
-        return new Comparator<DataGroupProvider>() 
+        return new Comparator<NodeGroup>() 
         {
             @Override
-            public int compare(DataGroupProvider group1, DataGroupProvider group2) 
+            public int compare(NodeGroup group1, NodeGroup group2) 
             {
                 return group1.getPosition().compareTo(group2.getPosition());
             }
