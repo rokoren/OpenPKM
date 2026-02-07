@@ -455,7 +455,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         String hex = props.getProperty(PROP_BOARD_BACKGROUND);
         if(hex != null)
         {
-            return Utils.getColor(hex, true);
+            return Color.decode(hex);
         }
         return null;
     }
@@ -468,16 +468,17 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
             Object oldValue = props.remove(PROP_BOARD_BACKGROUND);
             if(oldValue != null)
             {
-                oldValue = Utils.getColor(oldValue.toString(), true);
+                oldValue = Color.decode(oldValue.toString());
             }
             propertyChangeSupport.firePropertyChange(PROP_BOARD_BACKGROUND, oldValue, color);
         }
         else
         {
-            Object oldValue = props.setProperty(PROP_BOARD_BACKGROUND, Utils.getHex(color));
+            String hex = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());            
+            Object oldValue = props.setProperty(PROP_BOARD_BACKGROUND, hex);
             if(oldValue != null)
             {
-                oldValue = Utils.getColor(oldValue.toString(), true);
+                oldValue = Color.decode(oldValue.toString());
             }
             propertyChangeSupport.firePropertyChange(PROP_BOARD_BACKGROUND, oldValue, color);            
         }

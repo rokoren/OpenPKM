@@ -99,7 +99,11 @@ public class TrelloBoardWizardPanel1 implements WizardDescriptor.ValidatingPanel
         Color background = getComponent().getBoardBackground();
         if(background != null)
         {
-            descriptor.putProperty(TrelloProject.PROP_BOARD_BACKGROUND, background.toString());
+            int red = (int) Math.round(background.getRed() * 255);
+            int green = (int) Math.round(background.getGreen() * 255);
+            int blue = (int) Math.round(background.getBlue() * 255);
+            String hex = String.format("#%02X%02X%02X", red, green, blue);                        
+            descriptor.putProperty(TrelloProject.PROP_BOARD_BACKGROUND, hex);
         }
         
         Lookup.Provider provider = (Lookup.Provider)descriptor.getProperty("provider");

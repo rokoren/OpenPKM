@@ -4,7 +4,6 @@
  */
 package openpkm.utils;
 
-import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -74,21 +73,6 @@ public class Utils
             props.setProperty(key, descriptor.getProperty(key).toString());
         }  
         return props;
-    }
-    
-    public static String getHex(Color color)
-    {
-        return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
-    }
-    
-    public static Color getColor(String hex, boolean hasAlpha)
-    {
-        if(hasAlpha)
-        {
-            int argb = (int) Long.parseLong(hex.substring(2), 16);
-            return new Color(argb, true);                
-        }                   
-        return Color.decode(hex);
     }
     
     public static List<FileObject> getDataFiles(FileObject folder)
