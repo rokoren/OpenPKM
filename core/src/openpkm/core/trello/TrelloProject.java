@@ -455,7 +455,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         String hex = props.getProperty(PROP_BOARD_BACKGROUND);
         if(hex != null)
         {
-            return Utils.getColor(hex);
+            return Utils.getColor(hex, true);
         }
         return null;
     }
@@ -468,7 +468,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
             Object oldValue = props.remove(PROP_BOARD_BACKGROUND);
             if(oldValue != null)
             {
-                oldValue = Utils.getColor(oldValue.toString());
+                oldValue = Utils.getColor(oldValue.toString(), true);
             }
             propertyChangeSupport.firePropertyChange(PROP_BOARD_BACKGROUND, oldValue, color);
         }
@@ -477,7 +477,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
             Object oldValue = props.setProperty(PROP_BOARD_BACKGROUND, Utils.getHex(color));
             if(oldValue != null)
             {
-                oldValue = Utils.getColor(oldValue.toString());
+                oldValue = Utils.getColor(oldValue.toString(), true);
             }
             propertyChangeSupport.firePropertyChange(PROP_BOARD_BACKGROUND, oldValue, color);            
         }
@@ -762,15 +762,11 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         @Override
         public synchronized Image getIcon()
         { 
-            TrelloBoard board = getTrelloBoard();
-            if(board != null)
+            Color color = getBoardBackground();
+            if(color != null)
             {
-                Color color = board.getBoardBackground();
-                if(color != null)
-                {
-                    Icon icon = new RoundRectIcon(16, 16, color);
-                    return ImageUtilities.icon2Image(icon);
-                }
+                Icon icon = new RoundRectIcon(16, 16, color);
+                return ImageUtilities.icon2Image(icon);
             }
             return ImageUtilities.loadImage(ICON);
         }

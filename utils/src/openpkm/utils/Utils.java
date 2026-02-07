@@ -81,8 +81,13 @@ public class Utils
         return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
     }
     
-    public static Color getColor(String hex)
+    public static Color getColor(String hex, boolean hasAlpha)
     {
+        if(hasAlpha)
+        {
+            int argb = (int) Long.parseLong(hex.substring(2), 16);
+            return new Color(argb, true);                
+        }                   
         return Color.decode(hex);
     }
     

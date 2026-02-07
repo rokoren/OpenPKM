@@ -60,7 +60,6 @@ public class TrelloBoardAction implements ActionListener
     {                
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new TrelloBoardWizardPanel1());
-        panels.add(new TrelloBoardWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {

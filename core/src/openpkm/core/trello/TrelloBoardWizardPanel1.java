@@ -7,6 +7,7 @@ package openpkm.core.trello;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+import javafx.scene.paint.Color;
 import javax.swing.event.ChangeListener;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
@@ -93,6 +94,12 @@ public class TrelloBoardWizardPanel1 implements WizardDescriptor.ValidatingPanel
             descriptor.putProperty(TrelloProject.PROP_BOARD_DESCRIPTION, board.getBoardDescription()); 
             descriptor.putProperty(TrelloProject.PROP_BOARD_URL, board.getBoardUrl()); 
             descriptor.putProperty(TrelloProject.PROP_BOARD_SHORT_URL, board.getBoardShortUrl()); 
+        }
+        
+        Color background = getComponent().getBoardBackground();
+        if(background != null)
+        {
+            descriptor.putProperty(TrelloProject.PROP_BOARD_BACKGROUND, background.toString());
         }
         
         Lookup.Provider provider = (Lookup.Provider)descriptor.getProperty("provider");
