@@ -108,10 +108,17 @@ import openpkm.base.Notebook;
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Notebook, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
+public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
 {
-    public static final String PROP_TRELLO_USERNAME = "trello.username";
-    public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
+    public static final String PROP_ACCOUNT_USERNAME  = "account.username";
+    public static final String PROP_WORKSPACE_ID      = "workspace.id";    
+    public static final String PROP_BOARD_ID          = "board.id";
+    public static final String PROP_BOARD_NAME        = "board.name";
+    public static final String PROP_BOARD_DESCRIPTION = "board.description";
+    public static final String PROP_BOARD_URL         = "board.url";
+    public static final String PROP_BOARD_SHORT_URL   = "board.short.url";
+    public static final String PROP_BOARD_BACKGROUND  = "board.background";      
+    
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";
     
     @StaticResource()
@@ -217,7 +224,7 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
     {
         if(trelloAccount == null)
         {
-            String username = props.getProperty(PROP_TRELLO_USERNAME);
+            String username = getAccountUsername();
             if (username != null)
             {
                 TrelloAccountsProvider provider = Lookup.getDefault().lookup(TrelloAccountsProvider.class);
@@ -250,7 +257,7 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
             TrelloAccount account = getTrelloAccount();
             if(account != null)
             {
-                String boardID = props.getProperty(PROP_TRELLO_BOARD_ID);
+                String boardID = getBoardID();
                 if (boardID != null)
                 {
                     trelloBoard = account.getBoard(boardID);          
@@ -398,17 +405,90 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
         return lkp;
     }      
 
+// TrelloBoard
+   
+    @Override
+    public String getAccountUsername()
+    {
+        return props.getProperty(PROP_ACCOUNT_USERNAME);
+    }    
+    
+    @Override
+    public String getWorkspaceID()
+    {
+        return props.getProperty(PROP_WORKSPACE_ID);
+    }
+    
+    @Override
+    public String getBoardID()
+    {
+        return props.getProperty(PROP_BOARD_ID);
+    }    
+    
+    @Override
+    public String getBoardName()
+    {
+        return props.getProperty(PROP_BOARD_NAME);
+    }     
+    
+    @Override
+    public String getBoardDescription()
+    {
+        return props.getProperty(PROP_BOARD_DESCRIPTION);
+    }     
+    
+    @Override
+    public String getBoardUrl()
+    {
+        return props.getProperty(PROP_BOARD_URL);
+    } 
+    
+    @Override
+    public String getBoardShortUrl()
+    {
+        return props.getProperty(PROP_BOARD_SHORT_URL);
+    }   
+    
+    @Override
+    public Color getBoardBackground()
+    {
+        String hex = props.getProperty(PROP_BOARD_BACKGROUND);
+        if(hex != null)
+        {
+            return Utils.getColor(hex);
+        }
+        return null;
+    }
+    
+    @Override
+    public void setBoardBackground(Color color)
+    {
+        if(color == null)
+        {
+            Object oldValue = props.remove(PROP_BOARD_BACKGROUND);
+            if(oldValue != null)
+            {
+                oldValue = Utils.getColor(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_BOARD_BACKGROUND, oldValue, color);
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_BOARD_BACKGROUND, Utils.getHex(color));
+            if(oldValue != null)
+            {
+                oldValue = Utils.getColor(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_BOARD_BACKGROUND, oldValue, color);            
+        }
+    }
+    
 // TODO Notebook  
     
     @Override
     public String getNotebookID() 
     {
-        TrelloBoard board = getTrelloBoard();
-        if(board != null)
-        {
-            return board.getBoardID();
-        }
-        return null;
+        return getBoardID();
     }    
     
     @Override
@@ -433,22 +513,13 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
     @Override
     public String getTitle() 
     {
-        return props.getProperty(PROP_TITLE);
+        return getBoardName();
     }
 
     @Override
     public void setTitle(String title) 
     {
-        if(title == null)
-        {
-            Object oldValue = props.remove(PROP_TITLE);
-            propertyChangeSupport.firePropertyChange(PROP_TITLE, oldValue, title);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_TITLE, title);  
-            propertyChangeSupport.firePropertyChange(PROP_TITLE, oldValue, title);
-        } 
+        throw new UnsupportedOperationException();
     } 
     
 // TODO DescriptionProvider  
@@ -456,22 +527,13 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
     @Override
     public String getDescription() 
     {
-        return props.getProperty(PROP_DESCRIPTION);
+        return getBoardDescription();
     }
 
     @Override
     public void setDescription(String desc) 
     {
-        if(desc == null)
-        {
-            Object oldValue = props.remove(PROP_DESCRIPTION);
-            propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, desc);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_DESCRIPTION, desc);  
-            propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, desc);
-        }   
+        throw new UnsupportedOperationException();
     }     
 
 // TODO PropertiesProvider
@@ -527,7 +589,7 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
                 {
                     try
                     {
-                        browser = provider.getCefClient().createBrowser(board.getShortUrl(), false, false);   
+                        browser = provider.getCefClient().createBrowser(getBoardShortUrl(), false, false);   
                         add(browser.getUIComponent(), BorderLayout.CENTER);
                     }
                     catch(Exception e)
@@ -703,7 +765,7 @@ public class TrelloProject implements Notebook, TitleProvider, DescriptionProvid
             TrelloBoard board = getTrelloBoard();
             if(board != null)
             {
-                Color color = board.getBackground();
+                Color color = board.getBoardBackground();
                 if(color != null)
                 {
                     Icon icon = new RoundRectIcon(16, 16, color);

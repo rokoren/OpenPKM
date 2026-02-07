@@ -4,6 +4,7 @@
  */
 package openpkm.utils;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -34,6 +35,7 @@ import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.SubprojectProvider;
+import org.openide.WizardDescriptor;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
@@ -62,7 +64,27 @@ public class Utils
         props.load(input);
         input.close();   
         return props;
-    }       
+    }  
+    
+    public static Properties getProperties(WizardDescriptor descriptor)
+    {
+        Properties props = new Properties();
+        for(String key : descriptor.getProperties().keySet())
+        {
+            props.setProperty(key, descriptor.getProperty(key).toString());
+        }  
+        return props;
+    }
+    
+    public static String getHex(Color color)
+    {
+        return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+    }
+    
+    public static Color getColor(String hex)
+    {
+        return Color.decode(hex);
+    }
     
     public static List<FileObject> getDataFiles(FileObject folder)
     {

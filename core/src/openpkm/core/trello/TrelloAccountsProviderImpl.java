@@ -171,7 +171,7 @@ public class TrelloAccountsProviderImpl implements TrelloAccountsProvider
                     for (TrelloBoard board : list)
                     {
                         boards.put(board.getBoardID(), board);
-                        LOG.info("Board: " + board.getName() + ", Workspace ID: " + board.getWorkspaceID()); 
+                        LOG.info("Board: " + board.getBoardName() + ", Workspace ID: " + board.getWorkspaceID()); 
                     }                     
                 }           
             }  

@@ -151,15 +151,15 @@ public class TrelloAccountNode extends AbstractNode
         {
             super(Children.LEAF);
             setName(board.getBoardID());
-            setDisplayName(board.getName());
-            setShortDescription(board.getDescription());
+            setDisplayName(board.getBoardName());
+            setShortDescription(board.getBoardDescription());
             this.board = board;
         } 
         
         @Override
         public Image getIcon(int type) 
         {
-            Icon icon = new RoundRectIcon(16, 16, board.getBackground());
+            Icon icon = new RoundRectIcon(16, 16, board.getBoardBackground());
             return ImageUtilities.icon2Image(icon);
         }        
     }     

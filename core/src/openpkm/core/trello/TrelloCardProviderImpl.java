@@ -19,11 +19,13 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Rok Koren
  */
+@ServiceProvider(service=TrelloCardProvider.class)
 public class TrelloCardProviderImpl implements TrelloCardProvider
 {    
     private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());     

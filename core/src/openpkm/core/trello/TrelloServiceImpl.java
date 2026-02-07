@@ -48,9 +48,9 @@ public class TrelloServiceImpl implements TrelloService
         }     
 
         @Override
-        public TrelloAccount getAccount() 
+        public String getAccountUsername() 
         {
-            return account;
+            return account.getUsername();
         }      
 
         @Override
@@ -60,25 +60,25 @@ public class TrelloServiceImpl implements TrelloService
         }
 
         @Override
-        public String getUrl()
+        public String getBoardUrl()
         {
             return board.getUrl();
         }
         
         @Override
-        public String getShortUrl()
+        public String getBoardShortUrl()
         {
             return board.getShortUrl();
         }        
 
         @Override
-        public String getName() 
+        public String getBoardName() 
         {
             return board.getName();
         }
 
         @Override
-        public String getDescription() 
+        public String getBoardDescription() 
         {
             return board.getDesc();
         }
@@ -90,13 +90,13 @@ public class TrelloServiceImpl implements TrelloService
         }  
         
         @Override
-        public Color getBackground()
+        public Color getBoardBackground()
         {
             return Color.CYAN;
         }
         
         @Override
-        public void setBackground(Color color)
+        public void setBoardBackground(Color color)
         {
             throw new UnsupportedOperationException("Color not found");
         }
@@ -104,7 +104,7 @@ public class TrelloServiceImpl implements TrelloService
         @Override
         public String toString()
         {
-            return getName();
+            return getBoardName();
         }         
     }  
 }

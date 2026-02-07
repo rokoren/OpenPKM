@@ -524,7 +524,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 {
                     try
                     {
-                        browser = provider.getCefClient().createBrowser(board.getShortUrl(), false, false);   
+                        browser = provider.getCefClient().createBrowser(board.getBoardShortUrl(), false, false);   
                         add(browser.getUIComponent(), BorderLayout.CENTER);
                     }
                     catch(Exception e)
@@ -700,7 +700,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             TrelloBoard board = getTrelloBoard();
             if(board != null)
             {
-                Color color = board.getBackground();
+                Color color = board.getBoardBackground();
                 if(color != null)
                 {
                     Icon icon = new RoundRectIcon(16, 16, color);

@@ -13,15 +13,15 @@ import java.util.Comparator;
  */
 public interface TrelloBoard 
 {
+    String getAccountUsername();    
     String getWorkspaceID();     
-    TrelloAccount getAccount();
     String getBoardID();
-    String getName();
-    String getDescription();    
-    String getUrl();
-    String getShortUrl();  
-    Color getBackground();
-    void setBackground(Color color);
+    String getBoardName();
+    String getBoardDescription();    
+    String getBoardUrl();
+    String getBoardShortUrl();  
+    Color getBoardBackground();
+    void setBoardBackground(Color color);
     
     public static Comparator<TrelloBoard> nameComparator() 
     {
@@ -30,7 +30,7 @@ public interface TrelloBoard
             @Override
             public int compare(TrelloBoard board1, TrelloBoard board2) 
             {
-                return board1.getName().compareTo(board2.getName());
+                return board1.getBoardName().compareTo(board2.getBoardName());
             }
         };
     }     
