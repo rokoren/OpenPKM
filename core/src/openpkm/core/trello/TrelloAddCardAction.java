@@ -43,20 +43,20 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Trello/Card",
-        id = "openpkm.core.TrelloCardAction"
+        id = "openpkm.core.TrelloAddCardAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/panel.png",
-        displayName = "#CTL_TrelloCardAction"
+        displayName = "#CTL_TrelloAddCardAction"
 )
-@Messages("CTL_TrelloCardAction=Add Card")
-public class TrelloCardAction implements ActionListener
+@Messages("CTL_TrelloAddCardAction=Add Card")
+public class TrelloAddCardAction implements ActionListener
 {
-    private static final Logger LOG = Logger.getLogger(TrelloCardAction.class.getName());     
+    private static final Logger LOG = Logger.getLogger(TrelloAddCardAction.class.getName());     
     
     private final TrelloCardsProvider provider;
 
-    public TrelloCardAction(TrelloCardsProvider provider)
+    public TrelloAddCardAction(TrelloCardsProvider provider)
     {
         this.provider = provider;
     }    

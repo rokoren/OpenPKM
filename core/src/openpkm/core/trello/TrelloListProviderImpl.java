@@ -12,11 +12,11 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import openpkm.base.NodePositionProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloList;
 import openpkm.trello.TrelloListProvider;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.openide.nodes.Children;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.ServiceProvider;
@@ -136,7 +136,13 @@ public class TrelloListProviderImpl implements TrelloListProvider
             List<Action> actions = new ArrayList();
             actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Card"));         
             return actions;
-        }      
+        } 
+        
+        @Override
+        public Children getChildren() 
+        {
+            return Children.LEAF;
+        }        
 
         @Override
         public int getPosition() 

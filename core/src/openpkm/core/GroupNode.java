@@ -147,7 +147,7 @@ public class GroupNode extends AbstractNode implements NodeSupport
 
         public SourceNode(NodeProvider provider) 
         {
-            super(Children.LEAF, Lookups.singleton(provider));
+            super(provider.getChildren(), Lookups.singleton(provider));
             setName(provider.getName());
             setDisplayName(provider.getDisplayName());
             this.provider = provider;

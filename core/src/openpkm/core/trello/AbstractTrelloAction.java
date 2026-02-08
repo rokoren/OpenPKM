@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.trello;
+package openpkm.core.trello;
 
 import java.awt.Color;
 import java.awt.Image;
@@ -15,7 +15,10 @@ import java.util.StringTokenizer;
 import javax.swing.Action;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.trello.TrelloAction;
+import openpkm.trello.TrelloCardAction;
 import openpkm.utils.UserIcon;
+import org.openide.nodes.Children;
 
 /**
  *
@@ -132,7 +135,13 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
     {
         StringTokenizer st = new StringTokenizer(getMemberFullName());
         return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
-    }                  
+    } 
+    
+    @Override
+    public Children getChildren() 
+    {
+        return Children.LEAF;
+    }    
     
     public static final class CardUpdate extends AbstractTrelloAction implements TrelloCardAction
     {        

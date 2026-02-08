@@ -18,6 +18,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloMember;
 import openpkm.trello.TrelloMemberProvider;
 import openpkm.utils.UserIcon;
+import org.openide.nodes.Children;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -156,5 +157,11 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         {       
             return Collections.EMPTY_LIST;
         }          
+
+        @Override
+        public Children getChildren() 
+        {
+            return Children.LEAF;
+        }
     }     
 }

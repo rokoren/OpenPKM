@@ -16,6 +16,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListProvider;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.openide.nodes.Children;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.ServiceProvider;
@@ -127,6 +128,12 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
             List<Action> actions = new ArrayList();
             actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Checklist"));         
             return actions;
+        } 
+        
+        @Override
+        public Children getChildren() 
+        {
+            return Children.LEAF;
         }        
     }     
 }

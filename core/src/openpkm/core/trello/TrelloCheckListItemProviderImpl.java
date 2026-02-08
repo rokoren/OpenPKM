@@ -17,6 +17,7 @@ import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItemProvider;
+import org.openide.nodes.Children;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -165,6 +166,12 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         public List<Action> getActions() 
         {       
             return Collections.EMPTY_LIST;
-        }          
+        } 
+        
+        @Override
+        public Children getChildren() 
+        {
+            return Children.LEAF;
+        }        
     }      
 }

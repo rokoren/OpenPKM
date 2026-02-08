@@ -16,6 +16,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.openide.nodes.Children;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -121,5 +122,11 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         {       
             return Collections.EMPTY_LIST;
         }  
+        
+        @Override
+        public Children getChildren() 
+        {
+            return Children.LEAF;
+        }        
     }      
 }

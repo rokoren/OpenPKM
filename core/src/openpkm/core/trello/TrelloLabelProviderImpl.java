@@ -17,6 +17,7 @@ import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
+import org.openide.nodes.Children;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -175,6 +176,12 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
         public List<Action> getActions() 
         {       
             return Collections.EMPTY_LIST;
-        }          
+        } 
+        
+        @Override
+        public Children getChildren() 
+        {
+            return Children.LEAF;
+        }        
     }      
 }

@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.logging.Logger;
-import openpkm.trello.AbstractTrelloAction;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
 import openpkm.utils.DateTimeUtils;
