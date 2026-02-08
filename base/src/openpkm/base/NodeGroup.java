@@ -26,7 +26,7 @@ public interface NodeGroup
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener);
     Lookup.Provider getProvider(); 
-    SortedSet<NodeProvider> getNodes();
+    SortedSet<? extends NodeProvider> getNodes();
     
     public static Comparator<NodeGroup> positionComparator() 
     {

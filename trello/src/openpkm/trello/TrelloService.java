@@ -15,4 +15,6 @@ public interface TrelloService
 {
     List<TrelloBoard> getBoards(TrelloAccount account, Trello trello); 
     List<TrelloList> getLists(TrelloBoard trelloBoard, TrelloListProvider provider, Trello trello);
+    List<TrelloMember> getMembers(TrelloBoard trelloBoard, TrelloMemberProvider provider, Trello trello);    
+    List<TrelloLabel> getLabels(TrelloBoard trelloBoard, TrelloLabelProvider provider, Trello trello); 
 }

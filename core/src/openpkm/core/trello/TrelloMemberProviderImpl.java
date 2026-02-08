@@ -49,11 +49,23 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         Properties props = new Properties();
         props.setProperty(PROP_MEMBER_ID, member.getId());
         props.setProperty(PROP_MEMBER_USERNAME, member.getUsername());
-        props.setProperty(PROP_MEMBER_BIO, member.getBio());
-        props.setProperty(PROP_MEMBER_EMAIL, member.getEmail());          
+        if(member.getBio() != null)
+        {
+            props.setProperty(PROP_MEMBER_BIO, member.getBio());            
+        }
+        if(member.getEmail() != null)
+        {
+            props.setProperty(PROP_MEMBER_EMAIL, member.getEmail());                      
+        }
         props.setProperty(PROP_MEMBER_FULL_NAME, member.getFullName());
-        props.setProperty(PROP_MEMBER_STATUS, member.getStatus());                   
-        props.setProperty(PROP_MEMBER_TYPE, member.getMemberType());
+        if(member.getStatus() != null)
+        {
+            props.setProperty(PROP_MEMBER_STATUS, member.getStatus());                               
+        }
+        if(member.getMemberType() != null)
+        {
+            props.setProperty(PROP_MEMBER_TYPE, member.getMemberType());            
+        }
         return new TrelloMemberImpl(props);
     } 
     

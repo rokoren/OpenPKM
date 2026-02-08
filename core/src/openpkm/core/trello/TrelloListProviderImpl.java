@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloList;
@@ -51,7 +52,7 @@ public class TrelloListProviderImpl implements TrelloListProvider
         return new TrelloListImpl(props);
     } 
     
-    private static final class TrelloListImpl implements TrelloList, NodeProvider, PropertiesProvider
+    private static final class TrelloListImpl implements TrelloList, NodePositionProvider, PropertiesProvider
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_list.png";  
@@ -136,5 +137,16 @@ public class TrelloListProviderImpl implements TrelloListProvider
             actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Card"));         
             return actions;
         }      
+
+        @Override
+        public int getPosition() 
+        {
+            Integer position = getListPosition();
+            if(position != null)
+            {
+                return position.intValue();
+            }
+            return -1;
+        }
     } 
 }

@@ -6,14 +6,20 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.domain.Board;
+import com.julienvey.trello.domain.Label;
+import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloBoard;
+import openpkm.trello.TrelloLabel;
+import openpkm.trello.TrelloLabelProvider;
 import openpkm.trello.TrelloList;
 import openpkm.trello.TrelloListProvider;
+import openpkm.trello.TrelloMember;
+import openpkm.trello.TrelloMemberProvider;
 import openpkm.trello.TrelloService;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -46,6 +52,30 @@ public class TrelloServiceImpl implements TrelloService
             all.add(provider.createList(list));
         }                     
         return all;        
+    }   
+    
+    @Override
+    public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)
+    {
+        List<TrelloMember> list = new ArrayList();   
+        List<Member> members = trello.getBoardMembers(board.getBoardID());
+        for(Member member : members)                
+        {
+            list.add(provider.createMember(member));
+        }                     
+        return list;        
+    }     
+    
+    @Override
+    public List<TrelloLabel> getLabels(TrelloBoard board, TrelloLabelProvider provider, Trello trello)
+    {
+        List<TrelloLabel> list = new ArrayList();   
+        List<Label> labels = trello.getBoardLabels(board.getBoardID());
+        for(Label label : labels)                
+        {
+            list.add(provider.createLabel(label));
+        }                     
+        return list;        
     }     
 
     private static final class TrelloBoardImpl implements TrelloBoard

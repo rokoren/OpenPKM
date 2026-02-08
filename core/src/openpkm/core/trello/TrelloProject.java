@@ -46,6 +46,7 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
+import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
@@ -1230,14 +1231,20 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         }          
     }      
     
-    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements NodeGroup, FileChangeListener
+    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements NodeGroup, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/palette.png";         
+        private static final String ICON = "openpkm/core/resources/palette.png"; 
+
+        private static final String PROP_TRELLO_SYNC_LABEL = "trello.sync.label"; 
                 
         public TrelloLabelsProviderImpl(TrelloLabelProvider provider) 
         {
-            super(provider);            
+            super(provider);  
+            if(getLastSync() == null)
+            {
+                RP.post(this);                
+            }             
         }          
         
         @Override
@@ -1404,17 +1411,86 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        }  
+
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_LABEL);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_LABEL);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_LABEL, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_LABEL, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_LABEL, oldValue, time); 
+            }
+        } 
+        
+        @Override
+        public void run()
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                List<TrelloLabel> labels = service.getLabels(TrelloProject.this, provider, getTrello());
+                for(TrelloLabel label : labels)
+                {
+                    if(!getLabels().containsKey(label.getLabelID()))
+                    {
+                        if(label instanceof PropertiesProvider properties)
+                        {
+                            try
+                            {
+                                OutputStream os = getRootFolder().createAndOpen(label.getLabelID() + "." + PropertiesProvider.EXTENSION);                            
+                                properties.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                                os.close();
+                                LOG.info("Trello label saved: " + label.getLabelID());                              
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                            
+                        }
+                    }
+                }
+                setLastSync(LocalDateTime.now());
+            }
+        }         
     }  
     
-    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements NodeGroup, FileChangeListener
+    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements NodeGroup, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/group.png";                  
+        private static final String ICON = "openpkm/core/resources/group.png"; 
+        
+        private static final String PROP_TRELLO_SYNC_MEMBER = "trello.sync.member";         
                 
         public TrelloMembersProviderImpl(TrelloMemberProvider provider) 
         {
-            super(provider);            
+            super(provider);   
+            if(getLastSync() == null)
+            {
+                RP.post(this);                
+            }            
         }          
         
         @Override
@@ -1581,7 +1657,70 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        }  
+
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_MEMBER);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_MEMBER);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_MEMBER, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_MEMBER, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_MEMBER, oldValue, time); 
+            }
+        } 
+        
+        @Override
+        public void run()
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                List<TrelloMember> members = service.getMembers(TrelloProject.this, provider, getTrello());
+                for(TrelloMember member : members)
+                {
+                    if(!getMembers().containsKey(member.getMemberID()))
+                    {
+                        if(member instanceof PropertiesProvider properties)
+                        {
+                            try
+                            {
+                                OutputStream os = getRootFolder().createAndOpen(member.getMemberID() + "." + PropertiesProvider.EXTENSION);                            
+                                properties.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                                os.close();
+                                LOG.info("Trello member saved: " + member.getMemberID());                              
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                            
+                        }
+                    }
+                }
+                setLastSync(LocalDateTime.now());
+            }
+        }        
     }      
 
     private final class TrelloListsProviderImpl extends TrelloListsProvider implements NodeGroup, FileChangeListener, Runnable
@@ -1589,7 +1728,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_columns.png"; 
         
-        private static final String PROP_TRELLO_SYNC_LISTS = "trello.sync.lists";        
+        private static final String PROP_TRELLO_SYNC_LIST = "trello.sync.list";        
         
         public TrelloListsProviderImpl(TrelloListProvider provider) 
         {
@@ -1633,14 +1772,14 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         } 
         
         @Override
-        public SortedSet<NodeProvider> getNodes()
+        public SortedSet<? extends NodeProvider> getNodes()
         {
-            List<NodeProvider> list = getLists().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
+            List<NodePositionProvider> list = getLists().values().stream()
+                    .filter(NodePositionProvider.class::isInstance)
+                    .map(NodePositionProvider.class::cast)
                     .toList();        
             
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
+            SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
             sorted.addAll(list);
             
             return sorted;
@@ -1768,7 +1907,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         
         public LocalDateTime getLastSync()
         {
-            String string = props.getProperty(PROP_TRELLO_SYNC_LISTS);
+            String string = props.getProperty(PROP_TRELLO_SYNC_LIST);
             if(string != null)
             {
                 return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
@@ -1780,21 +1919,21 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         {
             if(time == null)
             {
-                Object oldValue = props.remove(PROP_TRELLO_SYNC_LISTS);
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_LIST);
                 if(oldValue != null)
                 {
                     oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
                 }                
-                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_LISTS, oldValue, time); 
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_LIST, oldValue, time); 
             }
             else        
             {
-                Object oldValue = props.setProperty(PROP_TRELLO_ACTIVITY, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_LIST, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
                 if(oldValue != null)
                 {
                     oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
                 }
-                propertyChangeSupport.firePropertyChange(PROP_TRELLO_ACTIVITY, oldValue, time); 
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_LIST, oldValue, time); 
             }
         }         
         
