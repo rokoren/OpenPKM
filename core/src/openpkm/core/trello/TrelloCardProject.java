@@ -486,10 +486,21 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     }    
     
     @Override
-    public boolean isCardLink()
+    public String getCardRole() 
     {
+        return props.getProperty(TrelloCardProvider.PROP_CARD_ROLE);
+    }          
+
+    @Override
+    public boolean isCardLink() 
+    {
+        String cardRole = getCardRole();
+        if(cardRole != null)
+        {
+            return cardRole.equalsIgnoreCase(TrelloCardProvider.CARD_ROLE_LINK);
+        }
         return false;
-    }
+    } 
     
 // TODO TitleProvider  
     

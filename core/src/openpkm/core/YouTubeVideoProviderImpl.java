@@ -5,6 +5,8 @@
 package openpkm.core;
 
 import com.google.api.client.util.DateTime;
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.VideoListResponse;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -12,12 +14,15 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.BoxLayout;
@@ -33,7 +38,9 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.utils.DateTimeUtils;
+import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
+import openpkm.youtube.YouTubeService;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
 import org.cef.browser.CefBrowser;
@@ -45,6 +52,7 @@ import org.openide.awt.UndoRedo;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
 
@@ -62,6 +70,140 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
     {
         return new YouTubeVideoImpl(props);
     }
+    
+    @Override
+    public YouTubeVideo getVideo(String videoID)
+    {
+        try
+        {         
+            GooglePasswordProvider provider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+            YouTube youtubeService = YouTubeService.getDeafult().getService();
+            YouTube.Videos.List request = youtubeService.videos().list("snippet,contentDetails,statistics,topicDetails");
+            //YouTube.Videos.List request = youtubeService.videos().list("snippet");
+            request.setKey(provider.getKey());
+            VideoListResponse response = request.setId(videoID).execute();  
+            if(response.getItems() != null && !response.getItems().isEmpty())
+            { 
+                Properties props = new Properties();
+                props.setProperty(YouTubeVideo.PROP_VIDEO_ID, response.getItems().get(0).getId());
+                props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, response.getItems().get(0).getSnippet().getTitle());
+                props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, response.getItems().get(0).getSnippet().getChannelId()); 
+                props.setProperty(YouTubeVideo.PROP_CHANNEL_TITLE, response.getItems().get(0).getSnippet().getChannelTitle());
+         
+                DateTime publishedAt = response.getItems().get(0).getSnippet().getPublishedAt();
+                if (publishedAt != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());  
+                }                
+
+                if(response.getItems().get(0).getContentDetails() != null)
+                {
+                    String duration = response.getItems().get(0).getContentDetails().getDuration();                  
+                    if (duration != null)
+                    {
+                        props.setProperty(YouTubeVideo.PROP_DURATION, duration);  
+                    }   
+                    
+                    String caption = response.getItems().get(0).getContentDetails().getCaption();  
+                    if(caption != null)
+                    {
+                        props.setProperty(YouTubeVideo.PROP_CAPTION, caption);
+                    }                      
+                } 
+                
+                String description = response.getItems().get(0).getSnippet().getDescription();
+                if (description != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description);            
+                }
+                
+                String defaultLanguage = response.getItems().get(0).getSnippet().getDefaultLanguage();
+                if (defaultLanguage != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_DEFAULT_LANGUAGE, defaultLanguage);
+                } 
+                
+                String defaultAudioLanguage = response.getItems().get(0).getSnippet().getDefaultAudioLanguage();  
+                if (defaultAudioLanguage != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_DEFAULT_AUDIO_LANGUAGE, defaultAudioLanguage);
+                }  
+                
+                String liveBroadcastContent = response.getItems().get(0).getSnippet().getLiveBroadcastContent();
+                if (liveBroadcastContent != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_LIVEBROADCAST_CONTENT, liveBroadcastContent);
+                }                                                
+                
+                String thumbnailDefault = response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();                
+                if(thumbnailDefault != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT, thumbnailDefault);
+                } 
+                
+                String thumbnailHigh = response.getItems().get(0).getSnippet().getThumbnails().getHigh().getUrl();                
+                if(thumbnailHigh != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH, thumbnailHigh);
+                }  
+                
+                String thumbnailMedium = response.getItems().get(0).getSnippet().getThumbnails().getMedium().getUrl();                
+                if(thumbnailMedium != null)
+                {
+                    props.setProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM, thumbnailMedium);
+                } 
+                
+                if(response.getItems().get(0).getSnippet().getThumbnails().getStandard() != null)
+                {
+                    String thumbnailStandard = response.getItems().get(0).getSnippet().getThumbnails().getStandard().getUrl();  
+                    props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);              
+                } 
+
+                List<String> tags = response.getItems().get(0).getSnippet().getTags();
+                if(tags != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(String tag : tags)
+                    {
+                        joiner.add(tag);
+                    }
+                    props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());
+                } 
+                
+                if(response.getItems().get(0).getStatistics() != null)
+                {
+                    BigInteger views = response.getItems().get(0).getStatistics().getViewCount();  
+                    if (views != null)
+                    {
+                        props.setProperty(YouTubeVideo.PROP_VIEW_COUNT, views.toString()); 
+                    }
+
+                    BigInteger likes = response.getItems().get(0).getStatistics().getLikeCount();  
+                    if (likes != null)
+                    {
+                        props.setProperty(YouTubeVideo.PROP_LIKE_COUNT, likes.toString()); 
+                    }   
+
+                    BigInteger comments = response.getItems().get(0).getStatistics().getCommentCount();  
+                    if (comments != null)
+                    {
+                        props.setProperty(YouTubeVideo.PROP_COMMENT_COUNT, comments.toString()); 
+                    }                     
+                }                 
+
+                return getVideo(props);
+            }                 
+        }
+        catch (IOException e)
+        {
+            LOG.warning(e.getMessage());   
+        }
+        catch (GeneralSecurityException e)
+        {
+            LOG.warning(e.getMessage());  
+        }                                        
+        return null;
+    }    
  
     private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
@@ -69,6 +211,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         private final PropertyChangeSupport propertyChangeSupport;
         private final ChangeSupport changeSupport;         
         
+        private Lookup lkp;
         private boolean isDeleted;        
 
         public YouTubeVideoImpl(Properties props)
@@ -77,6 +220,16 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
             propertyChangeSupport = new PropertyChangeSupport(this);
             changeSupport = new ChangeSupport(this);            
         }
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this);              
+            }
+            return lkp;
+        }         
 
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener)

@@ -20,6 +20,7 @@ public interface TrelloCard extends Source
     String getCardName();
     Integer getCardPosition();
     Boolean isCardClosed();
+    String getCardRole();
     boolean isCardLink();
     /*
     String getCardDescription();    

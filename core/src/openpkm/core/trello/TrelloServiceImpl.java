@@ -12,6 +12,8 @@ import com.julienvey.trello.domain.Label;
 import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
 import java.awt.Color;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -33,6 +35,7 @@ import openpkm.trello.TrelloListProvider;
 import openpkm.trello.TrelloMember;
 import openpkm.trello.TrelloMemberProvider;
 import openpkm.trello.TrelloService;
+import openpkm.utils.Utils;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -128,6 +131,8 @@ public class TrelloServiceImpl implements TrelloService
         
         JSONObject json = response.getBody().getObject();
         
+        LOG.info(json.toString());
+        
         JSONArray idLabels = json.getJSONArray("idLabels");
         List<Label> labels = new ArrayList();
         for(int i=0; i<idLabels.length(); i++)
@@ -141,8 +146,12 @@ public class TrelloServiceImpl implements TrelloService
             label.setName(jsonLabel.getString("name"));
             */
         }
-          
+         
+        LocalDateTime now = LocalDateTime.now();
+        
         Properties props = new Properties();
+        props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
+        props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
         props.setProperty(TrelloCardProvider.PROP_CARD_ID, json.getString("id"));
         props.setProperty(TrelloCardProvider.PROP_BOARD_ID, json.getString("idBoard"));
         props.setProperty(TrelloCardProvider.PROP_LIST_ID, json.getString("idList"));            
@@ -150,6 +159,10 @@ public class TrelloServiceImpl implements TrelloService
         props.setProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION, json.getString("desc"));
         props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, json.getInt("pos") + "");        
         props.setProperty(TrelloCardProvider.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
+        if(!json.isNull("cardRole"))
+        {
+            props.setProperty(TrelloCardProvider.PROP_CARD_ROLE, json.getString("cardRole"));            
+        }
         
         /*
         card.setSubscribed(json.getBoolean("subscribed"));

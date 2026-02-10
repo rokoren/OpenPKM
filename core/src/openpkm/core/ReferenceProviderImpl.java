@@ -77,6 +77,7 @@ import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
 
@@ -152,6 +153,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         protected final PropertyChangeSupport propertyChangeSupport;
         protected final ChangeSupport changeSupport;  
         
+        private Lookup lkp;         
         private boolean isDeleted;  
 
         public AbstractReference(Properties props) 
@@ -160,6 +162,16 @@ public class ReferenceProviderImpl implements ReferenceProvider
             propertyChangeSupport = new PropertyChangeSupport(this);
             changeSupport = new ChangeSupport(this);                
         }
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this);              
+            }
+            return lkp;
+        }         
 
         @Override
         public Properties getProperties()

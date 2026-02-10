@@ -28,8 +28,7 @@ import org.openide.nodes.Node;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
-import org.openide.util.lookup.AbstractLookup;
-import org.openide.util.lookup.InstanceContent;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
 import org.openide.windows.TopComponent;
 
@@ -103,7 +102,6 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
 {
     private static final Logger LOG = Logger.getLogger(MarkdownDataObject.class.getName());
     
-    private final InstanceContent lookupContent;
     private final ChangeSupport changeSupport;
     
     private Lookup lookup;     
@@ -111,7 +109,6 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
     public MarkdownDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException 
     {
         super(pf, loader);
-        lookupContent = new InstanceContent(); 
         changeSupport = new ChangeSupport(this);        
         registerEditor(MarkdownLanguageConfig.MIME_TYPE, true);
     }
@@ -137,15 +134,18 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
         if(lookup == null)
         { 
             Source source = Utils.getSource(getPrimaryFile());
-            if(source != null)
+            if(source == null)
+            {
+                lookup = super.getLookup();
+            }  
+            else
             {
                 source.addPropertyChangeListener(this);
-                source.addChangeListener(this);
-                lookupContent.add(source);                
-            }  
-            lookup = new ProxyLookup(super.getLookup(), new AbstractLookup(lookupContent));
+                source.addChangeListener(this);                    
+                lookup = new ProxyLookup(super.getLookup(), Lookups.proxy(source));                
+            }
         }
-        return lookup;
+        return lookup;   
     } 
 
     @Override
@@ -181,7 +181,7 @@ public class MarkdownDataObject extends MultiDataObject implements PropertyChang
         {
             source.removePropertyChangeListener(this);
             source.removeChangeListener(this);
-            lookupContent.remove(source);  
+            //lookupContent.remove(source);  
             CloseCookie close = getCookie(CloseCookie.class);
             if(close != null)
             {

@@ -11,19 +11,21 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.event.ChangeListener;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
-import openpkm.trello.TrelloCardsProvider;
-import openpkm.utils.Utils;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
+import openpkm.youtube.YouTubeVideo;
+import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.util.ChangeSupport;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -33,45 +35,14 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=TrelloCardProvider.class)
 public class TrelloCardProviderImpl implements TrelloCardProvider
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());     
+    private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());  
+    
+    private static final Pattern YT_PATTERN = Pattern.compile("^(?:https?://)?(?:www\\.)?(?:youtube\\.com/(?:watch\\?v=|embed/|v/)|youtu\\.be/)([A-Za-z0-9_-]{11}).*");    
     
     @Override
     public TrelloCard getCard(Properties props)
     {
         return new TrelloCardImpl(props);
-    }
-    
-    @Override
-    public TrelloCard getCard(FileObject fo) 
-    {
-        if(fo.isFolder())
-        {
-            try
-            {
-                Project project = ProjectManager.getDefault().findProject(fo);
-                if(project != null)
-                {
-                    return project.getLookup().lookup(TrelloCard.class);  
-                }                
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }
-        }
-        else
-        {
-            try
-            {
-                Properties props = Utils.getProperties(fo); 
-                return new TrelloCardImpl(props);
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }
-        }
-        return null;
     }
     
     @Override
@@ -137,17 +108,16 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     public static String getCardID(Properties props)
     {
         return props.getProperty(PROP_CARD_ID);      
-    }    
+    } 
     
-    public static boolean isCardLink(Properties props)
+    public static String extractYouTubeId(String url) 
     {
-        String string = props.getProperty(PROP_CARD_LINK);
-        if(string != null)
-        {
-            return Boolean.parseBoolean(string);  
+        Matcher m = YT_PATTERN.matcher(url);
+        if (m.matches()) {
+            return m.group(1);
         }
-        return false;        
-    }
+        return null; // ni YouTube link ali ni ID-ja
+    }   
     
     private static final class TrelloCardImpl implements TrelloCard, PropertiesProvider
     {         
@@ -155,6 +125,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         private final PropertyChangeSupport propertyChangeSupport;
         private final ChangeSupport changeSupport;  
         
+        private Lookup lkp;         
         private boolean isDeleted;          
         
         public TrelloCardImpl(Properties props)
@@ -164,6 +135,36 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             changeSupport = new ChangeSupport(this);  
         }     
 
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                List list = new ArrayList();
+
+                list.add(this);
+                if(isCardLink())
+                {
+                    String videoID = extractYouTubeId(getCardName());
+                    if(videoID != null)
+                    {
+                        YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                        if(provider != null)
+                        {
+                            YouTubeVideo video = provider.getVideo(videoID);
+                            if(video != null)
+                            {
+                                list.add(video);
+                            }
+                        }
+                    }
+                }
+
+                lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
+            }
+            return lkp;
+        }         
+        
 // TODO TrelloCard        
         
         @Override
@@ -287,9 +288,20 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }
         
         @Override
+        public String getCardRole() 
+        {
+            return props.getProperty(PROP_CARD_ROLE);
+        }          
+        
+        @Override
         public boolean isCardLink() 
         {
-            return TrelloCardProviderImpl.isCardLink(props);
+            String cardRole = getCardRole();
+            if(cardRole != null)
+            {
+                return cardRole.equalsIgnoreCase(CARD_ROLE_LINK);
+            }
+            return false;
         }        
         
 // TODO PropertiesProvider        
@@ -299,5 +311,5 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         {
             return props;
         }                       
-    }     
+    }        
 }

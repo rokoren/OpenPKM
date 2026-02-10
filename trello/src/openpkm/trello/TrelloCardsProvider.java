@@ -11,7 +11,7 @@ import openpkm.base.SourceProvider;
  *
  * @author Rok Koren
  */
-public interface TrelloCardsProvider extends SourceProvider
+public interface TrelloCardsProvider extends SourceProvider<TrelloCard>
 {
     TrelloCardProvider getCardProvider();   
     Collection<TrelloCard> getCards();     

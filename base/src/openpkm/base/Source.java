@@ -9,12 +9,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import javax.swing.event.ChangeListener;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public interface Source
+public interface Source extends Lookup.Provider
 {        
     String PROP_APP_ID       = "app.id";        
     String PROP_TIME_CREATED = "time.created";      

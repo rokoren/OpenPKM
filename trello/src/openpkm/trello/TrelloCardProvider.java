@@ -6,7 +6,6 @@ package openpkm.trello;
 
 import com.julienvey.trello.domain.Card;
 import java.util.Properties;
-import org.openide.filesystems.FileObject;
 
 /**
  *
@@ -14,6 +13,8 @@ import org.openide.filesystems.FileObject;
  */
 public interface TrelloCardProvider 
 {
+    String CARD_ROLE_LINK = "link";
+    
     String PROP_APP_ID           = "app.id";        
     String PROP_TIME_CREATED     = "time.created";           
     String PROP_BOARD_ID         = "board.id";
@@ -22,10 +23,9 @@ public interface TrelloCardProvider
     String PROP_CARD_NAME        = "card.name";
     String PROP_CARD_DESCRIPTION = "card.description";
     String PROP_CARD_POSITION    = "card.position"; 
-    String PROP_CARD_LINK        = "card.link"; 
+    String PROP_CARD_ROLE        = "card.role"; 
     String PROP_CARD_CLOSED      = "card.closed"; 
 
-    TrelloCard getCard(Properties props); 
-    TrelloCard getCard(FileObject fo);    
+    TrelloCard getCard(Properties props);  
     TrelloCard createCard(Card card);      
 }

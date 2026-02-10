@@ -35,6 +35,8 @@ import openpkm.base.VisibilityProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -92,6 +94,7 @@ public class ContentProviderImpl implements ContentProvider
         protected final PropertyChangeSupport propertyChangeSupport;
         protected final ChangeSupport changeSupport;  
         
+        private Lookup lkp;          
         private boolean isDeleted;  
 
         public AbstractContent(Properties props) 
@@ -100,6 +103,16 @@ public class ContentProviderImpl implements ContentProvider
             propertyChangeSupport = new PropertyChangeSupport(this);
             changeSupport = new ChangeSupport(this);                
         }
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this);              
+            }
+            return lkp;
+        }          
                 
         @Override
         public Properties getProperties()

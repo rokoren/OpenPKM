@@ -12,5 +12,6 @@ import java.util.Properties;
  */
 public interface YouTubeVideoProvider 
 {
-    YouTubeVideo getVideo(Properties props);    
+    YouTubeVideo getVideo(Properties props);  
+    YouTubeVideo getVideo(String videoID);  
 }
