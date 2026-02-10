@@ -4,6 +4,8 @@
  */
 package openpkm.trello;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
 import org.netbeans.api.project.SourceGroup;
@@ -30,7 +32,7 @@ public abstract class TrelloListsProvider implements SourceGroup
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloList> getLists();
+    protected abstract Map<String, TrelloList> getListsById();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -42,9 +44,14 @@ public abstract class TrelloListsProvider implements SourceGroup
         changeSupport.removeChangeListener(listener);
     }     
 
+    public Collection<TrelloList> getLists()
+    {
+        return Collections.unmodifiableCollection(getListsById().values());
+    }
+    
     public TrelloList getList(String listID) 
     {
-        return getLists().get(listID);
+        return getListsById().get(listID);
     }                                  
 
     @Override
@@ -62,6 +69,6 @@ public abstract class TrelloListsProvider implements SourceGroup
     @Override
     public boolean contains(FileObject file) 
     {
-        return getLists().containsKey(file.getName());
+        return getListsById().containsKey(file.getName());
     }     
 }

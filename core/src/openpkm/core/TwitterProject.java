@@ -1468,7 +1468,7 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         }               
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return TwitterProject.this;
         } 
@@ -1542,47 +1542,28 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(WebPage webPage, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            WebPage webPage = provider.getWebPage(props);
-            if(webPage != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, webPage.getSourceID());  
+
+            if(webPage instanceof Article)
             {
-                try
+                Article article = (Article)webPage;
+                if(fileTypeProvider instanceof ArticleProvider)
                 {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, webPage.getSourceID());  
-                    
-                    if(webPage instanceof Article)
-                    {
-                        Article article = (Article)webPage;
-                        if(fileTypeProvider instanceof ArticleProvider)
-                        {
-                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(webPage.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                        webPage.save(os, "New Content Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            } 
-            return null;
-        }           
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }  
+            
+            return primaryFile;            
+        }          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1660,7 +1641,7 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         }               
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return TwitterProject.this;
         }  
@@ -1728,58 +1709,39 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            Reference reference = provider.getReference(props);
-            if(reference != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
+
+            if(reference instanceof Article)
             {
-                try
+                Article article = (Article)reference;
+                if(fileTypeProvider instanceof ArticleProvider)
                 {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
-                    
-                    if(reference instanceof Article)
-                    {
-                        Article article = (Article)reference;
-                        if(fileTypeProvider instanceof ArticleProvider)
-                        {
-                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    else if(reference instanceof Book)
-                    {
-                        Book book = (Book)reference;
-                        if(fileTypeProvider instanceof BookProvider)
-                        {
-                            BookProvider bookProvider = (BookProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                        reference.save(os, "New Reference Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }
+            else if(reference instanceof Book)
+            {
+                Book book = (Book)reference;
+                if(fileTypeProvider instanceof BookProvider)
                 {
-                    LOG.warning(e.getMessage());
-                }
-            } 
-            return null;
-        }          
+                    BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                    output.close();
+                }                         
+            }            
+
+            return primaryFile;
+        }         
         
         @Override
         public void fileFolderCreated(FileEvent evt) 

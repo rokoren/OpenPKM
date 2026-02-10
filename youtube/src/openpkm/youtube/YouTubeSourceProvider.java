@@ -18,7 +18,7 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public abstract class YouTubeSourceProvider implements SourceProvider
+public abstract class YouTubeSourceProvider implements SourceProvider<YouTubeVideo>
 {
     protected static final String ROOT_FOLDER = "youtube";       
 
@@ -31,6 +31,11 @@ public abstract class YouTubeSourceProvider implements SourceProvider
     {
         this.provider = provider;
     } 
+    
+    public YouTubeVideoProvider getVideoProvider()
+    {
+        return provider;
+    }
     
     protected abstract Map<String, YouTubeVideo> getVideosById();
     

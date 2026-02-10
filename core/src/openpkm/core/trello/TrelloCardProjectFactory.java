@@ -50,7 +50,7 @@ public class TrelloCardProjectFactory implements ProjectFactory
             Properties props = new Properties();
             FileObject folder = dir.getFileObject(PROJECT_FOLDER);  
             props.load(folder.getFileObject(PROJECT_FILE).getInputStream());  
-            return new TrelloProject(dir, state, props);   
+            return new TrelloCardProject(dir, state, props);   
         }       
         return null;          
     }    

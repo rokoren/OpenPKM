@@ -15,7 +15,7 @@ import org.openide.filesystems.FileObject;
  *
  * @author Rok Koren
  */
-public abstract class WebSourceProvider implements SourceProvider
+public abstract class WebSourceProvider implements SourceProvider<WebPage>
 {
     protected static final String ROOT_FOLDER = "web";       
 
@@ -28,6 +28,11 @@ public abstract class WebSourceProvider implements SourceProvider
     {
         this.provider = provider;
     } 
+    
+    public WebPageProvider getWebPageProvider()
+    {
+        return provider;
+    }
     
     public abstract Map<String, WebPage> getLinks();
 

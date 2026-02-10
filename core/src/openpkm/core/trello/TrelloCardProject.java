@@ -17,6 +17,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,14 +38,14 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
-import openpkm.base.DataProvider;
-import openpkm.base.DataProviders;
-import openpkm.base.DataSource;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.Source;
+import openpkm.base.SourceProvider;
+import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.core.TopComponentProvider;
@@ -102,7 +103,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, DataProviders, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
 { 
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -123,7 +124,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     private static final RequestProcessor RP = new RequestProcessor(TrelloCardProject.class);   
     
     private final Map<String, SourceGroup> sources = new HashMap(); 
-    private final Map<String, DataProvider> dataProviders = new HashMap();
     private final List<UpdateCookie> cookies = new ArrayList();      
     private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
     private final ChangeSupport changeSupport = new ChangeSupport(this);
@@ -135,7 +135,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private DataSource dataSource;
+    private Source lastSource; 
+    private boolean isDeleted;      
     
     private TrelloAccount trelloAccount;
     private Trello trelloApi;    
@@ -259,13 +260,18 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         return fileSystem;
     }
    
-// DataProviders    
+// SourceProviders    
     
     @Override
-    public DataProvider getDataProvider(String name)
+    public SourceProvider getSourceProvider(String folder)
     {
-        return dataProviders.get(name);
-    }
+        SourceGroup sourceGroup = sources.get(folder);
+        if(sourceGroup instanceof SourceProvider provider)
+        {
+            return provider;
+        }
+        return null;
+    }  
     
     private synchronized FileObject getDataDirectory() throws IOException
     {
@@ -300,19 +306,17 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         return null;
     }
     
-    @Override
-    public DataSource getDataSource() 
+    private Source getLastSource() 
     {
-        return dataSource;
+        return lastSource;
     }
 
-    @Override
-    public void setDataSource(DataSource newValue) 
+    private void setLastSource(Source source) 
     {
-        DataSource oldValue = dataSource;
-        dataSource = newValue;
-        propertyChangeSupport.firePropertyChange(PROP_DATA_SOURCE, oldValue, newValue);
-    }  
+        Source oldSource = lastSource;
+        lastSource = source;
+        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
+    } 
     
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener)
@@ -376,8 +380,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             list.add(new TrelloCardLogicalView(this));
             list.add(new TrelloCardCustomizerProvider(this));                                 
 
-            list.addAll(sources.values());         
-            list.addAll(dataProviders.values());    
+            list.addAll(sources.values());           
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -408,6 +411,26 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     {
         return getCardID();
     }
+    
+    @Override
+    public boolean isDeleted()
+    {
+        return isDeleted;
+    }
+
+    @Override
+    public void setDeleted()
+    {
+        isDeleted = true;
+        changeSupport.fireChange();
+    }  
+
+    @Override
+    public void save(OutputStream os, String comments) throws IOException
+    {
+        props.store(os, comments); 
+        LOG.info("Trello Card Properties saved");      
+    }      
     
     @Override
     public String getBoardID() 
@@ -450,6 +473,17 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }
         return null;
     }  
+    
+    @Override
+    public Boolean isCardClosed()
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_CLOSED);
+        if(string != null)
+        {
+            return Boolean.parseBoolean(string);
+        }
+        return null;
+    }    
     
     @Override
     public boolean isCardLink()

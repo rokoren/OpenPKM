@@ -1869,7 +1869,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }               
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return YouTubeChannelProject.this;
         }  
@@ -1937,57 +1937,38 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            Reference reference = provider.getReference(props);
-            if(reference != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
+
+            if(reference instanceof Article)
             {
-                try
+                Article article = (Article)reference;
+                if(fileTypeProvider instanceof ArticleProvider)
                 {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
-                    
-                    if(reference instanceof Article)
-                    {
-                        Article article = (Article)reference;
-                        if(fileTypeProvider instanceof ArticleProvider)
-                        {
-                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    else if(reference instanceof Book)
-                    {
-                        Book book = (Book)reference;
-                        if(fileTypeProvider instanceof BookProvider)
-                        {
-                            BookProvider bookProvider = (BookProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                        reference.save(os, "New Reference Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }
+            else if(reference instanceof Book)
+            {
+                Book book = (Book)reference;
+                if(fileTypeProvider instanceof BookProvider)
                 {
-                    LOG.warning(e.getMessage());
-                }
-            } 
-            return null;
+                    BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                    output.close();
+                }                         
+            }            
+
+            return primaryFile;
         }          
         
         @Override
@@ -2066,7 +2047,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }          
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return YouTubeChannelProject.this;
         } 
@@ -2134,43 +2115,24 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            YouTubeVideo video = provider.getVideo(props);
-            if(video != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
             {
-                try
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    
-                    if(fileTypeProvider instanceof ArticleProvider)
-                    {
-                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = primaryFile.getOutputStream();
-                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
-                        output.close();
-                    }                     
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                        video.save(os, "New YouTube Video Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }                           
-            return null;
-        }          
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }                 
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2307,25 +2269,32 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 String description = activity.getSnippet().getDescription();
                                 String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
                                   
-                                FileObject file = createSource(getProperties(activity), fileTypeProvider);
-                                if(file != null)
-                                {
-                                    String text = getTitle() + ": " + title;
-                                    IconProvider iconProvider = getLookup().lookup(IconProvider.class);
-                                    Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon());                           
+                                YouTubeVideo video = provider.getVideo(getProperties(activity));                                
+                                FileObject file = createData(video, fileTypeProvider);
+                                
+                                FileObject root = getRootFolder();
+                                if(root != null)
+                                {  
+                                    OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                                    video.save(os, "New YouTube Video Created");
+                                    os.close();  
+                                }                                 
+                                
+                                String text = getTitle() + ": " + title;
+                                IconProvider iconProvider = getLookup().lookup(IconProvider.class);
+                                Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon());                           
 
-                                    URL url = new URL(thumbnail);
-                                    BufferedImage image = ImageIO.read(url);                          
-                             
-                                    JLabel baloonDetails = new JLabel();
-                                    baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
-                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
-                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                                    JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+                                URL url = new URL(thumbnail);
+                                BufferedImage image = ImageIO.read(url);                          
 
-                                    //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
-                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                                      
-                                }
+                                JLabel baloonDetails = new JLabel();
+                                baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
+                                baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+
+                                //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
+                                NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");    
 
                                 if (publishedAtMax == null || publishedAt.getValue() > publishedAtMax.getValue())
                                 {
@@ -2392,7 +2361,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(evt.getSource() == getProvider())
+            if(evt.getSource() == getLookupProvider())
             {
                 RP.post(this);                
             }

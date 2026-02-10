@@ -56,6 +56,9 @@
                 <package>com.julienvey.trello.impl.domaininternal</package>
                 <package>com.julienvey.trello.impl.http</package>
                 <package>com.julienvey.trello.utils</package>
+                <package>kong.unirest</package>
+                <package>kong.unirest.apache</package>
+                <package>kong.unirest.json</package>
                 <package>openpkm.trello</package>
             </public-packages>
             <class-path-extension>

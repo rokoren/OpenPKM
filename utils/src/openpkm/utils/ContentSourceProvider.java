@@ -15,7 +15,7 @@ import openpkm.base.ContentProvider;
  *
  * @author Rok Koren
  */
-public abstract class ContentSourceProvider implements SourceProvider
+public abstract class ContentSourceProvider implements SourceProvider<Content>
 {
     protected static final String ROOT_FOLDER = "content";       
 
@@ -27,7 +27,12 @@ public abstract class ContentSourceProvider implements SourceProvider
     public ContentSourceProvider(ContentProvider provider) 
     {
         this.provider = provider;
-    } 
+    }
+    
+    public ContentProvider getContentProvider()
+    {
+        return provider;
+    }
     
     public abstract Map<String, Content> getContents();
 

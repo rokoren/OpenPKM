@@ -4,6 +4,7 @@
  */
 package openpkm.trello;
 
+import com.julienvey.trello.domain.Card;
 import java.util.Properties;
 import org.openide.filesystems.FileObject;
 
@@ -21,8 +22,10 @@ public interface TrelloCardProvider
     String PROP_CARD_NAME        = "card.name";
     String PROP_CARD_DESCRIPTION = "card.description";
     String PROP_CARD_POSITION    = "card.position"; 
-    String PROP_CARD_LINK        = "card.link";     
-    
-    TrelloCard getCard(FileObject fo);
-    TrelloCard createCard(Properties props, TrelloCardsProvider provider);
+    String PROP_CARD_LINK        = "card.link"; 
+    String PROP_CARD_CLOSED      = "card.closed"; 
+
+    TrelloCard getCard(Properties props); 
+    TrelloCard getCard(FileObject fo);    
+    TrelloCard createCard(Card card);      
 }

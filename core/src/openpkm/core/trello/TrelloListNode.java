@@ -1,0 +1,192 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package openpkm.core.trello;
+
+import java.awt.Image;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.logging.Logger;
+import javax.swing.Action;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import openpkm.base.DataGroupProvider;
+import openpkm.base.NodePositionProvider;
+import openpkm.trello.TrelloCard;
+import org.netbeans.api.annotations.common.StaticResource;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.nodes.Children;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.Node;
+import org.openide.util.ImageUtilities;
+
+/**
+ *
+ * @author Rok Koren
+ */
+public class TrelloListNode implements NodePositionProvider
+{
+    @StaticResource()
+    private static final String ICON = "openpkm/core/resources/application_view_list.png";  
+    
+    private static final Logger LOG = Logger.getLogger(TrelloListNode.class.getName());     
+
+    private final DataGroupProvider provider;
+
+    public TrelloListNode(DataGroupProvider provider)
+    {
+        this.provider = provider;
+    }           
+
+    @Override
+    public String getName() 
+    {
+        return provider.getName();
+    }
+
+    @Override
+    public String getDisplayName() 
+    {
+        return provider.getDisplayName();
+    }
+
+    @Override
+    public Image getIcon(boolean opened) 
+    {
+        return ImageUtilities.loadImage(ICON);
+    } 
+
+    @Override
+    public List<Action> getActions() 
+    {
+        List<Action> actions = new ArrayList();
+        actions.addAll(provider.getActions());         
+        return actions;
+    } 
+
+    @Override
+    public Children getChildren() 
+    {
+        return new ChildrenImpl(provider);
+    }        
+
+    @Override
+    public int getPosition() 
+    {
+        Integer position = provider.getPosition();
+        if(position != null)
+        {
+            return position.intValue();
+        }
+        return -1;
+    }  
+    
+    private static final class ChildrenImpl extends Children.Keys<DataObject> implements ChangeListener 
+    {
+        private final DataGroupProvider provider;            
+
+        public ChildrenImpl(DataGroupProvider provider)
+        {
+            this.provider = provider;   
+            provider.addChangeListener(this);             
+        }  
+
+        @Override
+        protected void addNotify() 
+        {
+            updateKeys();
+        }
+
+        private void updateKeys() 
+        { 
+            SortedSet<DataObject> sorted = new TreeSet<DataObject>(positionComparator());
+            try
+            {
+                for(FileObject file : provider.getRootFolder().getChildren())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    }                     
+
+                    if(provider.contains(data))
+                    {
+                        sorted.add(data);
+                    }
+                }                
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }              
+            setKeys(sorted); 
+            
+            /*
+            SwingUtilities.invokeLater(() -> 
+            {
+                SortedSet<OpenPkmDataObject> data = new TreeSet<OpenPkmDataObject>(OpenPkmData.titleComparator());
+                data.addAll(getData(provider));     
+                setKeys(data);    
+            });
+            */
+        }
+
+        @Override
+        protected void removeNotify()
+        {
+            provider.removeChangeListener(this);            
+            setKeys(Collections.<DataObject>emptySet());
+        }
+
+        @Override
+        protected Node[] createNodes(DataObject data) 
+        {
+            return new Node[] {new FilterNode(data.getNodeDelegate())};
+        }          
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            updateKeys();
+        }                 
+    } 
+    
+    private static Comparator<DataObject> positionComparator() 
+    {
+        return new Comparator<DataObject>() 
+        {
+            @Override
+            public int compare(DataObject data1, DataObject data2) 
+            {
+                TrelloCard card1 = data1.getLookup().lookup(TrelloCard.class);
+                TrelloCard card2 = data2.getLookup().lookup(TrelloCard.class);
+                if(card1 != null && card1 != null)
+                {
+                    return card1.getCardPosition().compareTo(card2.getCardPosition());                    
+                }
+                return -1;
+            }
+        };
+    }         
+}

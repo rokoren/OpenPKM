@@ -35,7 +35,7 @@ public class SavableImpl extends AbstractSavable
     protected String findDisplayName() 
     {
         StringBuilder sb = new StringBuilder();
-        TitleProvider title1 = provider.getProvider().getLookup().lookup(TitleProvider.class);
+        TitleProvider title1 = provider.getLookupProvider().getLookup().lookup(TitleProvider.class);
         if(title1 != null)
         {
             sb.append(title1.getTitle());

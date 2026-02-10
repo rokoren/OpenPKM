@@ -4,7 +4,7 @@
  */
 package openpkm.base;
 
-import java.util.Properties;
+import java.io.IOException;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
@@ -13,9 +13,9 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public interface SourceProvider extends SourceGroup 
+public interface SourceProvider<T extends Source> extends SourceGroup 
 {    
     Source getSource(String sourceID);
-    FileObject createSource(Properties props, FileTypeProvider fileTypeProvider);
-    Lookup.Provider getProvider();
+    FileObject createData(T source, FileTypeProvider fileTypeProvider) throws IOException;
+    Lookup.Provider getLookupProvider();
 }

@@ -14,6 +14,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
@@ -47,7 +48,10 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.RequestProcessor;
 
@@ -76,7 +80,7 @@ public final class YouTubeVideoAction implements ActionListener
     @Override
     public void actionPerformed(ActionEvent ev) 
     {        
-        ReferenceSourceProvider referenceProvider = provider.getProvider().getLookup().lookup(ReferenceSourceProvider.class); 
+        ReferenceSourceProvider referenceProvider = provider.getLookupProvider().getLookup().lookup(ReferenceSourceProvider.class); 
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeWizardPanel1());
         if(referenceProvider != null)
@@ -105,7 +109,7 @@ public final class YouTubeVideoAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add YouTube Video");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getProvider());
+        wiz.putProperty("provider", provider.getLookupProvider());
         showWizard(provider, referenceProvider, wiz);
     }
     
@@ -201,7 +205,7 @@ public final class YouTubeVideoAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -235,9 +239,34 @@ public final class YouTubeVideoAction implements ActionListener
                 YouTubeDownload downloader = new YouTubeDownload(props, referenceProvider, resolution, videoID, title, fileType);
                 RP.post(downloader);                
             }  
-            else if(provider.createSource(props, fileType) != null)
+            else
             {
-                StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                
+                FileObject root = provider.getRootFolder();
+                if(root != null)
+                {
+                    YouTubeVideo video = provider.getVideoProvider().getVideo(props);
+                    try
+                    {
+                        FileObject file = provider.createData(video, fileType); 
+                        OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                        video.save(os, "New YouTube Video Created");
+                        os.close();  
+
+                        StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                         
+                        
+                        DataObject data = DataObject.find(file);
+                        OpenCookie open = data.getCookie(OpenCookie.class);
+                        open.open();                         
+                    }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                       
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }               
             }                                             
         }          
     }    

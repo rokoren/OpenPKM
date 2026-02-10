@@ -167,14 +167,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
     private final FileObject projectDir;        
     private final ProjectState state;
-    private final Properties props;   
-    private final RaindropSourceProviderImpl raindrops;    
+    private final Properties props;       
     
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
     private Source lastSource; 
     
+    private RaindropSourceProviderImpl raindrops;    
     private RaindropCollection raindropCollection;  
     private Neo4jInstance neo4jInstance;   
     private RequestProcessor.Task task;     
@@ -184,7 +184,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-        raindrops = new RaindropSourceProviderImpl();
+        
+        RaindropProvider raindropProvider = Lookup.getDefault().lookup(RaindropProvider.class);
+        if(raindropProvider != null)
+        {
+            raindrops = new RaindropSourceProviderImpl(raindropProvider);  
+            sources.put(raindrops.getName(), raindrops);             
+        }
 
         ContentProvider contentProvider = Lookup.getDefault().lookup(ContentProvider.class);
         if(contentProvider != null)
@@ -206,8 +212,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
             sources.put(videos.getName(), videos);                       
         }        
-        
-        sources.put(raindrops.getName(), raindrops);  
+         
     }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -1716,7 +1721,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }               
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return RaindropProject.this;
         } 
@@ -1790,57 +1795,38 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(Content content, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            Content content = provider.getContent(props);
-            if(content != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, content.getSourceID());  
+
+            if(content instanceof Article)
             {
-                try
+                Article article = (Article)content;
+                if(fileTypeProvider instanceof ArticleProvider)
                 {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, content.getSourceID());  
-                    
-                    if(content instanceof Article)
-                    {
-                        Article article = (Article)content;
-                        if(fileTypeProvider instanceof ArticleProvider)
-                        {
-                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    else if(content instanceof Book)
-                    {
-                        Book book = (Book)content;
-                        if(fileTypeProvider instanceof BookProvider)
-                        {
-                            BookProvider bookProvider = (BookProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                        content.save(os, "New Content Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }
+            else if(content instanceof Book)
+            {
+                Book book = (Book)content;
+                if(fileTypeProvider instanceof BookProvider)
                 {
-                    LOG.warning(e.getMessage());
-                }
+                    BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                    output.close();
+                }                         
             } 
-            return null;
+            
+            return primaryFile;            
         }          
         
         @Override
@@ -1919,7 +1905,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }               
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return RaindropProject.this;
         }  
@@ -1987,57 +1973,38 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            Reference reference = provider.getReference(props);
-            if(reference != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
+
+            if(reference instanceof Article)
             {
-                try
+                Article article = (Article)reference;
+                if(fileTypeProvider instanceof ArticleProvider)
                 {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, reference.getSourceID());  
-                    
-                    if(reference instanceof Article)
-                    {
-                        Article article = (Article)reference;
-                        if(fileTypeProvider instanceof ArticleProvider)
-                        {
-                            ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    else if(reference instanceof Book)
-                    {
-                        Book book = (Book)reference;
-                        if(fileTypeProvider instanceof BookProvider)
-                        {
-                            BookProvider bookProvider = (BookProvider)fileTypeProvider;
-                            OutputStream output = primaryFile.getOutputStream();
-                            output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
-                            output.close();
-                        }                         
-                    }
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                        reference.save(os, "New Reference Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }
+            else if(reference instanceof Book)
+            {
+                Book book = (Book)reference;
+                if(fileTypeProvider instanceof BookProvider)
                 {
-                    LOG.warning(e.getMessage());
-                }
-            } 
-            return null;
+                    BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                    output.close();
+                }                         
+            }            
+
+            return primaryFile;
         }          
         
         @Override
@@ -2109,9 +2076,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     } 
     
     private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 
-    {        
+    { 
+        public RaindropSourceProviderImpl(RaindropProvider provider) 
+        {
+            super(provider);
+        }        
+        
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return RaindropProject.this;
         } 
@@ -2255,7 +2227,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }  
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(Raindrop raindrop, FileTypeProvider fileTypeProvider)     
         {
             /*
             YouTubeVideo video = provider.getVideo(props);
@@ -2393,7 +2365,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return RaindropProject.this;
         } 
@@ -2460,42 +2432,23 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
-        public FileObject createSource(Properties props, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            YouTubeVideo video = provider.getVideo(props);
-            if(video != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
             {
-                try
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(primaryFile, true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    
-                    if(fileTypeProvider instanceof ArticleProvider)
-                    {
-                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = primaryFile.getOutputStream();
-                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
-                        output.close();
-                    }                     
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                        video.save(os, "New YouTube Video Created");
-                        os.close();  
-                        return primaryFile;
-                    }                                                          
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }                           
-            return null;
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
         }          
         
         @Override

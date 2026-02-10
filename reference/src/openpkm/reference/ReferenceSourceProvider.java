@@ -16,7 +16,7 @@ import org.openide.util.ImageUtilities;
  *
  * @author Rok Koren
  */
-public abstract class ReferenceSourceProvider implements SourceProvider
+public abstract class ReferenceSourceProvider implements SourceProvider<Reference>
 {
     protected static final String ROOT_FOLDER = "reference";       
 
@@ -29,6 +29,11 @@ public abstract class ReferenceSourceProvider implements SourceProvider
     {
         this.provider = provider;
     } 
+    
+    public ReferenceProvider getReferenceProvider()
+    {
+        return provider;
+    }
     
     public abstract Map<String, Reference> getReferences();
 

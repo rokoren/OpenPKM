@@ -16,15 +16,27 @@ import org.openide.util.ImageUtilities;
  *
  * @author Rok Koren
  */
-public abstract class RaindropSourceProvider implements SourceProvider
+public abstract class RaindropSourceProvider implements SourceProvider<Raindrop>
 {
     protected static final String ROOT_FOLDER = "raindrop";       
 
     protected Map<String, Raindrop> raindrops; 
-    protected FileObject rootDir;         
+    protected FileObject rootDir; 
+    
+    protected final RaindropProvider provider;
 
+    public RaindropSourceProvider(RaindropProvider provider) 
+    {
+        this.provider = provider;
+    }        
+    
     public abstract Map<String, Raindrop> getRaindrops();    
 
+    public RaindropProvider getRaindropProvider()
+    {
+        return provider;
+    }
+    
     @Override
     public Source getSource(String sourceID) 
     {

@@ -7,6 +7,8 @@ package openpkm.core;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +21,7 @@ import javax.swing.JComponent;
 import openpkm.base.Article;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
@@ -35,6 +38,10 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -87,7 +94,7 @@ public class ArticleAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Article Reference");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getProvider());
+        wiz.putProperty("provider", provider.getLookupProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -129,7 +136,7 @@ public class ArticleAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -141,10 +148,33 @@ public class ArticleAction implements ActionListener
                 }
             }  
 
-            if(provider.createSource(props, fileType) != null)
+            FileObject root = provider.getRootFolder();
+            if(root != null)
             {
-                StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);                      
-            }                                              
+                Reference reference = provider.getReferenceProvider().getReference(props);
+                try
+                {
+                    FileObject file = provider.createData(reference, fileType); 
+                    OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    reference.save(os, "New Article Created by Wizard");
+                    os.close();  
+
+                    StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);                        
+
+                    DataObject data = DataObject.find(file);
+                    OpenCookie open = data.getCookie(OpenCookie.class);
+                    open.open();                         
+                }
+                catch(DataObjectNotFoundException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                       
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                                      
+            }             
+                                            
         }        
     }      
 }

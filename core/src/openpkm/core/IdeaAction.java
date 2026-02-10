@@ -36,7 +36,10 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -91,7 +94,7 @@ public class IdeaAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Idea");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getProvider());
+        wiz.putProperty("provider", provider.getLookupProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         {  
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
@@ -125,21 +128,33 @@ public class IdeaAction implements ActionListener
                 props.setProperty(SomedayMaybeProvider.PROP_TICKLE_DATE, tickleDate.format(DateTimeFormatter.ISO_DATE)); 
             }                                           
 
-            FileObject folder = provider.getRootFolder();
-            if(folder != null)
+            FileObject root = provider.getRootFolder();
+            if(root != null)
             {
+                Content content = provider.getContentProvider().getContent(props);
                 try
-                { 
-                    OutputStream os = folder.createAndOpen(now.getNano() + "." + PropertiesProvider.EXTENSION);
-                    props.store(os, "New Idea Created by Wizard"); 
-                    os.close();                           
-                    StatusDisplayer.getDefault().setStatusText("Idea saved with title: " + title);             
+                {
+                    FileObject file = provider.createData(content, fileType); 
+                    OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    content.save(os, "New idea content created");
+                    os.close();  
+
+                    StatusDisplayer.getDefault().setStatusText("Idea content saved with title: " + title);                         
+
+                    DataObject data = DataObject.find(file);
+                    OpenCookie open = data.getCookie(OpenCookie.class);
+                    open.open();                         
                 }
-                catch(IOException e) 
+                catch(DataObjectNotFoundException e)
                 {
                     LOG.warning(e.getMessage());
-                }                     
-            }                      
+                }                       
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                   
+            }               
+                               
         }                                                      
     }    
 }

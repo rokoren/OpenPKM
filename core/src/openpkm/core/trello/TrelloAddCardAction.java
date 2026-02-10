@@ -22,8 +22,6 @@ import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.utils.Utils;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
@@ -87,7 +85,7 @@ public class TrelloAddCardAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Card");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getProvider());
+        wiz.putProperty("provider", provider.getLookupProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -124,57 +122,40 @@ public class TrelloAddCardAction implements ActionListener
             }  
             */
             
-            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
-            if(markdown != null)
+            FileObject root = provider.getRootFolder();
+            if(root != null)
             {
-                FileObject file = provider.createData(props, markdown);
-                if(file != null)  
+                MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+                if(markdown != null)
                 {
-                    StatusDisplayer.getDefault().setStatusText("OpenPKM Trello Card Project saved: " + name);                     
+                    TrelloCard card = provider.getCardProvider().getCard(props);
                     try
                     {
+                        FileObject file = provider.createData(card, markdown);
+
+                        FileObject projectDirectory = FileUtil.createFolder(root, cardID);           
+                        FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
+
+                        OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
+                        props.store(os, "OpenPKM Trello Card Project"); 
+                        os.close();  
+                        
+                        StatusDisplayer.getDefault().setStatusText("OpenPKM Trello Card Project saved: " + name);                                             
+                        
                         DataObject data = DataObject.find(file);
                         OpenCookie open = data.getCookie(OpenCookie.class);
-                        open.open();                           
+                        open.open();                         
                     }
                     catch(DataObjectNotFoundException e)
                     {
                         LOG.warning(e.getMessage());
-                    }
-                }
-            }
-            
-
-            
-            try
-            {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), cardID);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
-
-                OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM Trello Card Project"); 
-                os.close(); 
-                                
-                StatusDisplayer.getDefault().setStatusText("OpenPKM Trello Card Project saved: " + name); 
-
-                Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                if(project != null)
-                {
-                    TrelloCard card = project.getLookup().lookup(TrelloCard.class);
-                    if(card != null)
+                    }                    
+                    catch(IOException e)
                     {
-                        provider.addCard(card);
-                        /*
-                        Project[] projects = {domain};
-                        OpenProjects.getDefault().open(projects, false);   
-                        */
+                        LOG.warning(e.getMessage());
                     }
-                }                  
+                }                
             }
-            catch(IOException e) 
-            {
-                LOG.warning(e.getMessage());
-            }  
         }  
     }
 }

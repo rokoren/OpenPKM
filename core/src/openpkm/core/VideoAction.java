@@ -36,7 +36,10 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -88,7 +91,7 @@ public class VideoAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Video Reference");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getProvider());
+        wiz.putProperty("provider", provider.getLookupProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -124,7 +127,7 @@ public class VideoAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -136,21 +139,33 @@ public class VideoAction implements ActionListener
                 }
             }   
             
-            FileObject folder = provider.getRootFolder();
-            if(folder != null)
+            FileObject root = provider.getRootFolder();
+            if(root != null)
             {
+                Reference reference = provider.getReferenceProvider().getReference(props);
                 try
-                { 
-                    OutputStream os = folder.createAndOpen(now.getNano() + "." + PropertiesProvider.EXTENSION);
-                    props.store(os, "New Video Created by Wizard"); 
-                    os.close();                           
-                    StatusDisplayer.getDefault().setStatusText("Video saved with title: " + title);             
+                {
+                    FileObject file = provider.createData(reference, fileType); 
+                    OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    reference.save(os, "New video Created by Wizard");
+                    os.close();  
+
+                    StatusDisplayer.getDefault().setStatusText("Video saved with title: " + title);                        
+
+                    DataObject data = DataObject.find(file);
+                    OpenCookie open = data.getCookie(OpenCookie.class);
+                    open.open();                         
                 }
-                catch(IOException e) 
+                catch(DataObjectNotFoundException e)
                 {
                     LOG.warning(e.getMessage());
-                }                     
-            }                                 
+                }                       
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                                      
+            }              
+                                            
         }        
     }     
 }

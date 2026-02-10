@@ -4,12 +4,16 @@
  */
 package openpkm.core.trello;
 
+import com.julienvey.trello.domain.Card;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.logging.Logger;
+import javax.swing.event.ChangeListener;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
@@ -19,6 +23,7 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.util.ChangeSupport;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -29,6 +34,12 @@ import org.openide.util.lookup.ServiceProvider;
 public class TrelloCardProviderImpl implements TrelloCardProvider
 {    
     private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());     
+    
+    @Override
+    public TrelloCard getCard(Properties props)
+    {
+        return new TrelloCardImpl(props);
+    }
     
     @Override
     public TrelloCard getCard(FileObject fo) 
@@ -62,46 +73,66 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }
         return null;
     }
+    
+    @Override
+    public TrelloCard createCard(Card card) 
+    {
+        Properties props = new Properties();
+        props.setProperty(PROP_CARD_ID, card.getId());
+        props.setProperty(PROP_BOARD_ID, card.getIdBoard());
+        props.setProperty(PROP_LIST_ID, card.getIdList());            
+        props.setProperty(PROP_CARD_NAME, card.getName());
+        props.setProperty(PROP_CARD_DESCRIPTION, card.getDesc());
+        props.setProperty(PROP_CARD_POSITION, card.getPos() + "");
+        props.setProperty(PROP_CARD_CLOSED, Boolean.toString(card.isClosed()));
+        return getCard(props);
+    }     
 
+    /*
     @Override
     public TrelloCard createCard(Properties props, TrelloCardsProvider provider)
     {
-        if(isCardLink(props))
+        FileObject root = provider.getRootFolder();
+        if(root != null)
         {
-            try
+            if(isCardLink(props))
             {
-                FileObject file = provider.getRootDirectory().createData(getCardID(props), PropertiesProvider.EXTENSION);
-                OutputStream os = file.getOutputStream();
-                props.store(os, "OpenPKM Trello Card Link"); 
-                os.close();   
-                
-                return getCard(file);
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }              
-        }
-        else
-        {
-            try
-            {
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), getCardID(props));           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
+                try
+                {
+                    FileObject file = root.createData(getCardID(props), PropertiesProvider.EXTENSION);
+                    OutputStream os = file.getOutputStream();
+                    props.store(os, "OpenPKM Trello Card Link"); 
+                    os.close();   
 
-                OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM Trello Card Project"); 
-                os.close();    
-
-                return getCard(projectDirectory);
+                    return getCard(file);
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }              
             }
-            catch(IOException e)
+            else
             {
-                LOG.warning(e.getMessage());
-            }         
+                try
+                {
+                    FileObject projectDirectory = FileUtil.createFolder(root, getCardID(props));           
+                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
+
+                    OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
+                    props.store(os, "OpenPKM Trello Card Project"); 
+                    os.close();    
+
+                    return getCard(projectDirectory);
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }         
+            }            
         }
         return null;
     }
+    */
     
     public static String getCardID(Properties props)
     {
@@ -120,14 +151,44 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     
     private static final class TrelloCardImpl implements TrelloCard, PropertiesProvider
     {         
-        private final Properties props;     
+        private final Properties props;
+        private final PropertyChangeSupport propertyChangeSupport;
+        private final ChangeSupport changeSupport;  
+        
+        private boolean isDeleted;          
         
         public TrelloCardImpl(Properties props)
         {
-            this.props = props;              
+            this.props = props;  
+            propertyChangeSupport = new PropertyChangeSupport(this);
+            changeSupport = new ChangeSupport(this);  
         }     
 
 // TODO TrelloCard        
+        
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(listener);
+        } 
+
+        @Override
+        public void addChangeListener(ChangeListener listener)
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }         
         
         @Override
         public String getAppID() 
@@ -151,6 +212,26 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         {
             return getCardID();
         }
+        
+        @Override
+        public boolean isDeleted()
+        {
+            return isDeleted;
+        }
+
+        @Override
+        public void setDeleted()
+        {
+            isDeleted = true;
+            changeSupport.fireChange();
+        }  
+
+        @Override
+        public void save(OutputStream os, String comments) throws IOException
+        {
+            props.store(os, comments); 
+            LOG.info("Trello Card Properties saved");      
+        }  
 
         @Override
         public String getBoardID() 
@@ -194,7 +275,17 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             return null;
         }
         
-
+        @Override
+        public Boolean isCardClosed()
+        {
+            String string = props.getProperty(PROP_CARD_CLOSED);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return null;
+        }
+        
         @Override
         public boolean isCardLink() 
         {
