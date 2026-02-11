@@ -68,6 +68,7 @@ import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListItemsProvider;
 import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloCheckListsProvider;
+import openpkm.trello.TrelloService;
 import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
 import org.cef.browser.CefBrowser;
@@ -139,7 +140,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     private boolean isDeleted;      
     
     private TrelloAccount trelloAccount;
-    private Trello trelloApi;    
+    private Trello trello;    
     private TrelloBoard trelloBoard;
     
     public TrelloCardProject(FileObject projectDir, ProjectState state, Properties props) 
@@ -182,7 +183,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     {
         if(trelloAccount == null)
         {
-            String username = props.getProperty(PROP_TRELLO_USERNAME);
+            String username = getAccountUsername();
             if (username != null)
             {
                 TrelloAccountsProvider provider = Lookup.getDefault().lookup(TrelloAccountsProvider.class);
@@ -195,17 +196,18 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         return trelloAccount;
     }     
     
-    public Trello getTrelloApi()
+    public synchronized Trello getTrello()
     {
-        if(trelloApi == null)
+        if(trello == null)
         {
             TrelloAccount account = getTrelloAccount();
             if(account != null)
             {
-                trelloApi = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
+                trello = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
+                //trello = new TrelloImpl(account.getApiKey(), account.getAccessToken(), new OkHttpTrelloHttpClient());                
             }            
         }
-        return trelloApi;
+        return trello;
     }
     
     public TrelloBoard getTrelloBoard()
@@ -215,7 +217,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             TrelloAccount account = getTrelloAccount();
             if(account != null)
             {
-                String boardID = props.getProperty(PROP_TRELLO_BOARD_ID);
+                String boardID = getBoardID();
                 if (boardID != null)
                 {
                     trelloBoard = account.getBoard(boardID);          
@@ -371,7 +373,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
 
             list.add(this);
             list.add(new Info());
-            list.add(new IconProviderImpl());
+            //list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
@@ -431,6 +433,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         props.store(os, comments); 
         LOG.info("Trello Card Properties saved");      
     }      
+    
+    @Override
+    public String getAccountUsername()
+    {
+        return props.getProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME);
+    }    
     
     @Override
     public String getBoardID() 
@@ -1005,14 +1013,20 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }          
     }      
     
-    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements NodeGroup, FileChangeListener
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements NodeGroup, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/attach.png";         
+        private static final String ICON = "openpkm/core/resources/attach.png"; 
+
+        private static final String PROP_TRELLO_SYNC_ATTACHMENT = "trello.sync.attachment";        
                 
         public TrelloAttachmentsProviderImpl(TrelloAttachmentProvider provider) 
         {
-            super(provider);            
+            super(provider);    
+            if(getLastSync() == null)
+            {
+                RP.post(this);                
+            }              
         }          
         
         @Override
@@ -1179,7 +1193,67 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        } 
+        
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_ATTACHMENT);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_ATTACHMENT);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_ATTACHMENT, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_ATTACHMENT, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_ATTACHMENT, oldValue, time); 
+            }
+        } 
+
+        @Override
+        public void run()
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                List<TrelloAttachment> attachments = service.getAttachments(TrelloCardProject.this, provider, getTrello());
+                for(TrelloAttachment attachment : attachments)
+                {
+                    if(!getAttachments().containsKey(attachment.getAttachmentID()))
+                    {
+                        try
+                        {
+                            OutputStream os = getRootFolder().createAndOpen(attachment.getAttachmentID() + "." + PropertiesProvider.EXTENSION);                            
+                            attachment.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            os.close();
+                            LOG.info("Trello attachment saved: " + attachment.getAttachmentID());                              
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }  
+                    }
+                }
+                setLastSync(LocalDateTime.now());
+            }
+        }  
     }  
     
     private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements NodeGroup, FileChangeListener

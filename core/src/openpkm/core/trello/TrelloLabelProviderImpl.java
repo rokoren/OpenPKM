@@ -50,7 +50,7 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
         return new TrelloLabelImpl(props);
     }    
     
-    private static final class TrelloLabelImpl implements TrelloLabel, NodeProvider, PropertiesProvider
+    private static final class TrelloLabelImpl implements TrelloLabel, NodeProvider
     {        
         private final Properties props;                
         

@@ -17,8 +17,9 @@ public interface TrelloService
     List<TrelloBoard> getBoards(TrelloAccount account, Trello trello); 
     List<TrelloList> getLists(TrelloBoard trelloBoard, TrelloListProvider provider, Trello trello);
     List<TrelloMember> getMembers(TrelloBoard trelloBoard, TrelloMemberProvider provider, Trello trello);    
-    List<TrelloLabel> getLabels(TrelloBoard trelloBoard, TrelloLabelProvider provider, Trello trello); 
+    List<TrelloLabel> getLabels(TrelloBoard trelloBoard, TrelloLabelProvider provider, Trello trello);     
+    List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentProvider provider, Trello trello);         
     List<String> getCards(TrelloBoard trelloBoard, Trello trello); 
     List<TrelloCard> getCards(TrelloList trelloList, TrelloCardProvider provider, Trello trello);  
-    TrelloCard getCard(String cardID, TrelloCardProvider provider, String key, String token) throws UnirestException;
+    TrelloCard getCard(String cardID, TrelloCardProvider provider, TrelloAccount account) throws UnirestException;
 }

@@ -15,6 +15,7 @@ import openpkm.base.Source;
  */
 public interface TrelloCard extends Source, PropertiesProvider
 {
+    String getAccountUsername();    
     String getBoardID();
     String getListID();
     String getCardID();

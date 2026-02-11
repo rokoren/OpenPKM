@@ -70,7 +70,7 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         return new TrelloMemberImpl(props);
     } 
     
-    private static final class TrelloMemberImpl implements TrelloMember, NodeProvider, PropertiesProvider
+    private static final class TrelloMemberImpl implements TrelloMember, NodeProvider
     {
         private final Properties props;                
         

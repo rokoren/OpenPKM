@@ -302,14 +302,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             }            
         }
         return trello;
-        /*
-        TrelloAccount account = getTrelloAccount();
-        if(account != null)
-        {
-            return new TrelloImpl(account.getApiKey(), account.getAccessToken(), new JDKTrelloHttpClient());                
-        }        
-        return null;
-        */
     }
     
     public TrelloBoard getTrelloBoard()
@@ -1263,7 +1255,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             FileObject root = getRootFolder();
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            if(root != null && service != null)
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+            if(root != null && service != null && markdown != null)
             {
                 ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Trello cards");
                 handle.start();
@@ -1277,7 +1270,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloCard card = service.getCard(id, provider, getTrelloAccount().getApiKey(), getTrelloAccount().getAccessToken());
+                            TrelloCard card = service.getCard(id, provider, getTrelloAccount());
                             if(card.isCardLink())
                             {
                                 String videoID = extractYouTubeId(card.getCardName());
@@ -1317,12 +1310,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                             }                                
                             if(card != null)
                             {
-                                getCardsById().put(card.getCardID(), card);   
-                                MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
-                                if(markdown != null)
-                                {
-                                    createData(card, markdown);
-                                }                                      
+                                getCardsById().put(card.getCardID(), card);  
+                                createData(card, markdown);                                                                     
                             }                                                                                                
                         }
                         catch(Exception e)
@@ -1743,20 +1732,17 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     if(!getLabels().containsKey(label.getLabelID()))
                     {
-                        if(label instanceof PropertiesProvider properties)
+                        try
                         {
-                            try
-                            {
-                                OutputStream os = getRootFolder().createAndOpen(label.getLabelID() + "." + PropertiesProvider.EXTENSION);                            
-                                properties.getProperties().store(os, "Created by Trello project: " + getTitle()); 
-                                os.close();
-                                LOG.info("Trello label saved: " + label.getLabelID());                              
-                            }
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                            
+                            OutputStream os = getRootFolder().createAndOpen(label.getLabelID() + "." + PropertiesProvider.EXTENSION);                            
+                            label.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            os.close();
+                            LOG.info("Trello label saved: " + label.getLabelID());                              
                         }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }  
                     }
                 }
                 setLastSync(LocalDateTime.now());
@@ -1989,20 +1975,17 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     if(!getMembers().containsKey(member.getMemberID()))
                     {
-                        if(member instanceof PropertiesProvider properties)
+                        try
                         {
-                            try
-                            {
-                                OutputStream os = getRootFolder().createAndOpen(member.getMemberID() + "." + PropertiesProvider.EXTENSION);                            
-                                properties.getProperties().store(os, "Created by Trello project: " + getTitle()); 
-                                os.close();
-                                LOG.info("Trello member saved: " + member.getMemberID());                              
-                            }
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                            
+                            OutputStream os = getRootFolder().createAndOpen(member.getMemberID() + "." + PropertiesProvider.EXTENSION);                            
+                            member.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            os.close();
+                            LOG.info("Trello member saved: " + member.getMemberID());                              
                         }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        } 
                     }
                 }
                 setLastSync(LocalDateTime.now());
@@ -2234,20 +2217,17 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     if(!getListsById().containsKey(list.getListID()))
                     {
-                        if(list instanceof PropertiesProvider properties)
+                        try
                         {
-                            try
-                            {
-                                OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);                            
-                                properties.getProperties().store(os, "Created by Trello project: " + getTitle()); 
-                                os.close();
-                                LOG.info("Trello list saved: " + list.getListID());                              
-                            }
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                            
+                            OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);                            
+                            list.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            os.close();
+                            LOG.info("Trello list saved: " + list.getListID());                              
                         }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        } 
                     }
                 }
                 setLastSync(LocalDateTime.now());

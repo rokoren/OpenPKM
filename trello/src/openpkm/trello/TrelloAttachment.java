@@ -4,11 +4,13 @@
  */
 package openpkm.trello;
 
+import openpkm.base.PropertiesProvider;
+
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloAttachment 
+public interface TrelloAttachment extends PropertiesProvider
 {
     String getAttachmentID();
     String getAttachmentUrl();

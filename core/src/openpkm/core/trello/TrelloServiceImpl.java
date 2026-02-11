@@ -6,6 +6,7 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.domain.Argument;
+import com.julienvey.trello.domain.Attachment;
 import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.Label;
@@ -25,6 +26,8 @@ import kong.unirest.UnirestException;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAttachment;
+import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
@@ -93,7 +96,19 @@ public class TrelloServiceImpl implements TrelloService
             list.add(provider.createLabel(label));
         }                     
         return list;        
-    }   
+    }  
+    
+    @Override
+    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, Trello trello)
+    {
+        List<TrelloAttachment> list = new ArrayList();   
+        List<Attachment> attachments = trello.getCardAttachments(card.getCardID());
+        for(Attachment attachment : attachments)                
+        {
+            list.add(provider.createAttachment(attachment));
+        }                     
+        return list;        
+    }     
     
     @Override
     public List<String> getCards(TrelloBoard board, Trello trello)
@@ -121,12 +136,12 @@ public class TrelloServiceImpl implements TrelloService
     }  
     
     @Override
-    public TrelloCard getCard(String cardID,  TrelloCardProvider provider, String key, String token) throws UnirestException
+    public TrelloCard getCard(String cardID,  TrelloCardProvider provider, TrelloAccount account) throws UnirestException
     {
         HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + cardID)
           .header("Accept", "application/json")
-          .queryString("key", key)
-          .queryString("token", token)
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
           .asJson();  
         
         JSONObject json = response.getBody().getObject();
@@ -152,6 +167,7 @@ public class TrelloServiceImpl implements TrelloService
         Properties props = new Properties();
         props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
         props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
+        props.setProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME, account.getUsername());
         props.setProperty(TrelloCardProvider.PROP_CARD_ID, json.getString("id"));
         props.setProperty(TrelloCardProvider.PROP_BOARD_ID, json.getString("idBoard"));
         props.setProperty(TrelloCardProvider.PROP_LIST_ID, json.getString("idList"));            

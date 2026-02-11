@@ -23,9 +23,9 @@ import org.openide.nodes.AbstractNode;
  * @author Rok Koren
  */
 @NodeFactory.Registration(projectType="openpkm-trello-project", position=100)
-public class TrelloNodeFactoryImpl implements NodeFactory
+public class TrelloBoardNodeFactoryImpl implements NodeFactory
 {
-    private static final Logger LOG = Logger.getLogger(TrelloNodeFactoryImpl.class.getName());
+    private static final Logger LOG = Logger.getLogger(TrelloBoardNodeFactoryImpl.class.getName());
 
     @Override
     public NodeList createNodes(Project project) 

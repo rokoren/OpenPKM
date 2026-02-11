@@ -16,7 +16,8 @@ public interface TrelloCardProvider
     String CARD_ROLE_LINK = "link";
     
     String PROP_APP_ID           = "app.id";        
-    String PROP_TIME_CREATED     = "time.created";           
+    String PROP_TIME_CREATED     = "time.created"; 
+    String PROP_ACCOUNT_USERNAME = "account.username";    
     String PROP_BOARD_ID         = "board.id";
     String PROP_LIST_ID          = "list.id";
     String PROP_CARD_ID          = "card.id";

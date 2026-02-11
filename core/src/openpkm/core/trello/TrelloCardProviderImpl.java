@@ -218,6 +218,12 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }  
 
         @Override
+        public String getAccountUsername()
+        {
+            return props.getProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME);
+        }          
+        
+        @Override
         public String getBoardID() 
         {
             return props.getProperty(PROP_BOARD_ID);

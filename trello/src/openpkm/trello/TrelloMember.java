@@ -4,11 +4,13 @@
  */
 package openpkm.trello;
 
+import openpkm.base.PropertiesProvider;
+
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloMember 
+public interface TrelloMember extends PropertiesProvider
 {
     String getMemberID(); 
     String getMemberUsername();

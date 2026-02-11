@@ -9,6 +9,8 @@ import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 import openpkm.base.Source;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.core.api.multiview.MultiViewHandler;
 import org.netbeans.core.api.multiview.MultiViewPerspective;
 import org.netbeans.core.api.multiview.MultiViews;
@@ -46,6 +48,13 @@ public class Installer implements Runnable
                             DataObject data = topComponent.getLookup().lookup(DataObject.class);
                             if (data != null) 
                             {
+                                Project project = data.getLookup().lookup(Project.class);
+                                if(project != null)
+                                {
+                                    Project[] projects = {project};
+                                    OpenProjects.getDefault().open(projects, false);                                         
+                                }                                 
+                                
                                 FileObject currentFile = data.getPrimaryFile();
                                 MultiViewDescription mvd = data.getLookup().lookup(MultiViewDescription.class);
                                 if(mvd != null)
@@ -63,7 +72,7 @@ public class Installer implements Runnable
                                                 handler.requestActive(perspective);
                                             }                                             
                                         }                                      
-                                    }
+                                    }                                                                       
                                     
                                     //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
                                     /*
