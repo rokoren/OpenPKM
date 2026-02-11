@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.swing.event.ChangeListener;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
@@ -36,9 +34,7 @@ import org.openide.util.lookup.ServiceProvider;
 public class TrelloCardProviderImpl implements TrelloCardProvider
 {    
     private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());  
-    
-    private static final Pattern YT_PATTERN = Pattern.compile("^(?:https?://)?(?:www\\.)?(?:youtube\\.com/(?:watch\\?v=|embed/|v/)|youtu\\.be/)([A-Za-z0-9_-]{11}).*");    
-    
+        
     @Override
     public TrelloCard getCard(Properties props)
     {
@@ -108,18 +104,9 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     public static String getCardID(Properties props)
     {
         return props.getProperty(PROP_CARD_ID);      
-    } 
+    }       
     
-    public static String extractYouTubeId(String url) 
-    {
-        Matcher m = YT_PATTERN.matcher(url);
-        if (m.matches()) {
-            return m.group(1);
-        }
-        return null; // ni YouTube link ali ni ID-ja
-    }   
-    
-    private static final class TrelloCardImpl implements TrelloCard, PropertiesProvider
+    private static final class TrelloCardImpl implements TrelloCard
     {         
         private final Properties props;
         private final PropertyChangeSupport propertyChangeSupport;
@@ -145,17 +132,13 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                 list.add(this);
                 if(isCardLink())
                 {
-                    String videoID = extractYouTubeId(getCardName());
-                    if(videoID != null)
+                    YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                    if(provider != null)
                     {
-                        YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
-                        if(provider != null)
+                        YouTubeVideo video = provider.getVideo(props);
+                        if(video != null)
                         {
-                            YouTubeVideo video = provider.getVideo(videoID);
-                            if(video != null)
-                            {
-                                list.add(video);
-                            }
+                            list.add(video);
                         }
                     }
                 }
@@ -310,6 +293,12 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public Properties getProperties()
         {
             return props;
-        }                       
+        }  
+        
+        @Override
+        public void merge(PropertiesProvider provider)
+        {
+            props.putAll(provider.getProperties());
+        }
     }        
 }

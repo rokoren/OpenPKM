@@ -180,6 +180,12 @@ public class ReferenceProviderImpl implements ReferenceProvider
         }  
         
         @Override
+        public void merge(PropertiesProvider provider)
+        {
+            props.putAll(provider.getProperties());
+        }        
+        
+        @Override
         public void addPropertyChangeListener(PropertyChangeListener listener)
         {
             propertyChangeSupport.addPropertyChangeListener(listener);

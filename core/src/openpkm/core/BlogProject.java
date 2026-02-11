@@ -393,7 +393,13 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
     public Properties getProperties()
     {
         return props;
-    }     
+    } 
+
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }
     
 // TODO BatchUpdateSupport    
     

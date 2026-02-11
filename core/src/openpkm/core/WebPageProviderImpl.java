@@ -124,6 +124,12 @@ public class WebPageProviderImpl implements WebPageProvider
         }  
         
         @Override
+        public void merge(PropertiesProvider provider)
+        {
+            props.putAll(provider.getProperties());
+        }        
+        
+        @Override
         public void addPropertyChangeListener(PropertyChangeListener listener)
         {
             propertyChangeSupport.addPropertyChangeListener(listener);

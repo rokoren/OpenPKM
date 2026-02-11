@@ -129,7 +129,13 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         public Properties getProperties()
         {
             return props;
-        }                  
+        }  
+        
+        @Override
+        public void merge(PropertiesProvider provider)
+        {
+            props.putAll(provider.getProperties());
+        }        
 
 // TODO NodeProvider         
 

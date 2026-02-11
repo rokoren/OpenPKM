@@ -512,7 +512,13 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     public Properties getProperties()
     {
         return props;
-    }     
+    }  
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
     
 // TODO BatchUpdateSupport    
     

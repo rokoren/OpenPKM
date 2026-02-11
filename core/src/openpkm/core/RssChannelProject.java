@@ -640,6 +640,12 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
     {
         return props.getProperty(PROP_DESCRIPTION);
     }
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
 
     @Override
     public void setDescription(String desc) 

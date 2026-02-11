@@ -7,6 +7,7 @@ package openpkm.youtube;
 import com.google.api.client.util.DateTime;
 import java.util.List;
 import java.util.regex.Pattern;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 import openpkm.base.Video;
@@ -16,7 +17,7 @@ import openpkm.base.WatchLater;
  *
  * @author Rok Koren
  */
-public interface YouTubeVideo extends Source, Video, WatchLater, TitleProvider
+public interface YouTubeVideo extends Source, PropertiesProvider, Video, WatchLater, TitleProvider
 {    
     //String YOUTUBE_URL = "https://www.youtube.com/";
     String YOUTUBE_URL = "https://www.youtube-nocookie.com/";

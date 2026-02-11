@@ -522,7 +522,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     public Properties getProperties()
     {
         return props;
-    }     
+    }
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
     
 // TODO BatchUpdateSupport    
     

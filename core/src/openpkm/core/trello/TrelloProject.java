@@ -31,6 +31,8 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -108,14 +110,16 @@ import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
-import org.openide.loaders.DataObjectNotFoundException;
+import openpkm.youtube.YouTubeVideo;
+import openpkm.youtube.YouTubeVideoProvider;
+import org.netbeans.api.progress.*;
 import org.openide.util.Utilities;
 
 /**
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider, TitleProvider, DescriptionProvider, Sources, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_ACCOUNT_USERNAME  = "account.username";
     public static final String PROP_WORKSPACE_ID      = "workspace.id";    
@@ -136,7 +140,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
     private static final int POSITION_LISTS   = 100;
     private static final int POSITION_ACTIONS = 200;    
     private static final int POSITION_LABELS  = 300;
-    private static final int POSITION_MEMBERS = 400;
+    private static final int POSITION_MEMBERS = 400;           
 
     private static final Logger LOG = Logger.getLogger(TrelloProject.class.getName());        
     
@@ -195,9 +199,10 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         }  
         
         TrelloCardProvider cardProvider = Lookup.getDefault().lookup(TrelloCardProvider.class);
-        if(cardProvider != null)
+        YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+        if(cardProvider != null && youTubeVideoProvider != null)
         {
-            SourceProvider cards = new TrelloCardsProviderImpl(cardProvider);
+            SourceProvider cards = new TrelloCardsProviderImpl(cardProvider, youTubeVideoProvider);
             sources.put(cards.getName(), cards);    
         } 
     } 
@@ -558,7 +563,13 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
     public Properties getProperties()
     {
         return props;
-    }     
+    }  
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
     
 // TODO BatchUpdateSupport    
     
@@ -867,6 +878,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         {
             this.list = list;
             changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(TrelloCardsProviderImpl.PROP_TRELLO_SYNC_CARD, this);
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
 
@@ -943,11 +955,18 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof TrelloCard card)
+            if(evt.getPropertyName().equals(TrelloCardsProviderImpl.PROP_TRELLO_SYNC_CARD))
             {
-                if(card.getListID().equals(list.getListID()))
+                changeSupport.fireChange();  
+            }
+            else if(getLastSource() instanceof TrelloCard card)
+            {
+                if(card.getListID() != null)
                 {
-                    changeSupport.fireChange();                    
+                    if(card.getListID().equals(list.getListID()))
+                    {
+                        changeSupport.fireChange();                    
+                    }                    
                 }
             }
         }
@@ -960,6 +979,8 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/panel.png"; 
         
+        private static final Pattern YT_PATTERN = Pattern.compile("^(?:https?://)?(?:www\\.)?(?:youtube\\.com/(?:watch\\?v=|embed/|v/)|youtu\\.be/)([A-Za-z0-9_-]{11}).*");         
+        
         private static final String PROP_TRELLO_SYNC_CARD = "trello.sync.card"; 
         
         private static final String ROOT_FOLDER = "cards";          
@@ -967,15 +988,14 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         private Map<String, TrelloCard> cards; 
         private FileObject rootDir;            
         
-        private final TrelloCardProvider provider;             
+        private final TrelloCardProvider provider;    
+        private final YouTubeVideoProvider youTubeVideoProvider; 
 
-        public TrelloCardsProviderImpl(TrelloCardProvider provider)
+        public TrelloCardsProviderImpl(TrelloCardProvider provider, YouTubeVideoProvider youTubeVideoProvider)
         {
             this.provider = provider;
-            if(getLastSync() == null)
-            {
-                RP.post(this);                
-            }            
+            this.youTubeVideoProvider = youTubeVideoProvider;
+            RP.post(this);                              
         } 
         
         @Override
@@ -1037,8 +1057,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
                     {
                         rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
                         LOG.info("Cards root folder created: " + rootDir.getPath());                        
-                    } 
-                    rootDir.addFileChangeListener(this);                                        
+                    }                                                      
                 }
                 catch(IOException e)
                 {
@@ -1166,7 +1185,7 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
 
         @Override
@@ -1190,12 +1209,12 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
 
         @Override
         public void fileRenamed(FileRenameEvent fre) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
 
         @Override
         public void fileAttributeChanged(FileAttributeEvent fae) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }   
         
         public LocalDateTime getLastSync()
@@ -1230,55 +1249,92 @@ public class TrelloProject implements Notebook, TrelloBoard, TitleProvider, Desc
             }
         } 
         
+        private static String extractYouTubeId(String url) 
+        {
+            Matcher m = YT_PATTERN.matcher(url);
+            if (m.matches()) {
+                return m.group(1);
+            }
+            return null; // ni YouTube link ali ni ID-ja
+        }         
+        
         @Override
         public void run()
         {
+            FileObject root = getRootFolder();
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            if(service != null)
+            if(root != null && service != null)
             {
+                ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Trello cards");
+                handle.start();
+                handle.switchToIndeterminate();
+                
+                
                 List<String> ids = service.getCards(TrelloProject.this, getTrello());
                 for(String id : ids)
                 {
                     if(!getCardsById().containsKey(id))
                     {
-                        FileObject root = getRootFolder();
-                        if(root != null)
+                        try
                         {
-                            try
+                            TrelloCard card = service.getCard(id, provider, getTrelloAccount().getApiKey(), getTrelloAccount().getAccessToken());
+                            if(card.isCardLink())
                             {
-                                TrelloCard card = service.getCard(id, provider, getTrelloAccount().getApiKey(), getTrelloAccount().getAccessToken());
+                                String videoID = extractYouTubeId(card.getCardName());
+                                if(videoID != null)
+                                {
+                                    
+                                    if(provider != null)
+                                    {
+                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID);
+                                        if(video != null)
+                                        {
+                                            card.merge(video);
+                                        }
+                                    }
+                                }                                
+                                
+                                FileObject file = root.createData(id, PropertiesProvider.EXTENSION);
+                                OutputStream os = file.getOutputStream();
+                                card.save(os, "Saved by Trello project: " + getTitle());
+                                os.close();                                  
+                            }
+                            else
+                            {
+                                FileObject projectDirectory = FileUtil.createFolder(root, id);           
+                                FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
+
+                                OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
+                                card.save(os, "OpenPKM Trello Card Project");
+                                //props.store(os, "OpenPKM Trello Card Project"); 
+                                os.close();  
+
+                                Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                                if(project != null)
+                                {
+                                    card = project.getLookup().lookup(TrelloCard.class);                                      
+                                }
+                            }                                
+                            if(card != null)
+                            {
+                                getCardsById().put(card.getCardID(), card);   
                                 MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
                                 if(markdown != null)
                                 {
                                     createData(card, markdown);
-                                    if(card.isCardLink())
-                                    {
-                                        FileObject file = root.createData(id, PropertiesProvider.EXTENSION);
-                                        OutputStream os = file.getOutputStream();
-                                        card.save(os, "Saved by Trello project: " + getTitle());
-                                        os.close();                                         
-                                    }
-                                    else
-                                    {
-                                        FileObject projectDirectory = FileUtil.createFolder(root, id);           
-                                        FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
-
-                                        OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                                        card.save(os, "OpenPKM Trello Card Project");
-                                        //props.store(os, "OpenPKM Trello Card Project"); 
-                                        os.close();                                          
-                                    }
-                                    setLastSource(card);
-                                }                                 
-                            }
-                            catch(Exception e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }
+                                }                                      
+                            }                                                                                                
+                        }
+                        catch(Exception e)
+                        {
+                            LOG.warning(e.getMessage());
                         }
                     }
                 }
-                setLastSync(LocalDateTime.now());                  
+                setLastSync(LocalDateTime.now()); 
+                LOG.info("Syncing Trello cards succeeded");
+                handle.finish();
+                rootDir.addFileChangeListener(this);  
             }                       
         }         
     }      

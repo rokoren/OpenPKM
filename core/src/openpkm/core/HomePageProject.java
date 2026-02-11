@@ -396,7 +396,13 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     public Properties getProperties()
     {
         return props;
-    }     
+    }    
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
     
 // TODO BatchUpdateSupport    
     

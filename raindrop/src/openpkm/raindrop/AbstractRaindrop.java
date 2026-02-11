@@ -26,6 +26,7 @@ import openpkm.base.IconProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Video;
 import openpkm.base.Link;
+import openpkm.base.PropertiesProvider;
 import org.openide.awt.NotificationDisplayer;
 import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
@@ -138,6 +139,12 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     {
         return props;
     }
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
     
     @Override
     public RaindropUser getUser() 

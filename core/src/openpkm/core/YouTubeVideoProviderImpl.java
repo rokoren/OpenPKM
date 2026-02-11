@@ -205,7 +205,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return null;
     }    
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -272,7 +272,13 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public Properties getProperties()
         {
             return props;
-        }     
+        }  
+        
+        @Override
+        public void merge(PropertiesProvider provider)
+        {
+            props.putAll(provider.getProperties());
+        }        
 
         @Override
         public String getSourceID()

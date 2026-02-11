@@ -742,7 +742,13 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     public Properties getProperties()
     {
         return props;
-    }     
+    }   
+    
+    @Override
+    public void merge(PropertiesProvider provider)
+    {
+        props.putAll(provider.getProperties());
+    }    
     
 // TODO BatchUpdateSupport    
     

@@ -15,4 +15,5 @@ public interface PropertiesProvider
     String EXTENSION = "properties";    
     
     Properties getProperties();  
+    void merge(PropertiesProvider provider);
 }
