@@ -6,14 +6,15 @@ package openpkm.trello;
 
 import java.util.Arrays;
 import java.util.Optional;
+import openpkm.base.NodePositionProvider;
+import openpkm.base.PropertiesProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCheckListItem 
+public interface TrelloCheckListItem extends PropertiesProvider, NodePositionProvider
 {
-    String getCheckListID();
     String getCheckListItemID();
     String getCheckListItemName();
     Integer getCheckListItemPosition(); 

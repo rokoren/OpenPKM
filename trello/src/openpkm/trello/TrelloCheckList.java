@@ -4,6 +4,8 @@
  */
 package openpkm.trello;
 
+import java.util.Collection;
+import javax.swing.event.ChangeListener;
 import openpkm.base.PropertiesProvider;
 
 /**
@@ -12,7 +14,14 @@ import openpkm.base.PropertiesProvider;
  */
 public interface TrelloCheckList extends PropertiesProvider
 {
+    String getBoardID();
+    String getCardID();
     String getCheckListID();
     String getCheckListName();
-    Integer getCheckListPosition();   
+    Integer getCheckListPosition(); 
+    Collection<TrelloCheckListItem> getItems();
+    void addItem(TrelloCheckListItem item);
+    void removeItem(String itemID);
+    void addChangeListener(ChangeListener listener);
+    void removeChangeListener(ChangeListener listener);
 }

@@ -17,7 +17,8 @@ public interface TrelloCheckListProvider
     String PROP_CARD_ID            = "card.id";    
     String PROP_CHECKLIST_ID       = "checklist.id";
     String PROP_CHECKLIST_NAME     = "checklist.name";        
-    String PROP_CHECKLIST_POSITION = "checklist.position";     
+    String PROP_CHECKLIST_POSITION = "checklist.position";   
+    String PROP_CHECKLIST_ITEMS    = "checklist.items";  
     
     TrelloCheckList getCheckList(Properties props);
     TrelloCheckList createCheckList(CheckList checkList);      

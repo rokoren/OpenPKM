@@ -12,8 +12,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import kong.unirest.json.JSONObject;
 import openpkm.base.IconsProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItemProvider;
@@ -27,18 +27,17 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service=TrelloCheckListItemProvider.class)
 public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvider
-{
-    private static final String PROP_CHECKLIST_ID            = "checklist.id";
-    private static final String PROP_CHECKLIST_ITEM_ID       = "checklist.item.id";
-    private static final String PROP_CHECKLIST_ITEM_NAME     = "checklist.item.name";        
-    private static final String PROP_CHECKLIST_ITEM_POSITION = "checklist.item.position"; 
-    private static final String PROP_CHECKLIST_ITEM_STATE    = "checklist.item.state"; 
-    
+{    
     private static final Logger LOG = Logger.getLogger(TrelloCheckListItemProvider.class.getName());    
 
     @Override
-    public TrelloCheckListItem getCheckListItem(Properties props) 
+    public TrelloCheckListItem getCheckListItem(JSONObject json) 
     {
+        Properties props = new Properties();
+        props.setProperty(PROP_CHECKLIST_ITEM_ID, json.getString("id"));
+        props.setProperty(PROP_CHECKLIST_ITEM_NAME, json.getString("name"));            
+        props.setProperty(PROP_CHECKLIST_ITEM_POSITION, json.getInt("pos") + "");        
+        props.setProperty(PROP_CHECKLIST_ITEM_STATE, json.getString("state")); 
         return new TrelloCheckListItemImpl(props);
     }
     
@@ -50,10 +49,10 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         props.setProperty(PROP_CHECKLIST_ITEM_NAME, item.getName());          
         props.setProperty(PROP_CHECKLIST_ITEM_POSITION, item.getPos() + ""); 
         props.setProperty(PROP_CHECKLIST_ITEM_STATE, item.getState()); 
-        return getCheckListItem(props);
+        return new TrelloCheckListItemImpl(props);
     } 
     
-    private static final class TrelloCheckListItemImpl implements TrelloCheckListItem, NodeProvider, PropertiesProvider
+    private static final class TrelloCheckListItemImpl implements TrelloCheckListItem
     {         
         private final Properties props;     
         
@@ -63,12 +62,6 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         }     
 
 // TODO TrelloCheckListItem        
-
-        @Override
-        public String getCheckListID() 
-        {
-            return props.getProperty(PROP_CHECKLIST_ID);
-        } 
         
         @Override
         public String getCheckListItemID() 
@@ -178,6 +171,17 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         public Children getChildren() 
         {
             return Children.LEAF;
+        }  
+        
+        @Override
+        public int getPosition() 
+        {
+            Integer position = getCheckListItemPosition();
+            if(position != null)
+            {
+                return position.intValue();
+            }
+            return -1;
         }        
     }      
 }

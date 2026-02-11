@@ -158,6 +158,7 @@ public class TrelloServiceImpl implements TrelloService
             props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
             props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
             props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
+            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, json.getJSONArray("checkItems").toString());            
             list.add(provider.getCheckList(props));
         }
         return list;        

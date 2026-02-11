@@ -131,7 +131,7 @@ public class GroupNode extends AbstractNode implements NodeSupport
         @Override
         protected Node[] createNodes(NodeProvider provider) 
         {
-            return new Node[] {new SourceNode(provider)};
+            return new Node[] {new ProviderNode(provider)};
         }          
 
         @Override
@@ -141,11 +141,11 @@ public class GroupNode extends AbstractNode implements NodeSupport
         }                 
     }  
     
-    private static final class SourceNode extends AbstractNode
+    private static final class ProviderNode extends AbstractNode
     {
         private final NodeProvider provider;
 
-        public SourceNode(NodeProvider provider) 
+        public ProviderNode(NodeProvider provider) 
         {
             super(provider.getChildren(), Lookups.singleton(provider));
             setName(provider.getName());

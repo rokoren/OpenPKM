@@ -63,9 +63,6 @@ import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloCheckList;
-import openpkm.trello.TrelloCheckListItem;
-import openpkm.trello.TrelloCheckListItemProvider;
-import openpkm.trello.TrelloCheckListItemsProvider;
 import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloCheckListsProvider;
 import openpkm.trello.TrelloService;
@@ -85,6 +82,7 @@ import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.UndoRedo;
+import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -169,13 +167,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             SourceGroup checkLists = new TrelloCheckListsProviderImpl(checkListProvider);
             sources.put(checkLists.getName(), checkLists);            
         }  
-
-        TrelloCheckListItemProvider checkListItemProvider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
-        if(checkListItemProvider != null)
-        {          
-            SourceGroup checkListItems = new TrelloCheckListItemsProviderImpl(checkListItemProvider);
-            sources.put(checkListItems.getName(), checkListItems);            
-        } 
         
     }        
     
@@ -1398,15 +1389,17 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().get(file.getName());  
-            if(label != null)
+            try
             {
-                
-            }
-            */
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+                TrelloCheckList checkList = provider.getCheckList(Utils.getProperties(file)); 
+                getCheckLists().put(checkList.getCheckListID(), checkList);               
+                changeSupport.fireChange();
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            } 
         }
 
         @Override
@@ -1473,7 +1466,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 List<TrelloCheckList> checkLists = service.getCheckLists(TrelloCardProject.this, provider, getTrelloAccount());
                 for(TrelloCheckList checkList : checkLists)
                 {
-                    if(!getCheckLists().containsKey(checkList.getCheckListID()))
+                    TrelloCheckList old = getCheckLists().get(checkList.getCheckListID());
+                    if(old == null)
                     {
                         try
                         {
@@ -1485,150 +1479,36 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                         catch(IOException e)
                         {
                             LOG.warning(e.getMessage());
-                        }  
+                        }                                                  
+                    }
+                    else if(!old.getProperties().equals(checkList.getProperties()))
+                    {
+                        FileObject file = getRootFolder().getFileObject(checkList.getCheckListID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                OutputStream os = file.getOutputStream();
+                                checkList.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                                os.close();
+                                LOG.info("Trello checklist saved: " + checkList.getCheckListID());  
+                            }  
+                            catch(FileAlreadyLockedException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                                                             
+                        }                          
+                         
                     }
                 }
                 setLastSync(LocalDateTime.now());
             }
         }         
-    }      
-
-    private final class TrelloCheckListItemsProviderImpl extends TrelloCheckListItemsProvider implements FileChangeListener
-    {   
-        @StaticResource()
-        private static final String ICON = "openpkm/core/resources/date_task.png";         
-        
-        public TrelloCheckListItemsProviderImpl(TrelloCheckListItemProvider provider) 
-        {
-            super(provider);            
-        }           
-
-        @Override
-        public Icon getIcon(boolean isOpen)
-        {
-            return ImageUtilities.loadIcon(ICON);
-        }         
-        
-        @Override
-        protected synchronized Map<String, TrelloCheckListItem> getCheckListItems()
-        {
-            if(checkListItems == null)
-            {
-                checkListItems = new HashMap<>();
-                FileObject folder = getRootFolder();
-                if(folder !=  null)
-                {
-                    for (FileObject file : folder.getChildren()) 
-                    {
-                        try
-                        {
-                            TrelloCheckListItem checkListItem = provider.getCheckListItem(Utils.getProperties(file)); 
-                            checkListItems.put(checkListItem.getCheckListItemID(), checkListItem);
-                        }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                                                                                                                                             
-                    }                     
-                }                
-            }
-            return checkListItems;
-        }                
-
-        @Override
-        public FileObject getRootFolder() 
-        {
-            if(rootDir == null)
-            {
-                try
-                {                
-                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
-                    if(rootDir == null)
-                    {
-                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Checklist items root folder created: " + rootDir.getPath());                        
-                    } 
-                    rootDir.addFileChangeListener(this);                                        
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                
-            }
-            return rootDir;
-        }
-
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }        
-        
-        @Override
-        public void fileFolderCreated(FileEvent evt) 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileDataCreated(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            try
-            {
-                TrelloCheckListItem checkListItem = provider.getCheckListItem(Utils.getProperties(file)); 
-                getCheckListItems().put(checkListItem.getCheckListItemID(), checkListItem);               
-                changeSupport.fireChange();
-            }           
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }               
-        }
-
-        @Override
-        public void fileChanged(FileEvent evt) 
-        {
-            /*
-            FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().get(file.getName());  
-            if(label != null)
-            {
-                
-            }
-            */
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileDeleted(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            TrelloCheckListItem checkListItem = getCheckListItems().remove(file.getName());  
-            if(checkListItem != null)
-            {
-                changeSupport.fireChange();
-            }
-        }
-
-        @Override
-        public void fileRenamed(FileRenameEvent fre) 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileAttributeChanged(FileAttributeEvent fae) 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
-    }    
+    }        
     
 // TODO HtmlFilesProvider        
     
@@ -1840,9 +1720,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @StaticResource()
         public static final String BANNER = "openpkm/core/resources/banner.png";          
         
-        protected final TrelloCheckListItemsProvider provider;            
+        protected final TrelloCheckListProvider provider;            
 
-        public AddCheckListItem(TrelloCheckListItemsProvider provider) 
+        public AddCheckListItem(TrelloCheckListProvider provider) 
         {
             super("Add Checklist");
             this.provider = provider;

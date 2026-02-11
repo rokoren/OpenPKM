@@ -5,20 +5,39 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.CheckList;
+import java.awt.EventQueue;
 import java.awt.Image;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import kong.unirest.json.JSONArray;
+import kong.unirest.json.JSONObject;
+import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckList;
+import openpkm.trello.TrelloCheckListItem;
+import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListProvider;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 import org.openide.util.Utilities;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -39,26 +58,76 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
     @Override
     public TrelloCheckList createCheckList(CheckList checkList) 
     {
-        Properties props = new Properties();               
+        Properties props = new Properties(); 
+        props.setProperty(PROP_BOARD_ID, checkList.getIdBoard());        
+        props.setProperty(PROP_CARD_ID, checkList.getIdCard());        
         props.setProperty(PROP_CHECKLIST_ID, checkList.getId());
         props.setProperty(PROP_CHECKLIST_NAME, checkList.getName());          
         props.setProperty(PROP_CHECKLIST_POSITION, checkList.getPos() + ""); 
         return getCheckList(props);
     } 
     
-    private static final class TrelloCheckListImpl implements TrelloCheckList, NodeProvider
+    private static final class TrelloCheckListImpl implements TrelloCheckList, NodePositionProvider
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/date_task.png";  
         
-        private final Properties props;     
+        private final Properties props; 
+        
+        private Map<String, TrelloCheckListItem> items;
+        private ChangeSupport changeSupport;
         
         public TrelloCheckListImpl(Properties props)
         {
             this.props = props;              
-        }     
+        }  
+        
+        private Map<String, TrelloCheckListItem> getItemsById()
+        {
+            if(items == null)
+            {
+                items = new HashMap();
+                TrelloCheckListItemProvider provider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
+                if(provider != null)
+                {
+                    String string = props.getProperty(PROP_CHECKLIST_ITEMS);
+                    if(string != null)
+                    {
+                        JSONArray jsons = new JSONArray(string);
+                        for(int i=0; i<jsons.length(); i++)
+                        {
+                            JSONObject json = jsons.getJSONObject(i);
+                            TrelloCheckListItem item = provider.getCheckListItem(json);
+                            items.put(item.getCheckListItemID(), item);
+                        }                    
+                    }                    
+                }
+            }
+            return items;
+        } 
+        
+        private ChangeSupport getChangeSupport()
+        {
+            if(changeSupport == null)
+            {
+                changeSupport = new ChangeSupport(this);
+            }
+            return changeSupport;
+        }
 
 // TODO TrelloCheckList        
+
+        @Override
+        public String getBoardID() 
+        {
+            return props.getProperty(PROP_BOARD_ID);
+        } 
+
+        @Override
+        public String getCardID() 
+        {
+            return props.getProperty(PROP_CARD_ID);
+        }
         
         @Override
         public String getCheckListID() 
@@ -88,7 +157,39 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
                 }
             }
             return null;
-        }               
+        } 
+        
+        @Override
+        public Collection<TrelloCheckListItem> getItems()
+        {
+            return Collections.unmodifiableCollection(getItemsById().values());
+        }
+        
+        @Override
+        public void addItem(TrelloCheckListItem item)
+        {
+            getItemsById().put(item.getCheckListItemID(), item);
+            getChangeSupport().fireChange();
+        }
+        
+        @Override
+        public void removeItem(String itemID)
+        {
+            getItemsById().remove(itemID);
+            getChangeSupport().fireChange();
+        }        
+        
+        @Override
+        public void addChangeListener(ChangeListener listener)
+        {
+            getChangeSupport().addChangeListener(listener);
+        }
+        
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            getChangeSupport().removeChangeListener(listener);
+        }        
         
 // TODO PropertiesProvider        
         
@@ -135,7 +236,99 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         @Override
         public Children getChildren() 
         {
-            return Children.LEAF;
+            return new ChildrenImpl(this);
         }        
-    }     
+
+        @Override
+        public int getPosition() 
+        {
+            Integer position = getCheckListPosition();
+            if(position != null)
+            {
+                return position.intValue();
+            }
+            return -1;
+        }
+    }  
+    
+    static final class ChildrenImpl extends Children.Keys<NodePositionProvider> implements ChangeListener
+    {
+        private final TrelloCheckList checkList;
+
+        public ChildrenImpl(TrelloCheckList checkList)
+        {
+            this.checkList = checkList;  
+            checkList.addChangeListener(this);
+        }  
+
+        protected @Override void addNotify() 
+        {
+            updateKeys();                             
+        }
+
+        private void updateKeys() 
+        {
+            EventQueue.invokeLater(new Runnable() 
+            {
+                public void run()
+                {                                                
+                    SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
+                    sorted.addAll(checkList.getItems());
+                    setKeys(sorted);  
+                }
+            });
+        }        
+
+        @Override
+        protected void removeNotify() 
+        {
+            checkList.removeChangeListener(this);
+            setKeys(Collections.<NodePositionProvider>emptySet());
+        }
+
+        @Override
+        protected Node[] createNodes(NodePositionProvider provider) 
+        {
+            return new Node[] {new ItemNode(provider)};
+        }          
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            updateKeys();
+        }
+    } 
+
+    private static final class ItemNode extends AbstractNode
+    {
+        private final NodeProvider provider;
+
+        public ItemNode(NodeProvider provider) 
+        {
+            super(provider.getChildren(), Lookups.singleton(provider));
+            setName(provider.getName());
+            setDisplayName(provider.getDisplayName());
+            this.provider = provider;
+        } 
+        
+        @Override    
+        public Action[] getActions(boolean context) 
+        {
+            List<Action> actions = new ArrayList();
+            actions.addAll(provider.getActions());
+            return actions.toArray(new Action[actions.size()]);
+        }
+
+        @Override    
+        public Image getIcon(int type)     
+        {
+            return provider.getIcon(false);
+        }
+
+        @Override
+        public Image getOpenedIcon(int type) 
+        {
+            return provider.getIcon(true);
+        }        
+    } 
 }

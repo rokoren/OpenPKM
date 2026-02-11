@@ -5,7 +5,7 @@
 package openpkm.trello;
 
 import com.julienvey.trello.domain.CheckItem;
-import java.util.Properties;
+import kong.unirest.json.JSONObject;
 
 /**
  *
@@ -13,6 +13,11 @@ import java.util.Properties;
  */
 public interface TrelloCheckListItemProvider 
 {
-    TrelloCheckListItem getCheckListItem(Properties props);
+    String PROP_CHECKLIST_ITEM_ID       = "checklist.item.id";
+    String PROP_CHECKLIST_ITEM_NAME     = "checklist.item.name";        
+    String PROP_CHECKLIST_ITEM_POSITION = "checklist.item.position"; 
+    String PROP_CHECKLIST_ITEM_STATE    = "checklist.item.state";     
+    
+    TrelloCheckListItem getCheckListItem(JSONObject json);
     TrelloCheckListItem createCheckListItem(CheckItem item);     
 }
