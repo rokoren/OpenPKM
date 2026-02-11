@@ -13,6 +13,12 @@ import java.util.Properties;
  */
 public interface TrelloCheckListProvider 
 {
+    String PROP_BOARD_ID           = "board.id";
+    String PROP_CARD_ID            = "card.id";    
+    String PROP_CHECKLIST_ID       = "checklist.id";
+    String PROP_CHECKLIST_NAME     = "checklist.name";        
+    String PROP_CHECKLIST_POSITION = "checklist.position";     
+    
     TrelloCheckList getCheckList(Properties props);
     TrelloCheckList createCheckList(CheckList checkList);      
 }

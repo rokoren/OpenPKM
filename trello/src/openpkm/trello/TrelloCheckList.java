@@ -4,11 +4,13 @@
  */
 package openpkm.trello;
 
+import openpkm.base.PropertiesProvider;
+
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCheckList 
+public interface TrelloCheckList extends PropertiesProvider
 {
     String getCheckListID();
     String getCheckListName();

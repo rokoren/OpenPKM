@@ -31,6 +31,8 @@ import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
+import openpkm.trello.TrelloCheckList;
+import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
 import openpkm.trello.TrelloList;
@@ -96,19 +98,7 @@ public class TrelloServiceImpl implements TrelloService
             list.add(provider.createLabel(label));
         }                     
         return list;        
-    }  
-    
-    @Override
-    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, Trello trello)
-    {
-        List<TrelloAttachment> list = new ArrayList();   
-        List<Attachment> attachments = trello.getCardAttachments(card.getCardID());
-        for(Attachment attachment : attachments)                
-        {
-            list.add(provider.createAttachment(attachment));
-        }                     
-        return list;        
-    }     
+    }      
     
     @Override
     public List<String> getCards(TrelloBoard board, Trello trello)
@@ -136,6 +126,44 @@ public class TrelloServiceImpl implements TrelloService
     }  
     
     @Override
+    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, Trello trello)
+    {
+        List<TrelloAttachment> list = new ArrayList();   
+        List<Attachment> attachments = trello.getCardAttachments(card.getCardID());
+        for(Attachment attachment : attachments)                
+        {
+            list.add(provider.createAttachment(attachment));
+        }                     
+        return list;        
+    } 
+
+    @Override
+    public List<TrelloCheckList> getCheckLists(TrelloCard card, TrelloCheckListProvider provider, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + card.getCardID() + "/checklists")
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+        
+        List<TrelloCheckList> list = new ArrayList(); 
+        
+        JSONArray jsons = response.getBody().getArray();
+        for(int i=0; i<jsons.length(); i++)
+        {
+            JSONObject json = jsons.getJSONObject(i);
+            Properties props = new Properties();
+            props.setProperty(TrelloCheckListProvider.PROP_BOARD_ID, json.getString("idBoard"));
+            props.setProperty(TrelloCheckListProvider.PROP_CARD_ID, json.getString("idCard"));            
+            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
+            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
+            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
+            list.add(provider.getCheckList(props));
+        }
+        return list;        
+    } 
+    
+    @Override
     public TrelloCard getCard(String cardID,  TrelloCardProvider provider, TrelloAccount account) throws UnirestException
     {
         HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + cardID)
@@ -144,9 +172,7 @@ public class TrelloServiceImpl implements TrelloService
           .queryString("token", account.getAccessToken())
           .asJson();  
         
-        JSONObject json = response.getBody().getObject();
-        
-        LOG.info(json.toString());
+        JSONObject json = response.getBody().getObject();        
         
         JSONArray idLabels = json.getJSONArray("idLabels");
         List<Label> labels = new ArrayList();

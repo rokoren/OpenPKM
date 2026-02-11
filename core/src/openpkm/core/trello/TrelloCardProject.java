@@ -1023,10 +1023,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public TrelloAttachmentsProviderImpl(TrelloAttachmentProvider provider) 
         {
             super(provider);    
-            if(getLastSync() == null)
-            {
-                RP.post(this);                
-            }              
+            RP.post(this);            
         }          
         
         @Override
@@ -1256,14 +1253,17 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }  
     }  
     
-    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements NodeGroup, FileChangeListener
+    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements NodeGroup, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/date_task.png";         
+        private static final String ICON = "openpkm/core/resources/date_task.png"; 
+
+        private static final String PROP_TRELLO_SYNC_CHECKLIST = "trello.sync.checklist";
                 
         public TrelloCheckListsProviderImpl(TrelloCheckListProvider provider) 
         {
-            super(provider);            
+            super(provider); 
+            RP.post(this);    
         }          
         
         @Override
@@ -1430,64 +1430,84 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        }   
+        
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_CHECKLIST);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_CHECKLIST);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_CHECKLIST, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_CHECKLIST, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_CHECKLIST, oldValue, time); 
+            }
+        } 
+
+        @Override
+        public void run()
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                List<TrelloCheckList> checkLists = service.getCheckLists(TrelloCardProject.this, provider, getTrelloAccount());
+                for(TrelloCheckList checkList : checkLists)
+                {
+                    if(!getCheckLists().containsKey(checkList.getCheckListID()))
+                    {
+                        try
+                        {
+                            OutputStream os = getRootFolder().createAndOpen(checkList.getCheckListID() + "." + PropertiesProvider.EXTENSION);                            
+                            checkList.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            os.close();
+                            LOG.info("Trello checklist saved: " + checkList.getCheckListID());                              
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }  
+                    }
+                }
+                setLastSync(LocalDateTime.now());
+            }
+        }         
     }      
 
-    private final class TrelloCheckListItemsProviderImpl extends TrelloCheckListItemsProvider implements NodeGroup, FileChangeListener
-    { 
+    private final class TrelloCheckListItemsProviderImpl extends TrelloCheckListItemsProvider implements FileChangeListener
+    {   
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/date_task.png";         
-                
+        
         public TrelloCheckListItemsProviderImpl(TrelloCheckListItemProvider provider) 
         {
             super(provider);            
-        }          
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return TrelloCardProject.this;
-        }         
-        
-        @Override
-        public Integer getPosition() 
-        {
-            return POSITION_CHECK_LIST_ITEMS;
-        }  
+        }           
 
         @Override
         public Icon getIcon(boolean isOpen)
         {
-            return ImageUtilities.image2Icon(getIcon(false, isOpen));
+            return ImageUtilities.loadIcon(ICON);
         }         
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddCheckListItem(this));         
-            return actions;
-        } 
-        
-        @Override
-        public SortedSet<NodeProvider> getNodes()
-        {
-            List<NodeProvider> list = getCheckListItems().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
-                    .toList();        
-            
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(list);
-            
-            return sorted;
-        }
         
         @Override
         protected synchronized Map<String, TrelloCheckListItem> getCheckListItems()

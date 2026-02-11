@@ -1,0 +1,32 @@
+[{
+        "id": "697c93a48c5b17fb483c52fc",
+        "name": "Checklist Test 1",
+        "idBoard": "66325349fb2cb1d8bbcaeeb9",
+        "idCard": "683a5004329207ab71d3e487",
+        "pos": 140737488355328,
+        "checkItems": [{
+                "id": "697c93d8dcc14ac889a48c28",
+                "name": "Test Checklist Item 1",
+                "nameData": {
+                    "emoji": {}
+                },
+                "pos": 140737488355328,
+                "state": "incomplete",
+                "due": null,
+                "dueReminder": null,
+                "idMember": null,
+                "idChecklist": "697c93a48c5b17fb483c52fc"
+            }, {
+                "id": "697d299a8a5ad242123f3576",
+                "name": "Test 2",
+                "nameData": {
+                    "emoji": {}
+                },
+                "pos": 140737488371712,
+                "state": "incomplete",
+                "due": null,
+                "dueReminder": null,
+                "idMember": null,
+                "idChecklist": "697c93a48c5b17fb483c52fc"
+            }]
+    }]

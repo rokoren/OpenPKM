@@ -27,11 +27,7 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service=TrelloCheckListProvider.class)
 public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
-{
-    private static final String PROP_CHECKLIST_ID       = "checklist.id";
-    private static final String PROP_CHECKLIST_NAME     = "checklist.name";        
-    private static final String PROP_CHECKLIST_POSITION = "checklist.position"; 
-    
+{    
     private static final Logger LOG = Logger.getLogger(TrelloCheckListProvider.class.getName());    
 
     @Override
@@ -50,7 +46,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         return getCheckList(props);
     } 
     
-    private static final class TrelloCheckListImpl implements TrelloCheckList, NodeProvider, PropertiesProvider
+    private static final class TrelloCheckListImpl implements TrelloCheckList, NodeProvider
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/date_task.png";  
