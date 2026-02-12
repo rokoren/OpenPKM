@@ -31,8 +31,6 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -110,6 +108,7 @@ import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
+import openpkm.youtube.YouTubeUtils;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
 import org.netbeans.api.progress.*;
@@ -969,9 +968,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private final class TrelloCardsProviderImpl implements TrelloCardsProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/panel.png"; 
-        
-        private static final Pattern YT_PATTERN = Pattern.compile("^(?:https?://)?(?:www\\.)?(?:youtube\\.com/(?:watch\\?v=|embed/|v/)|youtu\\.be/)([A-Za-z0-9_-]{11}).*");         
+        private static final String ICON = "openpkm/core/resources/panel.png";         
         
         private static final String PROP_TRELLO_SYNC_CARD = "trello.sync.card"; 
         
@@ -1239,15 +1236,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 }
                 propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_CARD, oldValue, time); 
             }
-        } 
-        
-        private static String extractYouTubeId(String url) 
-        {
-            Matcher m = YT_PATTERN.matcher(url);
-            if (m.matches()) {
-                return m.group(1);
-            }
-            return null; // ni YouTube link ali ni ID-ja
         }         
         
         @Override
@@ -1273,7 +1261,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                             TrelloCard card = service.getCard(id, provider, getTrelloAccount());
                             if(card.isCardLink())
                             {
-                                String videoID = extractYouTubeId(card.getCardName());
+                                String videoID = YouTubeUtils.getVideoID(card.getCardName());
                                 if(videoID != null)
                                 {
                                     

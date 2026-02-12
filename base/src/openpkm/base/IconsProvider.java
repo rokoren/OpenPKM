@@ -19,6 +19,7 @@ public interface IconsProvider
     public enum ICON 
     {
         DOMAINS,
+        WEB_PAGE,
         NOTEBOOKS,
         HOME_PAGE,
         BLOG,
@@ -50,7 +51,10 @@ public interface IconsProvider
         TAG_RED,
         TAG_GREEN,
         TAG_ORANGE,
-        TAG_PINK,        
+        TAG_PINK, 
+        FILE_PDF,
+        FILE_PNG,
+        FILE_JPG,
         VIDEOS;    
     }     
 }

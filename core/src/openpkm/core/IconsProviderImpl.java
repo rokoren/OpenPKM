@@ -22,6 +22,9 @@ public class IconsProviderImpl implements IconsProvider
     private static final String ICON_DOMAINS = "openpkm/core/resources/domain.png"; 
     
     @StaticResource()
+    private static final String ICON_WEB_PAGE = "openpkm/core/resources/www_page.png";     
+    
+    @StaticResource()
     private static final String ICON_NOTEBOOKS = "openpkm/core/resources/books_stack.png";    
     
     @StaticResource()
@@ -118,7 +121,16 @@ public class IconsProviderImpl implements IconsProvider
     public static final String ICON_TAG_ORANGE = "openpkm/core/resources/tag_orange.png";  
 
     @StaticResource()
-    public static final String ICON_TAG_PINK = "openpkm/core/resources/tag_pink.png";        
+    public static final String ICON_TAG_PINK = "openpkm/core/resources/tag_pink.png";  
+    
+    @StaticResource()
+    public static final String ICON_FILE_PDF = "openpkm/core/resources/file_extension_pdf.png"; 
+    
+    @StaticResource()
+    public static final String ICON_FILE_PNG = "openpkm/core/resources/file_extension_png.png";  
+    
+    @StaticResource()
+    public static final String ICON_FILE_JPG = "openpkm/core/resources/file_extension_jpg.png";      
 
     private String getResource(ICON icon)
     {
@@ -126,6 +138,8 @@ public class IconsProviderImpl implements IconsProvider
         {
             case DOMAINS:
             return ICON_DOMAINS;
+            case WEB_PAGE:
+            return ICON_WEB_PAGE;            
             case NOTEBOOKS:
             return ICON_NOTEBOOKS;            
             case HOME_PAGE:
@@ -192,6 +206,12 @@ public class IconsProviderImpl implements IconsProvider
             return ICON_TAG_ORANGE; 
             case TAG_PINK:
             return ICON_TAG_PINK; 
+            case FILE_PDF:
+            return ICON_FILE_PDF;   
+            case FILE_PNG:
+            return ICON_FILE_PNG;    
+            case FILE_JPG:
+            return ICON_FILE_JPG;             
         }  
         return null;
     }

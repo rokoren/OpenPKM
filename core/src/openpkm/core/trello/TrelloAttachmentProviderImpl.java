@@ -11,13 +11,16 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import openpkm.base.IconsProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
+import openpkm.youtube.YouTubeUtils;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.nodes.Children;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -27,6 +30,10 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=TrelloAttachmentProvider.class)
 public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
 {
+    private static final String MIME_TYPE_PDF  = "application/pdf";
+    private static final String MIME_TYPE_PNG  = "image/png";
+    private static final String MIME_TYPE_JPEG = "image/jpeg";
+    
     private static final String PROP_ATTACHMENT_ID        = "attachment.id";
     private static final String PROP_ATTACHMENT_URL       = "attachment.url";
     private static final String PROP_ATTACHMENT_NAME      = "attachment.name";    
@@ -46,12 +53,15 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         Properties props = new Properties();               
         props.setProperty(PROP_ATTACHMENT_ID, attachment.getId());
         props.setProperty(PROP_ATTACHMENT_URL, attachment.getUrl());
-        props.setProperty(PROP_ATTACHMENT_NAME, attachment.getName());          
-        props.setProperty(PROP_ATTACHMENT_MIME_TYPE, attachment.getMimeType()); 
+        props.setProperty(PROP_ATTACHMENT_NAME, attachment.getName()); 
+        if(attachment.getMimeType() != null)
+        {
+            props.setProperty(PROP_ATTACHMENT_MIME_TYPE, attachment.getMimeType());             
+        }
         return getAttachment(props);
     } 
     
-    private static final class TrelloAttachmentImpl implements TrelloAttachment, NodeProvider, PropertiesProvider
+    private static final class TrelloAttachmentImpl implements TrelloAttachment, NodeProvider
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/attach.png";  
@@ -120,6 +130,32 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         @Override
         public Image getIcon(boolean opened) 
         {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            String mimeType = getAttachmentMimeType();
+            if(mimeType == null || mimeType.isEmpty())
+            {
+                String url = getAttachmentUrl();
+                if(url != null)
+                {
+                    if(YouTubeUtils.isYouTube(url))
+                    {
+                        return provider.getImage(IconsProvider.ICON.YOUTUBE_VIDEO);
+                    }
+                    return provider.getImage(IconsProvider.ICON.WEB_PAGE);
+                }                
+            }
+            if(mimeType.equals(MIME_TYPE_PDF))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_PDF);
+            }
+            else if(mimeType.equals(MIME_TYPE_PNG))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_PNG);
+            }   
+            else if(mimeType.equals(MIME_TYPE_JPEG))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_JPG);
+            }             
             return ImageUtilities.loadImage(ICON);
         } 
 
