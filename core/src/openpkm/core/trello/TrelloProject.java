@@ -1071,7 +1071,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                             try
                             {
                                 Project project = ProjectManager.getDefault().findProject(fo);
-                                if(project instanceof TrelloCard card)
+                                TrelloCard card = project.getLookup().lookup(TrelloCard.class);
+                                if(card != null)
                                 {
                                     cards.put(card.getCardID(), card);
                                 }                                  
@@ -1251,7 +1252,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 handle.switchToIndeterminate();
                 
                 
-                List<String> ids = service.getCards(TrelloProject.this, getTrello());
+                List<String> ids = service.getCardsID(TrelloProject.this, getTrello());
                 for(String id : ids)
                 {
                     if(!getCardsById().containsKey(id))

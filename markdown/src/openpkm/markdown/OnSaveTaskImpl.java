@@ -4,18 +4,31 @@
  */
 package openpkm.markdown;
 
+import com.github.difflib.DiffUtils;
+import com.github.difflib.patch.Patch;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.PdfFilesProvider;
+import openpkm.base.RemoteDataProvider;
+import org.netbeans.api.diff.Diff;
+import org.netbeans.api.diff.DiffView;
+import org.netbeans.api.diff.StreamSource;
 import org.netbeans.api.editor.mimelookup.MimeRegistration;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.modules.editor.*;
 import org.netbeans.spi.editor.document.OnSaveTask;
+import org.openide.DialogDescriptor;
+import org.openide.DialogDisplayer;
 import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
@@ -36,7 +49,7 @@ public class OnSaveTaskImpl implements OnSaveTask
     public OnSaveTaskImpl(Context ctx) 
     {
         context = ctx;
-    } 
+    }  
      
     @Override
     public void performTask() 
@@ -45,7 +58,56 @@ public class OnSaveTaskImpl implements OnSaveTask
         {
             Document document = context.getDocument();                
             String text = document.getText(0, document.getLength());  
-            MarkdownDataObject data = (MarkdownDataObject)NbEditorUtilities.getDataObject(document);   
+            MarkdownDataObject data = (MarkdownDataObject)NbEditorUtilities.getDataObject(document);  
+            
+            RemoteDataProvider providerRemote = data.getLookup().lookup(RemoteDataProvider.class);
+            if(providerRemote != null)
+            {
+                String remoteText = providerRemote.pull(); 
+                List<String> baseLines = data.getPrimaryFile().asLines();
+                List<String> remoteLines = Arrays.asList(remoteText.split("\n"));
+                Patch<String> patchRemote = DiffUtils.diff(baseLines, remoteLines);
+                if(patchRemote.getDeltas().isEmpty())
+                {
+                    providerRemote.push(text);                      
+                }
+                else
+                {
+                    StreamSource sourceRemote = StreamSource.createSource("Trello", "Remote", "text/x-markdown", new StringReader(remoteText));
+                    StreamSource sourceLocal = StreamSource.createSource("OpenPKM", "Local", "text/x-markdown", new StringReader(text));
+
+                    DiffView view = Diff.getDefault().createDiff(sourceRemote, sourceLocal);                               
+ 
+                    /*
+                    Component diffComp = Diff.getDefault().createDiff(
+                        "Trello", "Remote", r1,
+                        "OpenPKM", "Local", r2,
+                        "text/plain"
+                    ); 
+                    diffComp.setPreferredSize(new Dimension(500, 400));
+                    */
+                    
+                    Component comp = view.getComponent();
+                    comp.setPreferredSize(new Dimension(500, 400));
+                    DialogDescriptor dd = new DialogDescriptor(
+                            comp,
+                            "Do you want to overwrite remote",
+                            true, // modalno
+                            new Object[]{DialogDescriptor.OK_OPTION, DialogDescriptor.CANCEL_OPTION},
+                            DialogDescriptor.OK_OPTION,
+                            DialogDescriptor.DEFAULT_ALIGN,
+                            null,
+                            null
+                    );                                        
+
+                    Object result = DialogDisplayer.getDefault().notify(dd);
+
+                    if (result == DialogDescriptor.OK_OPTION) 
+                    {
+                        providerRemote.push(text);                                               
+                    }                    
+                }
+            }
             
             Project project = FileOwnerQuery.getOwner(data.getPrimaryFile());
             HtmlFilesProvider providerHtml = project.getLookup().lookup(HtmlFilesProvider.class);

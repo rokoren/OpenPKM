@@ -114,8 +114,18 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
+                <package>com.github.difflib</package>
+                <package>com.github.difflib.algorithm</package>
+                <package>com.github.difflib.algorithm.myers</package>
+                <package>com.github.difflib.patch</package>
+                <package>com.github.difflib.text</package>
+                <package>com.github.difflib.unifieddiff</package>
                 <package>openpkm.utils</package>
             </public-packages>
+            <class-path-extension>
+                <runtime-relative-path>ext/java-diff-utils-4.15.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/java-diff-utils-4.15.jar</binary-origin>
+            </class-path-extension>
         </data>
     </configuration>
 </project>

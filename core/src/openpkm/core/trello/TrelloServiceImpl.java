@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.StringJoiner;
 import java.util.logging.Logger;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -101,7 +102,7 @@ public class TrelloServiceImpl implements TrelloService
     }      
     
     @Override
-    public List<String> getCards(TrelloBoard board, Trello trello)
+    public List<String> getCardsID(TrelloBoard board, Trello trello)
     {        
         List<String> list = new ArrayList();  
         Argument argument = new Argument("fields", "id");
@@ -111,7 +112,28 @@ public class TrelloServiceImpl implements TrelloService
             list.add(card.getId());
         }                     
         return list;        
-    }  
+    } 
+    
+    @Override
+    public String getCardDescription(String cardID, Trello trello)
+    { 
+        Argument argument = new Argument("fields", "desc");
+        Card card = trello.getCard(cardID, argument);                    
+        return card.getDesc();        
+    } 
+
+    @Override
+    public void setCardDescription(String cardID, String description, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.put("https://api.trello.com/1/cards/" + cardID)
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .queryString("desc", description)
+          .asJson();  
+        
+        LOG.info(response.getStatusText());
+    }
     
     @Override
     public List<TrelloCard> getCards(TrelloList trelloList, TrelloCardProvider provider, Trello trello)
@@ -123,7 +145,7 @@ public class TrelloServiceImpl implements TrelloService
             list.add(provider.createCard(card));
         }                     
         return list;        
-    }  
+    }       
     
     @Override
     public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, Trello trello)
@@ -176,17 +198,11 @@ public class TrelloServiceImpl implements TrelloService
         JSONObject json = response.getBody().getObject();        
         
         JSONArray idLabels = json.getJSONArray("idLabels");
-        List<Label> labels = new ArrayList();
+        StringJoiner joiner = new StringJoiner(",");
         for(int i=0; i<idLabels.length(); i++)
         {
             String id = idLabels.getString(i);
-            Label label = new Label();
-            label.setId(id);
-            labels.add(label);            
-            /*            
-            label.setColor(jsonLabel.getString("color"));
-            label.setName(jsonLabel.getString("name"));
-            */
+            joiner.add(id);
         }
          
         LocalDateTime now = LocalDateTime.now();
@@ -202,6 +218,11 @@ public class TrelloServiceImpl implements TrelloService
         props.setProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION, json.getString("desc"));
         props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, json.getInt("pos") + "");        
         props.setProperty(TrelloCardProvider.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
+        props.setProperty(TrelloCardProvider.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
+        props.setProperty(TrelloCardProvider.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
+        props.setProperty(TrelloCardProvider.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
+        props.setProperty(TrelloCardProvider.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
+        props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());
         if(!json.isNull("cardRole"))
         {
             props.setProperty(TrelloCardProvider.PROP_CARD_ROLE, json.getString("cardRole"));            
@@ -218,12 +239,8 @@ public class TrelloServiceImpl implements TrelloService
             LOG.info("Due Date: " + odt.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE));
             card.setDue(DateUtils.asDate(odt.toLocalDate()));
         }
-        */
-        
-        TrelloCard trelloCard = provider.getCard(props);
-        //trelloCard.setDueComplete(json.getBoolean("dueComplete"));
-        
-        return trelloCard;
+        */        
+        return provider.getCard(props);
     }     
 
     private static final class TrelloBoardImpl implements TrelloBoard

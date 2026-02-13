@@ -43,6 +43,7 @@ import openpkm.base.IconProvider;
 import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.RemoteDataProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
@@ -365,6 +366,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             list.add(this);
             list.add(new Info());
             //list.add(new IconProviderImpl());
+            list.add(new RemoteDataProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
@@ -481,6 +483,72 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             return Boolean.parseBoolean(string);
         }
+        return null;
+    } 
+    
+    @Override
+    public Boolean isCardSubsribed() 
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_SUBSCRIBED);
+        if(string != null)
+        {
+            return Boolean.parseBoolean(string);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean isCardPinned() 
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_PINNED);
+        if(string != null)
+        {
+            return Boolean.parseBoolean(string);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean isCardDueComplete()
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_DUE_COMPLETE);
+        if(string != null)
+        {
+            return Boolean.parseBoolean(string);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean isCardTemplate()
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_TEMPLATE);
+        if(string != null)
+        {
+            return Boolean.parseBoolean(string);
+        }
+        return null;
+    }
+
+    @Override
+    public LocalDateTime getDateLastActivity() 
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_DATE_LAST_ACTIVITY);
+        if(string != null)
+        {
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE);                   
+        }                
+        return null;
+    }
+
+    @Override
+    public List<String> getCardLabelsID() 
+    {
+        String string = props.getProperty(TrelloCardProvider.PROP_CARD_LABELS_ID);
+        if(string != null)
+        {
+            return List.of(string.split(","));                   
+        }                
         return null;
     }    
     
@@ -737,7 +805,26 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             return TrelloCardProject.this;
         }
     }     
-  
+
+// TODO RemoteDataProvider    
+    
+    private final class RemoteDataProviderImpl implements RemoteDataProvider
+    {                
+        @Override
+        public String pull() 
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            return service.getCardDescription(getCardID(), trello);
+        }
+
+        @Override
+        public void push(String data) 
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            service.setCardDescription(getCardID(), data, getTrelloAccount());
+        }                      
+    }     
+    
 // TODO IconProvider    
     
     private final class IconProviderImpl implements IconProvider

@@ -52,6 +52,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         props.setProperty(PROP_CARD_DESCRIPTION, card.getDesc());
         props.setProperty(PROP_CARD_POSITION, card.getPos() + "");
         props.setProperty(PROP_CARD_CLOSED, Boolean.toString(card.isClosed()));
+        props.setProperty(PROP_CARD_SUBSCRIBED, Boolean.toString(card.isSubscribed()));
         return getCard(props);
     }     
 
@@ -273,6 +274,72 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             {
                 return Boolean.parseBoolean(string);
             }
+            return null;
+        }
+
+        @Override
+        public Boolean isCardSubsribed() 
+        {
+            String string = props.getProperty(PROP_CARD_SUBSCRIBED);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return null;
+        }
+
+        @Override
+        public Boolean isCardPinned() 
+        {
+            String string = props.getProperty(PROP_CARD_PINNED);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return null;
+        }
+
+        @Override
+        public Boolean isCardDueComplete()
+        {
+            String string = props.getProperty(PROP_CARD_DUE_COMPLETE);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return null;
+        }
+
+        @Override
+        public Boolean isCardTemplate()
+        {
+            String string = props.getProperty(PROP_CARD_TEMPLATE);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return null;
+        }
+
+        @Override
+        public LocalDateTime getDateLastActivity() 
+        {
+            String string = props.getProperty(PROP_CARD_DATE_LAST_ACTIVITY);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE);                   
+            }                
+            return null;
+        }
+
+        @Override
+        public List<String> getCardLabelsID() 
+        {
+            String string = props.getProperty(PROP_CARD_LABELS_ID);
+            if(string != null)
+            {
+                return List.of(string.split(","));                   
+            }                
             return null;
         }
         

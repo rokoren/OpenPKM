@@ -4,7 +4,7 @@
  */
 package openpkm.trello;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
@@ -22,7 +22,13 @@ public interface TrelloCard extends Source, PropertiesProvider
     String getCardName();
     Integer getCardPosition();
     Boolean isCardClosed();
+    Boolean isCardSubsribed();
+    Boolean isCardPinned();    
+    Boolean isCardDueComplete(); 
+    Boolean isCardTemplate(); 
+    LocalDateTime getDateLastActivity();
     String getCardRole();
+    List<String> getCardLabelsID();
     boolean isCardLink();
     /*
     String getCardDescription();    
