@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -1236,15 +1238,17 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().get(file.getName());  
-            if(label != null)
+            try
             {
-                
-            }
-            */
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+                TrelloAttachment attachment = provider.getAttachment(Utils.getProperties(file)); 
+                getAttachments().put(attachment.getAttachmentID(), attachment);               
+                changeSupport.fireChange();
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            } 
         }
 
         @Override
@@ -1309,10 +1313,37 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             if(service != null)
             {
                 List<TrelloAttachment> attachments = service.getAttachments(TrelloCardProject.this, provider, getTrello());
+                Set<String> keys = new HashSet<>(getAttachments().keySet());
                 for(TrelloAttachment attachment : attachments)
-                {
-                    if(!getAttachments().containsKey(attachment.getAttachmentID()))
+                {                    
+                    if(keys.remove(attachment.getAttachmentID()))
                     {
+                        TrelloAttachment old = getAttachments().get(attachment.getAttachmentID());
+                        if(!old.getProperties().equals(attachment.getProperties()))
+                        {
+                            FileObject file = getRootFolder().getFileObject(attachment.getAttachmentID(), PropertiesProvider.EXTENSION);
+                            if(file != null)
+                            {
+                                try
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    attachment.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                                    os.close();
+                                    LOG.info("Trello attachment saved: " + attachment.getAttachmentID());  
+                                }  
+                                catch(FileAlreadyLockedException e)
+                                {
+                                    LOG.warning(e.getMessage());
+                                }                             
+                                catch(IOException e)
+                                {
+                                    LOG.warning(e.getMessage());
+                                }                                                             
+                            }                              
+                        }                                                                                                    
+                    }
+                    else
+                    {                                
                         try
                         {
                             OutputStream os = getRootFolder().createAndOpen(attachment.getAttachmentID() + "." + PropertiesProvider.EXTENSION);                            
@@ -1323,9 +1354,27 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                         catch(IOException e)
                         {
                             LOG.warning(e.getMessage());
-                        }  
+                        }                                 
                     }
                 }
+                if(!keys.isEmpty())
+                {
+                    for(String key : keys)
+                    {
+                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {  
+                            try
+                            {
+                                file.delete();                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }                      
+                    }
+                }                
                 setLastSync(LocalDateTime.now());
             }
         }  
@@ -1551,11 +1600,37 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             if(service != null)
             {
                 List<TrelloCheckList> checkLists = service.getCheckLists(TrelloCardProject.this, provider, getTrelloAccount());
+                Set<String> keys = new HashSet<>(getCheckLists().keySet());
                 for(TrelloCheckList checkList : checkLists)
                 {
-                    TrelloCheckList old = getCheckLists().get(checkList.getCheckListID());
-                    if(old == null)
+                    if(keys.remove(checkList.getCheckListID()))
                     {
+                        TrelloCheckList old = getCheckLists().get(checkList.getCheckListID());
+                        if(!old.getProperties().equals(checkList.getProperties()))
+                        {
+                            FileObject file = getRootFolder().getFileObject(checkList.getCheckListID(), PropertiesProvider.EXTENSION);
+                            if(file != null)
+                            {
+                                try
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    checkList.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                                    os.close();
+                                    LOG.info("Trello checklist saved: " + checkList.getCheckListID());  
+                                }  
+                                catch(FileAlreadyLockedException e)
+                                {
+                                    LOG.warning(e.getMessage());
+                                }                             
+                                catch(IOException e)
+                                {
+                                    LOG.warning(e.getMessage());
+                                }                                                             
+                            }                              
+                        }                                                                                                                          
+                    }
+                    else
+                    {                        
                         try
                         {
                             OutputStream os = getRootFolder().createAndOpen(checkList.getCheckListID() + "." + PropertiesProvider.EXTENSION);                            
@@ -1566,30 +1641,25 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                         catch(IOException e)
                         {
                             LOG.warning(e.getMessage());
-                        }                                                  
+                        }                                                 
                     }
-                    else if(!old.getProperties().equals(checkList.getProperties()))
+                }
+                if(!keys.isEmpty())
+                {
+                    for(String key : keys)
                     {
-                        FileObject file = getRootFolder().getFileObject(checkList.getCheckListID(), PropertiesProvider.EXTENSION);
+                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
                         if(file != null)
-                        {
+                        {  
                             try
                             {
-                                OutputStream os = file.getOutputStream();
-                                checkList.getProperties().store(os, "Created by Trello project: " + getTitle()); 
-                                os.close();
-                                LOG.info("Trello checklist saved: " + checkList.getCheckListID());  
-                            }  
-                            catch(FileAlreadyLockedException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                             
+                                file.delete();                                
+                            }
                             catch(IOException e)
                             {
                                 LOG.warning(e.getMessage());
-                            }                                                             
-                        }                          
-                         
+                            }
+                        }                      
                     }
                 }
                 setLastSync(LocalDateTime.now());
