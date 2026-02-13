@@ -25,4 +25,5 @@ public interface TrelloService
     TrelloCard getCard(String cardID, TrelloCardProvider provider, TrelloAccount account) throws UnirestException;
     List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentProvider provider, Trello trello);    
     List<TrelloCheckList> getCheckLists(TrelloCard trelloCard, TrelloCheckListProvider provider, TrelloAccount account);
+    TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account);
 }

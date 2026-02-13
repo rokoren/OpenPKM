@@ -83,6 +83,7 @@ import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAlreadyLockedException;
@@ -1463,7 +1464,29 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 }                
             }
             return checkLists;
-        }                
+        } 
+        
+        @Override
+        public void createCheckList(String name)
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            TrelloCheckList checkList = service.createCheckList(getCardID(), name, provider, getTrelloAccount());   
+            try
+            {
+                OutputStream os = getRootFolder().createAndOpen(checkList.getCheckListID() + "." + PropertiesProvider.EXTENSION);
+                checkList.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                os.close();
+                LOG.info("Trello checklist saved: " + checkList.getCheckListID());  
+            }  
+            catch(FileAlreadyLockedException e)
+            {
+                LOG.warning(e.getMessage());
+            }                             
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+        }
 
         @Override
         public FileObject getRootFolder() 
@@ -1826,11 +1849,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     } 
     
     private static final class AddCheckList extends AbstractAction
-    {  
-        @StaticResource()
-        public static final String BANNER = "openpkm/core/resources/banner.png";          
-        
-        protected final TrelloCheckListsProvider provider;            
+    {                  
+        private final TrelloCheckListsProvider provider;             
 
         public AddCheckList(TrelloCheckListsProvider provider) 
         {
@@ -1841,33 +1861,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void actionPerformed(ActionEvent evt) 
         {            
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new AttachmentWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Checklist");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
             {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Checklist");  
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            //wiz.putProperty("provider", provider.getProject());
-            //wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            { 
-                //StatusDisplayer.getDefault().setStatusText("Trello attachment added: " + attachment.getDisplayName());
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createCheckList(name);
             }
         }
     }  

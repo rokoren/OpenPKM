@@ -31,6 +31,12 @@ public abstract class TrelloCheckListsProvider implements SourceGroup
     } 
     
     protected abstract Map<String, TrelloCheckList> getCheckLists();
+    public abstract void createCheckList(String name);
+    
+    public TrelloCheckListProvider getCheckListProvider()
+    {
+        return provider;
+    }
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -45,7 +51,7 @@ public abstract class TrelloCheckListsProvider implements SourceGroup
     public TrelloCheckList getCheckList(String checkListID) 
     {
         return getCheckLists().get(checkListID);
-    }                                  
+    }     
 
     @Override
     public String getName() 

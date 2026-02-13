@@ -9,6 +9,7 @@ import com.julienvey.trello.domain.Argument;
 import com.julienvey.trello.domain.Attachment;
 import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
+import com.julienvey.trello.domain.CheckList;
 import com.julienvey.trello.domain.Label;
 import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
@@ -185,6 +186,29 @@ public class TrelloServiceImpl implements TrelloService
         }
         return list;        
     } 
+    
+    @Override
+    public TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/" + cardID + "/checklists")
+          .header("Accept", "application/json")
+          .queryString("name", name)
+          .queryString("idCard", cardID)
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+        
+        JSONArray json1 = response.getBody().getArray();
+        JSONObject json = json1.getJSONObject(0);
+
+        Properties props = new Properties();
+        props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
+        props.setProperty(TrelloCheckListProvider.PROP_BOARD_ID, json.getString("idBoard"));
+        props.setProperty(TrelloCheckListProvider.PROP_CARD_ID, json.getString("idCard"));            
+        props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
+        props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
+        return provider.getCheckList(props);
+    }
     
     @Override
     public TrelloCard getCard(String cardID,  TrelloCardProvider provider, TrelloAccount account) throws UnirestException
