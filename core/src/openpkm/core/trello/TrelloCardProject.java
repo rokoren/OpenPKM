@@ -112,7 +112,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";         
     
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/panel.png";
+    public static final String ICON = "openpkm/core/resources/date_task.png";
     
     private static final String DATA_FOLDER = "data";    
     
@@ -1383,7 +1383,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements NodeGroup, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/date_task.png"; 
+        private static final String ICON = "openpkm/core/resources/to_do_list_checked_1.png"; 
 
         private static final String PROP_TRELLO_SYNC_CHECKLIST = "trello.sync.checklist";
                 

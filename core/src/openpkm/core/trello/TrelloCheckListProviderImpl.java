@@ -70,7 +70,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
     private static final class TrelloCheckListImpl implements TrelloCheckList, NodePositionProvider
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/date_task.png";  
+        private static final String ICON = "openpkm/core/resources/check_box_list.png";  
         
         private final Properties props; 
         
