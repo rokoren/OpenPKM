@@ -5,8 +5,10 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.CheckList;
-import java.awt.EventQueue;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,6 +19,7 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -25,34 +28,45 @@ import kong.unirest.json.JSONObject;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListProvider;
+import openpkm.trello.TrelloCheckListsProvider;
+import openpkm.trello.TrelloService;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+import org.openide.filesystems.FileAlreadyLockedException;
+import org.openide.filesystems.FileObject;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
-import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloCheckListProvider.class)
 public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
 {    
     private static final Logger LOG = Logger.getLogger(TrelloCheckListProvider.class.getName());    
+    
+    private final TrelloCheckListsProvider provider; 
 
+    public TrelloCheckListProviderImpl(TrelloCheckListsProvider provider) 
+    {
+        this.provider = provider;
+    }    
+    
     @Override
     public TrelloCheckList getCheckList(Properties props) 
     {
-        return new TrelloCheckListImpl(props);
+        return new TrelloCheckListImpl(props, provider);
     }
     
     @Override
@@ -73,16 +87,18 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         private static final String ICON = "openpkm/core/resources/check_box_list.png";  
         
         private final Properties props; 
+        private final TrelloCheckListsProvider provider; 
         
         private Map<String, TrelloCheckListItem> items;
         private ChangeSupport changeSupport;
         
-        public TrelloCheckListImpl(Properties props)
+        public TrelloCheckListImpl(Properties props, TrelloCheckListsProvider provider)
         {
-            this.props = props;              
-        }  
+            this.props = props; 
+            this.provider = provider;
+        }         
         
-        private Map<String, TrelloCheckListItem> getItemsById()
+        private synchronized Map<String, TrelloCheckListItem> getItemsById()
         {
             if(items == null)
             {
@@ -166,10 +182,15 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         }
         
         @Override
-        public void addItem(TrelloCheckListItem item)
+        public void addItem(JSONObject json)
         {
-            getItemsById().put(item.getCheckListItemID(), item);
-            getChangeSupport().fireChange();
+            TrelloCheckListItemProvider provider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
+            if(provider != null)
+            {
+                TrelloCheckListItem item = provider.getCheckListItem(json);
+                items.put(item.getCheckListItemID(), item); 
+                getChangeSupport().fireChange();
+            }                                    
         }
         
         @Override
@@ -229,7 +250,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Checklist"));         
+            actions.add(new AddCheckListItem(this, provider));         
             return actions;
         } 
         
@@ -268,6 +289,10 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
 
         private void updateKeys() 
         {
+            SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
+            sorted.addAll(checkList.getItems());
+            setKeys(sorted);             
+            /*
             EventQueue.invokeLater(new Runnable() 
             {
                 public void run()
@@ -277,6 +302,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
                     setKeys(sorted);  
                 }
             });
+            */
         }        
 
         @Override
@@ -297,7 +323,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         {
             updateKeys();
         }
-    } 
+    }     
 
     private static final class ItemNode extends AbstractNode
     {
@@ -331,4 +357,60 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
             return provider.getIcon(true);
         }        
     } 
+    
+    private static final class AddCheckListItem extends AbstractAction
+    {          
+        private final TrelloCheckList checkList;  
+        private final TrelloCheckListsProvider provider; 
+
+        public AddCheckListItem(TrelloCheckList checkList, TrelloCheckListsProvider provider) 
+        {
+            super("Add Checklist Item");
+            this.checkList = checkList;
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {            
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Checklist Item");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
+            {
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+                JSONObject json = service.createCheckListIem(checkList.getCheckListID(), name, provider.getAccount());
+                
+                String string = checkList.getProperties().getProperty(PROP_CHECKLIST_ITEMS);
+                if(string != null)
+                {
+                    JSONArray jsons = new JSONArray(string);
+                    jsons.put(json);
+                    checkList.getProperties().setProperty(PROP_CHECKLIST_ITEMS, jsons.toString());
+                }                  
+                
+                FileObject file = provider.getRootFolder().getFileObject(checkList.getCheckListID(), PropertiesProvider.EXTENSION);
+                if(file != null)
+                {
+                    try
+                    {
+                        OutputStream os = file.getOutputStream();
+                        TitleProvider titleProvider = provider.getProvider().getLookup().lookup(TitleProvider.class);
+                        checkList.getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
+                        os.close();
+                        LOG.info("Trello checklist saved: " + checkList.getCheckListID()); 
+                        checkList.addItem(json);
+                    }  
+                    catch(FileAlreadyLockedException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                             
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                                                             
+                } 
+            }
+        }
+    }     
 }

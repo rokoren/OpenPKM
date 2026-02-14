@@ -9,6 +9,7 @@ import javax.swing.event.ChangeListener;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -21,22 +22,18 @@ public abstract class TrelloCheckListsProvider implements SourceGroup
     protected Map<String, TrelloCheckList> checkLists; 
     protected FileObject rootDir; 
 
-    protected final TrelloCheckListProvider provider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloCheckListsProvider(TrelloCheckListProvider provider) 
+    public TrelloCheckListsProvider() 
     {
-        this.provider = provider;
         changeSupport = new ChangeSupport(this); 
     } 
     
     protected abstract Map<String, TrelloCheckList> getCheckLists();
-    public abstract void createCheckList(String name);
     
-    public TrelloCheckListProvider getCheckListProvider()
-    {
-        return provider;
-    }
+    public abstract void createCheckList(String name);
+    public abstract TrelloAccount getAccount(); 
+    public abstract Lookup.Provider getProvider();
     
     public void addChangeListener(ChangeListener listener) 
     {

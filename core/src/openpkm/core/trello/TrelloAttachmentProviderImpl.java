@@ -32,12 +32,7 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
 {
     private static final String MIME_TYPE_PDF  = "application/pdf";
     private static final String MIME_TYPE_PNG  = "image/png";
-    private static final String MIME_TYPE_JPEG = "image/jpeg";
-    
-    private static final String PROP_ATTACHMENT_ID        = "attachment.id";
-    private static final String PROP_ATTACHMENT_URL       = "attachment.url";
-    private static final String PROP_ATTACHMENT_NAME      = "attachment.name";    
-    private static final String PROP_ATTACHMENT_MIME_TYPE = "attachment.mime.type";     
+    private static final String MIME_TYPE_JPEG = "image/jpeg";        
     
     private static final Logger LOG = Logger.getLogger(TrelloAttachmentProvider.class.getName());    
 

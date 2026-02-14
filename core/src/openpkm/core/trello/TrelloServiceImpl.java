@@ -9,7 +9,6 @@ import com.julienvey.trello.domain.Argument;
 import com.julienvey.trello.domain.Attachment;
 import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
-import com.julienvey.trello.domain.CheckList;
 import com.julienvey.trello.domain.Label;
 import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
@@ -209,6 +208,42 @@ public class TrelloServiceImpl implements TrelloService
         props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
         return provider.getCheckList(props);
     }
+    
+    @Override
+    public JSONObject createCheckListIem(String checkListID, String name, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/checklists/" + checkListID + "/checkItems")
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .queryString("name", name)
+          .asJson(); 
+        
+        JSONArray jsons = response.getBody().getArray();
+        return jsons.getJSONObject(0);       
+    }    
+    
+    @Override
+    public TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/" + cardID + "/attachments")
+          .header("Accept", "application/json")
+          .queryString("name", name)
+          .queryString("url", url)
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+
+        JSONArray json1 = response.getBody().getArray();
+        JSONObject json = json1.getJSONObject(0);
+        
+        Properties props = new Properties();
+        props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_ID, json.getString("id"));
+        props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL, url);        
+        props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME, name);     
+
+        return provider.getAttachment(props);        
+    }      
     
     @Override
     public TrelloCard getCard(String cardID,  TrelloCardProvider provider, TrelloAccount account) throws UnirestException

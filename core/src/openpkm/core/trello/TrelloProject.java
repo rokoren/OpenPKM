@@ -41,7 +41,6 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.MarkdownSupport;
 import openpkm.base.NodeGroup;
@@ -405,9 +404,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             list.add(new ParentProjectProviderImpl());
 
             list.add(new TrelloLogicalView(this));
-            list.add(new TrelloCustomizerProvider(this));                 
-            
-            list.add(new HtmlFilesProviderImpl());   
+            list.add(new TrelloCustomizerProvider(this));                                         
 
             list.addAll(sources.values());   
             
@@ -2223,164 +2220,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             }
         }
     }     
-    
-// TODO HtmlFilesProvider        
-    
-    private final class HtmlFilesProviderImpl implements HtmlFilesProvider, FileChangeListener
-    {
-        private static final String DATA_FOLDER = "html";       
-        
-        private FileObject dataDir;   
-        private Map<String, FileObject> dataFiles;        
-        
-        private final ChangeSupport changeSupport = new ChangeSupport(this);             
-
-        @Override
-        public String getLastDataID() 
-        {
-            return props.getProperty(PROP_LAST_DATA_ID);
-        }
-
-        @Override
-        public void setLastDataID(String dataID) 
-        {
-            if(dataID == null)
-            {
-                Object oldValue = props.remove(PROP_LAST_DATA_ID);
-                propertyChangeSupport.firePropertyChange(PROP_LAST_DATA_ID, oldValue, dataID);
-            }
-            else        
-            {
-                Object oldValue = props.setProperty(PROP_LAST_DATA_ID, dataID);  
-                propertyChangeSupport.firePropertyChange(PROP_LAST_DATA_ID, oldValue, dataID);
-            }   
-        }                   
-        
-        @Override
-        public synchronized FileObject getDataDirectory() throws IOException 
-        {
-            if(dataDir == null)
-            {
-                dataDir = getProjectDirectory().getFileObject(DATA_FOLDER);
-                if(dataDir == null)
-                {
-                    dataDir = getProjectDirectory().createFolder(DATA_FOLDER);
-                    LOG.info("Html data dir created: " + dataDir.getPath());
-                } 
-                dataDir.addFileChangeListener(this);                  
-            }
-            return dataDir;
-        } 
-        
-        private synchronized Map<String, FileObject> getDataMap()
-        {
-            if(dataFiles == null)
-            {
-                dataFiles = new HashMap<>();
-                try
-                {
-                    for (FileObject file : getDataDirectory().getChildren()) 
-                    {
-                        if(file.getExt().equalsIgnoreCase(FILE_EXT))
-                        {
-                            dataFiles.put(file.getName(), file);                             
-                        }                                                   
-                    }                     
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            } 
-            return dataFiles;
-        }  
-        
-        private synchronized void clear()
-        {
-            dataFiles = null;           
-        }         
-        
-        @Override
-        public Collection<FileObject> getDataFiles()
-        {
-            return Collections.unmodifiableCollection(getDataMap().values());
-        }
-        
-        @Override
-        public FileObject getDataFile(String dataID)
-        {
-            return getDataMap().get(dataID);
-        }
-        
-        @Override
-        public void fileFolderCreated(FileEvent fe) 
-        {
-            /*
-            clear();
-            fileEvent = fe;
-            cs.fireChange();
-            */
-        }
-
-        @Override
-        public void fileDataCreated(FileEvent fe) 
-        {
-            FileObject file = fe.getFile();
-            if(file.getExt().equalsIgnoreCase(FILE_EXT))
-            {
-                getDataMap().put(file.getName(), file);                             
-            }               
-            changeSupport.fireChange();
-        }
-
-        @Override
-        public void fileChanged(FileEvent fe) 
-        {
-            changeSupport.fireChange();
-        }
-
-        @Override
-        public void fileDeleted(FileEvent fe) 
-        {
-            FileObject file = fe.getFile();
-            if(file.getExt().equalsIgnoreCase(FILE_EXT))
-            {
-                getDataMap().remove(file.getName());                             
-            }               
-            changeSupport.fireChange();
-        }
-
-        @Override
-        public void fileRenamed(FileRenameEvent fre) 
-        {
-            clear();
-            changeSupport.fireChange();
-        }
-
-        @Override
-        public void fileAttributeChanged(FileAttributeEvent fae) 
-        {
-            changeSupport.fireChange();
-        }       
-        
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }        
-        
-        @Override
-        public Lookup.Provider getProvider() 
-        {
-            return TrelloProject.this;
-        }                 
-    } 
 
     private static final class AddList extends AbstractAction
     {                         

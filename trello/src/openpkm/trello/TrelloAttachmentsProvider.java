@@ -4,6 +4,7 @@
  */
 package openpkm.trello;
 
+import java.net.URL;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
 import org.netbeans.api.project.SourceGroup;
@@ -31,6 +32,7 @@ public abstract class TrelloAttachmentsProvider implements SourceGroup
     } 
     
     protected abstract Map<String, TrelloAttachment> getAttachments();
+    public abstract void createAttachmentLink(String url, String name);
     
     public void addChangeListener(ChangeListener listener) 
     {

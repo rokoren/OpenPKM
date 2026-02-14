@@ -7,6 +7,7 @@ package openpkm.trello;
 import com.julienvey.trello.Trello;
 import java.util.List;
 import kong.unirest.UnirestException;
+import kong.unirest.json.JSONObject;
 
 /**
  *
@@ -26,4 +27,6 @@ public interface TrelloService
     List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentProvider provider, Trello trello);    
     List<TrelloCheckList> getCheckLists(TrelloCard trelloCard, TrelloCheckListProvider provider, TrelloAccount account);
     TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account);
+    JSONObject createCheckListIem(String checkListID, String name, TrelloAccount account);
+    TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account);
 }
