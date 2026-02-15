@@ -89,7 +89,6 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         private final Properties props; 
         private final TrelloCheckListsProvider provider; 
         
-        private Map<String, TrelloCheckListItem> items;
         private ChangeSupport changeSupport;
         
         public TrelloCheckListImpl(Properties props, TrelloCheckListsProvider provider)
@@ -100,29 +99,27 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         
         private synchronized Map<String, TrelloCheckListItem> getItemsById()
         {
-            if(items == null)
+            Map<String, TrelloCheckListItem> items = new HashMap();
+            TrelloCheckListItemProvider provider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
+            if(provider != null)
             {
-                items = new HashMap();
-                TrelloCheckListItemProvider provider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
-                if(provider != null)
+                String string = props.getProperty(PROP_CHECKLIST_ITEMS);
+                if(string != null)
                 {
-                    String string = props.getProperty(PROP_CHECKLIST_ITEMS);
-                    if(string != null)
+                    JSONArray jsons = new JSONArray(string);
+                    for(int i=0; i<jsons.length(); i++)
                     {
-                        JSONArray jsons = new JSONArray(string);
-                        for(int i=0; i<jsons.length(); i++)
-                        {
-                            JSONObject json = jsons.getJSONObject(i);
-                            TrelloCheckListItem item = provider.getCheckListItem(json);
-                            items.put(item.getCheckListItemID(), item);
-                        }                    
+                        JSONObject json = jsons.getJSONObject(i);
+                        TrelloCheckListItem item = provider.getCheckListItem(json);
+                        items.put(item.getCheckListItemID(), item);
                     }                    
-                }
+                }                    
             }
             return items;
         } 
         
-        private ChangeSupport getChangeSupport()
+        @Override
+        public ChangeSupport getChangeSupport()
         {
             if(changeSupport == null)
             {
@@ -179,38 +176,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public Collection<TrelloCheckListItem> getItems()
         {
             return Collections.unmodifiableCollection(getItemsById().values());
-        }
-        
-        @Override
-        public void addItem(JSONObject json)
-        {
-            TrelloCheckListItemProvider provider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
-            if(provider != null)
-            {
-                TrelloCheckListItem item = provider.getCheckListItem(json);
-                items.put(item.getCheckListItemID(), item); 
-                getChangeSupport().fireChange();
-            }                                    
-        }
-        
-        @Override
-        public void removeItem(String itemID)
-        {
-            getItemsById().remove(itemID);
-            getChangeSupport().fireChange();
-        }        
-        
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            getChangeSupport().addChangeListener(listener);
-        }
-        
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            getChangeSupport().removeChangeListener(listener);
-        }        
+        }              
         
 // TODO PropertiesProvider        
         
@@ -279,7 +245,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public ChildrenImpl(TrelloCheckList checkList)
         {
             this.checkList = checkList;  
-            checkList.addChangeListener(this);
+            checkList.getChangeSupport().addChangeListener(this);
         }  
 
         protected @Override void addNotify() 
@@ -308,7 +274,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         @Override
         protected void removeNotify() 
         {
-            checkList.removeChangeListener(this);
+            checkList.getChangeSupport().removeChangeListener(this);
             setKeys(Collections.<NodePositionProvider>emptySet());
         }
 
@@ -398,8 +364,8 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
                         TitleProvider titleProvider = provider.getProvider().getLookup().lookup(TitleProvider.class);
                         checkList.getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
                         os.close();
+                        checkList.getChangeSupport().fireChange();
                         LOG.info("Trello checklist saved: " + checkList.getCheckListID()); 
-                        checkList.addItem(json);
                     }  
                     catch(FileAlreadyLockedException e)
                     {

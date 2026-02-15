@@ -5,9 +5,8 @@
 package openpkm.trello;
 
 import java.util.Collection;
-import javax.swing.event.ChangeListener;
-import kong.unirest.json.JSONObject;
 import openpkm.base.PropertiesProvider;
+import org.openide.util.ChangeSupport;
 
 /**
  *
@@ -21,8 +20,5 @@ public interface TrelloCheckList extends PropertiesProvider
     String getCheckListName();
     Integer getCheckListPosition(); 
     Collection<TrelloCheckListItem> getItems();
-    void addItem(JSONObject json);
-    void removeItem(String itemID);
-    void addChangeListener(ChangeListener listener);
-    void removeChangeListener(ChangeListener listener);
+    ChangeSupport getChangeSupport();
 }

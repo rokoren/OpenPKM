@@ -75,6 +75,21 @@ public class Utils
         return props;
     }
     
+    public static boolean equals(Properties props1, Properties props2, String propName)
+    {
+        String prop1 = props1.getProperty(propName);
+        String prop2 = props2.getProperty(propName);
+        if(prop1 != null)
+        {
+            return prop1.equals(prop2);
+        }
+        else if(prop2 != null)
+        {
+            return prop2.equals(prop1);
+        }
+        return true;
+    }    
+    
     public static List<FileObject> getDataFiles(FileObject folder)
     {
         FileObject[] files = folder.getChildren();

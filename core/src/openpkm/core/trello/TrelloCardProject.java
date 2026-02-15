@@ -1579,15 +1579,33 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             FileObject file = evt.getFile();
             try
             {
-                TrelloCheckList checkList = provider.getCheckList(Utils.getProperties(file)); 
-                getCheckLists().put(checkList.getCheckListID(), checkList);               
-                changeSupport.fireChange();
+                TrelloCheckList checkList = getCheckLists().get(file.getName()); 
+                Properties props = Utils.getProperties(file);
+                if(!checkList.getProperties().equals(props))
+                {
+                    if(Utils.equals(checkList.getProperties(), props, TrelloCheckListProvider.PROP_CHECKLIST_ITEMS))
+                    {
+                        checkList.getProperties().putAll(props);
+                        changeSupport.fireChange();                                          
+                    }
+                    else
+                    {
+                        boolean isPosition = Utils.equals(checkList.getProperties(), props, TrelloCheckListProvider.PROP_CHECKLIST_POSITION);
+                        boolean isName = Utils.equals(checkList.getProperties(), props, TrelloCheckListProvider.PROP_CHECKLIST_NAME);                    
+                        checkList.getProperties().putAll(props);
+                        checkList.getChangeSupport().fireChange();                    
+                        if(!isPosition || !isName)
+                        {
+                            changeSupport.fireChange();     
+                        }                    
+                    }                    
+                }
             }           
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
             } 
-        }
+        }       
 
         @Override
         public void fileDeleted(FileEvent evt) 
