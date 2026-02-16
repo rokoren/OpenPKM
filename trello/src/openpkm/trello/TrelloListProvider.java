@@ -13,6 +13,11 @@ import java.util.Properties;
  */
 public interface TrelloListProvider 
 {
+    String PROP_BOARD_ID      = "board.id";
+    String PROP_LIST_ID       = "list.id";
+    String PROP_LIST_NAME     = "list.name";    
+    String PROP_LIST_POSITION = "list.position";     
+    
     TrelloList getList(Properties props);
     TrelloList createList(TList list); 
 }

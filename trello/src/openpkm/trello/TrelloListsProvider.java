@@ -33,6 +33,7 @@ public abstract class TrelloListsProvider implements SourceGroup
     } 
     
     protected abstract Map<String, TrelloList> getListsById();
+    public abstract void createList(String name);
     
     public void addChangeListener(ChangeListener listener) 
     {

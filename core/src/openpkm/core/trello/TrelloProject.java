@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -111,6 +113,8 @@ import openpkm.youtube.YouTubeUtils;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
 import org.netbeans.api.progress.*;
+import org.openide.NotifyDescriptor;
+import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.util.Utilities;
 
 /**
@@ -1989,10 +1993,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public TrelloListsProviderImpl(TrelloListProvider provider) 
         {
             super(provider);  
-            if(getLastSync() == null)
-            {
-                RP.post(this);                
-            }
+            RP.post(this); 
         }          
         
         @Override
@@ -2064,7 +2065,29 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 }                
             }
             return lists;
-        }                
+        } 
+        
+        @Override
+        public void createList(String name)
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            TrelloList list = service.createList(getBoardID(), name, provider, getTrelloAccount());   
+            try
+            {
+                OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);
+                list.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                os.close();
+                LOG.info("Trello list saved: " + list.getListID());  
+            }  
+            catch(FileAlreadyLockedException e)
+            {
+                LOG.warning(e.getMessage());
+            }                             
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+        }        
 
         @Override
         public FileObject getRootFolder() 
@@ -2126,15 +2149,18 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().get(file.getName());  
-            if(label != null)
+            try
             {
-                
-            }
-            */
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+                TrelloList list = getListsById().get(file.getName()); 
+                Properties props = Utils.getProperties(file);
+                list.getProperties().putAll(props);
+                changeSupport.fireChange();  
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            } 
         }
 
         @Override
@@ -2199,9 +2225,36 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             if(service != null)
             {
                 List<TrelloList> lists = service.getLists(TrelloProject.this, provider, getTrello());
+                Set<String> keys = new HashSet<>(getListsById().keySet());
                 for(TrelloList list : lists)
                 {
-                    if(!getListsById().containsKey(list.getListID()))
+                    if(keys.remove(list.getListID()))
+                    {
+                        TrelloList old = getListsById().get(list.getListID());
+                        if(!old.getProperties().equals(list.getProperties()))
+                        {
+                            FileObject file = getRootFolder().getFileObject(list.getListID(), PropertiesProvider.EXTENSION);
+                            if(file != null)
+                            {
+                                try
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    list.getProperties().store(os, "Updated by Trello project: " + getTitle()); 
+                                    os.close();
+                                    LOG.info("Trello list saved: " + list.getListID());  
+                                }  
+                                catch(FileAlreadyLockedException e)
+                                {
+                                    LOG.warning(e.getMessage());
+                                }                             
+                                catch(IOException e)
+                                {
+                                    LOG.warning(e.getMessage());
+                                }                                                             
+                            }                              
+                        }                         
+                    } 
+                    else
                     {
                         try
                         {
@@ -2213,9 +2266,27 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         catch(IOException e)
                         {
                             LOG.warning(e.getMessage());
-                        } 
+                        }                         
                     }
                 }
+                if(!keys.isEmpty())
+                {
+                    for(String key : keys)
+                    {
+                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {  
+                            try
+                            {
+                                file.delete();                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }                      
+                    }
+                }                
                 setLastSync(LocalDateTime.now());
             }
         }
@@ -2223,44 +2294,23 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
 
     private static final class AddList extends AbstractAction
     {                         
-        protected final TrelloListsProvider sourceGroup;            
+        protected final TrelloListsProvider provider;            
 
-        public AddList(TrelloListsProvider sourceGroup) 
+        public AddList(TrelloListsProvider provider) 
         {
             super("Add List");
-            this.sourceGroup = sourceGroup;
+            this.provider = provider;
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
         {
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new ThoughtWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add List");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
             {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add List"); 
-            /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("project", provider.getProject());
-            */
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {                      
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createList(name);
             }
         }
     }     

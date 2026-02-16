@@ -75,7 +75,30 @@ public class TrelloServiceImpl implements TrelloService
             all.add(provider.createList(list));
         }                     
         return all;        
-    }   
+    } 
+    
+    @Override
+    public TrelloList createList(String boardID, String name, TrelloListProvider provider, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/lists/")
+          .header("Accept", "application/json")
+          .queryString("name", name)
+          .queryString("idBoard", boardID)
+          .queryString("pos", "bottom")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+        
+        JSONArray json1 = response.getBody().getArray();
+        JSONObject json = json1.getJSONObject(0);
+
+        Properties props = new Properties();
+        props.setProperty(TrelloListProvider.PROP_LIST_ID, json.getString("id"));
+        props.setProperty(TrelloListProvider.PROP_BOARD_ID, json.getString("idBoard"));           
+        props.setProperty(TrelloListProvider.PROP_LIST_NAME, json.getString("name"));
+        props.setProperty(TrelloListProvider.PROP_LIST_POSITION, json.getInt("pos") + "");
+        return provider.getList(props);
+    }    
     
     @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)

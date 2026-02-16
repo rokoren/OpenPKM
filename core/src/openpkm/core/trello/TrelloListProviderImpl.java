@@ -27,12 +27,7 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service=TrelloListProvider.class)
 public class TrelloListProviderImpl implements TrelloListProvider
-{        
-    private static final String PROP_BOARD_ID      = "board.id";
-    private static final String PROP_LIST_ID       = "list.id";
-    private static final String PROP_LIST_NAME     = "list.name";    
-    private static final String PROP_LIST_POSITION = "list.position";     
-    
+{            
     private static final Logger LOG = Logger.getLogger(TrelloListProvider.class.getName());    
 
     @Override

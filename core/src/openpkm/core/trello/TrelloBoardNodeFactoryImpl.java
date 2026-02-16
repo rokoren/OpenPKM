@@ -38,8 +38,7 @@ public class TrelloBoardNodeFactoryImpl implements NodeFactory
             SortedSet<NodeGroup> sorted = new TreeSet<NodeGroup>(NodeGroup.positionComparator());
             sorted.addAll(nodeGroups);
             
-            List<AbstractNode> list = new ArrayList();            
-            
+            List<AbstractNode> list = new ArrayList();                        
             for(NodeGroup nodeGroup : sorted)
             {
                 list.add(new GroupNode(nodeGroup)); 

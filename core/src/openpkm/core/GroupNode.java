@@ -8,8 +8,6 @@ import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
@@ -106,19 +104,8 @@ public class GroupNode extends AbstractNode implements NodeSupport
         }
 
         private void updateKeys() 
-        {  
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(nodeGroup.getNodes());             
-            setKeys(sorted); 
-            
-            /*
-            SwingUtilities.invokeLater(() -> 
-            {
-                SortedSet<OpenPkmDataObject> data = new TreeSet<OpenPkmDataObject>(OpenPkmData.titleComparator());
-                data.addAll(getData(provider));     
-                setKeys(data);    
-            });
-            */
+        {
+            setKeys(nodeGroup.getNodes()); 
         }
 
         @Override
