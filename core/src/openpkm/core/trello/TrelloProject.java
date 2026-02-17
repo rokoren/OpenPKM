@@ -115,7 +115,6 @@ import openpkm.youtube.YouTubeVideoProvider;
 import org.netbeans.api.progress.*;
 import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
-import org.openide.util.Utilities;
 
 /**
  *
@@ -165,6 +164,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private TrelloAccount trelloAccount;
     private Trello trello;    
     private TrelloBoard trelloBoard;
+    private TrelloCardsProvider cardsProvider;
     
     public TrelloProject(FileObject projectDir, ProjectState state, Properties props) 
     {
@@ -200,14 +200,25 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             sources.put(lists.getName(), lists);                       
         }  
         
-        TrelloCardProvider cardProvider = Lookup.getDefault().lookup(TrelloCardProvider.class);
-        YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
-        if(cardProvider != null && youTubeVideoProvider != null)
+        SourceGroup cards = getCardsProvider();
+        if(cards != null)
         {
-            SourceProvider cards = new TrelloCardsProviderImpl(cardProvider, youTubeVideoProvider);
-            sources.put(cards.getName(), cards);    
-        } 
+            sources.put(cards.getName(), cards);             
+        }
     } 
+    
+    private TrelloCardsProvider getCardsProvider()
+    {
+        if(cardsProvider == null)
+        {
+            TrelloCardProvider cardProvider = Lookup.getDefault().lookup(TrelloCardProvider.class);            
+            if(cardProvider != null)
+            {
+                cardsProvider = new TrelloCardsProviderImpl(cardProvider);   
+            }             
+        }
+        return cardsProvider;
+    }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -878,7 +889,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Trello/Card"));         
+            actions.add(new AddLink(list, getCardsProvider()));         
             return actions;
         }
         
@@ -951,14 +962,15 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             {
                 changeSupport.fireChange();  
             }
-            else if(getLastSource() instanceof TrelloCard card)
+            else if(evt.getPropertyName().equals(PROP_LAST_SOURCE))
             {
-                if(card.getListID() != null)
+                if(evt.getNewValue() instanceof TrelloCard)
                 {
-                    if(card.getListID().equals(list.getListID()))
+                    TrelloCard card = (TrelloCard)evt.getNewValue();
+                    if(card.getListID() != null && card.getListID().equals(list.getListID()))
                     {
                         changeSupport.fireChange();                    
-                    }                    
+                    }                      
                 }
             }
         }
@@ -979,12 +991,10 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         private FileObject rootDir;            
         
         private final TrelloCardProvider provider;    
-        private final YouTubeVideoProvider youTubeVideoProvider; 
 
-        public TrelloCardsProviderImpl(TrelloCardProvider provider, YouTubeVideoProvider youTubeVideoProvider)
+        public TrelloCardsProviderImpl(TrelloCardProvider provider)
         {
             this.provider = provider;
-            this.youTubeVideoProvider = youTubeVideoProvider;
             RP.post(this);                              
         } 
         
@@ -1108,7 +1118,45 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Collection<TrelloCard> getCards()
         {
             return Collections.unmodifiableCollection(getCardsById().values());
-        }            
+        }  
+        
+        @Override
+        public void createLink(TrelloList list, String url)
+        {
+            FileObject root = getRootFolder();
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+            if(root != null && service != null && markdown != null)
+            {
+                TrelloCard card = service.createLink(list.getListID(), url, provider, getTrelloAccount());
+                String videoID = YouTubeUtils.getVideoID(url);
+                if(videoID != null)
+                {  
+                    YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                    if(youTubeVideoProvider != null)
+                    {
+                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID);
+                        if(video != null)
+                        {
+                            card.merge(video);
+                        }
+                    }
+                }                                
+                
+                try
+                {
+                    createData(card, markdown);                      
+                    FileObject file = root.createData(card.getCardID(), PropertiesProvider.EXTENSION);
+                    OutputStream os = file.getOutputStream();
+                    card.save(os, "Saved by Trello project: " + getTitle());
+                    os.close();  
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }            
+        }
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1156,7 +1204,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
 
         @Override
         public void fileDataCreated(FileEvent evt) 
-        {
+        { 
+            /*
             try
             {
                 Properties props = Utils.getProperties(evt.getFile()); 
@@ -1170,13 +1219,35 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }                                                 
+            } 
+            */
         }
 
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            FileObject file = evt.getFile();
+            if(getCardsById().containsKey(file.getName()))
+            {
+                
+            }
+            else
+            {
+                try                         
+                {
+                    Properties props = Utils.getProperties(evt.getFile()); 
+                    TrelloCard card = provider.getCard(props);
+                    if(card != null)
+                    {
+                        getCardsById().put(card.getCardID(), card);
+                        setLastSource(card);     
+                    }             
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                  
+            }
         }
 
         @Override
@@ -1251,12 +1322,16 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Trello cards");
                 handle.start();
                 handle.switchToIndeterminate();
-                
-                
+                                
                 List<String> ids = service.getCardsID(TrelloProject.this, getTrello());
+                Set<String> keys = new HashSet<>(getCardsById().keySet());
                 for(String id : ids)
                 {
-                    if(!getCardsById().containsKey(id))
+                    if(keys.remove(id))
+                    {
+
+                    }
+                    else
                     {
                         try
                         {
@@ -1265,9 +1340,9 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                             {
                                 String videoID = YouTubeUtils.getVideoID(card.getCardName());
                                 if(videoID != null)
-                                {
-                                    
-                                    if(provider != null)
+                                {  
+                                    YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                                    if(youTubeVideoProvider != null)
                                     {
                                         YouTubeVideo video = youTubeVideoProvider.getVideo(videoID);
                                         if(video != null)
@@ -1307,9 +1382,28 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         catch(Exception e)
                         {
                             LOG.warning(e.getMessage());
-                        }
+                        }                        
                     }
                 }
+                if(!keys.isEmpty())
+                {
+                    for(String key : keys)
+                    {
+                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {  
+                            try
+                            {
+                                file.delete();    
+                                getCardsById().remove(key);
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }                      
+                    }
+                }                 
                 setLastSync(LocalDateTime.now()); 
                 LOG.info("Syncing Trello cards succeeded");
                 handle.finish();
@@ -2404,4 +2498,29 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             }
         }
     }  
+    
+    private static final class AddLink extends AbstractAction
+    {          
+        private final TrelloList list;       
+        private final TrelloCardsProvider provider;  
+
+        public AddLink(TrelloList list, TrelloCardsProvider provider) 
+        {
+            super("Add Link");
+            this.list = list;
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("URL:", "Add Link");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
+            {
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createLink(list, name);
+            }            
+        }
+    }    
 }
