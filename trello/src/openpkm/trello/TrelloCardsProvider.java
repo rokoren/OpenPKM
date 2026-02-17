@@ -16,4 +16,5 @@ public interface TrelloCardsProvider extends SourceProvider<TrelloCard>
     TrelloCardProvider getCardProvider();   
     Collection<TrelloCard> getCards();   
     void createLink(TrelloList list, String url);
+    void createCard(TrelloList list, String name);
 }

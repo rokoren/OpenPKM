@@ -115,6 +115,7 @@ import openpkm.youtube.YouTubeVideoProvider;
 import org.netbeans.api.progress.*;
 import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
+import org.openide.filesystems.FileSystem;
 
 /**
  *
@@ -890,6 +891,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             List<Action> actions = new ArrayList();
             actions.add(new AddLink(list, getCardsProvider()));         
+            actions.add(new AddCard(list, getCardsProvider())); 
             return actions;
         }
         
@@ -1145,11 +1147,14 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 
                 try
                 {
-                    createData(card, markdown);                      
-                    FileObject file = root.createData(card.getCardID(), PropertiesProvider.EXTENSION);
-                    OutputStream os = file.getOutputStream();
-                    card.save(os, "Saved by Trello project: " + getTitle());
-                    os.close();  
+                    createData(card, markdown);                     
+                    FileSystem fs = root.getFileSystem();
+                    fs.runAtomicAction(() -> {
+                        FileObject file = root.createData(card.getCardID(), PropertiesProvider.EXTENSION);
+                        OutputStream os = file.getOutputStream();
+                        card.save(os, "Saved by Trello project: " + getTitle());
+                        os.close();  
+                    });                                                             
                 }
                 catch(Exception e)
                 {
@@ -1157,6 +1162,35 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 }                
             }            
         }
+        
+        @Override
+        public void createCard(TrelloList list, String name)
+        {
+            FileObject root = getRootFolder();
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+            if(root != null && service != null && markdown != null)
+            {
+                TrelloCard card = service.createCard(list.getListID(), name, provider, getTrelloAccount());                                               
+                try
+                {
+                    createData(card, markdown); 
+                    FileSystem fs = root.getFileSystem();
+                    fs.runAtomicAction(() -> {
+                        FileObject projectDirectory = FileUtil.createFolder(root, card.getCardID());           
+                        FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
+                        OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
+                        card.save(os, "OpenPKM Trello Card Project");
+                        //props.store(os, "OpenPKM Trello Card Project"); 
+                        os.close();  
+                    });                                                             
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }            
+        }        
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1183,59 +1217,38 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public void fileFolderCreated(FileEvent evt) 
         {
-            try
+            FileObject folder = evt.getFile();
+            if(!getCardsById().containsKey(folder.getName()))
             {
-                Project project = ProjectManager.getDefault().findProject(evt.getFile());
-                if(project != null)
+                try
                 {
-                    TrelloCard card = project.getLookup().lookup(TrelloCard.class);  
-                    if(card != null)
+                    Project project = ProjectManager.getDefault().findProject(folder);
+                    if(project != null)
                     {
-                        getCardsById().put(card.getCardID(), card);
-                        setLastSource(card);    
-                    }                    
-                }                
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }            
+                        TrelloCard card = project.getLookup().lookup(TrelloCard.class);  
+                        if(card != null)
+                        {
+                            getCardsById().put(card.getCardID(), card);
+                            setLastSource(card);    
+                        }                    
+                    }                
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }                                             
         }
 
         @Override
         public void fileDataCreated(FileEvent evt) 
         { 
-            /*
-            try
-            {
-                Properties props = Utils.getProperties(evt.getFile()); 
-                TrelloCard card = provider.getCard(props);
-                if(card != null)
-                {
-                    getCardsById().put(card.getCardID(), card);
-                    setLastSource(card);    
-                }             
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            } 
-            */
-        }
-
-        @Override
-        public void fileChanged(FileEvent evt) 
-        {
             FileObject file = evt.getFile();
-            if(getCardsById().containsKey(file.getName()))
-            {
-                
-            }
-            else
+            if(!getCardsById().containsKey(file.getName()))
             {
                 try                         
                 {
-                    Properties props = Utils.getProperties(evt.getFile()); 
+                    Properties props = Utils.getProperties(file); 
                     TrelloCard card = provider.getCard(props);
                     if(card != null)
                     {
@@ -1247,7 +1260,13 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     LOG.warning(e.getMessage());
                 }                  
-            }
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
         }
 
         @Override
@@ -1389,19 +1408,23 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     for(String key : keys)
                     {
-                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {  
+                        FileObject fo = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
+                        if(fo == null)
+                        { 
+                            fo = getRootFolder().getFileObject(key);
+                        }        
+                        if(fo != null)
+                        {
                             try
                             {
-                                file.delete();    
+                                fo.delete();    
                                 getCardsById().remove(key);
                             }
                             catch(IOException e)
                             {
                                 LOG.warning(e.getMessage());
-                            }
-                        }                      
+                            }                            
+                        }
                     }
                 }                 
                 setLastSync(LocalDateTime.now()); 
@@ -2518,9 +2541,34 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             Object retVal = DialogDisplayer.getDefault().notify(d);
             if (retVal == NotifyDescriptor.OK_OPTION) 
             {
-                String name = ((NotifyDescriptor.InputLine) d).getInputText();
-                provider.createLink(list, name);
+                String url = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createLink(list, url);
             }            
         }
-    }    
+    }  
+    
+    private static final class AddCard extends AbstractAction
+    {          
+        private final TrelloList list;       
+        private final TrelloCardsProvider provider;  
+
+        public AddCard(TrelloList list, TrelloCardsProvider provider) 
+        {
+            super("Add Card");
+            this.list = list;
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Card");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
+            {
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createCard(list, name);
+            }            
+        }
+    }     
 }
