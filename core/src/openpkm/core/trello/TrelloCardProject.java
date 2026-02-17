@@ -42,7 +42,6 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
-import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.RemoteDataProvider;
@@ -101,6 +100,7 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
+import openpkm.base.SourceGroupProvider;
 
 /**
  *
@@ -918,7 +918,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements NodeGroup, FileChangeListener
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, FileChangeListener
     {                        
         public TrelloActionsProviderImpl(TrelloActionProvider provider) 
         {
@@ -1092,7 +1092,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }          
     }      
     
-    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements NodeGroup, FileChangeListener, Runnable
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/attach.png"; 
@@ -1401,7 +1401,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }  
     }  
     
-    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements NodeGroup, FileChangeListener, Runnable
+    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/to_do_list_checked_1.png"; 

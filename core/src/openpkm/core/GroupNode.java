@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import openpkm.base.NodeGroup;
 import openpkm.base.NodeProvider;
 import openpkm.base.NodeSupport;
 import org.openide.filesystems.FileObject;
@@ -20,6 +19,7 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.SourceGroupProvider;
 
 /**
  *
@@ -29,27 +29,27 @@ public class GroupNode extends AbstractNode implements NodeSupport
 {
     private static final Logger LOG = Logger.getLogger(GroupNode.class.getName());    
     
-    private final NodeGroup nodeGroup;
+    private final SourceGroupProvider provider;
     
-    public GroupNode(NodeGroup nodeGroup) 
+    public GroupNode(SourceGroupProvider provider) 
     {
-        super(new ChildrenImpl(nodeGroup), Lookups.proxy(nodeGroup.getProvider()));
-        setName(nodeGroup.getName());
-        setDisplayName(nodeGroup.getDisplayName());
-        this.nodeGroup = nodeGroup;
+        super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
+        setName(provider.getName());
+        setDisplayName(provider.getDisplayName());
+        this.provider = provider;
     }      
 
     @Override    
     public Action[] getActions(boolean context) 
     {
         List<Action> actions = new ArrayList();
-        actions.addAll(nodeGroup.getActions());
+        actions.addAll(provider.getActions());
         return actions.toArray(new Action[actions.size()]);
     }
 
     private Image getIcon(boolean opened) 
     {
-        return nodeGroup.getIcon(true, opened);
+        return provider.getIcon(true, opened);
     } 
     
     @Override    
@@ -89,12 +89,12 @@ public class GroupNode extends AbstractNode implements NodeSupport
     
     private static final class ChildrenImpl extends Children.Keys<NodeProvider> implements ChangeListener 
     {
-        private final NodeGroup nodeGroup;            
+        private final SourceGroupProvider provider;            
 
-        public ChildrenImpl(NodeGroup nodeGroup)
+        public ChildrenImpl(SourceGroupProvider provider)
         {
-            this.nodeGroup = nodeGroup;   
-            nodeGroup.addChangeListener(this);             
+            this.provider = provider;   
+            provider.addChangeListener(this);             
         }  
 
         @Override
@@ -105,13 +105,13 @@ public class GroupNode extends AbstractNode implements NodeSupport
 
         private void updateKeys() 
         {
-            setKeys(nodeGroup.getNodes()); 
+            setKeys(provider.getNodes()); 
         }
 
         @Override
         protected void removeNotify()
         {
-            nodeGroup.removeChangeListener(this);            
+            provider.removeChangeListener(this);            
             setKeys(Collections.<NodeProvider>emptySet());
         }
 

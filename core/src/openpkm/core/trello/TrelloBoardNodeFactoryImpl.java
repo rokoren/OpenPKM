@@ -10,13 +10,16 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import openpkm.base.NodeGroup;
+import openpkm.base.DataGroupProvider;
+import openpkm.base.GroupProvider;
+import openpkm.core.DataGroupNode;
 import openpkm.core.GroupNode;
 import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 import org.netbeans.spi.project.ui.support.NodeList;
 import org.openide.nodes.AbstractNode;
+import openpkm.base.SourceGroupProvider;
 
 /**
  *
@@ -32,16 +35,23 @@ public class TrelloBoardNodeFactoryImpl implements NodeFactory
     {
         assert project != null;
         
-        Collection<? extends NodeGroup> nodeGroups = project.getLookup().lookupAll(NodeGroup.class);
+        Collection<? extends GroupProvider> nodeGroups = project.getLookup().lookupAll(GroupProvider.class);
         if(!nodeGroups.isEmpty())
         {
-            SortedSet<NodeGroup> sorted = new TreeSet<NodeGroup>(NodeGroup.positionComparator());
+            SortedSet<GroupProvider> sorted = new TreeSet<GroupProvider>(GroupProvider.positionComparator());
             sorted.addAll(nodeGroups);
             
             List<AbstractNode> list = new ArrayList();                        
-            for(NodeGroup nodeGroup : sorted)
+            for(GroupProvider group : sorted)
             {
-                list.add(new GroupNode(nodeGroup)); 
+                if(group instanceof SourceGroupProvider nodeGroup)
+                {
+                    list.add(new GroupNode(nodeGroup));                     
+                }
+                else if(group instanceof DataGroupProvider provider)
+                {
+                    list.add(new DataGroupNode(provider));            
+                }
             }         
 
             AbstractNode[] nodes = new AbstractNode[list.size()];

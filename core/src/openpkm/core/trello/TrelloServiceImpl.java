@@ -5,6 +5,7 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
+import com.julienvey.trello.domain.Action;
 import com.julienvey.trello.domain.Argument;
 import com.julienvey.trello.domain.Attachment;
 import com.julienvey.trello.domain.Board;
@@ -14,6 +15,8 @@ import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
 import java.awt.Color;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +30,8 @@ import kong.unirest.UnirestException;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloAction;
+import openpkm.trello.TrelloActionProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.trello.TrelloBoard;
@@ -122,7 +127,49 @@ public class TrelloServiceImpl implements TrelloService
             list.add(provider.createLabel(label));
         }                     
         return list;        
-    }      
+    } 
+    
+    @Override
+    public List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello)
+    {
+        List<TrelloAction> list = new ArrayList();        
+        if(after == null)
+        {
+            List<Action> actions = trello.getBoardActions(board.getBoardID());
+            for(Action action : actions)
+            {
+                LOG.fine("Action: " + action.getType() + ", Member: " + action.getIdMemberCreator());
+                TrelloAction trelloAction = provider.createAction(action);
+                if(trelloAction != null)
+                {
+                    list.add(trelloAction);                                    
+                }
+            }             
+        }
+        else
+        {
+            ZoneId localZone = ZoneId.systemDefault(); // Replace with your ZoneId if needed
+            // Step 2: Convert to ZonedDateTime using the local zone
+            ZonedDateTime localZonedDateTime = after.atZone(localZone);
+            // Step 3: Convert to UTC
+            ZonedDateTime utcZonedDateTime = localZonedDateTime.withZoneSameInstant(ZoneId.of("UTC"));
+            // Step 4: Format the date as ISO 8601 with 'Z' at the end
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            LOG.info("Since: " + utcZonedDateTime.format(formatter));
+            Argument argument = new Argument("since", utcZonedDateTime.format(formatter));
+            List<Action> actions = trello.getBoardActions(board.getBoardID(), argument);
+            for(Action action : actions)
+            {
+                LOG.fine("Action: " + action.getType() + ", Member: " + action.getIdMemberCreator());
+                TrelloAction trelloAction = provider.createAction(action);
+                if(trelloAction != null)
+                {
+                    list.add(trelloAction);                                    
+                }
+            }             
+        }                 
+        return list;        
+    }     
     
     @Override
     public List<String> getCardsID(TrelloBoard board, Trello trello)

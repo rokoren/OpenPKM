@@ -45,7 +45,6 @@ import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.MarkdownSupport;
-import openpkm.base.NodeGroup;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
@@ -116,6 +115,7 @@ import org.netbeans.api.progress.*;
 import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileSystem;
+import openpkm.base.SourceGroupProvider;
 
 /**
  *
@@ -139,10 +139,10 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
     private static final String DATA_FOLDER = "data";    
     
-    private static final int POSITION_LISTS   = 100;
-    private static final int POSITION_ACTIONS = 200;    
-    private static final int POSITION_LABELS  = 300;
-    private static final int POSITION_MEMBERS = 400;           
+    private static final int POSITION_LISTS    = 100;
+    private static final int POSITION_COMMENTS = 200;    
+    private static final int POSITION_LABELS   = 300;
+    private static final int POSITION_MEMBERS  = 400;           
 
     private static final Logger LOG = Logger.getLogger(TrelloProject.class.getName());        
     
@@ -422,7 +422,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             list.add(new TrelloLogicalView(this));
             list.add(new TrelloCustomizerProvider(this));                                         
 
-            list.addAll(sources.values());   
+            list.addAll(sources.values());  
+            list.add(new CommentDataGroupProviderImpl());
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -978,6 +979,102 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }
     }  
     
+    private final class CommentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    {
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/comments.png";         
+        
+        private final ChangeSupport changeSupport; 
+                
+        public CommentDataGroupProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        } 
+
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            /*
+            actions.add(new AddLink(list, getCardsProvider()));         
+            actions.add(new AddCard(list, getCardsProvider())); 
+            */
+            return actions;
+        }
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return TrelloProject.this;
+        }        
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_COMMENTS;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public FileObject getRootFolder() throws IOException 
+        {
+            return getDataDirectory();
+        }
+
+        @Override
+        public String getName() 
+        {
+            return "comment";
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Comments";
+        }
+
+        @Override
+        public Image getIcon(boolean hasChildren) 
+        {
+            return ImageUtilities.loadImage(ICON);
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                TrelloAction action = data.getLookup().lookup(TrelloAction.class);
+                if(action != null)
+                {
+                    return true;
+                }                 
+            }                                   
+            return false;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            if(evt.getNewValue() instanceof TrelloAction)
+            {
+                changeSupport.fireChange();                           
+            }
+        }
+    }     
+    
 // TODO TrelloCardsProvider
     
     private final class TrelloCardsProviderImpl implements TrelloCardsProvider, FileChangeListener, Runnable
@@ -1083,7 +1180,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         {
                             try
                             {
-                                Project project = ProjectManager.getDefault().findProject(fo);
+                                Project project = ProjectManager.getDefault().findProject(fo);                                
                                 TrelloCard card = project.getLookup().lookup(TrelloCard.class);
                                 if(card != null)
                                 {
@@ -1437,61 +1534,30 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements NodeGroup, FileChangeListener
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceProvider<TrelloActionProviderImpl.CommentCard>, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/action_log.png";          
+        private static final String ICON = "openpkm/core/resources/action_log.png"; 
+        
+        private static final String PROP_TRELLO_SYNC_ACTION = "trello.sync.action";         
         
         public TrelloActionsProviderImpl(TrelloActionProvider provider) 
         {
-            super(provider);            
-        }          
+            super(provider); 
+            RP.post(this);                    
+        }              
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
         }         
-        
-        @Override
-        public Integer getPosition() 
-        {
-            return POSITION_ACTIONS;
-        }  
 
         @Override
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
         }        
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            //actions.add(new AddComment(this));         
-            return actions;
-        } 
-        
-        @Override
-        public SortedSet<NodeProvider> getNodes()
-        {
-            List<NodeProvider> list = getActivity().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
-                    .toList();        
-            
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(list);
-            
-            return sorted;
-        }
         
         @Override
         protected synchronized Map<String, TrelloAction> getActivity()
@@ -1552,7 +1618,29 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }        
+        }  
+        
+        @Override
+        public Source getSource(String sourceID)
+        {
+            TrelloAction action = getActivity().get(sourceID);
+            if(action instanceof TrelloActionProviderImpl.CommentCard comment)
+            {
+                return comment;
+            }
+            return null;
+        }         
+        
+        @Override
+        public FileObject createData(TrelloActionProviderImpl.CommentCard comment, FileTypeProvider fileTypeProvider) throws IOException     
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, comment.getActionID());                      
+            return primaryFile; 
+        }         
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1611,10 +1699,90 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        }   
+        
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_ACTION);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_ACTION);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_ACTION, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_ACTION, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_ACTION, oldValue, time); 
+            }
+        }
+        
+        @Override
+        public void run()
+        {
+            FileObject root = getRootFolder();
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+            if(root != null && service != null && markdown != null)
+            {
+                ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Trello actions");
+                handle.start();
+                handle.switchToIndeterminate();
+                                
+                List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), provider, getTrello());
+                for(TrelloAction action : actions)
+                {
+                    if(!getActivity().containsKey(action.getActionID()))
+                    {
+                        try
+                        {
+                            if(action instanceof TrelloActionProviderImpl.CommentCard comment)
+                            {
+                                createData(comment, markdown);  
+                                FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);
+                                OutputStream os = file.getOutputStream();
+                                comment.save(os, "Saved by Trello project: " + getTitle());
+                                os.close(); 
+                            }
+                            else
+                            {
+                                FileObject file = root.createData(action.getActionID(), PropertiesProvider.EXTENSION);
+                                OutputStream os = file.getOutputStream();
+                                action.getProperties().store(os, "Saved by Trello project: " + getTitle());
+                                os.close();                             
+                            }                              
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                          
+                    }
+                }                
+                setLastSync(LocalDateTime.now()); 
+                LOG.info("Syncing Trello actions succeeded");
+                handle.finish();
+                rootDir.addFileChangeListener(this);  
+            }                       
+        }           
     }      
     
-    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements NodeGroup, FileChangeListener, Runnable
+    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png"; 
@@ -1857,7 +2025,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
     }  
     
-    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements NodeGroup, FileChangeListener, Runnable
+    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/group.png"; 
@@ -2100,7 +2268,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }        
     }      
 
-    private final class TrelloListsProviderImpl extends TrelloListsProvider implements NodeGroup, FileChangeListener, Runnable
+    private final class TrelloListsProviderImpl extends TrelloListsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_columns.png"; 

@@ -2,29 +2,20 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core.trello;
+package openpkm.trello;
 
-import java.awt.Color;
-import java.awt.Image;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
-import java.util.StringTokenizer;
-import javax.swing.Action;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloCardAction;
-import openpkm.utils.UserIcon;
-import org.openide.nodes.Children;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider, PropertiesProvider
+public abstract class AbstractTrelloAction implements TrelloAction
 {
     public static final String PROP_ACTION_ID        = "action.id";
     public static final String PROP_ACTION_TYPE      = "action.type";    
@@ -100,12 +91,6 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
     public String getMemberFullName()
     {
         return props.getProperty(PROP_MEMBER_FULL_NAME);
-    }  
-    
-    @Override
-    public List<Action> getActions() 
-    {       
-        return Collections.EMPTY_LIST;
     }      
     
 // TODO PropertiesProvider        
@@ -120,34 +105,7 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }    
-
-// TODO NodeProvider         
-
-    @Override
-    public String getName() 
-    {
-        return getActionID();
-    }
-
-    @Override
-    public String getDisplayName()
-    {
-        return toString();
-    }        
-
-    @Override
-    public Image getIcon(boolean opened) 
-    {
-        StringTokenizer st = new StringTokenizer(getMemberFullName());
-        return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
-    } 
-    
-    @Override
-    public Children getChildren() 
-    {
-        return Children.LEAF;
-    }    
+    }      
     
     public static final class CardUpdate extends AbstractTrelloAction implements TrelloCardAction
     {        
@@ -436,39 +394,5 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
         {
             return "Update checklist item " + getCheckitemName() + " as " + getCheckitemState();
         }        
-    }
-    
-    public static final class CommentCard extends AbstractTrelloAction
-    {
-        public CommentCard(Properties props) 
-        {
-            super(props);
-        } 
-        
-        public String getCardID()
-        {
-            return props.getProperty(PROP_CARD_ID);
-        }
-        
-        public String getCardName()
-        {
-            return props.getProperty(PROP_CARD_NAME);
-        }        
-        
-        public String getListID()
-        {
-            return props.getProperty(PROP_LIST_ID);
-        }        
-        
-        public String getCommentText() 
-        {
-            return props.getProperty(PROP_COMMENT_TEXT);
-        }  
-             
-        @Override
-        public String toString()
-        {
-            return "Comment card " + getCardName().toUpperCase();
-        }
-    }      
+    }     
 }

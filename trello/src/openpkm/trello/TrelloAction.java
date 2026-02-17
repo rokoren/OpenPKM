@@ -5,12 +5,13 @@
 package openpkm.trello;
 
 import java.time.LocalDateTime;
+import openpkm.base.PropertiesProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloAction 
+public interface TrelloAction  extends PropertiesProvider
 {
     String getActionID();
     String getActionType();

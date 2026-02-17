@@ -4,10 +4,8 @@
  */
 package openpkm.base;
 
-import java.awt.Image;
 import java.util.Comparator;
 import java.util.List;
-import java.util.SortedSet;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import org.openide.util.Lookup;
@@ -16,24 +14,22 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public interface NodeGroup
-{  
+public interface GroupProvider 
+{
     String getName();
     String getDisplayName();
-    Image getIcon(boolean isEmpty, boolean isOpen);
     List<Action> getActions();
     Integer getPosition();
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener);
     Lookup.Provider getProvider(); 
-    SortedSet<? extends NodeProvider> getNodes();
     
-    public static Comparator<NodeGroup> positionComparator() 
+    public static Comparator<GroupProvider> positionComparator() 
     {
-        return new Comparator<NodeGroup>() 
+        return new Comparator<GroupProvider>() 
         {
             @Override
-            public int compare(NodeGroup group1, NodeGroup group2) 
+            public int compare(GroupProvider group1, GroupProvider group2) 
             {
                 return group1.getPosition().compareTo(group2.getPosition());
             }
