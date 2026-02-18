@@ -5,31 +5,13 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Action;
-import java.awt.Color;
-import java.awt.Image;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
-import openpkm.base.NodeProvider;
-import openpkm.base.Source;
-import openpkm.trello.AbstractTrelloAction;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
 import openpkm.utils.DateTimeUtils;
-import openpkm.utils.UserIcon;
-import org.openide.nodes.Children;
-import org.openide.util.ChangeSupport;
-import org.openide.util.Lookup;
-import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -79,7 +61,7 @@ public class TrelloActionProviderImpl implements TrelloActionProvider
         } 
         else if(actionType.equals(AbstractTrelloAction.TYPE_COMMENT_CARD))
         {
-            return new CommentCard(props);
+            return new AbstractTrelloAction.CommentCard(props);
         }    
         else if(actionType.equals(AbstractTrelloAction.TYPE_UPDATE_ITEM_STATE))
         {
@@ -170,157 +152,5 @@ public class TrelloActionProviderImpl implements TrelloActionProvider
         }        
         
         return getAction(props);
-    }  
-    
-    public static final class CommentCard extends AbstractTrelloAction implements Source, NodeProvider
-    {
-        private final PropertyChangeSupport propertyChangeSupport;
-        private final ChangeSupport changeSupport;  
-
-        private Lookup lkp;         
-        private boolean isDeleted;          
-        
-        public CommentCard(Properties props) 
-        {
-            super(props);
-            propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);              
-        } 
-        
-        @Override
-        public Lookup getLookup() 
-        {
-            if (lkp == null) 
-            { 
-                lkp = Lookups.fixed(this);              
-            }
-            return lkp;
-        }        
-        
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
-        } 
-        
-        @Override
-        public boolean isDeleted()
-        {
-            return isDeleted;
-        }
-
-        @Override
-        public void setDeleted()
-        {
-            isDeleted = true;
-            changeSupport.fireChange();
-        } 
-        
-        @Override
-        public String getAppID()
-        {
-            return props.getProperty(PROP_APP_ID);
-        }         
-        
-        @Override
-        public LocalDateTime getTimeCreated() 
-        {
-            String created = props.getProperty(PROP_TIME_CREATED);
-            if(created != null)
-            {
-                return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
-            }
-            return null;
-        }  
-        
-        @Override
-        public String getSourceID()
-        {
-            return getActionID();
-        }        
-        
-        public String getCardID()
-        {
-            return props.getProperty(PROP_CARD_ID);
-        }
-        
-        public String getCardName()
-        {
-            return props.getProperty(PROP_CARD_NAME);
-        }        
-        
-        public String getListID()
-        {
-            return props.getProperty(PROP_LIST_ID);
-        }        
-        
-        public String getCommentText() 
-        {
-            return props.getProperty(PROP_COMMENT_TEXT);
-        } 
-        
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            props.store(os, comments); 
-            LOG.info("Trello comment saved");
-        }         
-        
-// TODO NodeProvider         
-
-        @Override
-        public String getName() 
-        {
-            return getActionID();
-        }
-
-        @Override
-        public String getDisplayName()
-        {
-            return toString();
-        }        
-
-        @Override
-        public Image getIcon(boolean opened) 
-        {
-            StringTokenizer st = new StringTokenizer(getMemberFullName());
-            return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
-        } 
-        
-        @Override
-        public List<javax.swing.Action> getActions() 
-        {       
-            return Collections.EMPTY_LIST;
-        }         
-
-        @Override
-        public Children getChildren() 
-        {
-            return Children.LEAF;
-        }          
-             
-        @Override
-        public String toString()
-        {
-            return "Comment card " + getCardName().toUpperCase();
-        }
-    }     
+    }      
 }

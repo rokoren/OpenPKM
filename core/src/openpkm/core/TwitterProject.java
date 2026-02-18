@@ -172,7 +172,8 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         return sources.get(folder);
     }
     
-    private synchronized FileObject getDataDirectory() throws IOException
+    @Override
+    public synchronized FileObject getDataDirectory() throws IOException
     {
         if(dataDir == null)
         {

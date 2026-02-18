@@ -172,7 +172,8 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
         return sources.get(folder);
     }
     
-    private synchronized FileObject getDataDirectory() throws IOException
+    @Override
+    public synchronized FileObject getDataDirectory() throws IOException
     {
         if(dataDir == null)
         {

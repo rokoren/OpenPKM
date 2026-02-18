@@ -194,7 +194,8 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         return sources.get(folder);
     }
     
-    private synchronized FileObject getDataDirectory() throws IOException
+    @Override
+    public synchronized FileObject getDataDirectory() throws IOException
     {
         if(dataDir == null)
         {

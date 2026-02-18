@@ -231,7 +231,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         return sources.get(folder);
     }
     
-    private synchronized FileObject getDataDirectory() throws IOException
+    @Override
+    public synchronized FileObject getDataDirectory() throws IOException
     {
         if(dataDir == null)
         {

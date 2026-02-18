@@ -15,7 +15,6 @@ import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
@@ -40,13 +39,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
+import openpkm.base.DataGroupProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.RemoteDataProvider;
 import openpkm.base.Source;
-import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
@@ -55,7 +54,6 @@ import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloAction;
-import openpkm.trello.TrelloActionProvider;
 import openpkm.trello.TrelloActionsProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
@@ -91,7 +89,6 @@ import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
-import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
@@ -101,12 +98,13 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.base.SourceGroupProvider;
+import org.openide.loaders.DataObject;
 
 /**
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, BatchUpdateSupport
 { 
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -117,10 +115,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
     private static final String DATA_FOLDER = "data";    
     
-    private static final int POSITION_CHECK_LISTS      = 100;
-    private static final int POSITION_CHECK_LIST_ITEMS = 200;    
-    private static final int POSITION_ATTACHMENTS      = 300;
-    private static final int POSITION_ACTIONS          = 400;
+    private static final int POSITION_CHECK_LISTS = 100;
+    private static final int POSITION_COMMENTS    = 200;    
+    private static final int POSITION_ATTACHMENTS = 300;
 
     private static final Logger LOG = Logger.getLogger(TrelloCardProject.class.getName());        
     
@@ -150,14 +147,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-
-        TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
-        if(actionProvider != null)
-        {          
-            SourceGroup actions = new TrelloActionsProviderImpl(actionProvider);
-            sources.put(actions.getName(), actions);            
-        }         
-        
+               
         TrelloAttachmentProvider attachmentProvider = Lookup.getDefault().lookup(TrelloAttachmentProvider.class);
         if(attachmentProvider != null)
         {          
@@ -243,74 +233,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }
     }    
     
-    private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
-    {
-        if(fileSystem == null)
-        {
-            fileSystem = new LocalFileSystem();
-            fileSystem.setRootDirectory(FileUtil.toFile(getDataDirectory()));            
-        }
-        return fileSystem;
-    }
-   
-// SourceProviders    
-    
-    @Override
-    public SourceProvider getSourceProvider(String folder)
-    {
-        SourceGroup sourceGroup = sources.get(folder);
-        if(sourceGroup instanceof SourceProvider provider)
-        {
-            return provider;
-        }
-        return null;
-    }  
-    
-    private synchronized FileObject getDataDirectory() throws IOException
-    {
-        if(dataDir == null)
-        {
-            dataDir = getProjectDirectory().getFileObject(DATA_FOLDER);
-            if(dataDir == null)
-            {
-                dataDir = getProjectDirectory().createFolder(DATA_FOLDER);
-                LOG.info("Data dir created: " + dataDir.getPath());                        
-            }                 
-        }                           
-        return dataDir;       
-    } 
-    
-    @Override
-    public FileObject getFileWithAttrs(FileObject file, boolean refresh)
-    {
-        try
-        {
-            if(refresh) getFileSystem().getRoot().refresh();
-            return getFileSystem().getRoot().getFileObject(file.getName(), file.getExt());            
-        }
-        catch(IOException e)
-        {
-            LOG.warning(e.getMessage());
-        }
-        catch(PropertyVetoException e)
-        {
-            LOG.warning(e.getMessage());
-        }  
-        return null;
-    }
-    
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    } 
-    
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener)
     {
@@ -376,7 +298,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             
             list.add(new HtmlFilesProviderImpl());   
 
-            list.addAll(sources.values());           
+            list.addAll(sources.values());   
+            list.add(new CommentDataGroupProviderImpl());            
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -916,181 +839,110 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }          
     }           
     
-// TODO SourceGroup
+// TODO DataGroupProvider
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, FileChangeListener
-    {                        
-        public TrelloActionsProviderImpl(TrelloActionProvider provider) 
+    private final class CommentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    {
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/comments.png";         
+        
+        private final ChangeSupport changeSupport; 
+                
+        public CommentDataGroupProviderImpl()
         {
-            super(provider);            
-        }          
+            changeSupport = new ChangeSupport(this); 
+            //propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        } 
+
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            /*
+            actions.add(new AddLink(list, getCardsProvider()));         
+            actions.add(new AddCard(list, getCardsProvider())); 
+            */
+            return actions;
+        }
         
         @Override
         public Lookup.Provider getProvider()
         {
             return TrelloCardProject.this;
-        }         
+        }        
         
         @Override
         public Integer getPosition() 
         {
-            return POSITION_ACTIONS;
-        }  
+            return POSITION_COMMENTS;
+        }                  
 
         @Override
-        public Icon getIcon(boolean open)
+        public void addChangeListener(ChangeListener listener) 
         {
-            return ImageUtilities.loadIcon(ICON);
-        }        
-        
+            changeSupport.addChangeListener(listener);
+        }
+
         @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public FileObject getRootFolder() throws IOException 
+        {
+            ParentProjectProvider parent = getLookup().lookup(ParentProjectProvider.class);
+            SourceProviders provider = parent.getPartentProject().getLookup().lookup(SourceProviders.class);
+            return provider.getDataDirectory();
+        }
+
+        @Override
+        public String getName() 
+        {
+            return "comment";
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Comments";
+        }
+
+        @Override
+        public Image getIcon(boolean hasChildren) 
         {
             return ImageUtilities.loadImage(ICON);
         }
-        
+
         @Override
-        public List<Action> getActions() 
+        public boolean contains(DataObject data) 
         {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddComment(this));         
-            return actions;
-        } 
-        
-        @Override
-        public SortedSet<NodeProvider> getNodes()
-        {
-            List<NodeProvider> list = getActivity().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
-                    .toList();        
-            
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(list);
-            
-            return sorted;
-        }
-        
-        @Override
-        protected synchronized Map<String, TrelloAction> getActivity()
-        {
-            if(activity == null)
+            if(data != null)
             {
-                activity = new HashMap<>();
-                FileObject folder = getRootFolder();
-                if(folder !=  null)
+                TrelloAction action = data.getLookup().lookup(TrelloAction.class);
+                if(action instanceof AbstractTrelloAction.CommentCard comment)
                 {
-                    for (FileObject file : folder.getChildren()) 
+                    if(comment.getCardID() != null)
                     {
-                        try
-                        {
-                            TrelloAction action = provider.getAction(Utils.getProperties(file)); 
-                            activity.put(action.getActionID(), action);
-                        }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                                                                                                                                             
-                    }                     
-                }                
-            }
-            return activity;
-        }                
-
-        @Override
-        public FileObject getRootFolder() 
-        {
-            if(rootDir == null)
-            {
-                try
-                {                
-                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
-                    if(rootDir == null)
-                    {
-                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                        LOG.info("Actions root folder created: " + rootDir.getPath());                        
-                    } 
-                    rootDir.addFileChangeListener(this);                                        
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                
-            }
-            return rootDir;
+                        return comment.getCardID().equals(getCardID());                        
+                    }
+                }                 
+            }                                   
+            return false;
         }
 
         @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        public void propertyChange(PropertyChangeEvent evt) 
         {
-            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }        
-        
-        @Override
-        public void fileFolderCreated(FileEvent evt) 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileDataCreated(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            try
+            if(evt.getNewValue() instanceof AbstractTrelloAction.CommentCard)
             {
-                TrelloAction action = provider.getAction(Utils.getProperties(file)); 
-                getActivity().put(action.getActionID(), action);               
-                changeSupport.fireChange();
-            }           
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }               
-        }
-
-        @Override
-        public void fileChanged(FileEvent evt) 
-        {
-            /*
-            FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().get(file.getName());  
-            if(label != null)
-            {
-                
-            }
-            */
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileDeleted(FileEvent evt) 
-        {
-            FileObject file = evt.getFile();
-            TrelloAction action = getActivity().remove(file.getName());  
-            if(action != null)
-            {
-                changeSupport.fireChange();
+                changeSupport.fireChange();                           
             }
         }
-
-        @Override
-        public void fileRenamed(FileRenameEvent fre) 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void fileAttributeChanged(FileAttributeEvent fae) 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
-    }      
+    }       
+    
+// TODO SourceGroup    
     
     private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 

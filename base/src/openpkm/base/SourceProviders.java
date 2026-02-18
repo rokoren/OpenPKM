@@ -4,6 +4,7 @@
  */
 package openpkm.base;
 
+import java.io.IOException;
 import org.openide.filesystems.FileObject;
 
 /**
@@ -18,5 +19,6 @@ public interface SourceProviders
     String ATTR_SOURCE_PROVIDER = "source.provider";     
     
     SourceProvider getSourceProvider(String name);
+    FileObject getDataDirectory() throws IOException;
     FileObject getFileWithAttrs(FileObject file, boolean refresh);
 }

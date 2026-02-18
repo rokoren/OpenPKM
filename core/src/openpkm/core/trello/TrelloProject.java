@@ -140,7 +140,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_LISTS    = 100;
-    private static final int POSITION_COMMENTS = 200;    
+    private static final int POSITION_ACTIVITY = 200;    
     private static final int POSITION_LABELS   = 300;
     private static final int POSITION_MEMBERS  = 400;           
 
@@ -242,7 +242,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         return null;
     }    
     
-    private synchronized FileObject getDataDirectory() throws IOException
+    @Override
+    public synchronized FileObject getDataDirectory() throws IOException
     {
         if(dataDir == null)
         {
@@ -423,7 +424,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             list.add(new TrelloCustomizerProvider(this));                                         
 
             list.addAll(sources.values());  
-            list.add(new CommentDataGroupProviderImpl());
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -977,102 +977,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 }
             }
         }
-    }  
-    
-    private final class CommentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/core/resources/comments.png";         
-        
-        private final ChangeSupport changeSupport; 
-                
-        public CommentDataGroupProviderImpl()
-        {
-            changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        } 
-
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            /*
-            actions.add(new AddLink(list, getCardsProvider()));         
-            actions.add(new AddCard(list, getCardsProvider())); 
-            */
-            return actions;
-        }
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return TrelloProject.this;
-        }        
-        
-        @Override
-        public Integer getPosition() 
-        {
-            return POSITION_COMMENTS;
-        }                  
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }   
-
-        @Override
-        public FileObject getRootFolder() throws IOException 
-        {
-            return getDataDirectory();
-        }
-
-        @Override
-        public String getName() 
-        {
-            return "comment";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "Comments";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-
-        @Override
-        public boolean contains(DataObject data) 
-        {
-            if(data != null)
-            {
-                TrelloAction action = data.getLookup().lookup(TrelloAction.class);
-                if(action != null)
-                {
-                    return true;
-                }                 
-            }                                   
-            return false;
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(evt.getNewValue() instanceof TrelloAction)
-            {
-                changeSupport.fireChange();                           
-            }
-        }
     }     
     
 // TODO TrelloCardsProvider
@@ -1534,7 +1438,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceProvider<TrelloActionProviderImpl.CommentCard>, FileChangeListener, Runnable
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceProvider<AbstractTrelloAction.CommentCard>, SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
@@ -1548,6 +1452,24 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }              
         
         @Override
+        public Lookup.Provider getProvider()
+        {
+            return TrelloProject.this;
+        }   
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_ACTIVITY;
+        }  
+        
+        @Override
+        public List<Action> getActions() 
+        {      
+            return Collections.EMPTY_LIST;
+        }         
+        
+        @Override
         public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
@@ -1557,6 +1479,12 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
+        } 
+        
+        @Override
+        public Image getIcon(boolean isEmpty, boolean isOpen)
+        {
+            return ImageUtilities.loadImage(ICON);
         }        
         
         @Override
@@ -1624,7 +1552,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Source getSource(String sourceID)
         {
             TrelloAction action = getActivity().get(sourceID);
-            if(action instanceof TrelloActionProviderImpl.CommentCard comment)
+            if(action instanceof AbstractTrelloAction.CommentCard comment)
             {
                 return comment;
             }
@@ -1632,7 +1560,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
         
         @Override
-        public FileObject createData(TrelloActionProviderImpl.CommentCard comment, FileTypeProvider fileTypeProvider) throws IOException     
+        public FileObject createData(AbstractTrelloAction.CommentCard comment, FileTypeProvider fileTypeProvider) throws IOException     
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
             FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
@@ -1640,7 +1568,21 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
             file.setAttribute(ATTR_SOURCE_ID, comment.getActionID());                      
             return primaryFile; 
-        }         
+        }   
+        
+        @Override
+        public SortedSet<NodeProvider> getNodes()
+        {
+            List<NodeProvider> list = getActivity().values().stream()
+                    .filter(NodeProvider.class::isInstance)
+                    .map(NodeProvider.class::cast)
+                    .toList();        
+            
+            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
+            sorted.addAll(list);
+            
+            return sorted;
+        }        
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1752,7 +1694,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            if(action instanceof TrelloActionProviderImpl.CommentCard comment)
+                            if(action instanceof AbstractTrelloAction.CommentCard comment)
                             {
                                 createData(comment, markdown);  
                                 FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);

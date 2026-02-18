@@ -56,7 +56,7 @@ public abstract class TrelloActionsProvider implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Actions";
+        return "Activity";
     }
 
     @Override

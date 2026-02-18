@@ -172,7 +172,8 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         return sources.get(folder);
     }
     
-    private synchronized FileObject getDataDirectory() throws IOException
+    @Override
+    public synchronized FileObject getDataDirectory() throws IOException
     {
         if(dataDir == null)
         {
