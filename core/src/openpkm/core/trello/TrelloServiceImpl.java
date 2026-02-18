@@ -206,6 +206,19 @@ public class TrelloServiceImpl implements TrelloService
     }
     
     @Override
+    public String getCommentText(String actionID, Trello trello)
+    { 
+        Action action = trello.getAction(actionID);                    
+        return action.getData().getText();        
+    }   
+    
+    @Override
+    public void setCommentText(String cardID, String actionID, String description, Trello trello)
+    {
+        trello.updateComment(cardID, actionID, description);          
+    }
+    
+    @Override
     public List<TrelloCard> getCards(TrelloList trelloList, TrelloCardProvider provider, Trello trello)
     {
         List<TrelloCard> list = new ArrayList();   

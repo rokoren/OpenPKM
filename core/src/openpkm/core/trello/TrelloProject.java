@@ -117,6 +117,8 @@ import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileSystem;
 import openpkm.base.SourceGroupProvider;
+import openpkm.trello.TrelloComment;
+import openpkm.trello.TrelloCommentProvider;
 
 /**
  *
@@ -175,9 +177,10 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         this.props = props;                  
         
         TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
-        if(actionProvider != null)
+        TrelloCommentProvider commentProvider = Lookup.getDefault().lookup(TrelloCommentProvider.class);              
+        if(actionProvider != null && commentProvider != null)
         {
-            SourceGroup actions = new TrelloActionsProviderImpl(actionProvider);
+            SourceGroup actions = new TrelloActionsProviderImpl(actionProvider, commentProvider);
             sources.put(actions.getName(), actions);              
         }        
         
@@ -1439,16 +1442,19 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceProvider<AbstractTrelloAction.CommentCard>, SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceProvider<TrelloComment>, SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
         
         private static final String PROP_TRELLO_SYNC_ACTION = "trello.sync.action";         
         
-        public TrelloActionsProviderImpl(TrelloActionProvider provider) 
+        private final TrelloCommentProvider commentProvider;
+        
+        public TrelloActionsProviderImpl(TrelloActionProvider provider, TrelloCommentProvider commentProvider) 
         {
             super(provider); 
+            this.commentProvider = commentProvider;
             RP.post(this);                    
         }              
         
@@ -1527,7 +1533,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
                         LOG.info("Reference root folder created: " + rootDir.getPath());                        
                     } 
-                    rootDir.addFileChangeListener(this);                                        
                 }
                 catch(IOException e)
                 {
@@ -1553,7 +1558,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Source getSource(String sourceID)
         {
             TrelloAction action = getActivity().get(sourceID);
-            if(action instanceof AbstractTrelloAction.CommentCard comment)
+            TrelloComment comment = commentProvider.getComment(action, getTrello());   
+            if(comment != null)
             {
                 return comment;
             }
@@ -1561,10 +1567,15 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
         
         @Override
-        public FileObject createData(AbstractTrelloAction.CommentCard comment, FileTypeProvider fileTypeProvider) throws IOException     
+        public FileObject createData(TrelloComment comment, FileTypeProvider fileTypeProvider) throws IOException     
         {
-            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());                                    
             FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            
+            OutputStream output = primaryFile.getOutputStream();
+            output.write(comment.getText().getBytes());
+            output.close();            
+            
             FileObject file = getFileWithAttrs(primaryFile, true);
             file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
             file.setAttribute(ATTR_SOURCE_ID, comment.getActionID());                      
@@ -1679,9 +1690,9 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public void run()
         {
-            FileObject root = getRootFolder();
+            FileObject root = getRootFolder();                  
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);            
             if(root != null && service != null && markdown != null)
             {
                 ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Trello actions");
@@ -1693,23 +1704,25 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     if(!getActivity().containsKey(action.getActionID()))
                     {
+                        TrelloComment comment = commentProvider.getComment(action, getTrello());                       
                         try
                         {
-                            if(action instanceof AbstractTrelloAction.CommentCard comment)
+                            if(comment == null)
+                            {
+                                FileObject file = root.createData(action.getActionID(), PropertiesProvider.EXTENSION);
+                                OutputStream os = file.getOutputStream();
+                                action.getProperties().store(os, "Saved by Trello project: " + getTitle());
+                                os.close();   
+                            }   
+                            else
                             {
                                 createData(comment, markdown);  
                                 FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);
                                 OutputStream os = file.getOutputStream();
                                 comment.save(os, "Saved by Trello project: " + getTitle());
-                                os.close(); 
-                            }
-                            else
-                            {
-                                FileObject file = root.createData(action.getActionID(), PropertiesProvider.EXTENSION);
-                                OutputStream os = file.getOutputStream();
-                                action.getProperties().store(os, "Saved by Trello project: " + getTitle());
-                                os.close();                             
-                            }                              
+                                os.close();                                 
+                            } 
+                            getActivity().put(action.getActionID(), action);  
                         }
                         catch(IOException e)
                         {

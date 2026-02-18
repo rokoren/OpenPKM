@@ -53,7 +53,6 @@ import openpkm.core.TopComponentProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
-import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionsProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
@@ -98,6 +97,7 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.base.SourceGroupProvider;
+import openpkm.trello.TrelloComment;
 import org.openide.loaders.DataObject;
 
 /**
@@ -920,8 +920,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             if(data != null)
             {
-                TrelloAction action = data.getLookup().lookup(TrelloAction.class);
-                if(action instanceof AbstractTrelloAction.CommentCard comment)
+                TrelloComment comment = data.getLookup().lookup(TrelloComment.class);
+                if(comment != null)
                 {
                     if(comment.getCardID() != null)
                     {

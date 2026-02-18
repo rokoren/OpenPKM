@@ -6,28 +6,18 @@ package openpkm.core.trello;
 
 import java.awt.Color;
 import java.awt.Image;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
 import openpkm.base.NodeDateTimeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.Source;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloCardAction;
 import openpkm.utils.UserIcon;
 import org.openide.nodes.Children;
-import org.openide.util.ChangeSupport;
-import org.openide.util.Lookup;
-import org.openide.util.lookup.Lookups;
 
 /**
  *
@@ -453,92 +443,12 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
         }        
     }  
     
-    public static final class CommentCard extends AbstractTrelloAction implements Source
-    {
-        private static final Logger LOG = Logger.getLogger(CommentCard.class.getName());        
-        
-        private final PropertyChangeSupport propertyChangeSupport;
-        private final ChangeSupport changeSupport;  
-
-        private Lookup lkp;         
-        private boolean isDeleted;          
-        
+    public static final class CommentCard extends AbstractTrelloAction
+    {        
         public CommentCard(Properties props) 
         {
-            super(props);
-            propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);              
-        } 
-        
-        @Override
-        public Lookup getLookup() 
-        {
-            if (lkp == null) 
-            { 
-                lkp = Lookups.fixed(this);              
-            }
-            return lkp;
-        }        
-        
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
-        } 
-        
-        @Override
-        public boolean isDeleted()
-        {
-            return isDeleted;
-        }
-
-        @Override
-        public void setDeleted()
-        {
-            isDeleted = true;
-            changeSupport.fireChange();
-        } 
-        
-        @Override
-        public String getAppID()
-        {
-            return props.getProperty(PROP_APP_ID);
-        }         
-        
-        @Override
-        public LocalDateTime getTimeCreated() 
-        {
-            String created = props.getProperty(PROP_TIME_CREATED);
-            if(created != null)
-            {
-                return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
-            }
-            return null;
-        }  
-        
-        @Override
-        public String getSourceID()
-        {
-            return getActionID();
-        }        
+            super(props);            
+        }      
         
         public String getCardID()
         {
@@ -558,14 +468,7 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
         public String getCommentText() 
         {
             return props.getProperty(PROP_COMMENT_TEXT);
-        } 
-        
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            props.store(os, comments); 
-            LOG.info("Trello comment saved");
-        }                          
+        }         
              
         @Override
         public String toString()

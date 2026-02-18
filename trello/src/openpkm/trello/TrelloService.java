@@ -24,7 +24,9 @@ public interface TrelloService
     List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello);
     List<String> getCardsID(TrelloBoard trelloBoard, Trello trello); 
     String getCardDescription(String cardID, Trello trello);
-    void setCardDescription(String cardID, String description, TrelloAccount account);    
+    String getCommentText(String actionID, Trello trello);
+    void setCardDescription(String cardID, String description, TrelloAccount account); 
+    void setCommentText(String cardID, String actionID, String text, Trello trello);    
     List<TrelloCard> getCards(TrelloList trelloList, TrelloCardProvider provider, Trello trello);
     TrelloCard createCard(String listID, String name, TrelloCardProvider provider, TrelloAccount account);
     TrelloCard createLink(String listID, String url, TrelloCardProvider provider, TrelloAccount account);
