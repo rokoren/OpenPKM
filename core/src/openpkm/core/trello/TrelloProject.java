@@ -1088,12 +1088,15 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         {
                             try
                             {
-                                Project project = ProjectManager.getDefault().findProject(fo);                                
-                                TrelloCard card = project.getLookup().lookup(TrelloCard.class);
-                                if(card != null)
+                                Project project = ProjectManager.getDefault().findProject(fo);  
+                                if(project != null)
                                 {
-                                    cards.put(card.getCardID(), card);
-                                }                                  
+                                    TrelloCard card = project.getLookup().lookup(TrelloCard.class);
+                                    if(card != null)
+                                    {
+                                        cards.put(card.getCardID(), card);
+                                    }                                      
+                                }                                
                             }
                             catch(IOException e)
                             {

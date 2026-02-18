@@ -4,6 +4,7 @@
  */
 package openpkm.core.trello;
 
+import com.julienvey.trello.NotFoundException;
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.domain.Action;
 import com.julienvey.trello.domain.Argument;
@@ -233,12 +234,19 @@ public class TrelloServiceImpl implements TrelloService
     @Override
     public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, Trello trello)
     {
-        List<TrelloAttachment> list = new ArrayList();   
-        List<Attachment> attachments = trello.getCardAttachments(card.getCardID());
-        for(Attachment attachment : attachments)                
+        List<TrelloAttachment> list = new ArrayList(); 
+        try
         {
-            list.add(provider.createAttachment(attachment));
-        }                     
+            List<Attachment> attachments = trello.getCardAttachments(card.getCardID());
+            for(Attachment attachment : attachments)                
+            {
+                list.add(provider.createAttachment(attachment));
+            }             
+        } 
+        catch(NotFoundException e)
+        {
+            LOG.warning(e.getMessage());
+        }
         return list;        
     } 
 
@@ -252,19 +260,21 @@ public class TrelloServiceImpl implements TrelloService
           .asJson();  
         
         List<TrelloCheckList> list = new ArrayList(); 
-        
-        JSONArray jsons = response.getBody().getArray();
-        for(int i=0; i<jsons.length(); i++)
+        if(response.isSuccess())
         {
-            JSONObject json = jsons.getJSONObject(i);
-            Properties props = new Properties();
-            props.setProperty(TrelloCheckListProvider.PROP_BOARD_ID, json.getString("idBoard"));
-            props.setProperty(TrelloCheckListProvider.PROP_CARD_ID, json.getString("idCard"));            
-            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
-            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
-            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
-            props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, json.getJSONArray("checkItems").toString());            
-            list.add(provider.getCheckList(props));
+            JSONArray jsons = response.getBody().getArray();
+            for(int i=0; i<jsons.length(); i++)
+            {
+                JSONObject json = jsons.getJSONObject(i);
+                Properties props = new Properties();
+                props.setProperty(TrelloCheckListProvider.PROP_BOARD_ID, json.getString("idBoard"));
+                props.setProperty(TrelloCheckListProvider.PROP_CARD_ID, json.getString("idCard"));            
+                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
+                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
+                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
+                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, json.getJSONArray("checkItems").toString());            
+                list.add(provider.getCheckList(props));
+            }            
         }
         return list;        
     } 

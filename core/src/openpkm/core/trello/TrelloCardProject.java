@@ -42,6 +42,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.RemoteDataProvider;
@@ -1307,14 +1308,14 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         } 
         
         @Override
-        public SortedSet<NodeProvider> getNodes()
+        public SortedSet<? extends NodeProvider> getNodes()
         {
-            List<NodeProvider> list = getCheckLists().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
+            List<NodePositionProvider> list = getCheckLists().values().stream()
+                    .filter(NodePositionProvider.class::isInstance)
+                    .map(NodePositionProvider.class::cast)
                     .toList();        
             
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
+            SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
             sorted.addAll(list);
             
             return sorted;

@@ -128,7 +128,10 @@ public class TrelloActionProviderImpl implements TrelloActionProvider
         else if(action.getType().equalsIgnoreCase(AbstractTrelloAction.TYPE_DELETE_CARD))
         {
             props.setProperty(AbstractTrelloAction.PROP_CARD_ID, action.getData().getCard().getId());
-            props.setProperty(AbstractTrelloAction.PROP_CARD_NAME, action.getData().getCard().getName());  
+            if(action.getData().getCard().getName() != null)
+            {
+                props.setProperty(AbstractTrelloAction.PROP_CARD_NAME, action.getData().getCard().getName());                 
+            } 
             props.setProperty(AbstractTrelloAction.PROP_LIST_ID, action.getData().getList().getId());
         }         
         else if(action.getType().equalsIgnoreCase(AbstractTrelloAction.TYPE_CREATE_LIST))
