@@ -18,7 +18,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
-import openpkm.base.NodeProvider;
+import openpkm.base.NodeDateTimeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.trello.TrelloAction;
@@ -33,7 +33,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
+public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTimeProvider
 {
     public static final String PROP_ACTION_ID        = "action.id";
     public static final String PROP_ACTION_TYPE      = "action.type";    
@@ -145,6 +145,12 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeProvider
         StringTokenizer st = new StringTokenizer(getMemberFullName());
         return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
     } 
+    
+    @Override
+    public LocalDateTime getDateTime()
+    {
+        return getActionDate();
+    }
 
     @Override
     public List<javax.swing.Action> getActions() 
