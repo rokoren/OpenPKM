@@ -1836,7 +1836,10 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             this.account = account;
             this.trello = trello;
             area = new JTextArea();
+            area.setFont(area.getFont().deriveFont(18f));
             area.setPreferredSize(new Dimension(400, 200));
+            area.setLineWrap(true);
+            area.setWrapStyleWord(true);
         }
 
         @Override
