@@ -4,6 +4,7 @@
  */
 package openpkm.trello;
 
+import java.time.LocalDateTime;
 import openpkm.base.Source;
 
 /**
@@ -15,4 +16,5 @@ public interface TrelloComment extends Source
     String getActionID();
     String getCardID();
     String getText();
+    LocalDateTime getDate();    
 }

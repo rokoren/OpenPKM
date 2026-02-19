@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -905,6 +906,18 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             ParentProjectProvider parent = getLookup().lookup(ParentProjectProvider.class);
             SourceProviders provider = parent.getPartentProject().getLookup().lookup(SourceProviders.class);
             return provider.getDataDirectory();
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return dateComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
         }
 
         @Override
@@ -1884,5 +1897,23 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 }                 
             }                                                           
         }
-    }     
+    } 
+
+    private static Comparator<DataObject> dateComparator() 
+    {
+        return new Comparator<DataObject>() 
+        {
+            @Override
+            public int compare(DataObject data1, DataObject data2) 
+            {
+                TrelloComment comment1 = data1.getLookup().lookup(TrelloComment.class);
+                TrelloComment comment2 = data2.getLookup().lookup(TrelloComment.class);
+                if(comment1 != null && comment2 != null)
+                {
+                    return comment1.getDate().compareTo(comment2.getDate());                    
+                }
+                return -1;
+            }
+        };
+    } 
 }

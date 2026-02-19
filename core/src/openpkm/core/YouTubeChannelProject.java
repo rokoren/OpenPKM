@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1254,6 +1255,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        }          
 
         @Override
         public String getName() 
@@ -1367,6 +1380,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1458,6 +1483,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1549,6 +1586,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1640,6 +1689,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1731,6 +1792,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1822,6 +1895,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -2535,5 +2620,23 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return YouTubeChannelProject.this;
         }                 
+    }
+    
+    public static Comparator<DataObject> timeCreatedComparator() 
+    {
+        return new Comparator<DataObject>() 
+        {
+            @Override
+            public int compare(DataObject data1, DataObject data2) 
+            {
+                YouTubeVideo video1 = data1.getLookup().lookup(YouTubeVideo.class);
+                YouTubeVideo video2 = data2.getLookup().lookup(YouTubeVideo.class);
+                if(video1 != null && video2 != null)
+                {
+                    return video1.getTimeCreated().compareTo(video2.getTimeCreated());                    
+                }
+                return -1;
+            }
+        };
     }     
 }

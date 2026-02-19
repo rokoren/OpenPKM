@@ -153,6 +153,12 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
         }
         
         @Override
+        public LocalDateTime getDate() 
+        {
+            return comment.getActionDate();
+        }        
+        
+        @Override
         public void save(OutputStream os, String comments) throws IOException
         {
             comment.getProperties().store(os, comments); 

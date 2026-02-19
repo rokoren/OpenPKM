@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -963,6 +964,18 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1054,6 +1067,18 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1145,6 +1170,18 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1236,6 +1273,18 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1327,6 +1376,18 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1418,6 +1479,18 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 

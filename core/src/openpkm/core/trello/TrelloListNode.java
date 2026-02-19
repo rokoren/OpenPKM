@@ -8,7 +8,6 @@ import java.awt.Image;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -18,7 +17,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.NodePositionProvider;
-import openpkm.trello.TrelloCard;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
@@ -108,7 +106,7 @@ public class TrelloListNode implements NodePositionProvider
 
         private void updateKeys() 
         { 
-            SortedSet<DataObject> sorted = new TreeSet<DataObject>(positionComparator());
+            SortedSet<DataObject> sorted = new TreeSet<DataObject>(provider.getComparator());
             try
             {
                 for(FileObject file : provider.getRootFolder().getChildren())
@@ -170,23 +168,5 @@ public class TrelloListNode implements NodePositionProvider
         {
             updateKeys();
         }                 
-    } 
-    
-    private static Comparator<DataObject> positionComparator() 
-    {
-        return new Comparator<DataObject>() 
-        {
-            @Override
-            public int compare(DataObject data1, DataObject data2) 
-            {
-                TrelloCard card1 = data1.getLookup().lookup(TrelloCard.class);
-                TrelloCard card2 = data2.getLookup().lookup(TrelloCard.class);
-                if(card1 != null && card1 != null)
-                {
-                    return card1.getCardPosition().compareTo(card2.getCardPosition());                    
-                }
-                return -1;
-            }
-        };
     }         
 }

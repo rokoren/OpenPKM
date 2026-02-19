@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1125,6 +1126,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }        
 
         @Override
         public String getName() 
@@ -1216,6 +1229,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1307,6 +1332,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1398,6 +1435,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1489,6 +1538,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1580,6 +1641,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 
@@ -1671,6 +1744,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return getDataDirectory();
         }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Utils.titleComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }          
 
         @Override
         public String getName() 

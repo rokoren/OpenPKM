@@ -8,7 +8,6 @@ import java.awt.Image;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -17,7 +16,6 @@ import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.DataGroupProvider;
-import openpkm.base.TitleProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObject;
@@ -113,7 +111,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport
 
         private void updateKeys() 
         {  
-            SortedSet<DataObject> sorted = new TreeSet<DataObject>(titleComparator());
+            SortedSet<DataObject> sorted = new TreeSet<DataObject>(provider.getComparator());
             try
             {
                 for(FileObject file : provider.getRootFolder().getChildren())
@@ -139,12 +137,16 @@ public class DataGroupNode extends AbstractNode implements NodeSupport
                     {
                         sorted.add(data);
                     }
-                }                
+                } 
+                if(provider.isReversed())
+                {
+                    sorted = sorted.reversed();
+                }
             }
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }              
+            } 
             setKeys(sorted); 
             
             /*
@@ -175,23 +177,5 @@ public class DataGroupNode extends AbstractNode implements NodeSupport
         {
             updateKeys();
         }                 
-    }  
-    
-    private static Comparator<DataObject> titleComparator() 
-    {
-        return new Comparator<DataObject>() 
-        {
-            @Override
-            public int compare(DataObject data1, DataObject data2) 
-            {
-                TitleProvider provider1 = data1.getLookup().lookup(TitleProvider.class);
-                TitleProvider provider2 = data2.getLookup().lookup(TitleProvider.class);
-                if(provider1 != null && provider2 != null)
-                {
-                    return provider1.getTitle().compareTo(provider2.getTitle());                    
-                }
-                return -1;
-            }
-        };
-    }    
+    }   
 }
