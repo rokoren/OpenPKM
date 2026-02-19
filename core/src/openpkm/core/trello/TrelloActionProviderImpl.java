@@ -5,13 +5,14 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Action;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
-import openpkm.utils.DateTimeUtils;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -73,7 +74,7 @@ public class TrelloActionProviderImpl implements TrelloActionProvider
     @Override
     public TrelloAction createAction(Action action) 
     {
-        LocalDateTime actionDate = DateTimeUtils.convertToLocalDateTime(action.getDate());
+        LocalDateTime actionDate = Instant.ofEpochMilli(action.getDate().getTime()).atZone(ZoneId.of("UTC")).toLocalDateTime();
         Properties props = new Properties();
         props.setProperty(AbstractTrelloAction.PROP_ACTION_ID, action.getId());
         props.setProperty(AbstractTrelloAction.PROP_ACTION_TYPE, action.getType());

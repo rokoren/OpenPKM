@@ -10,8 +10,10 @@ import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -37,11 +39,13 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JTextArea;
 import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.MarkdownSupport;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
@@ -99,6 +103,8 @@ import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.base.SourceGroupProvider;
 import openpkm.trello.TrelloComment;
+import org.openide.DialogDescriptor;
+import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
 
 /**
@@ -285,6 +291,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         { 
             List list = new ArrayList();
 
+            ParentProjectProvider parentProjectProvider = new ParentProjectProviderImpl();
+            
             list.add(this);
             list.add(new Info());
             //list.add(new IconProviderImpl());
@@ -292,15 +300,20 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
-            list.add(new ParentProjectProviderImpl());              
+            list.add(parentProjectProvider);              
 
             list.add(new TrelloCardLogicalView(this));
             list.add(new TrelloCardCustomizerProvider(this));   
             
             list.add(new HtmlFilesProviderImpl());   
 
-            list.addAll(sources.values());   
-            list.add(new CommentDataGroupProviderImpl());            
+            list.addAll(sources.values());  
+            
+            TrelloActionsProvider actionsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(TrelloActionsProvider.class);              
+            if(actionsProvider != null)
+            {
+                list.add(new CommentDataGroupProviderImpl(actionsProvider));                            
+            }
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -842,27 +855,23 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
 // TODO DataGroupProvider
 
-    private final class CommentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class CommentDataGroupProviderImpl implements DataGroupProvider
     {
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/comments.png";         
         
-        private final ChangeSupport changeSupport; 
+        private final TrelloActionsProvider provider;
                 
-        public CommentDataGroupProviderImpl()
+        public CommentDataGroupProviderImpl(TrelloActionsProvider provider)
         {
-            changeSupport = new ChangeSupport(this); 
-            //propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            this.provider = provider;
         } 
 
         @Override
         public List<Action> getActions() 
         {
-            List<Action> actions = new ArrayList();
-            /*
-            actions.add(new AddLink(list, getCardsProvider()));         
-            actions.add(new AddCard(list, getCardsProvider())); 
-            */
+            List<Action> actions = new ArrayList();            
+            actions.add(new AddComment(getCardID(), provider, getTrelloAccount(), getTrello()));        
             return actions;
         }
         
@@ -881,13 +890,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void addChangeListener(ChangeListener listener) 
         {
-            changeSupport.addChangeListener(listener);
+            provider.addChangeListener(listener);
         }
 
         @Override
         public void removeChangeListener(ChangeListener listener) 
         {
-            changeSupport.removeChangeListener(listener);
+            provider.removeChangeListener(listener);
         }   
 
         @Override
@@ -931,15 +940,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 }                 
             }                                   
             return false;
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(evt.getNewValue() instanceof AbstractTrelloAction.CommentCard)
-            {
-                changeSupport.fireChange();                           
-            }
         }
     }       
     
@@ -1817,50 +1817,69 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }
     }  
     
-    private static final class AddComment extends AbstractAction
-    {  
-        @StaticResource()
-        public static final String BANNER = "openpkm/core/resources/banner.png";          
+    private static final class AddComment extends AbstractAction implements ActionListener
+    { 
+        private static final String ACTION_COMMAND_ADD_COMMENT = "Add Comment";
+        private static final String ACTION_COMMAND_OK          = "OK";
         
-        protected final TrelloActionsProvider provider;            
+        private final Trello trello;  
+        private final String cardID;   
+        private final TrelloAccount account;   
+        private final TrelloActionsProvider provider; 
+        private final JTextArea area;
 
-        public AddComment(TrelloActionsProvider provider) 
+        public AddComment(String cardID, TrelloActionsProvider provider, TrelloAccount account, Trello trello) 
         {
-            super("Add Comment");
+            super(ACTION_COMMAND_ADD_COMMENT);
+            this.cardID = cardID;
             this.provider = provider;
+            this.account = account;
+            this.trello = trello;
+            area = new JTextArea();
+            area.setPreferredSize(new Dimension(400, 200));
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
-        {            
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new AttachmentWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
+        {             
+            if(evt.getActionCommand().equals(ACTION_COMMAND_ADD_COMMENT))
+            {                
+                DialogDescriptor d = new DialogDescriptor(
+                area, // Component
+                "Add Comment", // title
+                true, // modality
+                this); // ActionListener
+                DialogDisplayer.getDefault().createDialog(d).setVisible(true);                  
+            }
+            else if(evt.getActionCommand().equals(ACTION_COMMAND_OK))
             {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Comment");  
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            //wiz.putProperty("provider", provider.get());
-            //wiz.putProperty(GtdActionImpl.PROP_TRELLO_CARD_ID, cardID);
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            { 
-                //StatusDisplayer.getDefault().setStatusText("Trello comment added: " + attachment.getDisplayName());
-            }
+                FileObject root = provider.getRootFolder();                  
+                TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+                MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
+
+                if(root != null && service != null && markdown != null)
+                {                                                                                                     
+                    TrelloComment comment = service.createComment(cardID, area.getText().trim(), provider.getActionProvider(), provider.getCommentProvider(), account, trello);
+                    if(comment != null)
+                    {
+                        try
+                        {                                                                                                                                            
+                            provider.createData(comment, markdown);  
+                            
+                            FileSystem fs = root.getFileSystem();
+                            fs.runAtomicAction(() -> {
+                                OutputStream os = root.createAndOpen(comment.getActionID() + "." + PropertiesProvider.EXTENSION);
+                                comment.save(os, "Saved by Add Comment Action");
+                                os.close();  
+                            });                                                                                                              
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }              
+                }                 
+            }                                                           
         }
     }     
 }

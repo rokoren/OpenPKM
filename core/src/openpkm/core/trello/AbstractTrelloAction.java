@@ -7,6 +7,7 @@ package openpkm.core.trello;
 import java.awt.Color;
 import java.awt.Image;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
@@ -84,7 +85,8 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
         String string = props.getProperty(PROP_ACTION_DATE);
         if(string != null)
         {
-            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            LocalDateTime utc = LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            return utc.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();            
         }
         return null;
     } 

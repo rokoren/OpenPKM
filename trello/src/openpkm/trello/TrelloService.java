@@ -36,4 +36,5 @@ public interface TrelloService
     TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account);
     JSONObject createCheckListIem(String checkListID, String name, TrelloAccount account);
     TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account);
+    TrelloComment createComment(String cardID, String text, TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider, TrelloAccount account, Trello trello);
 }

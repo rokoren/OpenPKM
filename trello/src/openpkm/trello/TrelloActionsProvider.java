@@ -6,7 +6,7 @@ package openpkm.trello;
 
 import java.util.Map;
 import javax.swing.event.ChangeListener;
-import org.netbeans.api.project.SourceGroup;
+import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
 
@@ -14,23 +14,35 @@ import org.openide.util.ChangeSupport;
  *
  * @author Rok Koren
  */
-public abstract class TrelloActionsProvider implements SourceGroup
+public abstract class TrelloActionsProvider implements SourceProvider<TrelloComment>
 {    
     protected static final String ROOT_FOLDER = "actions";       
 
     protected Map<String, TrelloAction> activity; 
     protected FileObject rootDir; 
 
-    protected final TrelloActionProvider provider;
+    protected final TrelloActionProvider actionProvider;
+    protected final TrelloCommentProvider commentProvider;
     protected final ChangeSupport changeSupport; 
 
-    public TrelloActionsProvider(TrelloActionProvider provider) 
+    public TrelloActionsProvider(TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider) 
     {
-        this.provider = provider;
+        this.actionProvider = actionProvider;
+        this.commentProvider = commentProvider;
         changeSupport = new ChangeSupport(this); 
     } 
     
     protected abstract Map<String, TrelloAction> getActivity();
+    
+    public TrelloActionProvider getActionProvider()
+    {
+        return actionProvider;
+    }
+    
+    public TrelloCommentProvider getCommentProvider()
+    {
+        return commentProvider;
+    }    
     
     public void addChangeListener(ChangeListener listener) 
     {

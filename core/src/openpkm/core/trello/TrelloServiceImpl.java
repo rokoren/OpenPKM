@@ -40,6 +40,8 @@ import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListProvider;
+import openpkm.trello.TrelloComment;
+import openpkm.trello.TrelloCommentProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
 import openpkm.trello.TrelloList;
@@ -105,6 +107,46 @@ public class TrelloServiceImpl implements TrelloService
         props.setProperty(TrelloListProvider.PROP_LIST_POSITION, json.getInt("pos") + "");
         return provider.getList(props);
     }    
+
+    @Override
+    public TrelloComment createComment(String cardID, String text, TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider, TrelloAccount account, Trello trello)
+    {
+        HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/" + cardID + "/actions/comments")
+          .header("Accept", "application/json")
+          .queryString("text", text)
+          .queryString("idCard", cardID)
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+        
+        JSONObject json = response.getBody().getObject();
+
+        Properties props = new Properties();
+        props.setProperty(AbstractTrelloAction.PROP_ACTION_ID, json.getString("id"));
+        props.setProperty(AbstractTrelloAction.PROP_ACTION_TYPE, json.getString("type"));           
+        props.setProperty(AbstractTrelloAction.PROP_ACTION_DATE, json.getString("date"));
+
+        JSONObject member = json.getJSONObject("memberCreator");
+        props.setProperty(AbstractTrelloAction.PROP_MEMBER_ID, member.getString("id"));
+        props.setProperty(AbstractTrelloAction.PROP_MEMBER_FULL_NAME, member.getString("fullName"));
+        
+        JSONObject data = json.getJSONObject("data");
+        props.setProperty(AbstractTrelloAction.PROP_COMMENT_TEXT, data.getString("text"));         
+        
+        JSONObject card = data.getJSONObject("card");
+        JSONObject list = data.getJSONObject("list");
+        props.setProperty(AbstractTrelloAction.PROP_CARD_ID, card.getString("id"));
+        props.setProperty(AbstractTrelloAction.PROP_CARD_NAME, card.getString("name"));
+        props.setProperty(AbstractTrelloAction.PROP_LIST_ID, list.getString("id"));
+        
+        TrelloAction action = actionProvider.getAction(props);
+        if(action != null)
+        {
+            return commentProvider.getComment(action, trello);
+        }
+        
+        return null;   
+    }  
     
     @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)

@@ -1445,19 +1445,16 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceProvider<TrelloComment>, SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
         
         private static final String PROP_TRELLO_SYNC_ACTION = "trello.sync.action";         
         
-        private final TrelloCommentProvider commentProvider;
-        
-        public TrelloActionsProviderImpl(TrelloActionProvider provider, TrelloCommentProvider commentProvider) 
+        public TrelloActionsProviderImpl(TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider) 
         {
-            super(provider); 
-            this.commentProvider = commentProvider;
+            super(actionProvider, commentProvider); 
             RP.post(this);                    
         }              
         
@@ -1510,7 +1507,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloAction action = provider.getAction(Utils.getProperties(file)); 
+                            TrelloAction action = actionProvider.getAction(Utils.getProperties(file)); 
                             activity.put(action.getActionID(), action);
                         }
                         catch(IOException e)
@@ -1611,7 +1608,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             FileObject file = evt.getFile();
             try
             {
-                TrelloAction action = provider.getAction(Utils.getProperties(file)); 
+                TrelloAction action = actionProvider.getAction(Utils.getProperties(file)); 
                 getActivity().put(action.getActionID(), action);               
                 changeSupport.fireChange();
             }           
@@ -1702,7 +1699,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 handle.start();
                 handle.switchToIndeterminate();
                                 
-                List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), provider, getTrello());
+                List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), actionProvider, getTrello());
                 for(TrelloAction action : actions)
                 {
                     if(!getActivity().containsKey(action.getActionID()))
