@@ -1458,7 +1458,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, PropertyChangeListener, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
@@ -1571,9 +1571,10 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Source getSource(String sourceID)
         {
             TrelloAction action = getActivity().get(sourceID);
-            TrelloComment comment = commentProvider.getComment(action, getTrello());   
+            TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());   
             if(comment != null)
             {
+                comment.addPropertyChangeListener(this);
                 return comment;
             }
             return null;
@@ -1642,7 +1643,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 
             }
             */
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            //throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
 
         @Override
@@ -1666,7 +1667,31 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }   
+        }  
+        
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            if(evt.getPropertyName().equals(Source.PROP_DELETED))
+            {
+                if(evt.getNewValue().equals(Boolean.TRUE))
+                {
+                    Source source = (Source)evt.getSource();
+                    FileObject fo = getRootFolder().getFileObject(source.getSourceID(), PropertiesProvider.EXTENSION);       
+                    if(fo != null)
+                    {
+                        try
+                        {
+                            fo.delete();    
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                            
+                    }                    
+                }
+            }
+        }        
         
         public LocalDateTime getLastSync()
         {
@@ -1717,7 +1742,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 {
                     if(!getActivity().containsKey(action.getActionID()))
                     {
-                        TrelloComment comment = commentProvider.getComment(action, getTrello());                       
+                        TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());                       
                         try
                         {
                             if(comment == null)

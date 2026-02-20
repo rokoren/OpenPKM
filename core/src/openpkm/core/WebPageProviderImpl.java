@@ -97,8 +97,7 @@ public class WebPageProviderImpl implements WebPageProvider
         protected final PropertyChangeSupport propertyChangeSupport;
         protected final ChangeSupport changeSupport;  
         
-        private Lookup lkp;          
-        private boolean isDeleted;  
+        private Lookup lkp;           
 
         public AbstractWebPage(Properties props) 
         {
@@ -162,14 +161,20 @@ public class WebPageProviderImpl implements WebPageProvider
         @Override
         public boolean isDeleted()
         {
-            return isDeleted;
+            String string = props.getProperty(PROP_DELETED);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return false;
         }
 
         @Override
-        public void setDeleted()
+        public void setDeleted(boolean isDeleted)
         {
-            isDeleted = true;
-            changeSupport.fireChange();
+            boolean oldValue = isDeleted();
+            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
+            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
         }        
 
         @Override

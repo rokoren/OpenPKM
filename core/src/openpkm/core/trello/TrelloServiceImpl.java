@@ -142,11 +142,23 @@ public class TrelloServiceImpl implements TrelloService
         TrelloAction action = actionProvider.getAction(props);
         if(action != null)
         {
-            return commentProvider.getComment(action, trello);
+            return commentProvider.getComment(action, trello, account);
         }
         
         return null;   
     }  
+    
+    @Override
+    public int deleteComment(String cardID, String actionID, TrelloAccount account)
+    {
+        HttpResponse<String> response = Unirest.delete("https://api.trello.com/1/cards/" + cardID + "/actions/" + actionID + "/comments")
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asString();   
+        
+        return response.getStatus();
+    }
     
     @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)

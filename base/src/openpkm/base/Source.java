@@ -8,7 +8,6 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
-import javax.swing.event.ChangeListener;
 import org.openide.util.Lookup;
 
 /**
@@ -18,16 +17,15 @@ import org.openide.util.Lookup;
 public interface Source extends Lookup.Provider
 {        
     String PROP_APP_ID       = "app.id";        
-    String PROP_TIME_CREATED = "time.created";      
+    String PROP_TIME_CREATED = "time.created"; 
+    String PROP_DELETED      = "deleted";    
     
     String getSourceID();
     String getAppID();
     LocalDateTime getTimeCreated(); 
     void save(OutputStream os, String comments) throws IOException;    
-    void setDeleted();
+    void setDeleted(boolean isDeleted);
     boolean isDeleted();
     void addPropertyChangeListener(PropertyChangeListener listener);
-    void removePropertyChangeListener(PropertyChangeListener listener);
-    void addChangeListener(ChangeListener listener);  
-    void removeChangeListener(ChangeListener listener);     
+    void removePropertyChangeListener(PropertyChangeListener listener);    
 }

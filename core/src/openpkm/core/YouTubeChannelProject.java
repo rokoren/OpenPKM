@@ -2109,7 +2109,6 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }
@@ -2272,7 +2271,6 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             if(video != null)
             {
                 video.removePropertyChangeListener(this);                
-                video.setDeleted();
                 setLastSource(video);
             }
         }

@@ -15,13 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
-import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
@@ -111,16 +109,13 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     {         
         private final Properties props;
         private final PropertyChangeSupport propertyChangeSupport;
-        private final ChangeSupport changeSupport;  
         
-        private Lookup lkp;         
-        private boolean isDeleted;          
+        private Lookup lkp;                 
         
         public TrelloCardImpl(Properties props)
         {
             this.props = props;  
             propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);  
         }     
 
         @Override
@@ -161,18 +156,6 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public void removePropertyChangeListener(PropertyChangeListener listener)
         {
             propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
         }         
         
         @Override
@@ -201,14 +184,20 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         @Override
         public boolean isDeleted()
         {
-            return isDeleted;
+            String string = props.getProperty(PROP_DELETED);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return false;
         }
 
         @Override
-        public void setDeleted()
+        public void setDeleted(boolean isDeleted)
         {
-            isDeleted = true;
-            changeSupport.fireChange();
+            boolean oldValue = isDeleted();
+            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
+            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
         }  
 
         @Override

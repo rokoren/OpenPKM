@@ -1803,7 +1803,6 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             if(webPage != null)
             {
                 webPage.removePropertyChangeListener(this);
-                webPage.setDeleted();
                 setLastSource(webPage);
             }
         }
@@ -1981,7 +1980,6 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }

@@ -12,5 +12,5 @@ import com.julienvey.trello.Trello;
  */
 public interface TrelloCommentProvider 
 {
-    TrelloComment getComment(TrelloAction action, Trello trello);
+    TrelloComment getComment(TrelloAction action, Trello trello, TrelloAccount account);
 }

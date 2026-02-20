@@ -12,4 +12,5 @@ public interface RemoteDataProvider
 {
     String pull();
     void push(String data);
+    void delete();
 }

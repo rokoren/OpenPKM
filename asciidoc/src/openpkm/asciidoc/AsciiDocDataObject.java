@@ -5,11 +5,8 @@
 
 package openpkm.asciidoc;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Source;
 import openpkm.utils.Utils;
@@ -18,7 +15,6 @@ import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
-import org.openide.cookies.CloseCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.MIMEResolver;
 import org.openide.loaders.DataObject;
@@ -99,7 +95,7 @@ import org.openide.windows.TopComponent;
         position=1400
     )
 })
-public class AsciiDocDataObject extends MultiDataObject implements PropertyChangeListener, ChangeListener
+public class AsciiDocDataObject extends MultiDataObject
 {    
     private static final Logger LOG = Logger.getLogger(AsciiDocDataObject.class.getName());
 
@@ -140,9 +136,7 @@ public class AsciiDocDataObject extends MultiDataObject implements PropertyChang
                 lookup = super.getLookup();
             }  
             else
-            {
-                source.addPropertyChangeListener(this);
-                source.addChangeListener(this);                    
+            {                  
                 lookup = new ProxyLookup(super.getLookup(), Lookups.proxy(source));                
             }
         }
@@ -167,31 +161,4 @@ public class AsciiDocDataObject extends MultiDataObject implements PropertyChang
     public static MultiViewEditorElement createEditor(Lookup lkp) {
         return new MultiViewEditorElement(lkp);
     }  
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) 
-    {
-        firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
-    }
-
-    @Override
-    public void stateChanged(ChangeEvent evt) 
-    {
-        Source source = (Source)evt.getSource();
-        if(source.isDeleted())
-        {
-            source.removePropertyChangeListener(this);
-            source.removeChangeListener(this);
-            //lookupContent.remove(source);  
-            CloseCookie close = getCookie(CloseCookie.class);
-            if(close != null)
-            {
-                close.close();
-            }
-        }
-        else
-        {
-            changeSupport.fireChange();
-        }
-    }
 }

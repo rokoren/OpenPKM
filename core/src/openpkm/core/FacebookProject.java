@@ -1678,7 +1678,6 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
             if(webPage != null)
             {
                 webPage.removePropertyChangeListener(this);
-                webPage.setDeleted();
                 setLastSource(webPage);
             }
         }
@@ -1856,7 +1855,6 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }

@@ -2157,7 +2157,6 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             if(webPage != null)
             {
                 webPage.removePropertyChangeListener(this);
-                webPage.setDeleted();
                 setLastSource(webPage);
             }
         }
@@ -2347,7 +2346,6 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }

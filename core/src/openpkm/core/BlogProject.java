@@ -1684,7 +1684,6 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
             if(webPage != null)
             {
                 webPage.removePropertyChangeListener(this);
-                webPage.setDeleted();
                 setLastSource(webPage);
             }
         }
@@ -1862,7 +1861,6 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }

@@ -1967,7 +1967,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             if(content != null)
             {
                 content.removePropertyChangeListener(this);
-                content.setDeleted();
                 setLastSource(content);
             }
         }
@@ -2145,7 +2144,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }
@@ -2433,7 +2431,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Raindrop raindrop = getRaindrops().remove(file.getName());  
             if(raindrop != null)
             {
-                raindrop.setDeleted();
                 setLastSource(raindrop);
             }
         }
@@ -2587,7 +2584,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
-                video.setDeleted();
                 setLastSource(video);
             }
         }

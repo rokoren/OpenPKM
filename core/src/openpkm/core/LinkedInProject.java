@@ -1673,7 +1673,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             if(webPage != null)
             {
                 webPage.removePropertyChangeListener(this);
-                webPage.setDeleted();
                 setLastSource(webPage);
             }
         }
@@ -1851,7 +1850,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             if(reference != null)
             {
                 reference.removePropertyChangeListener(this);
-                reference.setDeleted();
                 setLastSource(reference);
             }
         }

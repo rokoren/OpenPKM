@@ -18,6 +18,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.IconProvider;
 import openpkm.base.RemoteDataProvider;
 import openpkm.base.TitleProvider;
+import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloCommentProvider;
@@ -35,11 +36,11 @@ import org.openide.util.lookup.ServiceProvider;
 public class TrelloCommentProviderImpl implements TrelloCommentProvider
 {
     @Override
-    public TrelloComment getComment(TrelloAction action, Trello trello) 
+    public TrelloComment getComment(TrelloAction action, Trello trello, TrelloAccount account) 
     {
         if(action instanceof AbstractTrelloAction.CommentCard comment)
         {
-            return new TrelloCommentImpl(comment, trello);
+            return new TrelloCommentImpl(comment, trello, account);
         }
         return null;
     }  
@@ -48,19 +49,20 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
     {
         private static final Logger LOG = Logger.getLogger(TrelloCommentImpl.class.getName());        
         
-        private final PropertyChangeSupport propertyChangeSupport;
+        private final PropertyChangeSupport propertyChangeSupport; 
         private final ChangeSupport changeSupport;  
         private final AbstractTrelloAction.CommentCard comment;
         private final Trello trello;
+        private final TrelloAccount account;
 
-        private Lookup lkp;         
-        private boolean isDeleted;          
+        private Lookup lkp;                 
         
-        public TrelloCommentImpl(AbstractTrelloAction.CommentCard comment, Trello trello) 
+        public TrelloCommentImpl(AbstractTrelloAction.CommentCard comment, Trello trello, TrelloAccount account) 
         {
             this.comment = comment;
             this.trello = trello;
-            propertyChangeSupport = new PropertyChangeSupport(this);
+            this.account = account;
+            propertyChangeSupport = new PropertyChangeSupport(this);           
             changeSupport = new ChangeSupport(this);              
         } 
         
@@ -85,7 +87,7 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
         {
             propertyChangeSupport.removePropertyChangeListener(listener);
         } 
-
+        
         @Override
         public void addChangeListener(ChangeListener listener)
         {
@@ -96,19 +98,25 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
         public void removeChangeListener(ChangeListener listener)
         {
             changeSupport.removeChangeListener(listener);
-        } 
+        }         
         
         @Override
         public boolean isDeleted()
         {
-            return isDeleted;
+            String string = comment.getProperties().getProperty(PROP_DELETED);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return false;
         }
 
         @Override
-        public void setDeleted()
+        public void setDeleted(boolean isDeleted)
         {
-            isDeleted = true;
-            changeSupport.fireChange();
+            boolean oldValue = isDeleted();
+            comment.getProperties().setProperty(PROP_DELETED, Boolean.toString(isDeleted));
+            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
         } 
         
         @Override
@@ -179,7 +187,15 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
         {
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             service.setCommentText(getCardID(), getActionID(), data, trello);
-        }         
+        }  
+        
+        @Override
+        public void delete() 
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            int status = service.deleteComment(getCardID(), getActionID(), account);            
+            LOG.info("Delete Comment status: " + status);
+        }        
 
         @Override
         public String getTitle() 

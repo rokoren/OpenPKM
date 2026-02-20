@@ -16,6 +16,8 @@ import kong.unirest.json.JSONObject;
  */
 public interface TrelloService 
 {
+    int STATUS_OK = 200;
+    
     List<TrelloBoard> getBoards(TrelloAccount account, Trello trello); 
     List<TrelloList> getLists(TrelloBoard trelloBoard, TrelloListProvider provider, Trello trello);
     TrelloList createList(String boardID, String name, TrelloListProvider provider, TrelloAccount account);
@@ -37,4 +39,5 @@ public interface TrelloService
     JSONObject createCheckListIem(String checkListID, String name, TrelloAccount account);
     TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account);
     TrelloComment createComment(String cardID, String text, TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider, TrelloAccount account, Trello trello);
+    int deleteComment(String cardID, String actionID, TrelloAccount account);
 }
