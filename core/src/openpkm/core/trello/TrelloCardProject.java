@@ -46,6 +46,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
@@ -59,7 +60,6 @@ import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.RemoteDataProvider;
-import openpkm.base.Source;
 import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
@@ -102,7 +102,6 @@ import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
-import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
@@ -116,6 +115,11 @@ import org.openide.DialogDescriptor;
 import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
 import openpkm.base.NodeActionsProvider;
+import openpkm.jcef.CefAppProvider;
+import org.cef.CefClient;
+import org.cef.browser.CefFrame;
+import org.cef.handler.CefLoadHandler;
+import org.cef.network.CefRequest;
 import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
@@ -153,11 +157,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     private final ProjectState state;
     private final Properties props;   
     
-    private Lookup lkp;  
-    private FileObject dataDir;
-    private LocalFileSystem fileSystem;
-    private Source lastSource; 
-    private boolean isDeleted;      
+    private Lookup lkp;      
     
     private TrelloAccount trelloAccount;
     private Trello trello;    
@@ -2072,23 +2072,26 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }
     } 
     
-    private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement
+    private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement, ActionListener, CefLoadHandler
     {
-        private CefBrowser browser; 
         private JToolBar toolbar;
-        private JComboBox comboBox;
 
-        private final DefaultComboBoxModel<TrelloAttachment> attachments = new DefaultComboBoxModel<>();  
+        private final DefaultComboBoxModel<TrelloAttachment> attachments = new DefaultComboBoxModel<>(); 
         
         private transient MultiViewElementCallback callback;  
         
         private final TrelloAttachmentsProvider provider;
+        private final JComboBox comboBox;
+        
+        private CefClient client;
 
         public AttachmentsMultiViewElementImpl(TrelloAttachmentsProvider provider) 
         {
             this.provider = provider;
             setLayout(new CardLayout());
             attachments.addAll(provider.getAttachments());
+            comboBox = new JComboBox(attachments);
+            comboBox.setRenderer(new NodeProvider.ListCellRendererImpl());                          
         }                
         
         @Override
@@ -2113,28 +2116,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public JComponent getVisualRepresentation() 
         {
             return this;
-            /*
-            if(browser == null)
-            {
-                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
-                if(provider != null)
-                {
-                    try
-                    {
-                        browser = provider.getBrowser(video);   
-                        if(browser != null)
-                        {
-                            add(browser.getUIComponent());
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                }
-            }
-            return this;
-            */
         }
 
         @Override
@@ -2143,8 +2124,6 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             if(toolbar == null)
             {
                 toolbar = new JToolBar();
-                comboBox = new JComboBox(attachments);
-                comboBox.setRenderer(new NodeProvider.ListCellRendererImpl());
                 toolbar.add(comboBox);
             }
             return toolbar;
@@ -2165,15 +2144,35 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void componentOpened() 
         {
+            CefAppProvider browserProvider = Lookup.getDefault().lookup(CefAppProvider.class);
+            if(browserProvider != null)
+            {
+                try
+                {
+                    client = browserProvider.getApp().createClient();   
+                    client.addLoadHandler(this);
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }  
+
+            for(TrelloAttachment attachment : provider.getAttachments())
+            {
+                add(getVisualRepresentation(attachment), attachment.getAttachmentID());
+            }              
             
+            comboBox.addActionListener(this);            
         }
 
         @Override
         public void componentClosed() 
         {
-            if(browser != null)
+            comboBox.removeActionListener(this);
+            if(client != null)
             {
-                browser.close(true);
+                client.dispose();
             }
         }
 
@@ -2200,7 +2199,74 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             
         }
-    }    
+        
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            CardLayout layout = (CardLayout)getLayout();
+            TrelloAttachment attachment = (TrelloAttachment)attachments.getSelectedItem();
+            if(attachment != null)
+            {
+                layout.show(this, attachment.getAttachmentID());  
+            }          
+        }  
+        
+        private Component getVisualRepresentation(TrelloAttachment attachment) 
+        {
+            String mimeType = attachment.getAttachmentMimeType();
+            if(mimeType == null || mimeType.isEmpty())
+            {
+                String url = attachment.getAttachmentUrl();
+                if(url != null)
+                {
+                    try
+                    {
+                        CefBrowser browser = client.createBrowser(url, false, false); 
+                        return browser.getUIComponent();                             
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }                
+            } 
+            return null;
+        }        
+
+        @Override
+        public void onLoadingStateChange(CefBrowser cb, boolean bln, boolean bln1, boolean bln2) 
+        {
+            SwingUtilities.invokeLater(() -> {
+                repaint();
+            });
+        }
+
+        @Override
+        public void onLoadStart(CefBrowser cb, CefFrame cf, CefRequest.TransitionType tt) 
+        {
+            SwingUtilities.invokeLater(() -> {
+                repaint();
+            });
+        }
+
+        @Override
+        public void onLoadEnd(CefBrowser cb, CefFrame cf, int i) 
+        {
+            SwingUtilities.invokeLater(() -> {
+                revalidate();
+                doLayout();
+                repaint();
+            });
+        }
+
+        @Override
+        public void onLoadError(CefBrowser cb, CefFrame cf, ErrorCode ec, String string, String string1) 
+        {
+            SwingUtilities.invokeLater(() -> {
+                repaint();
+            });
+        }
+    } 
 
     private static Comparator<DataObject> dateComparator() 
     {
