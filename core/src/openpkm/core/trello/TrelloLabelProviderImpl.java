@@ -7,11 +7,8 @@ package openpkm.core.trello;
 import com.julienvey.trello.domain.Label;
 import java.awt.Color;
 import java.awt.Image;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.swing.Action;
 import openpkm.base.IconsProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
@@ -177,12 +174,6 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
             }
             return null;
         }  
-        
-        @Override
-        public List<Action> getActions() 
-        {       
-            return Collections.EMPTY_LIST;
-        } 
         
         @Override
         public Children getChildren() 

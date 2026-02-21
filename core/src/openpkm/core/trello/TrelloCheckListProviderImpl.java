@@ -6,9 +6,6 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.CheckList;
 import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,7 +16,6 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -28,18 +24,11 @@ import kong.unirest.json.JSONObject;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListProvider;
-import openpkm.trello.TrelloCheckListsProvider;
-import openpkm.trello.TrelloService;
 import org.netbeans.api.annotations.common.StaticResource;
-import org.openide.DialogDisplayer;
-import org.openide.NotifyDescriptor;
-import org.openide.filesystems.FileAlreadyLockedException;
-import org.openide.filesystems.FileObject;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
@@ -47,26 +36,21 @@ import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Rok Koren
  */
+@ServiceProvider(service=TrelloCheckListProvider.class)
 public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloCheckListProvider.class.getName());    
-    
-    private final TrelloCheckListsProvider provider; 
-
-    public TrelloCheckListProviderImpl(TrelloCheckListsProvider provider) 
-    {
-        this.provider = provider;
-    }    
+    private static final Logger LOG = Logger.getLogger(TrelloCheckListProvider.class.getName());       
     
     @Override
     public TrelloCheckList getCheckList(Properties props) 
     {
-        return new TrelloCheckListImpl(props, provider);
+        return new TrelloCheckListImpl(props);
     }
     
     @Override
@@ -81,20 +65,18 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         return getCheckList(props);
     } 
     
-    private static final class TrelloCheckListImpl implements TrelloCheckList, NodePositionProvider
+    private static final class TrelloCheckListImpl implements TrelloCheckList
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/check_box_list.png";  
         
         private final Properties props; 
-        private final TrelloCheckListsProvider provider; 
         
         private ChangeSupport changeSupport;
         
-        public TrelloCheckListImpl(Properties props, TrelloCheckListsProvider provider)
+        public TrelloCheckListImpl(Properties props)
         {
             this.props = props; 
-            this.provider = provider;
         }         
         
         private synchronized Map<String, TrelloCheckListItem> getItemsById()
@@ -213,14 +195,6 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         }  
         
         @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddCheckListItem(this, provider));         
-            return actions;
-        } 
-        
-        @Override
         public Children getChildren() 
         {
             return new ChildrenImpl(this);
@@ -307,7 +281,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public Action[] getActions(boolean context) 
         {
             List<Action> actions = new ArrayList();
-            actions.addAll(provider.getActions());
+            //actions.addAll(provider.getActions());
             return actions.toArray(new Action[actions.size()]);
         }
 
@@ -322,61 +296,5 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         {
             return provider.getIcon(true);
         }        
-    } 
-    
-    private static final class AddCheckListItem extends AbstractAction
-    {          
-        private final TrelloCheckList checkList;  
-        private final TrelloCheckListsProvider provider; 
-
-        public AddCheckListItem(TrelloCheckList checkList, TrelloCheckListsProvider provider) 
-        {
-            super("Add Checklist Item");
-            this.checkList = checkList;
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {            
-            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Checklist Item");
-            Object retVal = DialogDisplayer.getDefault().notify(d);
-            if (retVal == NotifyDescriptor.OK_OPTION) 
-            {
-                String name = ((NotifyDescriptor.InputLine) d).getInputText();
-                TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-                JSONObject json = service.createCheckListIem(checkList.getCheckListID(), name, provider.getAccount());
-                
-                String string = checkList.getProperties().getProperty(PROP_CHECKLIST_ITEMS);
-                if(string != null)
-                {
-                    JSONArray jsons = new JSONArray(string);
-                    jsons.put(json);
-                    checkList.getProperties().setProperty(PROP_CHECKLIST_ITEMS, jsons.toString());
-                }                  
-                
-                FileObject file = provider.getRootFolder().getFileObject(checkList.getCheckListID(), PropertiesProvider.EXTENSION);
-                if(file != null)
-                {
-                    try
-                    {
-                        OutputStream os = file.getOutputStream();
-                        TitleProvider titleProvider = provider.getProvider().getLookup().lookup(TitleProvider.class);
-                        checkList.getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
-                        os.close();
-                        checkList.getChangeSupport().fireChange();
-                        LOG.info("Trello checklist saved: " + checkList.getCheckListID()); 
-                    }  
-                    catch(FileAlreadyLockedException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }                             
-                    catch(IOException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }                                                             
-                } 
-            }
-        }
     }     
 }

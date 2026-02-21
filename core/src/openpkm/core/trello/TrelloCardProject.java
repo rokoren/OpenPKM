@@ -42,6 +42,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
 import javax.swing.event.ChangeListener;
+import kong.unirest.json.JSONArray;
+import kong.unirest.json.JSONObject;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.HtmlFilesProvider;
@@ -107,6 +109,7 @@ import openpkm.trello.TrelloComment;
 import org.openide.DialogDescriptor;
 import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
+import openpkm.base.NodeActionsProvider;
 
 /**
  *
@@ -163,9 +166,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             sources.put(attachments.getName(), attachments);            
         }  
         
-        SourceGroup checkLists = new TrelloCheckListsProviderImpl();
-        sources.put(checkLists.getName(), checkLists);  
-        
+        TrelloCheckListProvider checkListProvider = Lookup.getDefault().lookup(TrelloCheckListProvider.class);
+        if(checkListProvider != null)
+        {          
+            SourceGroup checkLists = new TrelloCheckListsProviderImpl(checkListProvider);
+            sources.put(checkLists.getName(), checkLists);           
+        }         
+                
     }        
     
     public TrelloAccount getTrelloAccount()
@@ -970,7 +977,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
 // TODO SourceGroup    
     
-    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloAttachment>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/attach.png"; 
@@ -1075,7 +1082,15 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             {
                 LOG.warning(e.getMessage());
             }            
-        }        
+        } 
+        
+        @Override
+        public List<Action> getActions(TrelloAttachment attachment)
+        {
+            List<Action> actions = new ArrayList<>(1);
+            actions.add(new DeleteAttachment(getTrello(), TrelloCardProject.this, this, attachment));
+            return actions;
+        }
 
         @Override
         public FileObject getRootFolder() 
@@ -1279,7 +1294,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }  
     }  
     
-    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloCheckList>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/to_do_list_checked_1.png"; 
@@ -1288,9 +1303,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
          
         private final TrelloCheckListProvider provider;
         
-        public TrelloCheckListsProviderImpl() 
+        public TrelloCheckListsProviderImpl(TrelloCheckListProvider provider) 
         {
-            provider = new TrelloCheckListProviderImpl(this);
+            this.provider = provider;
             RP.post(this);    
         }          
         
@@ -1331,6 +1346,14 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             actions.add(new AddCheckList(this));         
             return actions;
         } 
+        
+        @Override
+        public List<Action> getActions(TrelloCheckList checkList) 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddCheckListItem(checkList, this));         
+            return actions;
+        }         
         
         @Override
         public SortedSet<? extends NodeProvider> getNodes()
@@ -1793,6 +1816,62 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 provider.createCheckList(name);
             }
         }
+    }  
+    
+    private static final class AddCheckListItem extends AbstractAction
+    {          
+        private final TrelloCheckList checkList;  
+        private final TrelloCheckListsProvider provider; 
+
+        public AddCheckListItem(TrelloCheckList checkList, TrelloCheckListsProvider provider) 
+        {
+            super("Add Checklist Item");
+            this.checkList = checkList;
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {            
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Checklist Item");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
+            {
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+                JSONObject json = service.createCheckListIem(checkList.getCheckListID(), name, provider.getAccount());
+                
+                String string = checkList.getProperties().getProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS);
+                if(string != null)
+                {
+                    JSONArray jsons = new JSONArray(string);
+                    jsons.put(json);
+                    checkList.getProperties().setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, jsons.toString());
+                }                  
+                
+                FileObject file = provider.getRootFolder().getFileObject(checkList.getCheckListID(), PropertiesProvider.EXTENSION);
+                if(file != null)
+                {
+                    try
+                    {
+                        OutputStream os = file.getOutputStream();
+                        TitleProvider titleProvider = provider.getProvider().getLookup().lookup(TitleProvider.class);
+                        checkList.getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
+                        os.close();
+                        checkList.getChangeSupport().fireChange();
+                        LOG.info("Trello checklist saved: " + checkList.getCheckListID()); 
+                    }  
+                    catch(FileAlreadyLockedException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                             
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                                                             
+                } 
+            }
+        }
     }     
 
     private static final class AddAttachmentLink extends AbstractAction
@@ -1841,6 +1920,46 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             }
         }
     }  
+    
+    private static final class DeleteAttachment extends AbstractAction
+    {  
+        private final Trello trello;
+        private final TrelloCard card;
+        private final TrelloAttachmentsProvider provider; 
+        private final TrelloAttachment attachment;
+
+        public DeleteAttachment(Trello trello, TrelloCard card, TrelloAttachmentsProvider provider, TrelloAttachment attachment) 
+        {
+            super("Delete");
+            this.trello = trello;
+            this.card = card;
+            this.provider = provider;
+            this.attachment = attachment;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {  
+            NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to delete: " + attachment.getAttachmentName(), "Delete Attachment", NotifyDescriptor.YES_NO_OPTION);
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.YES_OPTION) 
+            {
+                trello.deleteAttachment(card.getCardID(), attachment.getAttachmentID());  
+                FileObject fo = provider.getRootFolder().getFileObject(attachment.getAttachmentID(), PropertiesProvider.EXTENSION);       
+                if(fo != null)
+                {
+                    try
+                    {
+                        fo.delete();    
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                            
+                } 
+            }                                   
+        }
+    }     
     
     private static final class AddComment extends AbstractAction implements ActionListener
     { 

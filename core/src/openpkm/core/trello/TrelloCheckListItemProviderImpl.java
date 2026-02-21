@@ -6,12 +6,9 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.CheckItem;
 import java.awt.Image;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.swing.Action;
 import kong.unirest.json.JSONObject;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
@@ -160,12 +157,6 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
             }
             return provider.getImage(IconsProvider.ICON.UNCHECK);
         }  
-        
-        @Override
-        public List<Action> getActions() 
-        {       
-            return Collections.EMPTY_LIST;
-        } 
         
         @Override
         public Children getChildren() 

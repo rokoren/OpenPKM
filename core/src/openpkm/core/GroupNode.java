@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.NodeSupport;
 import org.openide.filesystems.FileObject;
@@ -20,6 +21,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.SourceGroupProvider;
+import openpkm.base.NodeActionsProvider;
 
 /**
  *
@@ -89,7 +91,9 @@ public class GroupNode extends AbstractNode implements NodeSupport
     
     private static final class ChildrenImpl extends Children.Keys<NodeProvider> implements ChangeListener 
     {
-        private final SourceGroupProvider provider;            
+        private final SourceGroupProvider provider;  
+        
+        private NodeActionsProvider ap;
 
         public ChildrenImpl(SourceGroupProvider provider)
         {
@@ -116,9 +120,14 @@ public class GroupNode extends AbstractNode implements NodeSupport
         }
 
         @Override
-        protected Node[] createNodes(NodeProvider provider) 
+        protected Node[] createNodes(NodeProvider nodeProvider) 
         {
-            return new Node[] {new ProviderNode(provider)};
+            if(provider instanceof NodeActionsProvider)
+            {
+                NodeActionsProvider actionsProvider = (NodeActionsProvider)provider;
+                return new Node[] {new ProviderNode(nodeProvider, actionsProvider.getActions(nodeProvider))};                
+            }            
+            return new Node[] {new ProviderNode(nodeProvider, Collections.EMPTY_LIST)};
         }          
 
         @Override
@@ -131,21 +140,28 @@ public class GroupNode extends AbstractNode implements NodeSupport
     private static final class ProviderNode extends AbstractNode
     {
         private final NodeProvider provider;
+        private final List<Action> actions;
 
-        public ProviderNode(NodeProvider provider) 
+        public ProviderNode(NodeProvider provider, List<Action> actions) 
         {
             super(provider.getChildren(), Lookups.singleton(provider));
             setName(provider.getName());
             setDisplayName(provider.getDisplayName());
             this.provider = provider;
+            this.actions = actions;
         } 
         
         @Override    
         public Action[] getActions(boolean context) 
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(provider.getActions());
-            return actions.toArray(new Action[actions.size()]);
+            List<Action> list = new ArrayList<>();
+            list.addAll(actions);
+            if(provider instanceof ActionsProvider)
+            {
+                ActionsProvider actionsProvider = (ActionsProvider)provider;
+                list.addAll(actionsProvider.getActions());
+            }                                    
+            return list.toArray(new Action[list.size()]);
         }
 
         @Override    

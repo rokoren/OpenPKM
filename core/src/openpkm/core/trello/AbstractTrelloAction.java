@@ -9,8 +9,6 @@ import java.awt.Image;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import openpkm.base.NodeDateTimeProvider;
@@ -142,13 +140,7 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
     public LocalDateTime getDateTime()
     {
         return getActionDate();
-    }
-
-    @Override
-    public List<javax.swing.Action> getActions() 
-    {       
-        return Collections.EMPTY_LIST;
-    }         
+    }        
 
     @Override
     public Children getChildren() 

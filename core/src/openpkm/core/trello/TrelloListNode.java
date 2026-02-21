@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.NodePositionProvider;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -31,7 +32,7 @@ import org.openide.util.ImageUtilities;
  *
  * @author Rok Koren
  */
-public class TrelloListNode implements NodePositionProvider
+public class TrelloListNode implements NodePositionProvider, ActionsProvider
 {
     @StaticResource()
     private static final String ICON = "openpkm/core/resources/application_view_list.png";  
