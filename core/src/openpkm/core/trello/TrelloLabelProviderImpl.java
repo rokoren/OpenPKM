@@ -10,7 +10,6 @@ import java.awt.Image;
 import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.base.IconsProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
@@ -47,7 +46,7 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
         return new TrelloLabelImpl(props);
     }    
     
-    private static final class TrelloLabelImpl implements TrelloLabel, NodeProvider
+    private static final class TrelloLabelImpl implements TrelloLabel
     {        
         private final Properties props;                
         

@@ -46,6 +46,7 @@ import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.MarkdownSupport;
+import openpkm.base.NodeActionsProvider;
 import openpkm.base.NodeDateTimeProvider;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
@@ -1776,7 +1777,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }           
     }      
     
-    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png"; 
@@ -1786,10 +1787,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public TrelloLabelsProviderImpl(TrelloLabelProvider provider) 
         {
             super(provider);  
-            if(getLastSync() == null)
-            {
-                RP.post(this);                
-            }             
+            RP.post(this);             
         }          
         
         @Override
@@ -1823,6 +1821,14 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             actions.add(new AddLabel(this));         
             return actions;
         } 
+        
+        @Override
+        public List<Action> getActions(TrelloLabel label)
+        {
+            List<Action> actions = new ArrayList<>(1);
+            actions.add(new DeleteLabel(getTrello(), this, label));
+            return actions;
+        }        
         
         @Override
         public SortedSet<NodeProvider> getNodes()
@@ -2596,12 +2602,12 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
     private static final class AddLabel extends AbstractAction
     {                          
-        private final TrelloLabelsProvider sourceGroup;            
+        private final TrelloLabelsProvider provider;            
 
-        public AddLabel(TrelloLabelsProvider sourceGroup) 
+        public AddLabel(TrelloLabelsProvider provider) 
         {
             super("Add Label");
-            this.sourceGroup = sourceGroup;
+            this.provider = provider;
         }
 
         @Override
@@ -2638,6 +2644,44 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             }
         }
     } 
+    
+    private static final class DeleteLabel extends AbstractAction
+    {  
+        private final Trello trello;
+        private final TrelloLabelsProvider provider; 
+        private final TrelloLabel label;
+
+        public DeleteLabel(Trello trello, TrelloLabelsProvider provider, TrelloLabel label) 
+        {
+            super("Delete");
+            this.trello = trello;
+            this.provider = provider;
+            this.label = label;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {  
+            NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to delete: " + label.getLabelName(), "Delete Label", NotifyDescriptor.YES_NO_OPTION);
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.YES_OPTION) 
+            {
+                trello.deleteLabel(label.getLabelID());  
+                FileObject fo = provider.getRootFolder().getFileObject(label.getLabelID(), PropertiesProvider.EXTENSION);       
+                if(fo != null)
+                {
+                    try
+                    {
+                        fo.delete();    
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                            
+                } 
+            }                                   
+        }
+    }     
 
     private static final class AddMember extends AbstractAction
     {                          

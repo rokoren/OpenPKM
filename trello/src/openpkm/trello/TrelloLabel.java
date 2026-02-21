@@ -5,13 +5,14 @@
 package openpkm.trello;
 
 import java.awt.Color;
+import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloLabel extends PropertiesProvider
+public interface TrelloLabel extends PropertiesProvider, NodeProvider
 {    
     String getLabelID();
     String getLabelName();
