@@ -4,7 +4,8 @@
  */
 package openpkm.trello;
 
-import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
 import org.netbeans.api.project.SourceGroup;
@@ -31,8 +32,13 @@ public abstract class TrelloAttachmentsProvider implements SourceGroup
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloAttachment> getAttachments();
+    protected abstract Map<String, TrelloAttachment> getAttachmentsById();
     public abstract void createAttachmentLink(String url, String name);
+    
+    public Collection<TrelloAttachment> getAttachments()
+    {
+        return Collections.unmodifiableCollection(getAttachmentsById().values());
+    }
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -46,7 +52,7 @@ public abstract class TrelloAttachmentsProvider implements SourceGroup
 
     public TrelloAttachment getAttachment(String attachmentID) 
     {
-        return getAttachments().get(attachmentID);
+        return getAttachmentsById().get(attachmentID);
     }                                  
 
     @Override
@@ -64,6 +70,6 @@ public abstract class TrelloAttachmentsProvider implements SourceGroup
     @Override
     public boolean contains(FileObject file) 
     {
-        return getAttachments().containsKey(file.getName());
+        return getAttachmentsById().containsKey(file.getName());
     }       
 }

@@ -150,5 +150,5 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         {
             return Children.LEAF;
         }        
-    }      
+    }     
 }

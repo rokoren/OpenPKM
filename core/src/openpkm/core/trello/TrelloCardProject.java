@@ -1035,19 +1035,14 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public SortedSet<NodeProvider> getNodes()
         {
-            List<NodeProvider> list = getAttachments().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
-                    .toList();        
-
             SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(list);
+            sorted.addAll(getAttachments());
             
             return sorted;
         }
         
         @Override
-        protected synchronized Map<String, TrelloAttachment> getAttachments()
+        protected synchronized Map<String, TrelloAttachment> getAttachmentsById()
         {
             if(attachments == null)
             {
@@ -1150,7 +1145,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             try
             {
                 TrelloAttachment attachment = provider.getAttachment(Utils.getProperties(file)); 
-                getAttachments().put(attachment.getAttachmentID(), attachment);               
+                getAttachmentsById().put(attachment.getAttachmentID(), attachment);               
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1166,7 +1161,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             try
             {
                 TrelloAttachment attachment = provider.getAttachment(Utils.getProperties(file)); 
-                getAttachments().put(attachment.getAttachmentID(), attachment);               
+                getAttachmentsById().put(attachment.getAttachmentID(), attachment);               
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1179,7 +1174,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            TrelloAttachment attachment = getAttachments().remove(file.getName());  
+            TrelloAttachment attachment = getAttachmentsById().remove(file.getName());  
             if(attachment != null)
             {
                 changeSupport.fireChange();
@@ -1237,12 +1232,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             if(service != null)
             {
                 List<TrelloAttachment> attachments = service.getAttachments(TrelloCardProject.this, provider, getTrello());
-                Set<String> keys = new HashSet<>(getAttachments().keySet());
+                Set<String> keys = new HashSet<>(getAttachmentsById().keySet());
                 for(TrelloAttachment attachment : attachments)
                 {                    
                     if(keys.remove(attachment.getAttachmentID()))
                     {
-                        TrelloAttachment old = getAttachments().get(attachment.getAttachmentID());
+                        TrelloAttachment old = getAttachmentsById().get(attachment.getAttachmentID());
                         if(!old.getProperties().equals(attachment.getProperties()))
                         {
                             FileObject file = getRootFolder().getFileObject(attachment.getAttachmentID(), PropertiesProvider.EXTENSION);
@@ -2083,7 +2078,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         private JToolBar toolbar;
         private JComboBox comboBox;
 
-        private final DefaultComboBoxModel<TrelloAttachment> attachments = new DefaultComboBoxModel<>();        
+        private final DefaultComboBoxModel<TrelloAttachment> attachments = new DefaultComboBoxModel<>();  
         
         private transient MultiViewElementCallback callback;  
         
@@ -2093,6 +2088,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             this.provider = provider;
             setLayout(new CardLayout());
+            attachments.addAll(provider.getAttachments());
         }                
         
         @Override
@@ -2148,6 +2144,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             {
                 toolbar = new JToolBar();
                 comboBox = new JComboBox(attachments);
+                comboBox.setRenderer(new NodeProvider.ListCellRendererImpl());
                 toolbar.add(comboBox);
             }
             return toolbar;
