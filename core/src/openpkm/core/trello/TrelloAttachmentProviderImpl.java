@@ -13,9 +13,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.youtube.YouTubeUtils;
-import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.nodes.Children;
-import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -53,10 +51,7 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
     } 
     
     private static final class TrelloAttachmentImpl implements TrelloAttachment
-    { 
-        @StaticResource()
-        private static final String ICON = "openpkm/core/resources/attach.png";  
-        
+    {         
         private final Properties props;     
         
         public TrelloAttachmentImpl(Properties props)
@@ -147,7 +142,7 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
             {
                 return provider.getImage(IconsProvider.ICON.FILE_JPG);
             }             
-            return ImageUtilities.loadImage(ICON);
+            return provider.getImage(IconsProvider.ICON.ATTACHMENT);
         } 
         
         @Override

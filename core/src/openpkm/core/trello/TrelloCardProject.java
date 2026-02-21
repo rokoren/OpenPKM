@@ -8,6 +8,7 @@ import com.julienvey.trello.Trello;
 import com.julienvey.trello.impl.TrelloImpl;
 import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -37,10 +38,14 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
@@ -48,6 +53,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.IconsProvider;
 import openpkm.base.MarkdownSupport;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
@@ -110,6 +116,10 @@ import org.openide.DialogDescriptor;
 import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
 import openpkm.base.NodeActionsProvider;
+import org.netbeans.core.spi.multiview.CloseOperationState;
+import org.netbeans.core.spi.multiview.MultiViewDescription;
+import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 
 /**
  *
@@ -570,7 +580,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         }
         cookies.clear();
         return true;
-    }  
+    }
     
 // TODO TopComponentProvider
     
@@ -977,7 +987,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
 // TODO SourceGroup    
     
-    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloAttachment>, FileChangeListener, Runnable
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloAttachment>, MultiViewDescription, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/attach.png"; 
@@ -1292,6 +1302,43 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 setLastSync(LocalDateTime.now());
             }
         }  
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Attachments";
+        }
+
+        @Override
+        public Image getIcon() 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.ATTACHMENT);
+        }
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+
+        @Override
+        public String preferredID() 
+        {
+            return "attachment";
+        }
+
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new AttachmentsMultiViewElementImpl(this);
+        }           
     }  
     
     private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloCheckList>, FileChangeListener, Runnable
@@ -2029,6 +2076,134 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             }                                                           
         }
     } 
+    
+    private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement
+    {
+        private CefBrowser browser; 
+        private JToolBar toolbar;
+        private JComboBox comboBox;
+
+        private final DefaultComboBoxModel<TrelloAttachment> attachments = new DefaultComboBoxModel<>();        
+        
+        private transient MultiViewElementCallback callback;  
+        
+        private final TrelloAttachmentsProvider provider;
+
+        public AttachmentsMultiViewElementImpl(TrelloAttachmentsProvider provider) 
+        {
+            this.provider = provider;
+            setLayout(new CardLayout());
+        }                
+        
+        @Override
+        public UndoRedo getUndoRedo() 
+        {
+            return UndoRedo.NONE;
+        }
+
+        @Override
+        public void setMultiViewCallback(MultiViewElementCallback callback) 
+        {
+            this.callback = callback;
+        }
+
+        @Override
+        public CloseOperationState canCloseElement() 
+        {
+            return CloseOperationState.STATE_OK;
+        } 
+        
+        @Override
+        public JComponent getVisualRepresentation() 
+        {
+            return this;
+            /*
+            if(browser == null)
+            {
+                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+                if(provider != null)
+                {
+                    try
+                    {
+                        browser = provider.getBrowser(video);   
+                        if(browser != null)
+                        {
+                            add(browser.getUIComponent());
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
+            }
+            return this;
+            */
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            if(toolbar == null)
+            {
+                toolbar = new JToolBar();
+                comboBox = new JComboBox(attachments);
+                toolbar.add(comboBox);
+            }
+            return toolbar;
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookup.EMPTY;
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
+            
+        }
+
+        @Override
+        public void componentClosed() 
+        {
+            if(browser != null)
+            {
+                browser.close(true);
+            }
+        }
+
+        @Override
+        public void componentShowing() 
+        {
+            
+        }
+
+        @Override
+        public void componentHidden() 
+        {
+            
+        }
+
+        @Override
+        public void componentActivated() 
+        {
+            
+        }
+
+        @Override
+        public void componentDeactivated() 
+        {
+            
+        }
+    }    
 
     private static Comparator<DataObject> dateComparator() 
     {

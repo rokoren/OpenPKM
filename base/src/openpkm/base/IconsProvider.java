@@ -40,6 +40,7 @@ public interface IconsProvider
         WATCH_LATER,
         CHECK,
         UNCHECK,
+        ATTACHMENT,
         BULLET_RED,
         BULLET_GREEN,
         BULLET_BLUE,        
