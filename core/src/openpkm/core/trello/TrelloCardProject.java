@@ -122,6 +122,7 @@ import org.openide.DialogDescriptor;
 import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
 import openpkm.base.NodeActionsProvider;
+import openpkm.base.RunnableFX;
 import openpkm.jcef.CefAppProvider;
 import org.cef.CefClient;
 import org.cef.browser.CefFrame;
@@ -2095,6 +2096,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         private JToolBar toolbar;
 
         private final DefaultComboBoxModel<TrelloAttachment> attachments = new DefaultComboBoxModel<>(); 
+        private final Map<String, RunnableFX> inits = new HashMap<>(); 
         
         private transient MultiViewElementCallback callback;  
         
@@ -2229,6 +2231,18 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             TrelloAttachment attachment = (TrelloAttachment)attachments.getSelectedItem();
             if(attachment != null)
             {
+                RunnableFX init = inits.remove(attachment.getAttachmentID());
+                if(init != null)
+                {
+                    if(init.isFX())
+                    {
+                        Platform.runLater(init);                       
+                    }
+                    else
+                    {
+                        RP.post(init);
+                    }
+                }
                 layout.show(this, attachment.getAttachmentID());  
             }          
         }  
@@ -2261,38 +2275,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 try
                 {
                     HttpURLConnection conn = provider.getAttachmentConn(attachment);
-                    Platform.runLater(new Runnable() 
-                    {
-                        @Override
-                        public void run() 
-                        {
-                            try
-                            {
-                                PDFView pdfView = new PDFView();
-                                pdfView.load(conn.getInputStream());                              
-
-                                pdfView.setShowToolBar(false);
-                                pdfView.setShowThumbnails(false);
-                                pdfView.setCacheThumbnails(true);
-                                //pdfView.setShowAll(true);
-                                //pdfView.getStylesheets().setAll(Objects.requireNonNull(Installer.class.getResource("nord-dark.css")).toExternalForm(), Objects.requireNonNull(Installer.class.getResource("pdf-view-atlanta.css")).toExternalForm());                   
-                                Scene scene = new Scene(pdfView);
-                                /*
-                                if (isDarkLaF)
-                                {
-                                    scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
-                                    // Loading default content to force apply a content with css for dark background
-                                    //browser.getEngine().loadContent(readLoadingPage());
-                                }              
-                                */
-                                panel.setScene(scene);                                
-                            }
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }
-                        }
-                    });                       
+                    inits.put(attachment.getAttachmentID(), new PdfCard(panel, conn));                      
                 }
                 catch(MalformedURLException e)
                 {
@@ -2342,6 +2325,56 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             });
         }
     } 
+    
+    private static final class PdfCard implements RunnableFX
+    {
+        private final JFXPanel panel;
+        private final HttpURLConnection conn;
+
+        public PdfCard(JFXPanel panel, HttpURLConnection conn) {
+            this.panel = panel;
+            this.conn = conn;
+        }
+        
+        @Override
+        public boolean isFX()
+        {
+            return true;
+        }
+        
+        @Override
+        public void run()
+        {
+            try
+            {
+                PDFView pdfView = new PDFView();
+                pdfView.load(conn.getInputStream());                              
+
+                pdfView.setShowToolBar(false);
+                pdfView.setShowThumbnails(false);
+                pdfView.setCacheThumbnails(true);
+                //pdfView.setShowAll(true);
+                //pdfView.getStylesheets().setAll(Objects.requireNonNull(Installer.class.getResource("nord-dark.css")).toExternalForm(), Objects.requireNonNull(Installer.class.getResource("pdf-view-atlanta.css")).toExternalForm());                   
+                Scene scene = new Scene(pdfView);
+                /*
+                if (isDarkLaF)
+                {
+                    scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
+                    // Loading default content to force apply a content with css for dark background
+                    //browser.getEngine().loadContent(readLoadingPage());
+                }              
+                */
+                panel.setScene(scene);                 
+                
+                
+                            
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+        }
+    }
 
     private static Comparator<DataObject> dateComparator() 
     {
