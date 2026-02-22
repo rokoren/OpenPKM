@@ -4,6 +4,9 @@
  */
 package openpkm.trello;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -34,6 +37,7 @@ public abstract class TrelloAttachmentsProvider implements SourceGroup
     
     protected abstract Map<String, TrelloAttachment> getAttachmentsById();
     public abstract void createAttachmentLink(String url, String name);
+    public abstract HttpURLConnection getAttachmentConn(TrelloAttachment attachment) throws MalformedURLException, IOException;
     
     public Collection<TrelloAttachment> getAttachments()
     {

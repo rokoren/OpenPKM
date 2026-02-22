@@ -13,6 +13,10 @@ import java.util.Properties;
  */
 public interface TrelloAttachmentProvider 
 {
+    String MIME_TYPE_PDF  = "application/pdf";
+    String MIME_TYPE_PNG  = "image/png";
+    String MIME_TYPE_JPEG = "image/jpeg";      
+    
     String PROP_ATTACHMENT_ID        = "attachment.id";
     String PROP_ATTACHMENT_URL       = "attachment.url";
     String PROP_ATTACHMENT_NAME      = "attachment.name";    

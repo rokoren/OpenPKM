@@ -4,6 +4,7 @@
  */
 package openpkm.core.trello;
 
+import com.dlsc.pdfviewfx.PDFView;
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.impl.TrelloImpl;
 import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
@@ -20,6 +21,9 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -36,6 +40,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.DefaultComboBoxModel;
@@ -998,7 +1005,18 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             super(provider);    
             RP.post(this);            
-        }          
+        } 
+        
+        @Override
+        public HttpURLConnection getAttachmentConn(TrelloAttachment attachment) throws MalformedURLException, IOException
+        {
+            TrelloAccount account = getTrelloAccount();
+            String link = "https://api.trello.com/1/cards/" + getCardID() + "/attachments/" + attachment.getAttachmentID() + "/download/" + attachment.getAttachmentName();
+            URL url = new URL(link);                     
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("Authorization", "OAuth oauth_consumer_key=\"" + account.getApiKey() + "\", oauth_token=\"" + account.getAccessToken() + "\"");              
+            return conn;
+        }
         
         @Override
         public Lookup.Provider getProvider()
@@ -2163,7 +2181,11 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 add(getVisualRepresentation(attachment), attachment.getAttachmentID());
             }              
             
-            comboBox.addActionListener(this);            
+            comboBox.addActionListener(this); 
+            if(comboBox.getItemCount() > 0)
+            {
+                comboBox.setSelectedIndex(0);
+            }
         }
 
         @Override
@@ -2230,6 +2252,59 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                     }
                 }                
             } 
+            if(mimeType.equals(TrelloAttachmentProvider.MIME_TYPE_PDF))
+            {                
+                JFXPanel panel = new JFXPanel();
+                panel.setLayout(new BorderLayout());
+                LOG.info("Attachment URL: " + attachment.getAttachmentUrl());
+                
+                try
+                {
+                    HttpURLConnection conn = provider.getAttachmentConn(attachment);
+                    Platform.runLater(new Runnable() 
+                    {
+                        @Override
+                        public void run() 
+                        {
+                            try
+                            {
+                                PDFView pdfView = new PDFView();
+                                pdfView.load(conn.getInputStream());                              
+
+                                pdfView.setShowToolBar(false);
+                                pdfView.setShowThumbnails(false);
+                                pdfView.setCacheThumbnails(true);
+                                //pdfView.setShowAll(true);
+                                //pdfView.getStylesheets().setAll(Objects.requireNonNull(Installer.class.getResource("nord-dark.css")).toExternalForm(), Objects.requireNonNull(Installer.class.getResource("pdf-view-atlanta.css")).toExternalForm());                   
+                                Scene scene = new Scene(pdfView);
+                                /*
+                                if (isDarkLaF)
+                                {
+                                    scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
+                                    // Loading default content to force apply a content with css for dark background
+                                    //browser.getEngine().loadContent(readLoadingPage());
+                                }              
+                                */
+                                panel.setScene(scene);                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }
+                    });                       
+                }
+                catch(MalformedURLException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }          
+                
+                return panel; 
+            }            
             return null;
         }        
 
