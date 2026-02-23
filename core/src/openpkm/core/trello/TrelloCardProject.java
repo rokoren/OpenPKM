@@ -43,6 +43,8 @@ import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.DefaultComboBoxModel;
@@ -2180,7 +2182,11 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
 
             for(TrelloAttachment attachment : provider.getAttachments())
             {
-                add(getVisualRepresentation(attachment), attachment.getAttachmentID());
+                Component comp = getVisualRepresentation(attachment);
+                if(comp != null)
+                {
+                    add(comp, attachment.getAttachmentID());                    
+                }
             }              
             
             comboBox.addActionListener(this); 
@@ -2287,7 +2293,29 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 }          
                 
                 return panel; 
-            }            
+            } 
+            else if(mimeType.equals(TrelloAttachmentProvider.MIME_TYPE_JPEG) || mimeType.equals(TrelloAttachmentProvider.MIME_TYPE_PNG))
+            {                
+                JFXPanel panel = new JFXPanel();
+                panel.setLayout(new BorderLayout());
+                LOG.info("Attachment URL: " + attachment.getAttachmentUrl());
+                
+                try
+                {
+                    HttpURLConnection conn = provider.getAttachmentConn(attachment);
+                    inits.put(attachment.getAttachmentID(), new ImageCard(panel, conn));                      
+                }
+                catch(MalformedURLException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }          
+                
+                return panel; 
+            }             
             return null;
         }        
 
@@ -2364,10 +2392,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                     //browser.getEngine().loadContent(readLoadingPage());
                 }              
                 */
-                panel.setScene(scene);                 
-                
-                
-                            
+                panel.setScene(scene);                                                                             
             }
             catch(IOException e)
             {
@@ -2375,6 +2400,56 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             }
         }
     }
+    
+    private static final class ImageCard implements RunnableFX
+    {
+        private final JFXPanel panel;
+        private final HttpURLConnection conn;
+
+        public ImageCard(JFXPanel panel, HttpURLConnection conn) {
+            this.panel = panel;
+            this.conn = conn;
+        }
+        
+        @Override
+        public boolean isFX()
+        {
+            return true;
+        }
+        
+        @Override
+        public void run()
+        {            
+            ImageView imageView = new ImageView();            
+            BorderPane borderPane = new BorderPane();
+            borderPane.setCenter(imageView);                  
+            imageView.fitWidthProperty().bind(borderPane.widthProperty());
+            imageView.fitHeightProperty().bind(borderPane.heightProperty());  
+            imageView.setPreserveRatio(false);
+            imageView.setSmooth(true);
+            imageView.setCache(true);                  
+            Scene scene = new Scene(borderPane);
+            /*
+            if (isDarkLaF)
+            {
+                scene.getStylesheets().add(getClass().getResource("/openpkm/asciidoc/resources/javafx-nb-dark.css").toString());
+                // Loading default content to force apply a content with css for dark background
+                //browser.getEngine().loadContent(readLoadingPage());
+            }              
+            */
+            panel.setScene(scene);            
+            
+            try
+            {
+                javafx.scene.image.Image image = new javafx.scene.image.Image(conn.getInputStream());                
+                imageView.setImage(image); 
+            }                  
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+    }    
 
     private static Comparator<DataObject> dateComparator() 
     {
