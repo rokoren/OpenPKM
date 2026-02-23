@@ -79,7 +79,25 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         public String getAttachmentMimeType() 
         {
             return props.getProperty(PROP_ATTACHMENT_MIME_TYPE);
-        }        
+        } 
+        
+        @Override
+        public Integer getAttachmentPosition() 
+        {
+            String string = props.getProperty(PROP_ATTACHMENT_POSITION);
+            if(string != null)
+            {
+                try
+                {
+                    return Integer.parseInt(string);
+                }
+                catch(NumberFormatException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }
+            return null;
+        }         
         
 // TODO PropertiesProvider        
         
@@ -145,6 +163,17 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         public Children getChildren() 
         {
             return Children.LEAF;
+        }  
+        
+        @Override
+        public int getPosition() 
+        {
+            Integer position = getAttachmentPosition();
+            if(position != null)
+            {
+                return position.intValue();
+            }
+            return -1;
         }        
     }     
 }

@@ -1054,12 +1054,11 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         } 
         
         @Override
-        public SortedSet<NodeProvider> getNodes()
+        public SortedSet<? extends NodeProvider> getNodes()
         {
-            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(getAttachments());
-            
-            return sorted;
+            SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
+            sorted.addAll(getAttachments());            
+            return sorted.reversed();
         }
         
         @Override
@@ -1252,7 +1251,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             if(service != null)
             {
-                List<TrelloAttachment> attachments = service.getAttachments(TrelloCardProject.this, provider, getTrello());
+                List<TrelloAttachment> attachments = service.getAttachments(TrelloCardProject.this, provider, getTrelloAccount());
                 Set<String> keys = new HashSet<>(getAttachmentsById().keySet());
                 for(TrelloAttachment attachment : attachments)
                 {                    
@@ -2111,7 +2110,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             this.provider = provider;
             setLayout(new CardLayout());
-            attachments.addAll(provider.getAttachments());
+            SortedSet<TrelloAttachment> sorted = new TreeSet<TrelloAttachment>(NodePositionProvider.positionComparator());
+            sorted.addAll(provider.getAttachments());
+            attachments.addAll(sorted.reversed());
             comboBox = new JComboBox(attachments);
             comboBox.setRenderer(new NodeProvider.ListCellRendererImpl());                          
         }                

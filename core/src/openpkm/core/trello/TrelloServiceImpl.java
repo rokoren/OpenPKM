@@ -4,11 +4,9 @@
  */
 package openpkm.core.trello;
 
-import com.julienvey.trello.NotFoundException;
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.domain.Action;
 import com.julienvey.trello.domain.Argument;
-import com.julienvey.trello.domain.Attachment;
 import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.Label;
@@ -286,22 +284,34 @@ public class TrelloServiceImpl implements TrelloService
     }       
     
     @Override
-    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, Trello trello)
+    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, TrelloAccount account)
     {
+        HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + card.getCardID() + "/attachments")
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+        
         List<TrelloAttachment> list = new ArrayList(); 
-        try
+        if(response.isSuccess())
         {
-            List<Attachment> attachments = trello.getCardAttachments(card.getCardID());
-            for(Attachment attachment : attachments)                
+            JSONArray jsons = response.getBody().getArray();
+            for(int i=0; i<jsons.length(); i++)
             {
-                list.add(provider.createAttachment(attachment));
-            }             
-        } 
-        catch(NotFoundException e)
-        {
-            LOG.warning(e.getMessage());
+                JSONObject json = jsons.getJSONObject(i);
+                Properties props = new Properties();
+                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_ID, json.getString("id"));
+                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME, json.getString("name")); 
+                if(!json.isNull("mimeType"))
+                {
+                    props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_MIME_TYPE, json.getString("mimeType"));                    
+                }
+                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL, json.getString("url"));
+                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_POSITION, json.getInt("pos") + "");          
+                list.add(provider.getAttachment(props));
+            }            
         }
-        return list;        
+        return list;                
     } 
 
     @Override

@@ -33,7 +33,7 @@ public interface TrelloService
     TrelloCard createCard(String listID, String name, TrelloCardProvider provider, TrelloAccount account);
     TrelloCard createLink(String listID, String url, TrelloCardProvider provider, TrelloAccount account);
     TrelloCard getCard(String cardID, TrelloCardProvider provider, TrelloAccount account) throws UnirestException;
-    List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentProvider provider, Trello trello);    
+    List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentProvider provider, TrelloAccount account);    
     List<TrelloCheckList> getCheckLists(TrelloCard trelloCard, TrelloCheckListProvider provider, TrelloAccount account);
     TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account);
     JSONObject createCheckListIem(String checkListID, String name, TrelloAccount account);
