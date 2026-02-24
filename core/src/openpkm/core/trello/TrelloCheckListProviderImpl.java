@@ -21,9 +21,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
-import openpkm.base.ActionsProvider;
 import openpkm.base.NodePositionProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
@@ -216,7 +214,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         }
     }  
     
-    static final class ChildrenImpl extends Children.Keys<NodePositionProvider> implements ChangeListener
+    static final class ChildrenImpl extends Children.Keys<TrelloCheckListItem> implements ChangeListener
     {
         private final TrelloCheckList checkList;
 
@@ -233,7 +231,7 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
 
         private void updateKeys() 
         {
-            SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
+            SortedSet<TrelloCheckListItem> sorted = new TreeSet<TrelloCheckListItem>(NodePositionProvider.positionComparator());
             sorted.addAll(checkList.getItems());
             setKeys(sorted);             
             /*
@@ -253,13 +251,13 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         protected void removeNotify() 
         {
             checkList.getChangeSupport().removeChangeListener(this);
-            setKeys(Collections.<NodePositionProvider>emptySet());
+            setKeys(Collections.<TrelloCheckListItem>emptySet());
         }
 
         @Override
-        protected Node[] createNodes(NodePositionProvider provider) 
+        protected Node[] createNodes(TrelloCheckListItem item) 
         {
-            return new Node[] {new ItemNode(provider)};
+            return new Node[] {new ItemNode(item)};
         }          
 
         @Override
@@ -269,40 +267,49 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         }
     }     
 
-    private static final class ItemNode extends AbstractNode
+    private static final class ItemNode extends AbstractNode implements ChangeListener
     {
-        private final NodeProvider provider;
+        private final TrelloCheckListItem item;
 
-        public ItemNode(NodeProvider provider) 
+        public ItemNode(TrelloCheckListItem item) 
         {
-            super(provider.getChildren(), Lookups.singleton(provider));
-            setName(provider.getName());
-            setDisplayName(provider.getDisplayName());
-            this.provider = provider;
+            super(item.getChildren(), Lookups.singleton(item));
+            setName(item.getName());
+            setDisplayName(item.getDisplayName());
+            this.item = item;
+            item.getChangeSupport().addChangeListener(this);
         } 
+        
+        @Override
+        public Action getPreferredAction()
+        {
+            return item.getPreferredAction();
+        }
         
         @Override    
         public Action[] getActions(boolean context) 
         {
             List<Action> actions = new ArrayList();
-            if(provider instanceof ActionsProvider)
-            {
-                ActionsProvider actionsProvider = (ActionsProvider)provider;
-                actions.addAll(actionsProvider.getActions());                
-            }
+            actions.addAll(item.getActions());
             return actions.toArray(new Action[actions.size()]);
         }
 
         @Override    
         public Image getIcon(int type)     
         {
-            return provider.getIcon(false);
+            return item.getIcon(false);
         }
 
         @Override
         public Image getOpenedIcon(int type) 
         {
-            return provider.getIcon(true);
+            return item.getIcon(true);
         }        
+
+        @Override
+        public void stateChanged(ChangeEvent ce) 
+        {
+            fireIconChange();
+        }
     }    
 }

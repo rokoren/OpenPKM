@@ -6,26 +6,29 @@ package openpkm.trello;
 
 import java.util.Arrays;
 import java.util.Optional;
+import openpkm.base.ActionsProvider;
 import openpkm.base.NodePositionProvider;
+import openpkm.base.PreferredActionProvider;
 import openpkm.base.PropertiesProvider;
+import org.openide.util.ChangeSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCheckListItem extends PropertiesProvider, NodePositionProvider
+public interface TrelloCheckListItem extends PropertiesProvider, NodePositionProvider, ActionsProvider, PreferredActionProvider
 {
     String getCheckListItemID();
     String getCheckListItemName();
     Integer getCheckListItemPosition(); 
     State getCheckListItemState();
     void setCheckListItemState(State state);
+    ChangeSupport getChangeSupport();    
     
     public enum State 
     {
-        INCOMPLETE("Incomplete"),
-        COMPLETE("Complete"),
-        DELETED("Deeleted");
+        INCOMPLETE("incomplete"),
+        COMPLETE("complete");
 
         private String string;
 

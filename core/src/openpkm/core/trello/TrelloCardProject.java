@@ -146,9 +146,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";         
     
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/date_task.png";
-    
-    private static final String DATA_FOLDER = "data";    
+    public static final String ICON = "openpkm/core/resources/date_task.png"; 
     
     private static final int POSITION_CHECK_LISTS = 100;
     private static final int POSITION_COMMENTS    = 200;    

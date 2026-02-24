@@ -157,7 +157,7 @@ public class TrelloServiceImpl implements TrelloService
           .asString();   
         
         return response.getStatus();
-    }
+    }   
     
     @Override
     public int deleteCheckListItem(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account)
@@ -168,7 +168,19 @@ public class TrelloServiceImpl implements TrelloService
           .asString();
 
         return response.getStatus(); 
-    }      
+    }  
+
+    @Override
+    public int setCheckListItemState(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account)
+    {
+        HttpResponse<String> response = Unirest.put("https://api.trello.com/1/cards/" + checkList.getCardID() + "/checkItem/" + item.getCheckListItemID())
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .queryString("state", item.getCheckListItemState().toString())                
+          .asString();   
+        
+        return response.getStatus(); 
+    } 
     
     @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)

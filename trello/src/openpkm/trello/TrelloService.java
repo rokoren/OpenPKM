@@ -40,5 +40,6 @@ public interface TrelloService
     TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account);
     TrelloComment createComment(String cardID, String text, TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider, TrelloAccount account, Trello trello);
     int deleteComment(String cardID, String actionID, TrelloAccount account);
-    int deleteCheckListItem(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account);    
+    int deleteCheckListItem(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account);  
+    int setCheckListItemState(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account);   
 }

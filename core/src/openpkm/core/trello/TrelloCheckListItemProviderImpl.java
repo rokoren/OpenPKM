@@ -18,7 +18,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
-import openpkm.base.ActionsProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
@@ -33,6 +32,7 @@ import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileObject;
 import org.openide.nodes.Children;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 
 /**
@@ -86,9 +86,11 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         return new TrelloCheckListItemImpl(props);
     } 
     
-    private final class TrelloCheckListItemImpl implements TrelloCheckListItem, ActionsProvider
-    {         
-        private final Properties props;     
+    private final class TrelloCheckListItemImpl implements TrelloCheckListItem
+    {          
+        private final Properties props; 
+        
+        private ChangeSupport changeSupport;
         
         public TrelloCheckListItemImpl(Properties props)
         {
@@ -153,7 +155,17 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
             {
                 props.put(PROP_CHECKLIST_ITEM_STATE, state.toString());
             }
-        }         
+        }
+        
+        @Override
+        public ChangeSupport getChangeSupport()
+        {
+            if(changeSupport == null)
+            {
+                changeSupport = new ChangeSupport(this);
+            }
+            return changeSupport;
+        }        
         
 // TODO PropertiesProvider        
         
@@ -216,8 +228,15 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList<>();
+            actions.add(new CheckUncheckAction(this, TrelloCheckListItemProviderImpl.this));
             actions.add(new DeleteCheckListItem(this, TrelloCheckListItemProviderImpl.this));
             return actions;
+        }
+
+        @Override
+        public Action getPreferredAction() 
+        {
+            return new CheckUncheckAction(this, TrelloCheckListItemProviderImpl.this);
         }
     }  
     
@@ -294,5 +313,89 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                 }                                
             }            
         }
-    }      
+    }    
+    
+    private static final class CheckUncheckAction extends AbstractAction
+    {  
+        private static final String ACTION_NAME_CHECK   = "Check";
+        private static final String ACTION_NAME_UNCHECK = "Uncheck";
+        
+        private final TrelloCheckListItem item;   
+        private final TrelloCheckListItemProvider provider; 
+
+        public CheckUncheckAction(TrelloCheckListItem item, TrelloCheckListItemProvider provider) 
+        {
+            super(getActionName(item));
+            this.item = item;
+            this.provider = provider;
+        }
+        
+        private static String getActionName(TrelloCheckListItem item)
+        {
+            if(item.getCheckListItemState() == TrelloCheckListItem.State.INCOMPLETE)
+            {
+                return ACTION_NAME_CHECK;
+            }
+            else if(item.getCheckListItemState() == TrelloCheckListItem.State.COMPLETE)
+            {
+                return ACTION_NAME_UNCHECK;
+            }
+            return null;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        { 
+            if(item.getCheckListItemState() == TrelloCheckListItem.State.INCOMPLETE)
+            {
+                item.setCheckListItemState(TrelloCheckListItem.State.COMPLETE);
+            }   
+            else if(item.getCheckListItemState() == TrelloCheckListItem.State.COMPLETE)
+            {
+                item.setCheckListItemState(TrelloCheckListItem.State.INCOMPLETE);
+            }             
+            
+            String string = provider.getCheckList().getProperties().getProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS);
+            if(string != null)
+            {
+                JSONArray jsons = new JSONArray(string);  
+                for(int i=0; i<jsons.length(); i++)
+                {
+                    JSONObject json = jsons.getJSONObject(i);
+                    if(item.getCheckListItemID().equals(provider.getCheckListItem(json).getCheckListItemID()))
+                    {                                               
+                        json.put("state", item.getCheckListItemState().toString());
+                    }
+                } 
+                provider.getCheckList().getProperties().setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, jsons.toString());
+            }               
+            
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            int status = service.setCheckListItemState(provider.getCheckList(), item, provider.getProvider().getAccount());
+            if(status == TrelloService.STATUS_OK)
+            {               
+                FileObject file = provider.getProvider().getRootFolder().getFileObject(provider.getCheckList().getCheckListID(), PropertiesProvider.EXTENSION);
+                if(file != null)
+                {
+                    try
+                    {
+                        OutputStream os = file.getOutputStream();
+                        TitleProvider titleProvider = provider.getProvider().getProvider().getLookup().lookup(TitleProvider.class);
+                        provider.getCheckList().getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
+                        os.close();
+                        item.getChangeSupport().fireChange();
+                        LOG.info("Trello checklist saved: " + provider.getCheckList().getCheckListID()); 
+                    }  
+                    catch(FileAlreadyLockedException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                             
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                                                             
+                }                     
+            }            
+        }
+    }     
 }
