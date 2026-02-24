@@ -13,9 +13,12 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -88,7 +91,6 @@ import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloCheckListsProvider;
 import openpkm.trello.TrelloService;
-import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -126,6 +128,8 @@ import org.openide.loaders.DataObject;
 import openpkm.base.NodeActionsProvider;
 import openpkm.base.RunnableFX;
 import openpkm.jcef.CefAppProvider;
+import openpkm.trello.TrelloLabel;
+import openpkm.trello.TrelloLabelsProvider;
 import org.cef.CefClient;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandler;
@@ -146,7 +150,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";         
     
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/date_task.png"; 
+    public static final String ICON = "openpkm/core/resources/trello.png"; 
     
     private static final int POSITION_CHECK_LISTS = 100;
     private static final int POSITION_COMMENTS    = 200;    
@@ -316,7 +320,13 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             
             list.add(this);
             list.add(new Info());
-            //list.add(new IconProviderImpl());
+            
+            TrelloLabelsProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(TrelloLabelsProvider.class);
+            if(labelsProvider != null)
+            {
+                list.add(new IconProviderImpl(labelsProvider));                
+            }
+            
             list.add(new RemoteDataProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -799,23 +809,69 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
 // TODO IconProvider    
     
     private final class IconProviderImpl implements IconProvider
-    {                
+    { 
+        private static final int WIDTH  = 20;
+        private static final int HEIGHT = 18;      
+        
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
+        
+        private final TrelloLabelsProvider provider;
 
-        @Override
-        public synchronized Image getIcon()
-        {            
-            TrelloBoard board = getTrelloBoard();
-            if(board != null)
-            {
-                Color color = board.getBoardBackground();
-                if(color != null)
-                {
-                    Icon icon = new RoundRectIcon(16, 16, color);
-                    return ImageUtilities.icon2Image(icon);
+        public IconProviderImpl(TrelloLabelsProvider provider) 
+        {
+            this.provider = provider;
+        }
+        
+        public static Image createMiniCardIcon(List<Color> labels) 
+        {
+            BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int count = labels.size();
+
+            if (count == 0) {
+                // Prazna kartica – subtilen okvir
+                g.setColor(new Color(180, 180, 180, 180));
+                g.drawRoundRect(0, 2, WIDTH - 1, HEIGHT - 5, 4, 4);
+            } else {
+                // Dinamična širina labelov
+                int spacing = 1;
+                int totalSpacing = spacing * (count - 1);
+                int availableWidth = WIDTH - totalSpacing;
+
+                int labelWidth = availableWidth / count;
+                int labelHeight = 12;
+                int y = (HEIGHT - labelHeight) / 2;
+
+                int x = 0;
+
+                for (Color c : labels) {
+                    g.setColor(c);
+                    g.fillRoundRect(x, y, labelWidth, labelHeight, 3, 3);
+                    x += labelWidth + spacing;
                 }
             }
-            return ImageUtilities.loadImage(ICON);
+
+            g.dispose();
+            return img;
+        } 
+                
+        @Override
+        public synchronized Image getIcon()
+        { 
+            List<Color> colors = new ArrayList<>();
+            List<String> labelsID = getCardLabelsID();
+            for(String labelID : labelsID)
+            {
+                TrelloLabel label = provider.getLabel(labelID);
+                if(label != null)
+                {
+                    colors.add(label.getLabelColor());
+                }
+            }
+            return createMiniCardIcon(colors);
         }
 
         @Override
