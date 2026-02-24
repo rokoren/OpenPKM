@@ -35,9 +35,10 @@ public interface TrelloService
     TrelloCard getCard(String cardID, TrelloCardProvider provider, TrelloAccount account) throws UnirestException;
     List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentProvider provider, TrelloAccount account);    
     List<TrelloCheckList> getCheckLists(TrelloCard trelloCard, TrelloCheckListProvider provider, TrelloAccount account);
-    TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account);
+    TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account);    
     JSONObject createCheckListIem(String checkListID, String name, TrelloAccount account);
     TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account);
     TrelloComment createComment(String cardID, String text, TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider, TrelloAccount account, Trello trello);
     int deleteComment(String cardID, String actionID, TrelloAccount account);
+    int deleteCheckListItem(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account);    
 }

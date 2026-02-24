@@ -18,6 +18,8 @@ public interface TrelloCheckListItemProvider
     String PROP_CHECKLIST_ITEM_POSITION = "checklist.item.position"; 
     String PROP_CHECKLIST_ITEM_STATE    = "checklist.item.state";     
     
+    TrelloCheckList getCheckList();
+    TrelloCheckListsProvider getProvider();
     TrelloCheckListItem getCheckListItem(JSONObject json);
     TrelloCheckListItem createCheckListItem(CheckItem item);     
 }

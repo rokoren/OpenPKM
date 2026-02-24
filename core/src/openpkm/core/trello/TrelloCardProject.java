@@ -186,13 +186,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             sources.put(attachments.getName(), attachments);            
         }  
         
-        TrelloCheckListProvider checkListProvider = Lookup.getDefault().lookup(TrelloCheckListProvider.class);
-        if(checkListProvider != null)
-        {          
-            SourceGroup checkLists = new TrelloCheckListsProviderImpl(checkListProvider);
-            sources.put(checkLists.getName(), checkLists);           
-        }         
-                
+        SourceGroup checkLists = new TrelloCheckListsProviderImpl();
+        sources.put(checkLists.getName(), checkLists);                       
     }        
     
     public TrelloAccount getTrelloAccount()
@@ -1365,9 +1360,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
          
         private final TrelloCheckListProvider provider;
         
-        public TrelloCheckListsProviderImpl(TrelloCheckListProvider provider) 
+        public TrelloCheckListsProviderImpl() 
         {
-            this.provider = provider;
+            provider = new TrelloCheckListProviderImpl(this);
             RP.post(this);    
         }          
         
@@ -1934,7 +1929,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 } 
             }
         }
-    }     
+    }         
 
     private static final class AddAttachmentLink extends AbstractAction
     {  

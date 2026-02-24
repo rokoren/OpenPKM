@@ -21,6 +21,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import openpkm.base.ActionsProvider;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
@@ -28,29 +29,34 @@ import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListProvider;
+import openpkm.trello.TrelloCheckListsProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
-import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
-import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloCheckListProvider.class)
 public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloCheckListProvider.class.getName());       
+    private static final Logger LOG = Logger.getLogger(TrelloCheckListProvider.class.getName()); 
+    
+    private final TrelloCheckListsProvider checkListsProvider;
+
+    public TrelloCheckListProviderImpl(TrelloCheckListsProvider checkListsProvider) 
+    {
+        this.checkListsProvider = checkListsProvider;
+    }       
     
     @Override
     public TrelloCheckList getCheckList(Properties props) 
     {
-        return new TrelloCheckListImpl(props);
+        return new TrelloCheckListImpl(props, checkListsProvider);
     }
     
     @Override
@@ -70,33 +76,31 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/check_box_list.png";  
         
+        private final TrelloCheckListItemProvider checkListItemProvider;        
         private final Properties props; 
         
         private ChangeSupport changeSupport;
         
-        public TrelloCheckListImpl(Properties props)
+        public TrelloCheckListImpl(Properties props, TrelloCheckListsProvider checkListsProvider)
         {
             this.props = props; 
+            checkListItemProvider = new TrelloCheckListItemProviderImpl(checkListsProvider, this);
         }         
         
         private synchronized Map<String, TrelloCheckListItem> getItemsById()
         {
             Map<String, TrelloCheckListItem> items = new HashMap();
-            TrelloCheckListItemProvider provider = Lookup.getDefault().lookup(TrelloCheckListItemProvider.class);
-            if(provider != null)
+            String string = props.getProperty(PROP_CHECKLIST_ITEMS);
+            if(string != null)
             {
-                String string = props.getProperty(PROP_CHECKLIST_ITEMS);
-                if(string != null)
+                JSONArray jsons = new JSONArray(string);
+                for(int i=0; i<jsons.length(); i++)
                 {
-                    JSONArray jsons = new JSONArray(string);
-                    for(int i=0; i<jsons.length(); i++)
-                    {
-                        JSONObject json = jsons.getJSONObject(i);
-                        TrelloCheckListItem item = provider.getCheckListItem(json);
-                        items.put(item.getCheckListItemID(), item);
-                    }                    
+                    JSONObject json = jsons.getJSONObject(i);
+                    TrelloCheckListItem item = checkListItemProvider.getCheckListItem(json);
+                    items.put(item.getCheckListItemID(), item);
                 }                    
-            }
+            } 
             return items;
         } 
         
@@ -281,7 +285,11 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public Action[] getActions(boolean context) 
         {
             List<Action> actions = new ArrayList();
-            //actions.addAll(provider.getActions());
+            if(provider instanceof ActionsProvider)
+            {
+                ActionsProvider actionsProvider = (ActionsProvider)provider;
+                actions.addAll(actionsProvider.getActions());                
+            }
             return actions.toArray(new Action[actions.size()]);
         }
 
@@ -296,5 +304,5 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         {
             return provider.getIcon(true);
         }        
-    }     
+    }    
 }

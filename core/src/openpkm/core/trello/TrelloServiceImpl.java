@@ -37,6 +37,7 @@ import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCheckList;
+import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloCommentProvider;
@@ -157,6 +158,17 @@ public class TrelloServiceImpl implements TrelloService
         
         return response.getStatus();
     }
+    
+    @Override
+    public int deleteCheckListItem(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account)
+    {
+        HttpResponse<String> response = Unirest.delete("https://api.trello.com/1/checklists/" + checkList.getCheckListID() + "/checkItems/" + item.getCheckListItemID())
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asString();
+
+        return response.getStatus(); 
+    }      
     
     @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)
