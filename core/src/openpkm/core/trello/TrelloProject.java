@@ -1832,20 +1832,14 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         
         @Override
         public SortedSet<NodeProvider> getNodes()
-        {
-            List<NodeProvider> list = getLabels().values().stream()
-                    .filter(NodeProvider.class::isInstance)
-                    .map(NodeProvider.class::cast)
-                    .toList();        
-            
+        {            
             SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
-            sorted.addAll(list);
-            
+            sorted.addAll(getLabels());            
             return sorted;
         }
         
         @Override
-        protected synchronized Map<String, TrelloLabel> getLabels()
+        protected synchronized Map<String, TrelloLabel> getLabelsById()
         {
             if(labels == null)
             {
@@ -1918,7 +1912,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             try
             {
                 TrelloLabel label = provider.getLabel(Utils.getProperties(file)); 
-                getLabels().put(label.getLabelID(), label);               
+                getLabelsById().put(label.getLabelID(), label);               
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1945,7 +1939,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().remove(file.getName());  
+            TrelloLabel label = getLabelsById().remove(file.getName());  
             if(label != null)
             {
                 changeSupport.fireChange();
@@ -2005,7 +1999,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 List<TrelloLabel> labels = service.getLabels(TrelloProject.this, provider, getTrello());
                 for(TrelloLabel label : labels)
                 {
-                    if(!getLabels().containsKey(label.getLabelID()))
+                    if(!getLabelsById().containsKey(label.getLabelID()))
                     {
                         try
                         {

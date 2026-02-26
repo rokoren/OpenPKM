@@ -155,6 +155,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     private static final int POSITION_CHECK_LISTS = 100;
     private static final int POSITION_COMMENTS    = 200;    
     private static final int POSITION_ATTACHMENTS = 300;
+    private static final int POSITION_LABELS      = 400;    
 
     private static final Logger LOG = Logger.getLogger(TrelloCardProject.class.getName());        
     
@@ -324,7 +325,8 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             TrelloLabelsProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(TrelloLabelsProvider.class);
             if(labelsProvider != null)
             {
-                list.add(new IconProviderImpl(labelsProvider));                
+                list.add(new IconProviderImpl(labelsProvider));  
+                list.add(new TrelloLabelsProviderImpl(labelsProvider));        
             }
             
             list.add(new RemoteDataProviderImpl());
@@ -1045,6 +1047,95 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     }       
     
 // TODO SourceGroup    
+    
+    private final class TrelloLabelsProviderImpl implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>
+    { 
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/palette.png"; 
+            
+        private final TrelloLabelsProvider provider;
+        
+        protected final ChangeSupport changeSupport;         
+        
+        public TrelloLabelsProviderImpl(TrelloLabelsProvider provider) 
+        {
+            this.provider = provider;
+            changeSupport = new ChangeSupport(this); 
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return TrelloCardProject.this;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_LABELS;
+        }        
+        
+        @Override
+        public Image getIcon(boolean isEmpty, boolean isOpen)
+        {
+            return ImageUtilities.loadImage(ICON);
+        }
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            //actions.add(new AddLabel(this));         
+            return actions;
+        } 
+        
+        @Override
+        public List<Action> getActions(TrelloLabel label)
+        {
+            List<Action> actions = new ArrayList<>(1);
+            //actions.add(new DeleteLabel(getTrello(), this, label));
+            return actions;
+        }        
+        
+        @Override
+        public SortedSet<NodeProvider> getNodes()
+        {
+            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
+            for(String labelID : getCardLabelsID())
+            {
+                TrelloLabel label = provider.getLabel(labelID);
+                if(label != null)
+                {
+                    sorted.add(label);                    
+                }
+            }            
+            return sorted;
+        }                    
+
+        @Override
+        public String getName() 
+        {
+            return provider.getName();
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return provider.getDisplayName();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener)
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+    }      
     
     private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloAttachment>, MultiViewDescription, FileChangeListener, Runnable
     { 
