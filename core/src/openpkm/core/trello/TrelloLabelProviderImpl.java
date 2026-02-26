@@ -9,12 +9,13 @@ import java.awt.Color;
 import java.awt.Image;
 import java.util.Properties;
 import java.util.logging.Logger;
-import openpkm.base.IconsProvider;
+import javax.swing.Icon;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
+import openpkm.utils.RoundRectIcon;
 import org.openide.nodes.Children;
-import org.openide.util.Lookup;
+import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -26,7 +27,7 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
 {
     private static final String PROP_LABEL_ID    = "label.id";
     private static final String PROP_LABEL_NAME  = "label.name";
-    private static final String PROP_LABEL_COLOR = "label.color";    
+    private static final String PROP_LABEL_COLOR = "label.color";       
     
     private static final Logger LOG = Logger.getLogger(TrelloLabelProvider.class.getName());     
     
@@ -75,34 +76,50 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
             String string = props.getProperty(PROP_LABEL_COLOR);
             if(string != null)
             {
-                if(string.equalsIgnoreCase("yellow"))
+                if(string.equalsIgnoreCase(COLOR_YELLOW))
                 {
                     return Color.YELLOW;
                 }
-                else if(string.equalsIgnoreCase("magenta"))
+                else if(string.equalsIgnoreCase(COLOR_MAGENTA))
                 {
                     return Color.MAGENTA;
                 }
-                else if(string.equalsIgnoreCase("blue"))
+                else if(string.equalsIgnoreCase(COLOR_BLUE))
                 {
                     return Color.BLUE;
                 }                     
-                else if(string.equalsIgnoreCase("red"))
+                else if(string.equalsIgnoreCase(COLOR_RED))
                 {
                     return Color.RED;
                 }
-                else if(string.equalsIgnoreCase("green"))
+                else if(string.equalsIgnoreCase(COLOR_GREEN))
                 {
                     return Color.GREEN;
                 }  
-                else if(string.equalsIgnoreCase("orange"))
+                else if(string.equalsIgnoreCase(COLOR_ORANGE))
                 {
                     return Color.ORANGE;
                 }
-                else if(string.equalsIgnoreCase("pink"))
+                else if(string.equalsIgnoreCase(COLOR_PINK))
                 {
                     return Color.PINK;
-                } 
+                }                 
+                else if(string.equalsIgnoreCase(COLOR_BLACK))
+                {
+                    return Color.BLACK;
+                }  
+                else if(string.equalsIgnoreCase(COLOR_SKY))
+                {
+                    return Color.CYAN;
+                }
+                else if(string.equalsIgnoreCase(COLOR_LIME))
+                {
+                    return Color.green.brighter();
+                }   
+                else if(string.equalsIgnoreCase(COLOR_PURPLE))
+                {
+                    return Color.PINK.darker();
+                }                   
             }
             return null;
         }                  
@@ -138,38 +155,11 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
         @Override
         public Image getIcon(boolean opened) 
         {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             Color color = getLabelColor();
             if(color != null)
             {
-                if(color == Color.YELLOW)
-                {
-                    return provider.getImage(IconsProvider.ICON.TAG_YELLOW);
-                }
-                else if(color == Color.MAGENTA)
-                {
-                    throw new UnsupportedOperationException("Icon not found");
-                } 
-                else if(color == Color.BLUE)
-                {
-                    return provider.getImage(IconsProvider.ICON.TAG_BLUE);
-                }  
-                else if(color == Color.RED)
-                {
-                    return provider.getImage(IconsProvider.ICON.TAG_RED);
-                }  
-                else if(color == Color.GREEN)
-                {
-                    return provider.getImage(IconsProvider.ICON.TAG_GREEN);
-                }  
-                else if(color == Color.ORANGE)
-                {
-                    return provider.getImage(IconsProvider.ICON.TAG_ORANGE);
-                }      
-                else if(color == Color.PINK)
-                {
-                    return provider.getImage(IconsProvider.ICON.TAG_PINK);
-                }                 
+                Icon icon = new RoundRectIcon(14, 14, color);
+                return ImageUtilities.icon2Image(icon);
             }
             return null;
         }  
