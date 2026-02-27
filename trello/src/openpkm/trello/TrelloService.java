@@ -42,4 +42,5 @@ public interface TrelloService
     int deleteComment(String cardID, String actionID, TrelloAccount account);
     int deleteCheckListItem(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account);  
     int setCheckListItemState(TrelloCheckList checkList, TrelloCheckListItem item, TrelloAccount account);   
+    int addLabel(TrelloCard card, TrelloLabel label, TrelloAccount account);
 }

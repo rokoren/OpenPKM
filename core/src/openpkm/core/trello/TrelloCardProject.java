@@ -1136,11 +1136,19 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void addLabel(TrelloLabel label)
         {
-            List<String> labelsID = new ArrayList<>();
-            labelsID.addAll(getCardLabelsID());
-            labelsID.add(label.getLabelID());
-            setCardLabelsID(labelsID);
-            changeSupport.fireChange();
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                int status = service.addLabel(TrelloCardProject.this, label, getTrelloAccount());
+                if(status == TrelloService.STATUS_OK)
+                {
+                    List<String> labelsID = new ArrayList<>();
+                    labelsID.addAll(getCardLabelsID());
+                    labelsID.add(label.getLabelID());
+                    setCardLabelsID(labelsID);
+                    changeSupport.fireChange();                    
+                }
+            }
         }
         
         @Override

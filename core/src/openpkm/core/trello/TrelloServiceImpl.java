@@ -183,6 +183,18 @@ public class TrelloServiceImpl implements TrelloService
     } 
     
     @Override
+    public int addLabel(TrelloCard card, TrelloLabel label, TrelloAccount account)
+    {
+        HttpResponse<String> response = Unirest.post("https://api.trello.com/1/cards/" + card.getCardID() + "/idLabels")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .queryString("value", label.getLabelID())                
+          .asString();   
+        
+        return response.getStatus();         
+    }
+    
+    @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)
     {
         List<TrelloMember> list = new ArrayList();   
