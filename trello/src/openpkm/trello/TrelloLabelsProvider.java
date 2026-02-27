@@ -5,6 +5,7 @@
 package openpkm.trello;
 
 import java.util.Collection;
+import javax.swing.event.ChangeListener;
 
 /**
  *
@@ -12,7 +13,10 @@ import java.util.Collection;
  */
 public interface TrelloLabelsProvider
 {
-    Collection<TrelloLabel> getLabels();    
+    Collection<TrelloLabel> getLabels();
+    TrelloLabel getLabel(String labelID);
     void addLabel(TrelloLabel label);
     void removeLabel(TrelloLabel label);
+    void addChangeListener(ChangeListener listener);
+    void removeChangeListener(ChangeListener listener);
 }

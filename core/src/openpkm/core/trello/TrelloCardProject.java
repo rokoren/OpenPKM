@@ -60,6 +60,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
@@ -326,9 +327,10 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             
             AbstractTrelloLabelsProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(AbstractTrelloLabelsProvider.class);
             if(labelsProvider != null)
-            {
-                list.add(new IconProviderImpl(labelsProvider));  
-                list.add(new TrelloLabelsProviderImpl(labelsProvider));        
+            { 
+                TrelloLabelsProvider provider = new TrelloLabelsProviderImpl(labelsProvider);
+                list.add(provider);                 
+                list.add(new IconProviderImpl(provider)); 
             }
             
             list.add(new RemoteDataProviderImpl());
@@ -840,18 +842,19 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider
+    private final class IconProviderImpl implements IconProvider, ChangeListener
     { 
         private static final int WIDTH  = 20;
         private static final int HEIGHT = 18;      
         
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
         
-        private final AbstractTrelloLabelsProvider provider;
+        private final TrelloLabelsProvider provider;
 
-        public IconProviderImpl(AbstractTrelloLabelsProvider provider) 
+        public IconProviderImpl(TrelloLabelsProvider provider) 
         {
             this.provider = provider;
+            provider.addChangeListener(this);
         }
         
         public static Image createMiniCardIcon(List<Color> labels) 
@@ -917,6 +920,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         {
             changeSupport.removeChangeListener(listener);
         }                       
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            changeSupport.fireChange();
+        }
     }    
 
 // TODO RootProjectProvider     
@@ -1131,6 +1140,12 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public Collection<TrelloLabel> getLabels()
         {
             return provider.getLabels();
+        }
+        
+        @Override
+        public TrelloLabel getLabel(String labelID)
+        {
+            return provider.getLabel(labelID);
         }
         
         @Override
