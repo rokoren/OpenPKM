@@ -66,7 +66,7 @@ import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
-import openpkm.trello.TrelloLabelsProvider;
+import openpkm.trello.AbstractTrelloLabelsProvider;
 import openpkm.trello.TrelloList;
 import openpkm.trello.TrelloListProvider;
 import openpkm.trello.TrelloListsProvider;
@@ -1777,7 +1777,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }           
     }      
     
-    private final class TrelloLabelsProviderImpl extends TrelloLabelsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
+    private final class TrelloLabelsProviderImpl extends AbstractTrelloLabelsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png"; 
@@ -2596,9 +2596,9 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
     private static final class AddLabel extends AbstractAction
     {                          
-        private final TrelloLabelsProvider provider;            
+        private final AbstractTrelloLabelsProvider provider;            
 
-        public AddLabel(TrelloLabelsProvider provider) 
+        public AddLabel(AbstractTrelloLabelsProvider provider) 
         {
             super("Add Label");
             this.provider = provider;
@@ -2642,10 +2642,10 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private static final class DeleteLabel extends AbstractAction
     {  
         private final Trello trello;
-        private final TrelloLabelsProvider provider; 
+        private final AbstractTrelloLabelsProvider provider; 
         private final TrelloLabel label;
 
-        public DeleteLabel(Trello trello, TrelloLabelsProvider provider, TrelloLabel label) 
+        public DeleteLabel(Trello trello, AbstractTrelloLabelsProvider provider, TrelloLabel label) 
         {
             super("Delete");
             this.trello = trello;

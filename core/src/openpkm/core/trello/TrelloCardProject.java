@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -129,6 +130,7 @@ import openpkm.base.NodeActionsProvider;
 import openpkm.base.RunnableFX;
 import openpkm.jcef.CefAppProvider;
 import openpkm.trello.TrelloLabel;
+import openpkm.trello.AbstractTrelloLabelsProvider;
 import openpkm.trello.TrelloLabelsProvider;
 import org.cef.CefClient;
 import org.cef.browser.CefFrame;
@@ -322,7 +324,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             list.add(this);
             list.add(new Info());
             
-            TrelloLabelsProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(TrelloLabelsProvider.class);
+            AbstractTrelloLabelsProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(AbstractTrelloLabelsProvider.class);
             if(labelsProvider != null)
             {
                 list.add(new IconProviderImpl(labelsProvider));  
@@ -527,7 +529,35 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             return List.of(string.split(","));                   
         }                
         return null;
-    }    
+    }   
+    
+    @Override
+    public void setCardLabelsID(List<String> ids) 
+    {
+        if(ids == null)
+        {
+            Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_LABELS_ID);
+            if(oldValue != null)
+            {
+                oldValue = List.of(oldValue.toString().split(","));
+            }
+            propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_LABELS_ID, oldValue, ids);
+        }
+        else
+        {
+            StringJoiner joiner = new StringJoiner(",");
+            for(String id : ids)
+            {
+                joiner.add(id);
+            }
+            Object oldValue = props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());
+            if(oldValue != null)
+            {
+                oldValue = List.of(oldValue.toString().split(","));
+            }
+            propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_LABELS_ID, oldValue, ids);            
+        }
+    }     
     
     @Override
     public String getCardRole() 
@@ -817,9 +847,9 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
         
-        private final TrelloLabelsProvider provider;
+        private final AbstractTrelloLabelsProvider provider;
 
-        public IconProviderImpl(TrelloLabelsProvider provider) 
+        public IconProviderImpl(AbstractTrelloLabelsProvider provider) 
         {
             this.provider = provider;
         }
@@ -1048,16 +1078,16 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     
 // TODO SourceGroup    
     
-    private final class TrelloLabelsProviderImpl implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>
+    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, NodeActionsProvider<TrelloLabel>
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png"; 
             
-        private final TrelloLabelsProvider provider;
+        private final AbstractTrelloLabelsProvider provider;
         
         protected final ChangeSupport changeSupport;         
         
-        public TrelloLabelsProviderImpl(TrelloLabelsProvider provider) 
+        public TrelloLabelsProviderImpl(AbstractTrelloLabelsProvider provider) 
         {
             this.provider = provider;
             changeSupport = new ChangeSupport(this); 
@@ -1085,7 +1115,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            //actions.add(new AddLabel(this));         
+            actions.add(new AddLabel(this));         
             return actions;
         } 
         
@@ -1095,6 +1125,32 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             List<Action> actions = new ArrayList<>(1);
             //actions.add(new DeleteLabel(getTrello(), this, label));
             return actions;
+        }        
+        
+        @Override
+        public Collection<TrelloLabel> getLabels()
+        {
+            return provider.getLabels();
+        }
+        
+        @Override
+        public void addLabel(TrelloLabel label)
+        {
+            List<String> labelsID = new ArrayList<>();
+            labelsID.addAll(getCardLabelsID());
+            labelsID.add(label.getLabelID());
+            setCardLabelsID(labelsID);
+            changeSupport.fireChange();
+        }
+        
+        @Override
+        public void removeLabel(TrelloLabel label)
+        {
+            List<String> labelsID = new ArrayList<>();
+            labelsID.addAll(getCardLabelsID());
+            labelsID.remove(label.getLabelID());
+            setCardLabelsID(labelsID);
+            changeSupport.fireChange();            
         }        
         
         @Override
@@ -1108,7 +1164,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 {
                     sorted.add(label);                    
                 }
-            }            
+            }                             
             return sorted;
         }                    
 
@@ -2231,6 +2287,50 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
             }                                                           
         }
     } 
+    
+    private static final class AddLabel extends AbstractAction implements ActionListener
+    { 
+        private static final String ACTION_COMMAND_ADD_LABEL = "Add Label";
+        private static final String ACTION_COMMAND_OK        = "OK";        
+        
+        private final DefaultComboBoxModel<TrelloLabel> labels = new DefaultComboBoxModel<>(); 
+        private final JComboBox comboBox;
+
+        private final TrelloLabelsProvider provider;  
+
+        public AddLabel(TrelloLabelsProvider provider) 
+        {
+            super(ACTION_COMMAND_ADD_LABEL);
+            this.provider = provider;
+            SortedSet<TrelloLabel> sorted = new TreeSet<TrelloLabel>(NodeProvider.displayNameComparator());
+            sorted.addAll(provider.getLabels());
+            labels.addAll(sorted);
+            comboBox = new JComboBox(labels);
+            comboBox.setRenderer(new NodeProvider.ListCellRendererImpl());               
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            if(evt.getActionCommand().equals(ACTION_COMMAND_ADD_LABEL))
+            {                
+                DialogDescriptor d = new DialogDescriptor(
+                comboBox, // Component
+                "Add Label", // title
+                true, // modality
+                this); // ActionListener
+                DialogDisplayer.getDefault().createDialog(d).setVisible(true);                  
+            }
+            else if(evt.getActionCommand().equals(ACTION_COMMAND_OK))
+            {
+                TrelloLabel label = (TrelloLabel)labels.getSelectedItem();
+                if(label != null)
+                {
+                    provider.addLabel(label);
+                }                
+            }    
+        }
+    }     
     
     private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement, ActionListener, CefLoadHandler
     {

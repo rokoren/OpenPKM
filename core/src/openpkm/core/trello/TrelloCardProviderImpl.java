@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.StringJoiner;
 import java.util.logging.Logger;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
@@ -331,6 +332,24 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             }                
             return null;
         }
+        
+    @Override
+    public void setCardLabelsID(List<String> ids) 
+    {
+        if(ids == null)
+        {
+            Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_LABELS_ID);
+        }
+        else
+        {
+            StringJoiner joiner = new StringJoiner(",");
+            for(String id : ids)
+            {
+                joiner.add(id);
+            }
+            props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());        
+        }
+    }         
         
         @Override
         public String getCardRole() 
