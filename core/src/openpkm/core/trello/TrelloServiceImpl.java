@@ -195,6 +195,17 @@ public class TrelloServiceImpl implements TrelloService
     }
     
     @Override
+    public int removeLabel(TrelloCard card, TrelloLabel label, TrelloAccount account)
+    {
+        HttpResponse<String> response = Unirest.delete("https://api.trello.com/1/cards/" + card.getCardID() + "/idLabels/" + label.getLabelID())
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())               
+          .asString();   
+        
+        return response.getStatus();         
+    }    
+    
+    @Override
     public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)
     {
         List<TrelloMember> list = new ArrayList();   

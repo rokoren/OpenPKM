@@ -1132,7 +1132,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         public List<Action> getActions(TrelloLabel label)
         {
             List<Action> actions = new ArrayList<>(1);
-            //actions.add(new DeleteLabel(getTrello(), this, label));
+            actions.add(new RemoveLabel(this, label));
             return actions;
         }        
         
@@ -1169,11 +1169,19 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
         @Override
         public void removeLabel(TrelloLabel label)
         {
-            List<String> labelsID = new ArrayList<>();
-            labelsID.addAll(getCardLabelsID());
-            labelsID.remove(label.getLabelID());
-            setCardLabelsID(labelsID);
-            changeSupport.fireChange();            
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                int status = service.removeLabel(TrelloCardProject.this, label, getTrelloAccount());
+                if(status == TrelloService.STATUS_OK)
+                {
+                    List<String> labelsID = new ArrayList<>();
+                    labelsID.addAll(getCardLabelsID());
+                    labelsID.remove(label.getLabelID());
+                    setCardLabelsID(labelsID);
+                    changeSupport.fireChange();                    
+                }
+            }                                  
         }        
         
         @Override
@@ -2353,7 +2361,31 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
                 }                
             }    
         }
-    }     
+    }  
+    
+    private static final class RemoveLabel extends AbstractAction
+    {             
+        private final TrelloLabelsProvider provider; 
+        private final TrelloLabel label;
+
+        public RemoveLabel(TrelloLabelsProvider provider, TrelloLabel label) 
+        {
+            super("Remove");
+            this.provider = provider;         
+            this.label = label;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to remove: " + label.getLabelName(), "Remove Label", NotifyDescriptor.YES_NO_OPTION);
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.YES_OPTION) 
+            {
+                provider.removeLabel(label);                
+            }                                    
+        }
+    }      
     
     private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement, ActionListener, CefLoadHandler
     {
