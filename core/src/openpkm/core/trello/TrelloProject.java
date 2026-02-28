@@ -5,6 +5,7 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
+import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.impl.TrelloImpl;
 import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
 import java.awt.BorderLayout;
@@ -16,6 +17,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
@@ -121,6 +123,7 @@ import org.openide.filesystems.FileSystem;
 import openpkm.base.SourceGroupProvider;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloCommentProvider;
+import openpkm.utils.DateTimeUtils;
 
 /**
  *
@@ -1364,22 +1367,79 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 handle.start();
                 handle.switchToIndeterminate();
                                 
-                List<String> ids = service.getCardsID(TrelloProject.this, getTrello());
+                List<Card> cards = service.getCards(TrelloProject.this, getTrello());
                 Set<String> keys = new HashSet<>(getCardsById().keySet());
-                for(String id : ids)
+                for(Card card : cards)
                 {
-                    if(keys.remove(id))
+                    if(keys.remove(card.getId()))
                     {
-
+                        boolean isTime = false;
+                        LocalDateTime lastSync = getLastSync();
+                        if(lastSync == null)
+                        {
+                            isTime = true;
+                        }
+                        else
+                        {
+                            LocalDateTime lastActivity = DateTimeUtils.convertToLocalDateTime(card.getDateLastActivity());
+                            if(lastSync.isBefore(lastActivity))
+                            {
+                                isTime = true;
+                            }                            
+                        }
+                        
+                        if(isTime)
+                        {
+                            TrelloCard oldCard = getCardsById().get(card.getId()); 
+                            TrelloCard newCard = service.getCard(card.getId(), provider, getTrelloAccount());
+                            if(!oldCard.getProperties().equals(newCard.getProperties()))
+                            {
+                                oldCard.merge(newCard);
+                                FileObject fo = getRootFolder().getFileObject(oldCard.getCardID());
+                                if(fo != null)
+                                {
+                                    if(fo.isFolder())
+                                    {
+                                        try
+                                        {
+                                            OutputStream os = new FileOutputStream(fo.getFileObject(TrelloCardProjectFactory.PROJECT_FOLDER).getFileObject(TrelloCardProjectFactory.PROJECT_FILE).getPath());
+                                            oldCard.getProperties().store(os, "Trello Card project updated");
+                                            os.close();                
+                                        }
+                                        catch(IOException e)
+                                        {
+                                            LOG.warning(e.getMessage());
+                                        }                                          
+                                    }
+                                    else
+                                    {
+                                        try
+                                        {
+                                            OutputStream os = fo.getOutputStream();
+                                            oldCard.getProperties().store(os, "Updated by Trello project: " + getTitle()); 
+                                            os.close();
+                                        }  
+                                        catch(FileAlreadyLockedException e)
+                                        {
+                                            LOG.warning(e.getMessage());
+                                        }                             
+                                        catch(IOException e)
+                                        {
+                                            LOG.warning(e.getMessage());
+                                        }                                           
+                                    }                                                                                              
+                                }                              
+                            }                              
+                        }                           
                     }
                     else
                     {
                         try
                         {
-                            TrelloCard card = service.getCard(id, provider, getTrelloAccount());
-                            if(card.isCardLink())
+                            TrelloCard trelloCard = service.getCard(card.getId(), provider, getTrelloAccount());
+                            if(trelloCard.isCardLink())
                             {
-                                String videoID = YouTubeUtils.getVideoID(card.getCardName());
+                                String videoID = YouTubeUtils.getVideoID(trelloCard.getCardName());
                                 if(videoID != null)
                                 {  
                                     YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
@@ -1388,36 +1448,36 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                         YouTubeVideo video = youTubeVideoProvider.getVideo(videoID);
                                         if(video != null)
                                         {
-                                            card.merge(video);
+                                            trelloCard.merge(video);
                                         }
                                     }
                                 }                                
                                 
-                                FileObject file = root.createData(id, PropertiesProvider.EXTENSION);
+                                FileObject file = root.createData(card.getId(), PropertiesProvider.EXTENSION);
                                 OutputStream os = file.getOutputStream();
-                                card.save(os, "Saved by Trello project: " + getTitle());
+                                trelloCard.save(os, "Saved by Trello project: " + getTitle());
                                 os.close();                                  
                             }
                             else
                             {
-                                FileObject projectDirectory = FileUtil.createFolder(root, id);           
+                                FileObject projectDirectory = FileUtil.createFolder(root, card.getId());           
                                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
 
                                 OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                                card.save(os, "OpenPKM Trello Card Project");
+                                trelloCard.save(os, "OpenPKM Trello Card Project");
                                 //props.store(os, "OpenPKM Trello Card Project"); 
                                 os.close();  
 
                                 Project project = ProjectManager.getDefault().findProject(projectDirectory);
                                 if(project != null)
                                 {
-                                    card = project.getLookup().lookup(TrelloCard.class);                                      
+                                    trelloCard = project.getLookup().lookup(TrelloCard.class);                                      
                                 }
                             }                                
                             if(card != null)
                             {
-                                getCardsById().put(card.getCardID(), card);  
-                                createData(card, markdown);                                                                     
+                                getCardsById().put(trelloCard.getCardID(), trelloCard);  
+                                createData(trelloCard, markdown);                                                                     
                             }                                                                                                
                         }
                         catch(Exception e)

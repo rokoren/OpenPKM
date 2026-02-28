@@ -5,6 +5,7 @@
 package openpkm.trello;
 
 import com.julienvey.trello.Trello;
+import com.julienvey.trello.domain.Card;
 import java.time.LocalDateTime;
 import java.util.List;
 import kong.unirest.UnirestException;
@@ -24,7 +25,7 @@ public interface TrelloService
     List<TrelloMember> getMembers(TrelloBoard trelloBoard, TrelloMemberProvider provider, Trello trello);    
     List<TrelloLabel> getLabels(TrelloBoard trelloBoard, TrelloLabelProvider provider, Trello trello);   
     List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello);
-    List<String> getCardsID(TrelloBoard trelloBoard, Trello trello); 
+    List<Card> getCards(TrelloBoard trelloBoard, Trello trello); 
     String getCardDescription(String cardID, Trello trello);
     String getCommentText(String actionID, Trello trello);
     void setCardDescription(String cardID, String description, TrelloAccount account); 

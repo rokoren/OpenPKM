@@ -272,16 +272,11 @@ public class TrelloServiceImpl implements TrelloService
     }     
     
     @Override
-    public List<String> getCardsID(TrelloBoard board, Trello trello)
+    public List<Card> getCards(TrelloBoard board, Trello trello)
     {        
-        List<String> list = new ArrayList();  
-        Argument argument = new Argument("fields", "id");
-        List<Card> cards = trello.getBoardCards(board.getBoardID(), argument);
-        for(Card card : cards)                
-        {            
-            list.add(card.getId());
-        }                     
-        return list;        
+        Argument argument1 = new Argument("fields", "id");
+        Argument argument2 = new Argument("fields", "dateLastActivity");
+        return trello.getBoardCards(board.getBoardID(), argument1, argument2);      
     } 
     
     @Override
