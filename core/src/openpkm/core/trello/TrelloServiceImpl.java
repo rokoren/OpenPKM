@@ -230,7 +230,7 @@ public class TrelloServiceImpl implements TrelloService
     } 
     
     @Override
-    public List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello)
+    public List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello) throws Exception
     {
         List<TrelloAction> list = new ArrayList();        
         if(after == null)

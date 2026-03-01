@@ -1797,42 +1797,52 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Trello actions");
                 handle.start();
                 handle.switchToIndeterminate();
-                                
-                List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), actionProvider, getTrello());
-                for(TrelloAction action : actions)
+                   
+                try
                 {
-                    if(!getActivity().containsKey(action.getActionID()))
+                    List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), actionProvider, getTrello());
+                    for(TrelloAction action : actions)
                     {
-                        TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());                       
-                        try
+                        if(!getActivity().containsKey(action.getActionID()))
                         {
-                            if(comment == null)
+                            TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());                       
+                            try
                             {
-                                FileObject file = root.createData(action.getActionID(), PropertiesProvider.EXTENSION);
-                                OutputStream os = file.getOutputStream();
-                                action.getProperties().store(os, "Saved by Trello project: " + getTitle());
-                                os.close();   
-                            }   
-                            else
+                                if(comment == null)
+                                {
+                                    FileObject file = root.createData(action.getActionID(), PropertiesProvider.EXTENSION);
+                                    OutputStream os = file.getOutputStream();
+                                    action.getProperties().store(os, "Saved by Trello project: " + getTitle());
+                                    os.close();   
+                                }   
+                                else
+                                {
+                                    createData(comment, markdown);  
+                                    FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);
+                                    OutputStream os = file.getOutputStream();
+                                    comment.save(os, "Saved by Trello project: " + getTitle());
+                                    os.close();                                 
+                                } 
+                                getActivity().put(action.getActionID(), action);  
+                            }
+                            catch(IOException e)
                             {
-                                createData(comment, markdown);  
-                                FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);
-                                OutputStream os = file.getOutputStream();
-                                comment.save(os, "Saved by Trello project: " + getTitle());
-                                os.close();                                 
-                            } 
-                            getActivity().put(action.getActionID(), action);  
+                                LOG.warning(e.getMessage());
+                            }                          
                         }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                          
-                    }
-                }                
-                setLastSync(LocalDateTime.now()); 
-                LOG.info("Syncing Trello actions succeeded");
-                handle.finish();
-                rootDir.addFileChangeListener(this);  
+                    }                     
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+                finally
+                {
+                    setLastSync(LocalDateTime.now()); 
+                    LOG.info("Syncing Trello actions succeeded");
+                    handle.finish();
+                    rootDir.addFileChangeListener(this);                      
+                }               
             }                       
         }           
     }      

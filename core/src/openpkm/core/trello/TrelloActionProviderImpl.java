@@ -86,7 +86,10 @@ public class TrelloActionProviderImpl implements TrelloActionProvider
         {
             props.setProperty(AbstractTrelloAction.PROP_CARD_ID, action.getData().getCard().getId());
             props.setProperty(AbstractTrelloAction.PROP_CARD_NAME, action.getData().getCard().getName());
-            props.setProperty(AbstractTrelloAction.PROP_LIST_ID, action.getData().getList().getId());
+            if(action.getData().getList() != null)
+            {
+                props.setProperty(AbstractTrelloAction.PROP_LIST_ID, action.getData().getList().getId());                
+            }
             if(action.getData().getListBefore() != null)
             {
                 props.setProperty(AbstractTrelloAction.PROP_LIST_BEFORE, action.getData().getListBefore().getId());                 

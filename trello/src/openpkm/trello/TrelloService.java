@@ -24,7 +24,7 @@ public interface TrelloService
     TrelloList createList(String boardID, String name, TrelloListProvider provider, TrelloAccount account);
     List<TrelloMember> getMembers(TrelloBoard trelloBoard, TrelloMemberProvider provider, Trello trello);    
     List<TrelloLabel> getLabels(TrelloBoard trelloBoard, TrelloLabelProvider provider, Trello trello);   
-    List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello);
+    List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello) throws Exception;
     List<Card> getCards(TrelloBoard trelloBoard, Trello trello); 
     String getCardDescription(String cardID, Trello trello);
     String getCommentText(String actionID, Trello trello);
