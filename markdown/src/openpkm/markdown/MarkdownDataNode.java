@@ -13,7 +13,10 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.PropertiesProvider;
+import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.Children;
@@ -29,8 +32,17 @@ public class MarkdownDataNode extends DataNode implements PropertyChangeListener
     public MarkdownDataNode(MarkdownDataObject data) 
     {
         super(data, Children.LEAF, data.getLookup());
-        data.addPropertyChangeListener(this);
-        data.addChangeListener(this);
+        Source source = data.getLookup().lookup(Source.class);
+        if(source != null)
+        {
+            source.addPropertyChangeListener(this);
+        }
+        
+        IconProvider provider = getLookup().lookup(IconProvider.class);  
+        if(provider != null)
+        {
+            provider.addChangeListener(this);
+        }        
     }
     
     @Override    
@@ -69,6 +81,17 @@ public class MarkdownDataNode extends DataNode implements PropertyChangeListener
             return provider.getTitle();          
         }       
         return super.getDisplayName();
+    }  
+    
+    @Override
+    public String getHtmlDisplayName() 
+    {
+        HtmlDisplayNameProvider provider = getLookup().lookup(HtmlDisplayNameProvider.class);  
+        if(provider == null)
+        {
+            return null;
+        }  
+        return provider.getHtmlDisplayName();
     }     
 
     @Override
@@ -77,6 +100,11 @@ public class MarkdownDataNode extends DataNode implements PropertyChangeListener
         if(evt.getPropertyName().equals(TitleProvider.PROP_TITLE))
         {
             fireDisplayNameChange(evt.getOldValue().toString(), evt.getNewValue().toString());
+        }
+        else if(evt.getPropertyName().equals(PropertiesProvider.PROP_PROPS_ALL))
+        {
+            fireIconChange();
+            fireDisplayNameChange(null, getDisplayName());
         }
     }
 

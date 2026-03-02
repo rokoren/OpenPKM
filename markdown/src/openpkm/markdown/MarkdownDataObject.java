@@ -6,7 +6,6 @@ package openpkm.markdown;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
 import openpkm.base.RemoteDataProvider;
 import openpkm.base.Source;
 import openpkm.utils.Utils;
@@ -22,7 +21,6 @@ import org.openide.loaders.DataObjectExistsException;
 import org.openide.loaders.MultiDataObject;
 import org.openide.loaders.MultiFileLoader;
 import org.openide.nodes.Node;
-import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.Lookups;
@@ -99,14 +97,11 @@ public class MarkdownDataObject extends MultiDataObject
 {
     private static final Logger LOG = Logger.getLogger(MarkdownDataObject.class.getName());
     
-    private final ChangeSupport changeSupport;
-    
     private Lookup lookup;     
     
     public MarkdownDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException 
     {
-        super(pf, loader);
-        changeSupport = new ChangeSupport(this);        
+        super(pf, loader);    
         registerEditor(MarkdownLanguageConfig.MIME_TYPE, true);
     }
     
@@ -127,17 +122,7 @@ public class MarkdownDataObject extends MultiDataObject
 
         // pokličeš privzeto brisanje datoteke
         super.handleDelete();
-    }    
-    
-    public void addChangeListener(ChangeListener listener)
-    {
-        changeSupport.addChangeListener(listener);
-    }
-    
-    public void removeChangeListener(ChangeListener listener)
-    {
-        changeSupport.removeChangeListener(listener);
-    }     
+    }       
 
     @Override
     protected int associateLookup() {

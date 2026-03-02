@@ -1396,22 +1396,23 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                             {
                                 oldCard.merge(newCard);
                                 FileObject fo = getRootFolder().getFileObject(oldCard.getCardID());
-                                if(fo != null)
+                                if(fo != null && fo.isFolder())
                                 {
-                                    if(fo.isFolder())
+                                    try
                                     {
-                                        try
-                                        {
-                                            OutputStream os = new FileOutputStream(fo.getFileObject(TrelloCardProjectFactory.PROJECT_FOLDER).getFileObject(TrelloCardProjectFactory.PROJECT_FILE).getPath());
-                                            oldCard.getProperties().store(os, "Trello Card project updated");
-                                            os.close();                
-                                        }
-                                        catch(IOException e)
-                                        {
-                                            LOG.warning(e.getMessage());
-                                        }                                          
+                                        OutputStream os = new FileOutputStream(fo.getFileObject(TrelloCardProjectFactory.PROJECT_FOLDER).getFileObject(TrelloCardProjectFactory.PROJECT_FILE).getPath());
+                                        oldCard.getProperties().store(os, "Trello Card project updated");
+                                        os.close();                
                                     }
-                                    else
+                                    catch(IOException e)
+                                    {
+                                        LOG.warning(e.getMessage());
+                                    }                                                                                                                                  
+                                }  
+                                else
+                                {
+                                    fo = getRootFolder().getFileObject(oldCard.getCardID(), PropertiesProvider.EXTENSION);
+                                    if(fo != null)
                                     {
                                         try
                                         {
@@ -1427,8 +1428,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                         {
                                             LOG.warning(e.getMessage());
                                         }                                           
-                                    }                                                                                              
-                                }                              
+                                    }                                   
+                                }
                             }                              
                         }                           
                     }

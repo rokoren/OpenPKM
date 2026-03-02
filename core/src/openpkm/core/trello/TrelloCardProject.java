@@ -66,6 +66,7 @@ import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -146,7 +147,7 @@ import org.netbeans.core.spi.multiview.MultiViewElementCallback;
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, TitleProvider, PropertiesProvider, Sources, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, TitleProvider, HtmlDisplayNameProvider, PropertiesProvider, Sources, BatchUpdateSupport
 { 
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -590,7 +591,24 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Pr
     public void setTitle(String title) 
     {
         throw new UnsupportedOperationException();
-    }     
+    }  
+    
+// TODO HtmlDisplayNameProvider         
+        
+    @Override
+    public String getHtmlDisplayName()
+    {
+        TitleProvider provider = getLookup().lookup(TitleProvider.class);
+        if(provider == null)
+        {
+            return null;
+        }
+        if(isCardDueComplete())
+        {
+            return "<html><s>" + provider.getTitle() + "</s></html>";
+        }
+        return "<html><b>" + provider.getTitle() + "</b></html>";
+    } 
 
 // TODO PropertiesProvider
     

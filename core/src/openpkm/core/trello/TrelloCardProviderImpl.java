@@ -16,7 +16,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.youtube.YouTubeVideo;
@@ -106,7 +108,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         return props.getProperty(PROP_CARD_ID);      
     }       
     
-    private static final class TrelloCardImpl implements TrelloCard
+    private static final class TrelloCardImpl implements TrelloCard, HtmlDisplayNameProvider
     {         
         private final Properties props;
         private final PropertyChangeSupport propertyChangeSupport;
@@ -379,7 +381,26 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         @Override
         public void merge(PropertiesProvider provider)
         {
+            Object oldValue = props.clone();
             props.putAll(provider.getProperties());
+            propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
+        }
+
+// TODO HtmlDisplayNameProvider         
+        
+        @Override
+        public String getHtmlDisplayName()
+        {
+            TitleProvider provider = getLookup().lookup(TitleProvider.class);
+            if(provider == null)
+            {
+                return null;
+            }
+            if(isCardDueComplete())
+            {
+                return "<html><s>" + provider.getTitle() + "</s></html>";
+            }
+            return "<html><b>" + provider.getTitle() + "</b></html>";
         }
     }        
 }
