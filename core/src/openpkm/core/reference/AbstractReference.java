@@ -345,7 +345,15 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
         @Override
         public String getShortDescription() 
         {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            try
+            {
+                return getFile().getPath();                
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+            return null;
         }
 
         @Override

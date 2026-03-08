@@ -341,7 +341,22 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getDescription()
         {
             return props.getProperty(PROP_DESCRIPTION);
-        }              
+        } 
+        
+        @Override
+        public void setDescription(String description)
+        {
+            if(description == null)
+            {
+                Object oldValue = props.remove(PROP_DESCRIPTION);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
+            }
+        }         
 
         @Override
         public com.gluonhq.richtextarea.model.Document getTextOnPage()

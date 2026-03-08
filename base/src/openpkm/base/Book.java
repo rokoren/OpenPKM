@@ -20,7 +20,10 @@ public interface Book
     String PROP_LANGUAGE     = "book.language"; 
     String PROP_ISBN         = "book.isbn"; 
     
+    String getTitle();
+    void setTitle(String title);         
     String getDescription();
+    void setDescription(String description);
     String getSubtitle();
     void setSubtitle(String subtitle);  
     String getAuthors();
