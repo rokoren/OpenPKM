@@ -25,6 +25,7 @@ public interface TrelloCard extends Source, PropertiesProvider
     Boolean isCardSubsribed();
     Boolean isCardPinned();    
     Boolean isCardDueComplete(); 
+    void setCardDueComplete(Boolean complete); 
     Boolean isCardTemplate(); 
     LocalDateTime getDateLastActivity();
     String getCardRole();

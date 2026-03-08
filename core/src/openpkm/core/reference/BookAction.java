@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.reference;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -24,7 +24,6 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
@@ -32,6 +31,7 @@ import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.BookWizardPanel2;
 import openpkm.reference.FileWizardPanel1;
 import openpkm.reference.Reference;
+import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
@@ -51,7 +51,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Book",
-        id = "openpkm.reference.BookAction"
+        id = "openpkm.core.reference.BookAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/reference/resources/link.png",
@@ -103,18 +103,18 @@ public class BookAction implements ActionListener
             String fileName = (String)wiz.getProperty(Reference.PROP_FILE_NAME);
             String fileExt = (String)wiz.getProperty(Reference.PROP_FILE_EXT);
             String filePath = (String)wiz.getProperty(Reference.PROP_FILE_PATH);
-            String title = (String)wiz.getProperty(TitleProvider.PROP_TITLE);
+            String title = (String)wiz.getProperty(ReferenceProvider.PROP_TITLE);
             List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);    
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME)); 
-            props.setProperty(ReferenceProviderImpl.PROP_TYPE, ReferenceProviderImpl.Type.BOOK.getName());
+            props.setProperty(ReferenceProvider.PROP_TYPE, ReferenceProvider.Type.BOOK.getName());
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());          
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());
-            props.setProperty(TitleProvider.PROP_TITLE, title);  
+            props.setProperty(ReferenceProvider.PROP_TITLE, title);  
             props.setProperty(Reference.PROP_FILE_NAME, fileName); 
             props.setProperty(Reference.PROP_FILE_EXT, fileExt);
             props.setProperty(Reference.PROP_FILE_PATH, filePath); 

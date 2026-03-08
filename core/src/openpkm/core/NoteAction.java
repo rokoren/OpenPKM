@@ -24,7 +24,6 @@ import openpkm.base.ContentProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.Utils;

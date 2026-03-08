@@ -2403,7 +2403,7 @@ public class TrelloCardProject implements Project, TrelloCard, TitleProvider, Ht
                 provider.removeLabel(label);                
             }                                    
         }
-    }      
+    }  
     
     private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement, ActionListener, CefLoadHandler
     {

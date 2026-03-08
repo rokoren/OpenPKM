@@ -5,19 +5,13 @@
 package openpkm.markdown;
 
 import java.awt.Image;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import openpkm.base.HtmlDisplayNameProvider;
-import openpkm.base.IconProvider;
-import openpkm.base.PropertiesProvider;
-import openpkm.base.Source;
-import openpkm.base.TitleProvider;
+import openpkm.base.NodeProvider;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.Children;
 
@@ -25,24 +19,18 @@ import org.openide.nodes.Children;
  *
  * @author Rok Koren
  */
-public class MarkdownDataNode extends DataNode implements PropertyChangeListener, ChangeListener
+public class MarkdownDataNode extends DataNode implements ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(MarkdownDataNode.class.getName());    
     
     public MarkdownDataNode(MarkdownDataObject data) 
     {
         super(data, Children.LEAF, data.getLookup());
-        Source source = data.getLookup().lookup(Source.class);
-        if(source != null)
-        {
-            source.addPropertyChangeListener(this);
-        }
-        
-        IconProvider provider = getLookup().lookup(IconProvider.class);  
+        NodeProvider provider = data.getLookup().lookup(NodeProvider.class);
         if(provider != null)
         {
             provider.addChangeListener(this);
-        }        
+        }      
     }
     
     @Override    
@@ -62,51 +50,59 @@ public class MarkdownDataNode extends DataNode implements PropertyChangeListener
     }    
     
     @Override
-    public Image getIcon(int i) 
+    public Image getIcon(int type) 
     {
-        IconProvider provider = getLookup().lookup(IconProvider.class);  
+        NodeProvider provider = getLookup().lookup(NodeProvider.class);
         if(provider != null)
         {
-            return provider.getIcon();
-        }
-        return super.getIcon(i);
-    }     
+            return provider.getIcon(type);
+        }          
+        return super.getIcon(type);
+    }    
+    
+    @Override
+    public Image getOpenedIcon(int type) 
+    {
+        NodeProvider provider = getLookup().lookup(NodeProvider.class);
+        if(provider != null)
+        {
+            return provider.getOpenedIcon(type);
+        }          
+        return super.getIcon(type);
+    }      
     
     @Override
     public String getDisplayName() 
     {
-        TitleProvider provider = getLookup().lookup(TitleProvider.class);  
+        NodeProvider provider = getLookup().lookup(NodeProvider.class);
         if(provider != null)
         {
-            return provider.getTitle();          
-        }       
+            return provider.getDisplayName();
+        }     
         return super.getDisplayName();
     }  
     
     @Override
+    public String getShortDescription()
+    {
+        NodeProvider provider = getLookup().lookup(NodeProvider.class);
+        if(provider != null)
+        {
+            return provider.getShortDescription();
+        }     
+        return super.getShortDescription();        
+    }
+    
+    @Override
     public String getHtmlDisplayName() 
     {
-        HtmlDisplayNameProvider provider = getLookup().lookup(HtmlDisplayNameProvider.class);  
-        if(provider == null)
+        NodeProvider provider = getLookup().lookup(NodeProvider.class);
+        if(provider != null)
         {
-            return null;
+            return provider.getHtmlDisplayName();
         }  
-        return provider.getHtmlDisplayName();
+        return super.getHtmlDisplayName();
     }     
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) 
-    {
-        if(evt.getPropertyName().equals(TitleProvider.PROP_TITLE))
-        {
-            fireDisplayNameChange(evt.getOldValue().toString(), evt.getNewValue().toString());
-        }
-        else if(evt.getPropertyName().equals(PropertiesProvider.PROP_PROPS_ALL))
-        {
-            fireIconChange();
-            fireDisplayNameChange(null, getDisplayName());
-        }
-    }
 
     @Override
     public void stateChanged(ChangeEvent e) 

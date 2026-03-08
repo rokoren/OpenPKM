@@ -56,6 +56,8 @@ public interface IconsProvider
         FILE_PDF,
         FILE_PNG,
         FILE_JPG,
+        FILE_GIF,
+        FILE_MP4,        
         VIDEOS;    
     }     
 }

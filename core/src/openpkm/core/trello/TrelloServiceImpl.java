@@ -301,6 +301,19 @@ public class TrelloServiceImpl implements TrelloService
     }
     
     @Override
+    public int setCardDueComplete(String cardID, boolean complete, TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.put("https://api.trello.com/1/cards/" + cardID)
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .queryString("dueComplete", Boolean.toString(complete))
+          .asJson();  
+        
+        return response.getStatus();
+    }     
+    
+    @Override
     public String getCommentText(String actionID, Trello trello)
     { 
         Action action = trello.getAction(actionID);                    

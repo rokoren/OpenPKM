@@ -29,6 +29,7 @@ public interface TrelloService
     String getCardDescription(String cardID, Trello trello);
     String getCommentText(String actionID, Trello trello);
     void setCardDescription(String cardID, String description, TrelloAccount account); 
+    int setCardDueComplete(String cardID, boolean complete, TrelloAccount account);
     void setCommentText(String cardID, String actionID, String text, Trello trello);    
     List<TrelloCard> getCards(TrelloList trelloList, TrelloCardProvider provider, Trello trello);
     TrelloCard createCard(String listID, String name, TrelloCardProvider provider, TrelloAccount account);

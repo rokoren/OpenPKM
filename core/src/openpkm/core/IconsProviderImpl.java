@@ -133,6 +133,12 @@ public class IconsProviderImpl implements IconsProvider
     public static final String ICON_FILE_JPG = "openpkm/core/resources/file_extension_jpg.png"; 
     
     @StaticResource()
+    public static final String ICON_FILE_GIF = "openpkm/core/resources/file_extension_gif.png"; 
+
+    @StaticResource()
+    public static final String ICON_FILE_MP4 = "openpkm/core/resources/file_extension_mp4.png"; 
+    
+    @StaticResource()
     private static final String ICON_ATTACHMENT = "openpkm/core/resources/attach.png";     
 
     private String getResource(ICON icon)
@@ -214,7 +220,11 @@ public class IconsProviderImpl implements IconsProvider
             case FILE_PNG:
             return ICON_FILE_PNG;    
             case FILE_JPG:
-            return ICON_FILE_JPG;                 
+            return ICON_FILE_JPG;               
+            case FILE_GIF:
+            return ICON_FILE_GIF;    
+            case FILE_MP4:
+            return ICON_FILE_MP4;                         
             case ATTACHMENT:
             return ICON_ATTACHMENT;             
         }  

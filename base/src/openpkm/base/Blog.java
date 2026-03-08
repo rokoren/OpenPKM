@@ -8,7 +8,7 @@ package openpkm.base;
  *
  * @author Rok Koren
  */
-public interface Blog extends TitleProvider, DescriptionProvider
+public interface Blog
 {
     public static final String PROP_BLOG_ID = "blog.id";
     public static final String PROP_URL     = "url"; 

@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.reference;
 
 import com.dlsc.pdfviewfx.PDFView;
 import com.gluonhq.richtextarea.model.Decoration;
@@ -12,16 +12,11 @@ import com.gluonhq.richtextarea.model.TextDecoration;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -43,20 +38,13 @@ import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JToolBar;
-import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.Book;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
 import openpkm.base.IconProvider;
 import openpkm.base.PageProvider;
 import openpkm.base.Picture;
-import openpkm.base.PropertiesProvider;
-import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
-import openpkm.base.TopicsProvider;
 import openpkm.base.Video;
-import openpkm.base.VisibilityProvider;
 import openpkm.javafx.TextProvider;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
@@ -66,18 +54,14 @@ import openpkm.reference.StyledTextStripper;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.TextPosition;
-import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
-import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
-import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
 
@@ -124,248 +108,13 @@ public class ReferenceProviderImpl implements ReferenceProvider
         return null;
     }
     
-    private static abstract class AbstractReference implements Reference, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
-    {
-        public static final String EXT_GIF = "gif";
-        public static final String EXT_JPG = "jpg";
-        public static final String EXT_PNG = "png";    
-        public static final String EXT_PDF = "pdf";
-        public static final String EXT_MP4 = "mp4";    
-
-        @StaticResource()
-        public static final String ICON_GIF = "openpkm/core/resources/file_extension_gif.png";   
-
-        @StaticResource()
-        public static final String ICON_JPG = "openpkm/core/resources/file_extension_jpg.png";  
-
-        @StaticResource()
-        public static final String ICON_PNG = "openpkm/core/resources/file_extension_png.png";      
-
-        @StaticResource()
-        public static final String ICON_PDF = "openpkm/core/resources/file_extension_pdf.png";   
-
-        @StaticResource()
-        public static final String ICON_MP4 = "openpkm/core/resources/file_extension_mp4.png";  
-
-        protected static final Logger LOG = Logger.getLogger(AbstractReference.class.getName());     
-
-        protected final Properties props; 
-        protected final PropertyChangeSupport propertyChangeSupport;
-        protected final ChangeSupport changeSupport;  
-        
-        private Lookup lkp;          
-
-        public AbstractReference(Properties props) 
-        {
-            this.props = props;
-            propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);                
-        }
-        
-        @Override
-        public Lookup getLookup() 
-        {
-            if (lkp == null) 
-            { 
-                lkp = Lookups.fixed(this);              
-            }
-            return lkp;
-        }         
-
-        @Override
-        public Properties getProperties()
-        {
-            return props;
-        }  
-        
-        @Override
-        public void merge(PropertiesProvider provider)
-        {
-            props.putAll(provider.getProperties());
-        }        
-        
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
-        } 
-        
-        @Override
-        public String getAppID()
-        {
-            return props.getProperty(PROP_APP_ID);
-        }          
-
-        @Override
-        public boolean isDeleted()
-        {
-            String string = props.getProperty(PROP_DELETED);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
-        }
-
-        @Override
-        public void setDeleted(boolean isDeleted)
-        {
-            boolean oldValue = isDeleted();
-            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
-        }        
-
-        @Override
-        public LocalDateTime getTimeCreated() 
-        {
-            String created = props.getProperty(PROP_TIME_CREATED);
-            if(created != null)
-            {
-                return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
-            }
-            return null;
-        }                       
-
-        @Override
-        public Image getIcon() 
-        { 
-            String nameExt = props.getProperty(PROP_FILE_EXT);
-            if(nameExt != null)
-            {
-                if(nameExt.equalsIgnoreCase(EXT_GIF))
-                {
-                    return ImageUtilities.loadImage(ICON_GIF);                
-                }
-                else if(nameExt.equalsIgnoreCase(EXT_JPG))
-                {
-                    return ImageUtilities.loadImage(ICON_JPG);                
-                } 
-                else if(nameExt.equalsIgnoreCase(EXT_PNG))
-                {
-                    return ImageUtilities.loadImage(ICON_PNG);                
-                }             
-                else if(nameExt.equalsIgnoreCase(EXT_MP4))
-                {
-                    return ImageUtilities.loadImage(ICON_MP4);                
-                }  
-                else if(nameExt.equalsIgnoreCase(EXT_PDF))
-                {
-                    return ImageUtilities.loadImage(ICON_PDF);                
-                }             
-            }    
-            return null;
-        } 
-
-        @Override
-        public List<String> getTags()
-        {
-            if(props.containsKey(PROP_TAGS))
-            {
-                String string = props.getProperty(PROP_TAGS);
-                return List.of(string.split(","));
-            }   
-            return Collections.EMPTY_LIST;
-        } 
-
-        @Override
-        public List<String> getTopics()
-        {
-            String topics = props.getProperty(PROP_TOPICS);
-            if(topics != null)
-            {
-                return List.of(topics.split(","));                   
-            }                
-            return Collections.EMPTY_LIST;
-        }
-
-        @Override
-        public VisibilityProvider.Modifier getModifier()
-        {
-            String name = props.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
-            if(name != null)
-            {
-                Optional<VisibilityProvider.Modifier> optional = VisibilityProvider.Modifier.get(name);
-                if(optional.isPresent())
-                {
-                    return optional.get();
-                }
-            }
-            return VisibilityProvider.Modifier.NONE;
-        }
-
-        @Override
-        public void setModifier(VisibilityProvider.Modifier modifier)
-        {
-            if(modifier == null)
-            {
-                props.remove(VisibilityProvider.PROP_VISIBILITY_MODIFIER);         
-            }
-            else
-            {
-                props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
-            }
-        }     
-
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            props.store(os, comments); 
-            LOG.info("Reference Properties saved");      
-        }  
-
-        protected FileObject getFile(AbstractFilesProvider provider) throws IOException
-        {
-            String filePath = props.getProperty(PROP_FILE_PATH);
-            if(filePath == null)
-            {
-                throw new IOException("File path not set");
-            }            
-            return provider.getFile(filePath);
-        }  
-
-        public void setFile(FileObject file, AbstractFilesProvider provider) throws IOException
-        {
-            if(file == null)
-            {
-                props.remove(PROP_FILE_PATH);
-                props.remove(PROP_FILE_NAME);
-                props.remove(PROP_FILE_EXT);
-            }
-            else
-            {                 
-                props.setProperty(PROP_FILE_NAME, file.getName());
-                props.setProperty(PROP_FILE_EXT, file.getExt());
-                props.setProperty(PROP_FILE_PATH, provider.getRelativePath(file));                                              
-            }
-        }    
-    } 
-    
-    private static final class BookImpl extends AbstractReference implements Book, DescriptionProvider, PageProvider, TextProvider, MultiViewDescription
+    private static final class BookImpl extends AbstractReference implements Book, PageProvider, TextProvider, MultiViewDescription
     { 
         private static final String PROP_WEB_PAGE = "web.page";         
         private static final String PROP_GITHUB   = "github";         
         
         private PDDocument document;
-        private com.gluonhq.richtextarea.model.Document textOnPage;
-        private boolean pageModified;         
+        private com.gluonhq.richtextarea.model.Document textOnPage;     
      
         public BookImpl(Properties props)
         {
@@ -376,26 +125,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getISBN();
-        }
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }         
+        }       
         
         @Override
         public FileObject getFile() throws IOException
@@ -611,20 +341,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getDescription()
         {
             return props.getProperty(PROP_DESCRIPTION);
-        }
-
-        @Override
-        public void setDescription(String desc)
-        {
-            if(desc == null)
-            {
-                props.remove(PROP_DESCRIPTION);
-            }
-            else
-            {
-                props.setProperty(PROP_DESCRIPTION, desc);
-            }
-        }                
+        }              
 
         @Override
         public com.gluonhq.richtextarea.model.Document getTextOnPage()
@@ -709,6 +426,13 @@ public class ReferenceProviderImpl implements ReferenceProvider
         {
             return TopComponent.PERSISTENCE_NEVER;
         }         
+
+        @Override
+        public Image getIcon()
+        {
+            IconProvider provider = getLookup().lookup(IconProvider.class);
+            return provider.getImage();
+        }
     }
     
     private static final class ArticleImpl extends AbstractReference implements Article, PageProvider, MultiViewDescription
@@ -722,26 +446,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }         
+        }        
         
         @Override
         public FileObject getFile() throws IOException
@@ -852,10 +557,17 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public int getPersistenceType() 
         {
             return TopComponent.PERSISTENCE_NEVER;
-        }         
+        }  
+        
+        @Override
+        public Image getIcon()
+        {
+            IconProvider provider = getLookup().lookup(IconProvider.class);
+            return provider.getImage();
+        }        
     }    
     
-    private static final class DocumentImpl extends AbstractReference implements Document, TitleProvider, PageProvider, MultiViewDescription
+    private static final class DocumentImpl extends AbstractReference implements Document, PageProvider, MultiViewDescription
     {                   
         public DocumentImpl(Properties props)
         {
@@ -866,26 +578,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }  
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }         
+        }          
 
         @Override
         public FileObject getFile() throws IOException
@@ -1058,10 +751,17 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public int getPersistenceType() 
         {
             return TopComponent.PERSISTENCE_NEVER;
-        }          
+        }  
+
+        @Override
+        public Image getIcon()
+        {
+            IconProvider provider = getLookup().lookup(IconProvider.class);
+            return provider.getImage();
+        }
     }  
     
-    public static final class PictureImpl extends AbstractReference implements Picture, TitleProvider, MultiViewDescription
+    public static final class PictureImpl extends AbstractReference implements Picture, MultiViewDescription
     {        
         public PictureImpl(Properties props)
         {
@@ -1072,26 +772,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }  
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }         
+        }           
         
         @Override
         public FileObject getFile() throws IOException
@@ -1133,10 +814,17 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public int getPersistenceType() 
         {
             return TopComponent.PERSISTENCE_NEVER;
-        }         
+        }  
+        
+        @Override
+        public Image getIcon()
+        {
+            IconProvider provider = getLookup().lookup(IconProvider.class);
+            return provider.getImage();
+        }        
     }   
     
-    private static final class VideoImpl extends AbstractReference implements Video, TitleProvider, MultiViewDescription
+    private static final class VideoImpl extends AbstractReference implements Video, MultiViewDescription
     {        
         public VideoImpl(Properties props)
         {
@@ -1147,25 +835,6 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public String getSourceID()
         {
             return getTimeCreated().getNano() + "";
-        }  
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
         }         
 
         @Override
@@ -1208,7 +877,14 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public int getPersistenceType() 
         {
             return TopComponent.PERSISTENCE_NEVER;
-        }          
+        }  
+
+        @Override
+        public Image getIcon()
+        {
+            IconProvider provider = getLookup().lookup(IconProvider.class);
+            return provider.getImage();
+        }        
     }  
     
     private static final class PdfMultiViewElement extends JFXPanel implements MultiViewElement, ItemListener

@@ -14,7 +14,8 @@ import java.util.Properties;
  */
 public interface ReferenceProvider 
 {
-    String PROP_TYPE = "reference.type";    
+    String PROP_TITLE = "reference.title";        
+    String PROP_TYPE  = "reference.type";    
     
     Reference getReference(Properties props);  
     

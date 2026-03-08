@@ -15,7 +15,6 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
@@ -150,7 +149,7 @@ public class FileWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
     public void storeSettings(WizardDescriptor descriptor) 
     {
         descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getReferenceFileType()); 
-        descriptor.putProperty(TitleProvider.PROP_TITLE, getComponent().getReferenceTitle());        
+        descriptor.putProperty(ReferenceProvider.PROP_TITLE, getComponent().getReferenceTitle());        
         descriptor.putProperty(TagsProvider.PROP_TAGS, getComponent().getReferenceTags());        
         descriptor.putProperty(Reference.PROP_FILE_NAME, getComponent().getReferenceFileName());        
         descriptor.putProperty(Reference.PROP_FILE_PATH, getComponent().getReferenceFileRelativePath());        

@@ -5,6 +5,7 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Card;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
@@ -101,12 +103,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }
         return null;
     }
-    */
-    
-    public static String getCardID(Properties props)
-    {
-        return props.getProperty(PROP_CARD_ID);      
-    }       
+    */    
     
     private static final class TrelloCardImpl implements TrelloCard, HtmlDisplayNameProvider
     {         
@@ -301,6 +298,8 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             }
             return null;
         }
+        
+        public 
 
         @Override
         public Boolean isCardTemplate()
@@ -402,5 +401,38 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             }
             return "<html><b>" + provider.getTitle() + "</b></html>";
         }
-    }        
+    } 
+    
+    public static final class CardComplete extends AbstractAction
+    {             
+        private final TrelloCard card;
+
+        public CardComplete(TrelloCard card) 
+        {
+            super(getActionName(card));       
+            this.card = card;
+        }
+        
+        private static String getActionName(TrelloCard card)
+        {
+            if(Boolean.TRUE.equals(card.isCardDueComplete()))
+            {
+                return "Uncomplete";
+            }
+            return "Complete";
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            if(Boolean.TRUE.equals(card.isCardDueComplete()))
+            {
+                card.setCardDueComplete(false);  
+            }
+            else
+            {
+                card.setCardDueComplete(true);                
+            }
+        }
+    }     
 }
