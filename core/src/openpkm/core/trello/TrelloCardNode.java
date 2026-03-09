@@ -16,6 +16,7 @@ import openpkm.base.DescriptionProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.TitleProvider;
 import openpkm.core.TopComponentProvider;
+import openpkm.utils.TopComponentProvider;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;
@@ -69,7 +70,7 @@ public class TrelloCardNode extends FilterNode implements ChangeListener, Proper
         IconProvider provider = project.getLookup().lookup(IconProvider.class);
         if(provider != null)
         {
-            return provider.getIcon();
+            return provider.getIcon(type);
         }
         
         ProjectInformation info = ProjectUtils.getInformation(project);        

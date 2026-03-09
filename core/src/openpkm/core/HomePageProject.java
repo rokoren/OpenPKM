@@ -68,7 +68,9 @@ import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
+import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.SavableImpl;
+import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
 import openpkm.utils.WebSourceProvider;
 import org.cef.browser.CefBrowser;
@@ -1615,7 +1617,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
                         try
                         {
                             WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                            webPage.addPropertyChangeListener(this);
+                            webPage.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             links.put(webPage.getSourceID(), webPage);
                         }
                         catch(IOException e)
@@ -1704,7 +1706,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             try
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                webPage.addPropertyChangeListener(this);
+                webPage.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getLinks().put(webPage.getSourceID(), webPage);               
                 setLastSource(webPage);                
             }           
@@ -1732,7 +1734,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             WebPage webPage = getLinks().remove(file.getName());  
             if(webPage != null)
             {
-                webPage.removePropertyChangeListener(this);
+                webPage.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(webPage);
             }
         }
@@ -1781,7 +1783,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
-                            reference.addPropertyChangeListener(this);
+                            reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -1881,7 +1883,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
-                reference.addPropertyChangeListener(this);
+                reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getReferences().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
@@ -1909,7 +1911,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             Reference reference = getReferences().remove(file.getName());  
             if(reference != null)
             {
-                reference.removePropertyChangeListener(this);
+                reference.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(reference);
             }
         }

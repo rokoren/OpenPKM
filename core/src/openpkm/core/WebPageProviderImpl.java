@@ -24,7 +24,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.IconProvider;
 import openpkm.base.Link;
@@ -37,6 +36,7 @@ import openpkm.base.WebPage;
 import openpkm.base.WebPageProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.rss.Rss;
+import openpkm.utils.DisplayNameProviderImpl;
 import org.cef.browser.CefBrowser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -46,7 +46,6 @@ import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
-import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
@@ -89,21 +88,20 @@ public class WebPageProviderImpl implements WebPageProvider
         return null;
     }  
     
-    private static abstract class AbstractWebPage implements WebPage, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractWebPage implements WebPage, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {         
         protected static final Logger LOG = Logger.getLogger(AbstractWebPage.class.getName());     
 
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;
-        protected final ChangeSupport changeSupport;  
         
-        private Lookup lkp;           
+        private Lookup lkp;  
+        protected boolean isDeleted, isModified;        
 
         public AbstractWebPage(Properties props) 
         {
             this.props = props;
-            propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);                
+            propertyChangeSupport = new PropertyChangeSupport(this);              
         }
         
         @Override
@@ -111,7 +109,7 @@ public class WebPageProviderImpl implements WebPageProvider
         {
             if (lkp == null) 
             { 
-                lkp = Lookups.fixed(this);              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
             }
             return lkp;
         }         
@@ -129,28 +127,30 @@ public class WebPageProviderImpl implements WebPageProvider
         }        
         
         @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
+        public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            if(propertyName == null)
+            {
+                propertyChangeSupport.addPropertyChangeListener(listener);    
+            }
+            else
+            {
+                propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+            }
         }
 
         @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
+        public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
-        }          
+            if(propertyName == null)
+            {
+                propertyChangeSupport.removePropertyChangeListener(listener);    
+            }
+            else
+            {
+                propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+            }                        
+        }         
         
         @Override
         public String getAppID()
@@ -161,20 +161,23 @@ public class WebPageProviderImpl implements WebPageProvider
         @Override
         public boolean isDeleted()
         {
-            String string = props.getProperty(PROP_DELETED);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
+            return isDeleted;
         }
 
         @Override
-        public void setDeleted(boolean isDeleted)
+        public void setDeleted(boolean newValue)
         {
-            boolean oldValue = isDeleted();
-            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
+            boolean oldValue = isDeleted;
+            this.isDeleted = newValue;
+            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, newValue);        
+        } 
+
+        @Override
+        public void markModified()
+        {
+            boolean oldValue = isModified;
+            this.isModified = true;
+            propertyChangeSupport.firePropertyChange(PROP_MODIFIED, oldValue, isModified);        
         }        
 
         @Override
@@ -242,6 +245,7 @@ public class WebPageProviderImpl implements WebPageProvider
         public void save(OutputStream os, String comments) throws IOException
         {
             props.store(os, comments); 
+            isModified = false;
             LOG.info("Web Page Properties saved");      
         }     
     }  
@@ -294,7 +298,7 @@ public class WebPageProviderImpl implements WebPageProvider
         }          
         
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
         }       
@@ -388,6 +392,12 @@ public class WebPageProviderImpl implements WebPageProvider
                 props.setProperty(PROP_DESCRIPTION, desc);
             }
         } 
+        
+        @Override
+        public Image getIcon(int type) 
+        {  
+            return ImageUtilities.loadImage(ICON);             
+        }          
         
         @Override
         public Image getIcon() 
@@ -534,7 +544,7 @@ public class WebPageProviderImpl implements WebPageProvider
         } 
 
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
         } 

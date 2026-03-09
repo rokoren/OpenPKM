@@ -13,11 +13,9 @@ import java.util.Properties;
  */
 public interface PropertiesProvider 
 {
-    String EXTENSION = "properties";  
+    String EXTENSION = "properties";          
     
-    String PROP_PROPS_ALL = "props.all";
-    
-    Properties getProperties();  
+    Properties getProperties();      
     void merge(PropertiesProvider provider);
     void addPropertyChangeListener(String propertyName, PropertyChangeListener listener);
     void removePropertyChangeListener(String propertyName, PropertyChangeListener listener);      

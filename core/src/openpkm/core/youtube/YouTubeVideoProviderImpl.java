@@ -209,7 +209,8 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;       
         
-        private Lookup lkp;      
+        private Lookup lkp;  
+        private boolean isDeleted, isModified;        
 
         public YouTubeVideoImpl(Properties props)
         {
@@ -230,20 +231,23 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         @Override
         public boolean isDeleted()
         {
-            String string = props.getProperty(PROP_DELETED);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
+            return isDeleted;
         }
 
         @Override
-        public void setDeleted(boolean isDeleted)
+        public void setDeleted(boolean newValue)
         {
-            boolean oldValue = isDeleted();
-            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
+            boolean oldValue = isDeleted;
+            this.isDeleted = newValue;
+            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, newValue);        
+        } 
+
+        @Override
+        public void markModified()
+        {
+            boolean oldValue = isModified;
+            this.isModified = true;
+            propertyChangeSupport.firePropertyChange(PROP_MODIFIED, oldValue, isModified);        
         }        
         
         @Override
@@ -583,6 +587,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public void save(OutputStream os, String comments) throws IOException
         {
             props.store(os, comments); 
+            isModified = false;
             LOG.info("YouTube video saved");
         } 
         

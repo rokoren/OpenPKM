@@ -24,9 +24,9 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.core.DisplayNameProviderImpl;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
+import openpkm.utils.DisplayNameProviderImpl;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -35,7 +35,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rokor
  */
-public abstract class AbstractReference implements Reference, PropertiesProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
+public abstract class AbstractReference implements Reference, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
 {
     public static final String EXT_GIF = "gif";
     public static final String EXT_JPG = "jpg";
@@ -49,7 +49,7 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     protected final PropertyChangeSupport propertyChangeSupport;
 
     protected Lookup lkp;  
-    protected boolean isDeleted;
+    protected boolean isDeleted, isModified;
 
     public AbstractReference(Properties props) 
     {
@@ -123,7 +123,15 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
         boolean oldValue = isDeleted;
         this.isDeleted = newValue;
         propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, newValue);        
-    }        
+    } 
+
+    @Override
+    public void markModified()
+    {
+        boolean oldValue = isModified;
+        this.isModified = true;
+        propertyChangeSupport.firePropertyChange(PROP_MODIFIED, oldValue, isModified);        
+    }     
 
     @Override
     public LocalDateTime getTimeCreated() 
@@ -208,7 +216,8 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     @Override
     public void save(OutputStream os, String comments) throws IOException
     {
-        props.store(os, comments); 
+        props.store(os, comments);
+        isModified = false;
         LOG.info("Reference Properties saved");      
     }  
 

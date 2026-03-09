@@ -101,6 +101,8 @@ import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.github.GitHubUser;
+import openpkm.utils.LogicalViewProviderImpl;
+import openpkm.utils.TopComponentProvider;
 
 /**
  *
@@ -1701,7 +1703,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                         try
                         {
                             WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                            webPage.addPropertyChangeListener(this);
+                            webPage.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             links.put(webPage.getSourceID(), webPage);
                         }
                         catch(IOException e)
@@ -1790,7 +1792,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             try
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                webPage.addPropertyChangeListener(this);
+                webPage.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getLinks().put(webPage.getSourceID(), webPage);               
                 setLastSource(webPage);                
             }           
@@ -1818,7 +1820,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             WebPage webPage = getLinks().remove(file.getName());  
             if(webPage != null)
             {
-                webPage.removePropertyChangeListener(this);
+                webPage.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(webPage);
             }
         }
@@ -1867,7 +1869,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
-                            reference.addPropertyChangeListener(this);
+                            reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -1967,7 +1969,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
-                reference.addPropertyChangeListener(this);
+                reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getReferences().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
@@ -1995,7 +1997,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             Reference reference = getReferences().remove(file.getName());  
             if(reference != null)
             {
-                reference.removePropertyChangeListener(this);
+                reference.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(reference);
             }
         }

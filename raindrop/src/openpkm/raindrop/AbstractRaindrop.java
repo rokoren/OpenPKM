@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.Book;
 import openpkm.base.Document;
@@ -27,8 +26,8 @@ import openpkm.base.TagsProvider;
 import openpkm.base.Video;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
+import openpkm.utils.DisplayNameProviderImpl;
 import org.openide.awt.NotificationDisplayer;
-import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -45,7 +44,6 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
          
     protected final Properties props;    
     protected final PropertyChangeSupport propertyChangeSupport;
-    protected final ChangeSupport changeSupport; 
     
     private Lookup lkp;    
 
@@ -53,7 +51,6 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     {
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
-        changeSupport = new ChangeSupport(this);
     }
     
     @Override
@@ -61,34 +58,36 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     {
         if (lkp == null) 
         { 
-            lkp = Lookups.fixed(this);              
+            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
         }
         return lkp;
     }      
     
     @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener)
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
     {
-        propertyChangeSupport.addPropertyChangeListener(listener);
+        if(propertyName == null)
+        {
+            propertyChangeSupport.addPropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+        }
     }
-    
+
     @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener)
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
     {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    } 
-    
-    @Override
-    public void addChangeListener(ChangeListener listener)
-    {
-        changeSupport.addChangeListener(listener);
-    }
-    
-    @Override
-    public void removeChangeListener(ChangeListener listener)
-    {
-        changeSupport.removeChangeListener(listener);
-    }     
+        if(propertyName == null)
+        {
+            propertyChangeSupport.removePropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+        }                        
+    }      
     
     @Override
     public boolean isDeleted()
@@ -427,7 +426,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     } 
 
     @Override
-    public Image getIcon() 
+    public Image getIcon(int type) 
     {    
         return ImageUtilities.loadImage(ICON); 
     }
@@ -760,6 +759,16 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
 
         @Override
         public void setISBN(String isbn) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public String getDescription() {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void setDescription(String description) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
     }     

@@ -53,6 +53,7 @@ import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Content;
@@ -127,6 +128,7 @@ import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
+import openpkm.utils.LogicalViewProviderImpl;
 
 /**
  *
@@ -163,12 +165,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private final List<UpdateCookie> cookies = new ArrayList();  
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
-    private final ChangeSupport changeSupport = new ChangeSupport(this);
     
     private final FileObject projectDir;        
     private final ProjectState state;
-    private final Properties props;       
+    private final Properties props;
+    private final PropertyChangeSupport propertyChangeSupport;   
     
     private Lookup lkp;  
     private FileObject dataDir;
@@ -185,6 +186,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
+        propertyChangeSupport = new PropertyChangeSupport(this);
         
         RaindropProvider raindropProvider = Lookup.getDefault().lookup(RaindropProvider.class);
         if(raindropProvider != null)
@@ -278,16 +280,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
     }  
     
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-    
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    } 
-    
 // TODO Sources    
     
     @Override
@@ -298,18 +290,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             return sources.values().toArray(new SourceGroup[0]);                
         }
         return new SourceGroup[0];
-    } 
-
-    @Override
-    public void addChangeListener(ChangeListener listener) 
-    {
-        changeSupport.addChangeListener(listener);
-    }
-
-    @Override
-    public void removeChangeListener(ChangeListener listener) 
-    {
-        changeSupport.removeChangeListener(listener);
     }      
     
 // TODO Project
@@ -345,7 +325,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     list.add(new ParentProjectProviderImpl());  
                 }                
                 
-                list.add(new RaindropProjectLogicalView(this));
+                list.add(new LogicalViewProviderImpl(this));
                 list.add(new RaindropCustomizerProvider(this));  
                 
                 /*
@@ -433,6 +413,32 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
+    }  
+    
+    @Override
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        if(propertyName == null)
+        {
+            propertyChangeSupport.addPropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+        }
+    }
+
+    @Override
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        if(propertyName == null)
+        {
+            propertyChangeSupport.removePropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+        }                        
     }    
     
 // TODO BatchUpdateSupport    
@@ -611,7 +617,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
   
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider, Runnable
+    private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
     {        
         private Image icon; 
         private boolean isLoading;
@@ -619,7 +625,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
 
         @Override
-        public synchronized Image getIcon()
+        public synchronized Image getIcon(int type)
         {
             if(icon != null)
             {
@@ -1130,7 +1136,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         }  
         
         @Override
@@ -1233,7 +1239,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         }  
         
         @Override
@@ -1336,7 +1342,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         }  
         
         @Override
@@ -1439,7 +1445,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         }  
         
         @Override
@@ -1542,7 +1548,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         }  
         
         @Override
@@ -1645,7 +1651,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override
@@ -1748,7 +1754,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override

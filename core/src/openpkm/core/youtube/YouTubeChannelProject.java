@@ -76,13 +76,13 @@ import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WatchLater;
-import openpkm.core.LogicalViewProviderImpl;
-import openpkm.core.TopComponentProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
+import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.SavableImpl;
+import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
 import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
@@ -1998,7 +1998,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
-                            reference.addPropertyChangeListener(this);
+                            reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2098,7 +2098,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
-                reference.addPropertyChangeListener(this);
+                reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getReferences().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
@@ -2126,7 +2126,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             Reference reference = getReferences().remove(file.getName());  
             if(reference != null)
             {
-                reference.removePropertyChangeListener(this);
+                reference.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(reference);
             }
         }
@@ -2175,7 +2175,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         try
                         {
                             YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
-                            video.addPropertyChangeListener(this);
+                            video.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2260,7 +2260,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             try
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
-                video.addPropertyChangeListener(this);
+                video.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getVideosById().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
@@ -2288,7 +2288,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
-                video.removePropertyChangeListener(this);                
+                video.removePropertyChangeListener(Source.PROP_MODIFIED, this);                
                 setLastSource(video);
             }
         }
@@ -2390,7 +2390,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 
                                 String text = getTitle() + ": " + title;
                                 IconProvider iconProvider = getLookup().lookup(IconProvider.class);
-                                Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon());                           
+                                Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16));                           
 
                                 URL url = new URL(thumbnail);
                                 BufferedImage image = ImageIO.read(url);                          

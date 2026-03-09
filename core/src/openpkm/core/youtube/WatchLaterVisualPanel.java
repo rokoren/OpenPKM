@@ -2,9 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.youtube;
 
-import openpkm.base.TitleProvider;
+import openpkm.youtube.YouTubeVideo;
 import org.cef.browser.CefBrowser;
 
 /**
@@ -13,14 +13,14 @@ import org.cef.browser.CefBrowser;
  */
 public class WatchLaterVisualPanel extends javax.swing.JPanel 
 { 
-    private final TitleProvider provider;
+    private final YouTubeVideo video;
     
     /**
      * Creates new form WatchLaterVisualPanel
      */
-    public WatchLaterVisualPanel(TitleProvider provider, CefBrowser browser) 
+    public WatchLaterVisualPanel(YouTubeVideo video, CefBrowser browser) 
     {
-        this.provider = provider;
+        this.video = video;
         initComponents(); 
         add(browser.getUIComponent());        
     }
@@ -28,7 +28,7 @@ public class WatchLaterVisualPanel extends javax.swing.JPanel
     @Override
     public String getName() 
     {
-        return provider.getTitle();
+        return video.getVideoTitle();
     } 
 
     /**

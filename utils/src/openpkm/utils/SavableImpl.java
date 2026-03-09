@@ -66,7 +66,7 @@ public class SavableImpl extends AbstractSavable
         }
         OutputStream os = file.getOutputStream();
         source.save(os, evt.getPropertyName());
-        os.close();          
+        os.close(); 
     }
 
     @Override

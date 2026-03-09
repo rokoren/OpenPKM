@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.Book;
 import openpkm.base.Content;
@@ -32,8 +31,8 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.utils.DisplayNameProviderImpl;
 import org.netbeans.api.annotations.common.StaticResource;
-import org.openide.util.ChangeSupport;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -92,15 +91,13 @@ public class ContentProviderImpl implements ContentProvider
 
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;
-        protected final ChangeSupport changeSupport;  
         
         private Lookup lkp;          
 
         public AbstractContent(Properties props) 
         {
             this.props = props;
-            propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);                
+            propertyChangeSupport = new PropertyChangeSupport(this);             
         }
         
         @Override
@@ -108,7 +105,7 @@ public class ContentProviderImpl implements ContentProvider
         {
             if (lkp == null) 
             { 
-                lkp = Lookups.fixed(this);              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
             }
             return lkp;
         }          
@@ -126,27 +123,29 @@ public class ContentProviderImpl implements ContentProvider
         }        
         
         @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
+        public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            if(propertyName == null)
+            {
+                propertyChangeSupport.addPropertyChangeListener(listener);    
+            }
+            else
+            {
+                propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+            }
         }
 
         @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
+        public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
+            if(propertyName == null)
+            {
+                propertyChangeSupport.removePropertyChangeListener(listener);    
+            }
+            else
+            {
+                propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+            }                        
         }          
         
         @Override
@@ -436,7 +435,7 @@ public class ContentProviderImpl implements ContentProvider
         } 
         
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
         }       
@@ -516,7 +515,7 @@ public class ContentProviderImpl implements ContentProvider
         } 
 
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
         } 
@@ -658,7 +657,7 @@ public class ContentProviderImpl implements ContentProvider
         } 
         
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
         }         
@@ -719,7 +718,7 @@ public class ContentProviderImpl implements ContentProvider
         } 
         
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
         }         
@@ -797,7 +796,7 @@ public class ContentProviderImpl implements ContentProvider
         }         
         
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         { 
             if(isActive())
             {
@@ -886,7 +885,7 @@ public class ContentProviderImpl implements ContentProvider
         }       
         
         @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {    
             return ImageUtilities.loadImage(ICON);           
         }         

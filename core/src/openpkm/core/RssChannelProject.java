@@ -18,6 +18,7 @@ import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -89,6 +90,7 @@ import openpkm.rss.Rss;
 import openpkm.rss.RssChannel;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.FileUtils;
+import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.SavableImpl;
 import openpkm.utils.Utils;
 import openpkm.utils.WebSourceProvider;
@@ -1902,7 +1904,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                         try
                         {
                             WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                            webPage.addPropertyChangeListener(this);
+                            webPage.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             links.put(webPage.getSourceID(), webPage);
                         }
                         catch(IOException e)
@@ -2054,7 +2056,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                                 }
 
                                 IconProvider provider = getLookup().lookup(IconProvider.class);
-                                Icon icon = ImageUtilities.image2Icon(provider.getIcon()); 
+                                Icon icon = ImageUtilities.image2Icon(provider.getIcon(BeanInfo.ICON_COLOR_16x16)); 
                                 
                                 JLabel baloonDetails = new JLabel();
                                 if(image == null)
@@ -2143,7 +2145,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             try
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                webPage.addPropertyChangeListener(this);
+                webPage.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getLinks().put(webPage.getSourceID(), webPage);               
                 setLastSource(webPage);                
             }           
@@ -2171,7 +2173,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             WebPage webPage = getLinks().remove(file.getName());  
             if(webPage != null)
             {
-                webPage.removePropertyChangeListener(this);
+                webPage.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(webPage);
             }
         }
@@ -2232,7 +2234,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
-                            reference.addPropertyChangeListener(this);
+                            reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2332,7 +2334,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
-                reference.addPropertyChangeListener(this);
+                reference.addPropertyChangeListener(Source.PROP_MODIFIED, this);
                 getReferences().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
@@ -2360,7 +2362,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             Reference reference = getReferences().remove(file.getName());  
             if(reference != null)
             {
-                reference.removePropertyChangeListener(this);
+                reference.removePropertyChangeListener(Source.PROP_MODIFIED, this);
                 setLastSource(reference);
             }
         }
