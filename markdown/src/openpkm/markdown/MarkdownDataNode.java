@@ -14,7 +14,6 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
-import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
@@ -117,12 +116,12 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
                 {
                     provider.addChangeListener(this);                    
                 }                                
-                return displayNameProvider.getDisplayName();                
+                return displayNameProvider.getDisplayName(false);                
             }
         } 
         else
         {
-            return displayNameProvider.getDisplayName();             
+            return displayNameProvider.getDisplayName(false);             
         }
         return super.getDisplayName();
     }  
@@ -130,11 +129,22 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     @Override
     public String getHtmlDisplayName() 
     {
-        HtmlDisplayNameProvider provider = getLookup().lookup(HtmlDisplayNameProvider.class);
-        if(provider != null)
+        if(displayNameProvider == null)
         {
-            return provider.getHtmlDisplayName();
-        }  
+            displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
+            if(displayNameProvider != null)
+            {
+                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                
+                return displayNameProvider.getDisplayName(true);                
+            }
+        } 
+        else
+        {
+            return displayNameProvider.getDisplayName(true);             
+        } 
         return super.getHtmlDisplayName();
     }    
     
@@ -165,7 +175,7 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     {
         if(evt.getSource() == displayNameProvider)
         {
-            fireDisplayNameChange(null, displayNameProvider.getDisplayName());
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName(false));
         }
         else if(evt.getSource() == shortDescriptionProvider)
         {

@@ -41,6 +41,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Blog;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
@@ -218,19 +219,7 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
         Source oldSource = lastSource;
         lastSource = source;
         propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }  
-    
-    @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyChangeSupport.addPropertyChangeListener(listener);
     }
-    
-    @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    } 
     
 // TODO Sources    
     
@@ -279,7 +268,7 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
 
-            list.add(new BlogLogicalView(this));
+            list.add(new LogicalViewProviderImpl(this));
             list.add(new BlogCustomizerProvider(this));  
 
             list.add(new DomainsProviderImpl()); 
@@ -403,6 +392,32 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
     {
         props.putAll(provider.getProperties());
     }
+    
+    @Override
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        if(propertyName == null)
+        {
+            propertyChangeSupport.addPropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+        }
+    }
+
+    @Override
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        if(propertyName == null)
+        {
+            propertyChangeSupport.removePropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+        }                        
+    }     
     
 // TODO BatchUpdateSupport    
     
@@ -654,7 +669,7 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
   
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider, Runnable
+    private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
     {        
         private Image icon; 
         private boolean isLoading;

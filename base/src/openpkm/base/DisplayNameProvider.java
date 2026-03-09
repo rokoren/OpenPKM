@@ -19,7 +19,7 @@ import org.openide.util.ImageUtilities;
  */
 public interface DisplayNameProvider 
 {
-    String getDisplayName();    
+    String getDisplayName(boolean isHtml);    
 
     public static Comparator<DisplayNameProvider> displayNameComparator() 
     {
@@ -28,7 +28,7 @@ public interface DisplayNameProvider
             @Override
             public int compare(DisplayNameProvider provider1, DisplayNameProvider provider2) 
             {
-                return provider1.getDisplayName().compareTo(provider2.getDisplayName());
+                return provider1.getDisplayName(false).compareTo(provider2.getDisplayName(false));
             }
         };
     }  
@@ -61,7 +61,7 @@ public interface DisplayNameProvider
             }
             else
             {                
-                setText(provider.getDisplayName()); 
+                setText(provider.getDisplayName(false)); 
                 
                 if(provider instanceof IconProvider)
                 {

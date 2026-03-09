@@ -82,13 +82,27 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     @Override
     public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
     {
-        propertyChangeSupport.addPropertyChangeListener(propertyName, listener);
+        if(propertyName == null)
+        {
+            propertyChangeSupport.addPropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+        }
     }
 
     @Override
     public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
     {
-        propertyChangeSupport.removePropertyChangeListener(propertyName, listener);
+        if(propertyName == null)
+        {
+            propertyChangeSupport.removePropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+        }                        
     } 
 
     @Override

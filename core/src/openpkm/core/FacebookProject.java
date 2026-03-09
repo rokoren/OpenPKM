@@ -7,6 +7,7 @@ package openpkm.core;
 import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -39,6 +40,7 @@ import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
@@ -219,18 +221,6 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
     }  
     
-    @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-    
-    @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener)
-    {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    } 
-    
 // TODO Sources    
     
     @Override
@@ -278,7 +268,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
 
-            list.add(new FacebookLogicalView(this));
+            list.add(new LogicalViewProviderImpl(this));
             list.add(new FacebookCustomizerProvider(this));  
 
             list.add(new DomainsProviderImpl()); 
@@ -395,7 +385,33 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }    
+    } 
+    
+    @Override
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        if(propertyName == null)
+        {
+            propertyChangeSupport.addPropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+        }
+    }
+
+    @Override
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    {
+        if(propertyName == null)
+        {
+            propertyChangeSupport.removePropertyChangeListener(listener);    
+        }
+        else
+        {
+            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+        }                        
+    }     
     
 // TODO BatchUpdateSupport    
     
@@ -477,7 +493,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         public Image getIcon() 
         {    
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getIcon();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }  
         
         @Override
@@ -647,7 +663,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
   
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider, Runnable
+    private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
     {        
         private Image icon; 
         private boolean isLoading;
@@ -655,7 +671,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
 
         @Override
-        public synchronized Image getIcon()
+        public synchronized Image getIcon(int type)
         {
             if(icon != null)
             {
@@ -955,7 +971,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override
@@ -1058,7 +1074,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override
@@ -1161,7 +1177,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override
@@ -1264,7 +1280,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override
@@ -1367,7 +1383,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override
@@ -1470,7 +1486,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Utils.titleComparator();
+            return DataGroupProvider.titleComparator();
         } 
         
         @Override

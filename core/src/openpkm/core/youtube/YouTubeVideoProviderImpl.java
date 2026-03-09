@@ -30,7 +30,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.event.ChangeListener;
+import openpkm.base.DisplayNameProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
@@ -49,7 +49,6 @@ import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
-import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -205,19 +204,17 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return null;
     }    
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, DisplayNameProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
-        private final PropertyChangeSupport propertyChangeSupport;
-        private final ChangeSupport changeSupport;         
+        private final PropertyChangeSupport propertyChangeSupport;       
         
         private Lookup lkp;      
 
         public YouTubeVideoImpl(Properties props)
         {
             this.props = props;
-            propertyChangeSupport = new PropertyChangeSupport(this);
-            changeSupport = new ChangeSupport(this);            
+            propertyChangeSupport = new PropertyChangeSupport(this);         
         }
         
         @Override
@@ -228,31 +225,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
                 lkp = Lookups.fixed(this);              
             }
             return lkp;
-        }         
-
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener)
-        {
-            changeSupport.removeChangeListener(listener);
-        }     
+        }            
 
         @Override
         public boolean isDeleted()
@@ -283,7 +256,33 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }        
+        }  
+        
+        @Override
+        public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+        {
+            if(propertyName == null)
+            {
+                propertyChangeSupport.addPropertyChangeListener(listener);    
+            }
+            else
+            {
+                propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
+            }
+        }
+
+        @Override
+        public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+        {
+            if(propertyName == null)
+            {
+                propertyChangeSupport.removePropertyChangeListener(listener);    
+            }
+            else
+            {
+                propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
+            }                        
+        }          
 
         @Override
         public String getSourceID()
@@ -305,15 +304,21 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         }
 
         @Override
-        public String getTitle() 
+        public String getDisplayName(boolean isHtml) 
         {
+            if(isHtml)
+            {
+                return null;
+            }
             return getVideoTitle();
-        }           
-
+        } 
+        
         @Override
-        public void setTitle(String title) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }        
+        public Image getIcon(int type) 
+        {    
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.YOUTUBE_VIDEO);
+        }            
 
         @Override
         public String getVideoID() 
