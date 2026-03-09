@@ -4,11 +4,14 @@
  */
 package openpkm.base;
 
+import javax.swing.event.ChangeListener;
+
 /**
  *
- * @author rokor
+ * @author Rok Koren
  */
-public interface ShortDescriptionProvider 
+public interface ChangeSupportProvider 
 {
-    String getShortDescription();      
+    void addChangeListener(ChangeListener listener);  
+    void removeChangeListener(ChangeListener listener);      
 }

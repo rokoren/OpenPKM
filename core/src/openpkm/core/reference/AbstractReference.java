@@ -4,6 +4,7 @@
  */
 package openpkm.core.reference;
 
+import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -15,7 +16,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
+import openpkm.base.IconProvider;
+import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.ShortDescriptionProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
@@ -31,7 +35,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rokor
  */
-public abstract class AbstractReference implements Reference, PropertiesProvider, TagsProvider, TopicsProvider, VisibilityProvider
+public abstract class AbstractReference implements Reference, PropertiesProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
 {
     public static final String EXT_GIF = "gif";
     public static final String EXT_JPG = "jpg";
@@ -58,7 +62,7 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     {
         if (lkp == null) 
         {
-            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new IconProviderImpl(this), new ShortDescriptionProviderImpl(this));              
+            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
         }
         return lkp;
     }         
@@ -218,5 +222,50 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
             props.setProperty(PROP_FILE_EXT, file.getExt());
             props.setProperty(PROP_FILE_PATH, provider.getRelativePath(file));                                              
         }
-    }    
+    }
+
+    @Override
+    public Image getIcon(int type) 
+    {
+        String nameExt = props.getProperty(Reference.PROP_FILE_EXT);
+        if(nameExt != null)
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            if(nameExt.equalsIgnoreCase(AbstractReference.EXT_GIF))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_GIF);                
+            }
+            else if(nameExt.equalsIgnoreCase(AbstractReference.EXT_JPG))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_JPG); 
+            } 
+            else if(nameExt.equalsIgnoreCase(AbstractReference.EXT_PNG))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_PNG);                 
+            }             
+            else if(nameExt.equalsIgnoreCase(AbstractReference.EXT_MP4))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_MP4);                 
+            }  
+            else if(nameExt.equalsIgnoreCase(AbstractReference.EXT_PDF))
+            {
+                return provider.getImage(IconsProvider.ICON.FILE_PDF);                 
+            }             
+        }    
+        return null;
+    } 
+    
+    @Override
+    public String getShortDescription() 
+    {
+        try
+        {
+            return getFile().getPath();            
+        }
+        catch(IOException e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        return null;
+    }     
 }

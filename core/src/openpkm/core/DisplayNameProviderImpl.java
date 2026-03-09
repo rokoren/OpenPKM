@@ -7,6 +7,7 @@ package openpkm.core;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
@@ -16,7 +17,7 @@ import org.openide.util.ChangeSupport;
  *
  * @author rokor
  */
-public class DisplayNameProviderImpl implements DisplayNameProvider, PropertyChangeListener 
+public class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener 
 {
     private final ChangeSupport changeSupport;         
     private final PropertiesProvider provider;

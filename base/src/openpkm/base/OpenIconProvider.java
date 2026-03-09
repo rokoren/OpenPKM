@@ -5,7 +5,6 @@
 package openpkm.base;
 
 import java.awt.Image;
-import javax.swing.event.ChangeListener;
 
 /**
  *
@@ -13,7 +12,5 @@ import javax.swing.event.ChangeListener;
  */
 public interface OpenIconProvider 
 {
-    Image getOpenedIcon(int type);
-    void addChangeListener(ChangeListener listener);  
-    void removeChangeListener(ChangeListener listener);      
+    Image getOpenedIcon(int type);    
 }

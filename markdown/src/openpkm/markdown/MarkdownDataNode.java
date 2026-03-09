@@ -12,9 +12,10 @@ import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
+import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.IconProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
 import org.openide.loaders.DataNode;
@@ -68,7 +69,10 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
             iconProvider = getLookup().lookup(IconProvider.class);
             if(iconProvider != null)
             {
-                iconProvider.addChangeListener(this);
+                if(iconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
                 return iconProvider.getIcon(type);                
             }
         } 
@@ -87,7 +91,10 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
             openIconProvider = getLookup().lookup(OpenIconProvider.class);
             if(openIconProvider != null)
             {
-                openIconProvider.addChangeListener(this);
+                if(openIconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
                 return openIconProvider.getOpenedIcon(type);                
             }
         } 
@@ -106,7 +113,10 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
             displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
             if(displayNameProvider != null)
             {
-                displayNameProvider.addChangeListener(this);
+                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                
                 return displayNameProvider.getDisplayName();                
             }
         } 
@@ -118,6 +128,17 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     }  
     
     @Override
+    public String getHtmlDisplayName() 
+    {
+        HtmlDisplayNameProvider provider = getLookup().lookup(HtmlDisplayNameProvider.class);
+        if(provider != null)
+        {
+            return provider.getHtmlDisplayName();
+        }  
+        return super.getHtmlDisplayName();
+    }    
+    
+    @Override
     public String getShortDescription()
     {
         if(shortDescriptionProvider == null)
@@ -125,7 +146,10 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
             shortDescriptionProvider = getLookup().lookup(ShortDescriptionProvider.class);
             if(shortDescriptionProvider != null)
             {
-                shortDescriptionProvider.addChangeListener(this);
+                if(shortDescriptionProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                  
                 return shortDescriptionProvider.getShortDescription();                
             }
         } 
@@ -134,17 +158,6 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
             return shortDescriptionProvider.getShortDescription();             
         }
         return super.getShortDescription();       
-    }
-    
-    @Override
-    public String getHtmlDisplayName() 
-    {
-        NodeProvider provider = getLookup().lookup(NodeProvider.class);
-        if(provider != null)
-        {
-            return provider.getHtmlDisplayName();
-        }  
-        return super.getHtmlDisplayName();
     }     
 
     @Override

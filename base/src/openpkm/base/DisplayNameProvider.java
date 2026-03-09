@@ -11,7 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
-import javax.swing.event.ChangeListener;
 import org.openide.util.ImageUtilities;
 
 /**
@@ -21,8 +20,6 @@ import org.openide.util.ImageUtilities;
 public interface DisplayNameProvider 
 {
     String getDisplayName();    
-    void addChangeListener(ChangeListener listener);  
-    void removeChangeListener(ChangeListener listener); 
 
     public static Comparator<DisplayNameProvider> displayNameComparator() 
     {

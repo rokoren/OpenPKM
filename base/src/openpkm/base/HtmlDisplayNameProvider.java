@@ -6,9 +6,9 @@ package openpkm.base;
 
 /**
  *
- * @author rokor
+ * @author Rok Koren
  */
-public interface ShortDescriptionProvider 
+public interface HtmlDisplayNameProvider 
 {
-    String getShortDescription();      
+    String getHtmlDisplayName();    
 }
