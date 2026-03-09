@@ -21,4 +21,22 @@ public interface DataGroupProvider extends GroupProvider
     boolean contains(DataObject data);   
     Comparator<DataObject> getComparator();
     boolean isReversed();
+    
+    public static Comparator<DataObject> titleComparator() 
+    {
+        return new Comparator<DataObject>() 
+        {
+            @Override
+            public int compare(DataObject data1, DataObject data2) 
+            {
+                TitleProvider provider1 = data1.getLookup().lookup(TitleProvider.class);
+                TitleProvider provider2 = data2.getLookup().lookup(TitleProvider.class);
+                if(provider1 != null && provider2 != null)
+                {
+                    return provider1.getTitle().compareTo(provider2.getTitle());                    
+                }
+                return -1;
+            }
+        };
+    } 
 }
