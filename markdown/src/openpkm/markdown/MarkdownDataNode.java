@@ -11,7 +11,12 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.NodeProvider;
+import openpkm.base.OpenIconProvider;
+import openpkm.base.ShortDescriptionProvider;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.Children;
 
@@ -23,14 +28,14 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(MarkdownDataNode.class.getName());    
     
+    private DisplayNameProvider displayNameProvider;
+    private ShortDescriptionProvider shortDescriptionProvider;
+    private IconProvider iconProvider;
+    private OpenIconProvider openIconProvider;
+    
     public MarkdownDataNode(MarkdownDataObject data) 
     {
-        super(data, Children.LEAF, data.getLookup());
-        NodeProvider provider = data.getLookup().lookup(NodeProvider.class);
-        if(provider != null)
-        {
-            provider.addChangeListener(this);
-        }      
+        super(data, Children.LEAF, data.getLookup());    
     }
     
     @Override    
@@ -43,6 +48,12 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
             actions.add(action);
         }
         
+        ActionsProvider provider = getLookup().lookup(ActionsProvider.class);
+        if(provider != null)
+        {
+            actions.addAll(provider.getActions());
+        }
+        
         MarkdownDataObject data = (MarkdownDataObject)getDataObject();  
         //actions.add(new PdfAction(data));            
         
@@ -52,45 +63,77 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     @Override
     public Image getIcon(int type) 
     {
-        NodeProvider provider = getLookup().lookup(NodeProvider.class);
-        if(provider != null)
+        if(iconProvider == null)
         {
-            return provider.getIcon(type);
-        }          
+            iconProvider = getLookup().lookup(IconProvider.class);
+            if(iconProvider != null)
+            {
+                iconProvider.addChangeListener(this);
+                return iconProvider.getIcon(type);                
+            }
+        } 
+        else
+        {
+            return iconProvider.getIcon(type);             
+        }                  
         return super.getIcon(type);
     }    
     
     @Override
     public Image getOpenedIcon(int type) 
     {
-        NodeProvider provider = getLookup().lookup(NodeProvider.class);
-        if(provider != null)
+        if(openIconProvider == null)
         {
-            return provider.getOpenedIcon(type);
-        }          
-        return super.getIcon(type);
+            openIconProvider = getLookup().lookup(OpenIconProvider.class);
+            if(openIconProvider != null)
+            {
+                openIconProvider.addChangeListener(this);
+                return openIconProvider.getOpenedIcon(type);                
+            }
+        } 
+        else
+        {
+            return openIconProvider.getOpenedIcon(type);             
+        }         
+        return super.getOpenedIcon(type);
     }      
     
     @Override
     public String getDisplayName() 
-    {
-        NodeProvider provider = getLookup().lookup(NodeProvider.class);
-        if(provider != null)
+    {        
+        if(displayNameProvider == null)
         {
-            return provider.getDisplayName();
-        }     
+            displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
+            if(displayNameProvider != null)
+            {
+                displayNameProvider.addChangeListener(this);
+                return displayNameProvider.getDisplayName();                
+            }
+        } 
+        else
+        {
+            return displayNameProvider.getDisplayName();             
+        }
         return super.getDisplayName();
     }  
     
     @Override
     public String getShortDescription()
     {
-        NodeProvider provider = getLookup().lookup(NodeProvider.class);
-        if(provider != null)
+        if(shortDescriptionProvider == null)
         {
-            return provider.getShortDescription();
-        }     
-        return super.getShortDescription();        
+            shortDescriptionProvider = getLookup().lookup(ShortDescriptionProvider.class);
+            if(shortDescriptionProvider != null)
+            {
+                shortDescriptionProvider.addChangeListener(this);
+                return shortDescriptionProvider.getShortDescription();                
+            }
+        } 
+        else
+        {
+            return shortDescriptionProvider.getShortDescription();             
+        }
+        return super.getShortDescription();       
     }
     
     @Override
@@ -105,8 +148,23 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     }     
 
     @Override
-    public void stateChanged(ChangeEvent e) 
+    public void stateChanged(ChangeEvent evt) 
     {
-        fireIconChange();
+        if(evt.getSource() == displayNameProvider)
+        {
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName());
+        }
+        else if(evt.getSource() == shortDescriptionProvider)
+        {
+            fireShortDescriptionChange(null, shortDescriptionProvider.getShortDescription());
+        }
+        else if(evt.getSource() == iconProvider)
+        {
+            fireIconChange();
+        }         
+        else if(evt.getSource() == openIconProvider)
+        {
+            fireOpenedIconChange();
+        }        
     }    
 }

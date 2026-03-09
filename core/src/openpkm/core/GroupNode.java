@@ -167,13 +167,13 @@ public class GroupNode extends AbstractNode implements NodeSupport
         @Override    
         public Image getIcon(int type)     
         {
-            return provider.getIcon(false);
+            return provider.getIcon(type);
         }
 
         @Override
         public Image getOpenedIcon(int type) 
         {
-            return provider.getIcon(true);
+            return provider.getIcon(type);
         }        
     }      
 }

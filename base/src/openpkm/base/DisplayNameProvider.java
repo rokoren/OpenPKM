@@ -5,12 +5,14 @@
 package openpkm.base;
 
 import java.awt.Component;
+import java.beans.BeanInfo;
 import java.util.Comparator;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
+import org.openide.util.ImageUtilities;
 
 /**
  *
@@ -67,7 +69,7 @@ public interface DisplayNameProvider
                 if(provider instanceof IconProvider)
                 {
                     IconProvider iconProvider = (IconProvider)provider;
-                    setIcon(iconProvider.getIcon());                      
+                    setIcon(ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16)));                      
                 }
             }
             

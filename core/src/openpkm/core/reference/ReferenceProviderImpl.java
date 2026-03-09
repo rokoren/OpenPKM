@@ -12,6 +12,7 @@ import com.gluonhq.richtextarea.model.TextDecoration;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.beans.BeanInfo;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -446,7 +447,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public Image getIcon()
         {
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getImage();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }
     }
     
@@ -578,7 +579,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public Image getIcon()
         {
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getImage();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }        
     }    
     
@@ -772,7 +773,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public Image getIcon()
         {
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getImage();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }
     }  
     
@@ -835,7 +836,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public Image getIcon()
         {
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getImage();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }        
     }   
     
@@ -898,7 +899,7 @@ public class ReferenceProviderImpl implements ReferenceProvider
         public Image getIcon()
         {
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getImage();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }        
     }  
     

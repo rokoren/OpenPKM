@@ -4,18 +4,14 @@
  */
 package openpkm.base;
 
-import java.beans.PropertyChangeListener;
-
 /**
  *
  * @author Rok Koren
  */
 public interface PageProvider 
 {
-    String PROP_PAGE_NUMBER   = "page.number"; 
+    String PROP_PAGE_NUMBER = "page.number"; 
     
     Integer getPageNumber();
     void setPageNumber(Integer page);
-    void addPropertyChangeListener(PropertyChangeListener listener);
-    void removePropertyChangeListener(PropertyChangeListener listener);    
 }

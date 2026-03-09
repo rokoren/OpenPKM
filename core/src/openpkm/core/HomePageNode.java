@@ -72,7 +72,7 @@ public class HomePageNode extends FilterNode implements ChangeListener, Property
         IconProvider provider = project.getLookup().lookup(IconProvider.class);
         if(provider != null)
         {
-            return provider.getIcon();
+            return provider.getIcon(type);
         }
         
         ProjectInformation info = ProjectUtils.getInformation(project);        

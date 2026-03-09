@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.reference;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -19,7 +18,6 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.Document;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
@@ -29,9 +27,9 @@ import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.reference.AbstractFilesProvider;
-import openpkm.reference.DocumentWizardPanel2;
 import openpkm.reference.FileWizardPanel1;
 import openpkm.reference.Reference;
+import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
@@ -50,21 +48,21 @@ import org.openide.util.NbBundle.Messages;
  * @author Rok Koren
  */
 @ActionID(
-        category = "OpenPKM/Document",
-        id = "openpkm.core.DocumentAction"
+        category = "OpenPKM/Video",
+        id = "openpkm.core.reference.VideoAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/reference/resources/link.png",
-        displayName = "#CTL_DocumentAction"
+        displayName = "#CTL_VideoAction"
 )
-@Messages("CTL_DocumentAction=Add Document Reference")
-public class DocumentAction implements ActionListener
+@Messages("CTL_VideoAction=Add Video Reference")
+public class VideoAction implements ActionListener
 {
-    private static final Logger LOG = Logger.getLogger(DocumentAction.class.getName());     
+    private static final Logger LOG = Logger.getLogger(VideoAction.class.getName());     
     
     private final ReferenceSourceProvider provider;
 
-    public DocumentAction(ReferenceSourceProvider provider) 
+    public VideoAction(ReferenceSourceProvider provider)
     {
         this.provider = provider;
     }
@@ -73,8 +71,7 @@ public class DocumentAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new FileWizardPanel1(AbstractFilesProvider.DOCUMENTS));
-        panels.add(new DocumentWizardPanel2());
+        panels.add(new FileWizardPanel1(AbstractFilesProvider.VIDEOS));
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -93,7 +90,7 @@ public class DocumentAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add Document Reference");  
+        wiz.setTitle("Add Video Reference");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getLookupProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
@@ -104,35 +101,20 @@ public class DocumentAction implements ActionListener
             String fileExt = (String)wiz.getProperty(Reference.PROP_FILE_EXT);
             String filePath = (String)wiz.getProperty(Reference.PROP_FILE_PATH);
             String title = (String)wiz.getProperty(TitleProvider.PROP_TITLE);
-            List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+            List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);   
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ReferenceProviderImpl.PROP_TYPE, ReferenceProviderImpl.Type.DOCUMENT.getName());
+            props.setProperty(ReferenceProvider.PROP_TYPE, ReferenceProvider.Type.VIDEO.getName());
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
-            props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());           
+            props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());            
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());            
             props.setProperty(TitleProvider.PROP_TITLE, title);  
             props.setProperty(Reference.PROP_FILE_NAME, fileName); 
             props.setProperty(Reference.PROP_FILE_EXT, fileExt);
-            props.setProperty(Reference.PROP_FILE_PATH, filePath); 
-
-            String subtitle = (String)wiz.getProperty(Document.PROP_SUBTITLE);
-            String authors = (String)wiz.getProperty(Document.PROP_AUTHORS);
-            String institution = (String)wiz.getProperty(Document.PROP_INSTITUTION);
-            LocalDate publishDate = (LocalDate)wiz.getProperty(Document.PROP_PUBLISH_DATE);
-            String language = (String)wiz.getProperty(Document.PROP_LANGUAGE);           
-
-            props.setProperty(Document.PROP_SUBTITLE, subtitle);
-            props.setProperty(Document.PROP_AUTHORS, authors);
-            props.setProperty(Document.PROP_INSTITUTION, institution);
-            if(publishDate != null)
-            {
-                props.setProperty(Document.PROP_PUBLISH_DATE, publishDate.format(DateTimeFormatter.ISO_DATE));                
-            }
-            props.setProperty(Document.PROP_LANGUAGE, language);
+            props.setProperty(Reference.PROP_FILE_PATH, filePath);         
 
             if(tags != null)
             {
@@ -156,8 +138,8 @@ public class DocumentAction implements ActionListener
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
-            }              
-
+            }   
+            
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
@@ -166,10 +148,10 @@ public class DocumentAction implements ActionListener
                 {
                     FileObject file = provider.createData(reference, fileType); 
                     OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    reference.save(os, "New Document Created by Wizard");
+                    reference.save(os, "New video Created by Wizard");
                     os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Document saved with title: " + title);                      
+                    StatusDisplayer.getDefault().setStatusText("Video saved with title: " + title);                        
 
                     DataObject data = DataObject.find(file);
                     OpenCookie open = data.getCookie(OpenCookie.class);
@@ -183,7 +165,8 @@ public class DocumentAction implements ActionListener
                 {
                     LOG.warning(e.getMessage());
                 }                                      
-            }                                             
+            }              
+                                            
         }        
-    }    
+    }     
 }

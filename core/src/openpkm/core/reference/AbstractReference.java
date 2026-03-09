@@ -4,8 +4,6 @@
  */
 package openpkm.core.reference;
 
-import java.awt.Image;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -17,22 +15,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.event.ChangeListener;
-import openpkm.base.IconsProvider;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.core.DisplayNameProviderImpl;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
-import openpkm.reference.ReferenceProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.nodes.Children;
-import org.openide.util.ChangeSupport;
-import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 
@@ -53,8 +44,8 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     protected final Properties props; 
     protected final PropertyChangeSupport propertyChangeSupport;
 
-    private Lookup lkp;  
-    private boolean isDeleted;
+    protected Lookup lkp;  
+    protected boolean isDeleted;
 
     public AbstractReference(Properties props) 
     {
@@ -67,7 +58,7 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     {
         if (lkp == null) 
         {
-            lkp = Lookups.fixed(this, new NodeProviderImpl());              
+            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new IconProviderImpl(this), new ShortDescriptionProviderImpl(this));              
         }
         return lkp;
     }         
@@ -85,15 +76,15 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     }        
 
     @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener)
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
     {
-        propertyChangeSupport.addPropertyChangeListener(listener);
+        propertyChangeSupport.addPropertyChangeListener(propertyName, listener);
     }
 
     @Override
-    public void removePropertyChangeListener(PropertyChangeListener listener)
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
     {
-        propertyChangeSupport.removePropertyChangeListener(listener);
+        propertyChangeSupport.removePropertyChangeListener(propertyName, listener);
     } 
 
     @Override
@@ -129,20 +120,20 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
     
     public String getTitle()
     {
-        return props.getProperty(ReferenceProvider.PROP_TITLE);
+        return props.getProperty(TitleProvider.PROP_TITLE);
     }
 
     public void setTitle(String title)
     {
         if(title == null)
         {
-            Object oldValue = props.remove(ReferenceProvider.PROP_TITLE);
-            propertyChangeSupport.firePropertyChange(ReferenceProvider.PROP_TITLE, oldValue, title);
+            Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+            propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
         }
         else
         {
-            Object oldValue = props.setProperty(ReferenceProvider.PROP_TITLE, title);
-            propertyChangeSupport.firePropertyChange(ReferenceProvider.PROP_TITLE, oldValue, title);
+            Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+            propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
         }
     }     
 
@@ -227,156 +218,5 @@ public abstract class AbstractReference implements Reference, PropertiesProvider
             props.setProperty(PROP_FILE_EXT, file.getExt());
             props.setProperty(PROP_FILE_PATH, provider.getRelativePath(file));                                              
         }
-    } 
-
-    private final class NodeProviderImpl implements NodeProvider, PropertyChangeListener
-    {                
-        private final ChangeSupport changeSupport = new ChangeSupport(this); 
-
-        public NodeProviderImpl() 
-        {
-            addPropertyChangeListener(this);
-        }                
-
-        @Override
-        public Image getImage()
-        { 
-            String nameExt = props.getProperty(PROP_FILE_EXT);
-            if(nameExt != null)
-            {
-                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-                if(nameExt.equalsIgnoreCase(EXT_GIF))
-                {
-                    return provider.getImage(IconsProvider.ICON.FILE_GIF);                
-                }
-                else if(nameExt.equalsIgnoreCase(EXT_JPG))
-                {
-                    return provider.getImage(IconsProvider.ICON.FILE_JPG); 
-                } 
-                else if(nameExt.equalsIgnoreCase(EXT_PNG))
-                {
-                    return provider.getImage(IconsProvider.ICON.FILE_PNG);                 
-                }             
-                else if(nameExt.equalsIgnoreCase(EXT_MP4))
-                {
-                    return provider.getImage(IconsProvider.ICON.FILE_MP4);                 
-                }  
-                else if(nameExt.equalsIgnoreCase(EXT_PDF))
-                {
-                    return provider.getImage(IconsProvider.ICON.FILE_PDF);                 
-                }             
-            }    
-            return null;
-        }        
-        
-        @Override
-        public Icon getIcon()
-        { 
-            String nameExt = props.getProperty(PROP_FILE_EXT);
-            if(nameExt != null)
-            {
-                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-                if(nameExt.equalsIgnoreCase(EXT_GIF))
-                {
-                    return provider.getIcon(IconsProvider.ICON.FILE_GIF);                
-                }
-                else if(nameExt.equalsIgnoreCase(EXT_JPG))
-                {
-                    return provider.getIcon(IconsProvider.ICON.FILE_JPG); 
-                } 
-                else if(nameExt.equalsIgnoreCase(EXT_PNG))
-                {
-                    return provider.getIcon(IconsProvider.ICON.FILE_PNG);                 
-                }             
-                else if(nameExt.equalsIgnoreCase(EXT_MP4))
-                {
-                    return provider.getIcon(IconsProvider.ICON.FILE_MP4);                 
-                }  
-                else if(nameExt.equalsIgnoreCase(EXT_PDF))
-                {
-                    return provider.getIcon(IconsProvider.ICON.FILE_PDF);                 
-                }             
-            }    
-            return null;
-        }                     
-
-        @Override
-        public String getName() 
-        {
-            return getSourceID();
-        }
-
-        @Override
-        public Image getIcon(int type) 
-        {
-            return getImage();
-        }
-
-        @Override
-        public Image getOpenedIcon(int type) 
-        {
-            return getImage();
-        }
-
-        @Override
-        public Children getChildren() 
-        {
-            return Children.LEAF;
-        }
-
-        @Override
-        public HelpCtx getHelpCtx() 
-        {
-            return HelpCtx.DEFAULT_HELP;
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return getTitle();
-        }
-
-        @Override
-        public String getHtmlDisplayName()
-        {
-            return null;
-        }
-
-        @Override
-        public String getShortDescription() 
-        {
-            try
-            {
-                return getFile().getPath();                
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        public List<Action> getActions() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            changeSupport.fireChange();
-        }
-    }     
+    }    
 }

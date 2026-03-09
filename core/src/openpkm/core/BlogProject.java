@@ -7,6 +7,7 @@ package openpkm.core;
 import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -483,7 +484,7 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
         public Image getIcon() 
         {    
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getIcon();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }  
         
         @Override
@@ -661,7 +662,7 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, Sources, S
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
 
         @Override
-        public synchronized Image getIcon()
+        public synchronized Image getIcon(int type)
         {
             if(icon != null)
             {

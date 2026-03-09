@@ -13,8 +13,7 @@ import java.util.Properties;
  * @author Rok Koren
  */
 public interface ReferenceProvider 
-{
-    String PROP_TITLE = "reference.title";        
+{    
     String PROP_TYPE  = "reference.type";    
     
     Reference getReference(Properties props);  

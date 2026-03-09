@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.reference;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -29,6 +29,7 @@ import openpkm.base.VisibilityProvider;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.FileWizardPanel1;
 import openpkm.reference.Reference;
+import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
@@ -48,7 +49,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Picture",
-        id = "openpkm.reference.PictureAction"
+        id = "openpkm.core.reference.PictureAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/reference/resources/link.png",
@@ -105,7 +106,7 @@ public class PictureAction implements ActionListener
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ReferenceProviderImpl.PROP_TYPE, ReferenceProviderImpl.Type.PICTURE.getName());
+            props.setProperty(ReferenceProvider.PROP_TYPE, ReferenceProvider.Type.PICTURE.getName());
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());             
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);

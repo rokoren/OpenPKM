@@ -4,7 +4,6 @@
  */
 package openpkm.base;
 
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
@@ -25,7 +24,5 @@ public interface Source extends Lookup.Provider
     LocalDateTime getTimeCreated(); 
     void save(OutputStream os, String comments) throws IOException;    
     void setDeleted(boolean isDeleted);
-    boolean isDeleted();   
-    void addPropertyChangeListener(PropertyChangeListener listener);
-    void removePropertyChangeListener(PropertyChangeListener listener);    
+    boolean isDeleted();     
 }

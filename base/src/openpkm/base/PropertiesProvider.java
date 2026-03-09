@@ -4,6 +4,7 @@
  */
 package openpkm.base;
 
+import java.beans.PropertyChangeListener;
 import java.util.Properties;
 
 /**
@@ -18,4 +19,6 @@ public interface PropertiesProvider
     
     Properties getProperties();  
     void merge(PropertiesProvider provider);
+    void addPropertyChangeListener(String propertyName, PropertyChangeListener listener);
+    void removePropertyChangeListener(String propertyName, PropertyChangeListener listener);      
 }

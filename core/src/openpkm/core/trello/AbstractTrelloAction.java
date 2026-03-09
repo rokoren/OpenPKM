@@ -130,7 +130,7 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
     }        
 
     @Override
-    public Image getIcon(boolean opened) 
+    public Image getIcon(int type) 
     {
         StringTokenizer st = new StringTokenizer(getMemberFullName());
         return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();

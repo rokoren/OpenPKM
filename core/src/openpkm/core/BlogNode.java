@@ -72,7 +72,7 @@ public class BlogNode extends FilterNode implements ChangeListener, PropertyChan
         IconProvider provider = project.getLookup().lookup(IconProvider.class);
         if(provider != null)
         {
-            return provider.getIcon();
+            return provider.getIcon(type);
         }
         
         ProjectInformation info = ProjectUtils.getInformation(project);        

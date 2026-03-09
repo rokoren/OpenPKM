@@ -24,6 +24,7 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
@@ -103,7 +104,7 @@ public class BookAction implements ActionListener
             String fileName = (String)wiz.getProperty(Reference.PROP_FILE_NAME);
             String fileExt = (String)wiz.getProperty(Reference.PROP_FILE_EXT);
             String filePath = (String)wiz.getProperty(Reference.PROP_FILE_PATH);
-            String title = (String)wiz.getProperty(ReferenceProvider.PROP_TITLE);
+            String title = (String)wiz.getProperty(TitleProvider.PROP_TITLE);
             List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);    
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
 
@@ -114,7 +115,7 @@ public class BookAction implements ActionListener
             props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());          
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());
-            props.setProperty(ReferenceProvider.PROP_TITLE, title);  
+            props.setProperty(TitleProvider.PROP_TITLE, title);  
             props.setProperty(Reference.PROP_FILE_NAME, fileName); 
             props.setProperty(Reference.PROP_FILE_EXT, fileExt);
             props.setProperty(Reference.PROP_FILE_PATH, filePath); 

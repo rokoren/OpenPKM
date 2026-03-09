@@ -70,7 +70,7 @@ public class RssChannelNode extends FilterNode implements ChangeListener, Proper
         IconProvider provider = project.getLookup().lookup(IconProvider.class);
         if(provider != null)
         {
-            return provider.getIcon();
+            return provider.getIcon(type);
         }
         
         ProjectInformation info = ProjectUtils.getInformation(project);        
