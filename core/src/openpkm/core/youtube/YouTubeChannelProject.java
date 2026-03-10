@@ -2542,7 +2542,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            RP.post(this);  
+            if(evt.getPropertyName().equals(PROP_VIDEO_COUNT))
+            {
+                RP.post(this);                
+            }                                      
         }
     }           
 

@@ -54,6 +54,7 @@ import openpkm.base.Link;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
+import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
@@ -66,7 +67,8 @@ import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
-import openpkm.utils.SavableImpl;
+import openpkm.utils.LogicalViewProviderImpl;
+import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
 import openpkm.utils.WebSourceProvider;
 import org.cef.browser.CefBrowser;
@@ -107,7 +109,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class LinkedInProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class LinkedInProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
 {    
     public static final String PROP_USER_NAME = "user.name"; 
     
@@ -129,13 +131,12 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     private static final RequestProcessor RP = new RequestProcessor(LinkedInProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
-    private final List<UpdateCookie> cookies = new ArrayList();      
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
-    private final ChangeSupport changeSupport = new ChangeSupport(this);
+    private final List<UpdateCookie> cookies = new ArrayList();         
     
     private final FileObject projectDir;        
     private final ProjectState state;
-    private final Properties props;   
+    private final Properties props;  
+    private final PropertyChangeSupport propertyChangeSupport;
     
     private Lookup lkp;  
     private FileObject dataDir;
@@ -147,6 +148,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
+        propertyChangeSupport = new PropertyChangeSupport(this);
 
         WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
         if(webPageProvider != null)
@@ -229,30 +231,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         Source oldSource = lastSource;
         lastSource = source;
         propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }  
-    
-// TODO Sources    
-    
-    @Override
-    public SourceGroup[] getSourceGroups(String string) 
-    {
-        if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
-        {
-            return sources.values().toArray(new SourceGroup[0]);                
-        }
-        return new SourceGroup[0];
-    } 
-
-    @Override
-    public void addChangeListener(ChangeListener listener) 
-    {
-        changeSupport.addChangeListener(listener);
-    }
-
-    @Override
-    public void removeChangeListener(ChangeListener listener) 
-    {
-        changeSupport.removeChangeListener(listener);
     }      
     
 // TODO Project
@@ -272,6 +250,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
 
             list.add(this);
             list.add(new Info());
+            list.add(new SourcesImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -346,6 +325,18 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         } 
     } 
     
+    @Override
+    public void addTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+    }
+    
+    @Override
+    public void removeTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+    }
+    
 // TODO DescriptionProvider  
     
     @Override
@@ -367,6 +358,18 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             Object oldValue = props.setProperty(PROP_DESCRIPTION, desc);  
             propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, desc);
         }   
+    } 
+    
+    @Override
+    public void addDescriptionListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+    }
+    
+    @Override
+    public void removeDescriptionListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
     }     
 
 // TODO PropertiesProvider
@@ -381,33 +384,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }  
-    
-    @Override
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-        }
-    }
-
-    @Override
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-        }                        
-    }      
+    }       
     
 // TODO BatchUpdateSupport    
     
@@ -601,7 +578,12 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         protected void projectClosed() 
         {          
-            propertyChangeSupport.removePropertyChangeListener(this);            
+            propertyChangeSupport.removePropertyChangeListener(this);  
+            
+            for(SourceProvider provider : sources.values())
+            {
+                provider.projectClosed();
+            }              
         }                  
 
         @Override
@@ -657,6 +639,35 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }
     }     
   
+// TODO Sources    
+    
+    private final class SourcesImpl implements Sources
+    {  
+        private final ChangeSupport changeSupport = new ChangeSupport(this);         
+        
+        @Override
+        public SourceGroup[] getSourceGroups(String string) 
+        {
+            if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
+            {
+                return sources.values().toArray(new SourceGroup[0]);                
+            }
+            return new SourceGroup[0];
+        } 
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+    }      
+    
 // TODO IconProvider    
     
     private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
@@ -1535,7 +1546,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     
 // TODO SourceGroup
    
-    private final class WebSourceProviderImpl extends WebSourceProvider implements FileChangeListener, PropertyChangeListener
+    private final class WebSourceProviderImpl extends WebSourceProvider implements FileChangeListener
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/www_page.png";         
@@ -1552,13 +1563,51 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         } 
         
         @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(WebPage link : getLinks())
+                {
+                    SourceState state = link.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    link.save(os, "Updated by LinkedIn project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }          
+        
+        @Override
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
         }        
         
         @Override
-        public synchronized Map<String, WebPage> getLinks()
+        public synchronized Map<String, WebPage> getLinksById()
         {
             if(links == null)
             {
@@ -1571,7 +1620,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
                         try
                         {
                             WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                            webPage.addPropertyChangeListener(this);
                             links.put(webPage.getSourceID(), webPage);
                         }
                         catch(IOException e)
@@ -1660,8 +1708,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             try
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
-                webPage.addPropertyChangeListener(this);
-                getLinks().put(webPage.getSourceID(), webPage);               
+                getLinksById().put(webPage.getSourceID(), webPage);               
                 setLastSource(webPage);                
             }           
             catch(IOException e)
@@ -1674,7 +1721,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            WebPage webPage = getLinks().get(file.getName());  
+            WebPage webPage = getLinksById().get(file.getName());  
             if(webPage != null)
             {
                 
@@ -1685,10 +1732,9 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            WebPage webPage = getLinks().remove(file.getName());  
+            WebPage webPage = getLinksById().remove(file.getName());  
             if(webPage != null)
             {
-                webPage.removePropertyChangeListener(this);
                 setLastSource(webPage);
             }
         }
@@ -1702,15 +1748,9 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            new SavableImpl(this, evt);            
-        }
     }     
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener, PropertyChangeListener
+    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
     {               
         public ReferenceSourceProviderImpl(ReferenceProvider provider) 
         {
@@ -1724,7 +1764,45 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }  
         
         @Override
-        public synchronized Map<String, Reference> getReferences()
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(Reference reference : getReferences())
+                {
+                    SourceState state = reference.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    reference.save(os, "Updated by Blog project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }          
+        
+        @Override
+        public synchronized Map<String, Reference> getReferencesById()
         {
             if(references == null)
             {
@@ -1737,7 +1815,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
-                            reference.addPropertyChangeListener(this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -1837,8 +1914,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
-                reference.addPropertyChangeListener(this);
-                getReferences().put(reference.getSourceID(), reference);               
+                getReferencesById().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
             catch(IOException e)
@@ -1851,7 +1927,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Reference reference = getReferences().get(file.getName());  
+            Reference reference = getReferencesById().get(file.getName());  
             if(reference != null)
             {
                 
@@ -1862,10 +1938,9 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Reference reference = getReferences().remove(file.getName());  
+            Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                reference.removePropertyChangeListener(this);
                 setLastSource(reference);
             }
         }
@@ -1879,12 +1954,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            new SavableImpl(this, evt);
-        }
     }           
 
 // TODO HtmlFilesProvider        

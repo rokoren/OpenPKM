@@ -88,7 +88,7 @@ public class WebPageProviderImpl implements WebPageProvider
         return null;
     }  
     
-    private static abstract class AbstractWebPage implements WebPage, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractWebPage implements WebPage, TitleProvider, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {         
         protected static final Logger LOG = Logger.getLogger(AbstractWebPage.class.getName());     
 
@@ -96,7 +96,7 @@ public class WebPageProviderImpl implements WebPageProvider
         protected final PropertyChangeSupport propertyChangeSupport;
         
         private Lookup lkp;  
-        protected boolean isDeleted, isModified;        
+        protected SourceState state;        
 
         public AbstractWebPage(Properties props) 
         {
@@ -112,6 +112,39 @@ public class WebPageProviderImpl implements WebPageProvider
                 lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
             }
             return lkp;
+        }  
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(TitleProvider.PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
+            }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
         }         
                 
         @Override
@@ -124,33 +157,7 @@ public class WebPageProviderImpl implements WebPageProvider
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }        
-        
-        @Override
-        public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-        {
-            if(propertyName == null)
-            {
-                propertyChangeSupport.addPropertyChangeListener(listener);    
-            }
-            else
-            {
-                propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-            }
-        }
-
-        @Override
-        public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-        {
-            if(propertyName == null)
-            {
-                propertyChangeSupport.removePropertyChangeListener(listener);    
-            }
-            else
-            {
-                propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-            }                        
-        }         
+        }               
         
         @Override
         public String getAppID()
@@ -159,25 +166,25 @@ public class WebPageProviderImpl implements WebPageProvider
         }           
 
         @Override
-        public boolean isDeleted()
+        public SourceState getState()
         {
-            return isDeleted;
+            return state;
         }
-
-        @Override
-        public void setDeleted(boolean newValue)
-        {
-            boolean oldValue = isDeleted;
-            this.isDeleted = newValue;
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, newValue);        
-        } 
 
         @Override
         public void markModified()
         {
-            boolean oldValue = isModified;
-            this.isModified = true;
-            propertyChangeSupport.firePropertyChange(PROP_MODIFIED, oldValue, isModified);        
+            SourceState oldValue = getState();
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
+
+        @Override
+        public void notifyDeleted()
+        {
+            SourceState oldValue = getState();
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }        
 
         @Override
@@ -245,7 +252,6 @@ public class WebPageProviderImpl implements WebPageProvider
         public void save(OutputStream os, String comments) throws IOException
         {
             props.store(os, comments); 
-            isModified = false;
             LOG.info("Web Page Properties saved");      
         }     
     }  
@@ -276,26 +282,7 @@ public class WebPageProviderImpl implements WebPageProvider
         public Document getDocument(String userAgent) throws IOException
         {
             return Jsoup.connect(getLink()).ignoreContentType(true).userAgent(userAgent).get();   
-        }         
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }          
+        }                 
         
         @Override
         public Image getIcon(int type) 
@@ -353,44 +340,39 @@ public class WebPageProviderImpl implements WebPageProvider
                 return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
             }
             return null;
-        }          
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }         
+        }                 
         
         @Override
         public String getDescription()
         {
             return props.getProperty(PROP_DESCRIPTION);
-        }
-
+        } 
+        
         @Override
-        public void setDescription(String desc)
+        public void setDescription(String description)
         {
-            if(desc == null)
+            if(description == null)
             {
-                props.remove(PROP_DESCRIPTION);
+                Object oldValue = props.remove(PROP_DESCRIPTION);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
             }
             else
             {
-                props.setProperty(PROP_DESCRIPTION, desc);
+                Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
             }
+        } 
+
+        @Override
+        public void addDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+        }
+
+        @Override
+        public void removeDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
         } 
         
         @Override
@@ -484,26 +466,7 @@ public class WebPageProviderImpl implements WebPageProvider
         public Document getDocument(String userAgent) throws IOException
         {
             return Jsoup.connect(getLink()).ignoreContentType(true).userAgent(userAgent).get();   
-        }         
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                props.remove(PROP_TITLE);
-            }
-            else
-            {
-                props.setProperty(PROP_TITLE, title);
-            }
-        }         
+        }                
 
         @Override
         public String getPublisher() 

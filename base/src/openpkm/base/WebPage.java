@@ -10,7 +10,7 @@ import java.io.IOException;
  *
  * @author Rok Koren
  */
-public interface WebPage extends Source, PropertiesProvider
+public interface WebPage extends Source
 {        
     org.jsoup.nodes.Document getDocument(String userAgent) throws IOException;
 }

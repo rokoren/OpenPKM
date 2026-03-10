@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.youtube;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -26,7 +26,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/WatchLater",
-        id = "openpkm.core.WatchLaterAction"
+        id = "openpkm.core.youtube.WatchLaterAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/eye.png",
