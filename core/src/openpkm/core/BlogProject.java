@@ -649,7 +649,7 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }
     } 
 
-    // TODO Sources    
+// TODO Sources    
     
     private final class SourcesImpl implements Sources
     {  
