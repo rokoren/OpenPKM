@@ -4,6 +4,8 @@
  */
 package openpkm.reference;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -35,12 +37,17 @@ public abstract class ReferenceSourceProvider implements SourceProvider<Referenc
         return provider;
     }
     
-    public abstract Map<String, Reference> getReferences();
+    public abstract Map<String, Reference> getReferencesById();
+    
+    public Collection<Reference> getReferences()
+    {
+        return Collections.unmodifiableCollection(getReferencesById().values());
+    }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getReferences().get(sourceID);
+        return getReferencesById().get(sourceID);
     }                                  
 
     @Override
@@ -64,6 +71,6 @@ public abstract class ReferenceSourceProvider implements SourceProvider<Referenc
     @Override
     public boolean contains(FileObject file) 
     {
-        return getReferences().containsKey(file.getName());
+        return getReferencesById().containsKey(file.getName());
     }      
 }

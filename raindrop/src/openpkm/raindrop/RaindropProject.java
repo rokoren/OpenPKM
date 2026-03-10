@@ -121,20 +121,20 @@ import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.DateTimeUtils;
-import openpkm.utils.SavableImpl;
 import openpkm.youtube.YouTubeSourceProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
+import openpkm.base.Source.SourceState;
 import openpkm.utils.LogicalViewProviderImpl;
 
 /**
  *
  * @author Rok Koren
  */
-public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, Sources, SourceProviders, BatchUpdateSupport
+public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_RAINDROP_USER_ID         = "raindrop.user.id";    
     public static final String PROP_RAINDROP_COLLECTION_ID   = "raindrop.collection.id";
@@ -278,19 +278,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         Source oldSource = lastSource;
         lastSource = source;
         propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }  
-    
-// TODO Sources    
-    
-    @Override
-    public SourceGroup[] getSourceGroups(String string) 
-    {
-        if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
-        {
-            return sources.values().toArray(new SourceGroup[0]);                
-        }
-        return new SourceGroup[0];
-    }      
+    }     
     
 // TODO Project
     
@@ -315,6 +303,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
                 list.add(this);
                 list.add(new Info());
+                list.add(new SourcesImpl());
                 list.add(new IconProviderImpl());
                 list.add(new ProjectOpenedHookImpl());   
                 list.add(new SubprojectProviderImpl());
@@ -378,6 +367,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
     } 
     
+    @Override
+    public void addTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+    }
+    
+    @Override
+    public void removeTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+    }    
+    
 // TODO DescriptionProvider  
     
     @Override
@@ -399,7 +400,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Object oldValue = props.setProperty(PROP_DESCRIPTION, desc);  
             propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, desc);
         }   
-    }      
+    } 
+    
+    @Override
+    public void addDescriptionListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+    }
+    
+    @Override
+    public void removeDescriptionListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+    }     
 
 // TODO PropertiesProvider
     
@@ -413,33 +426,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }  
-    
-    @Override
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-        }
-    }
-
-    @Override
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-        }                        
-    }    
+    }     
     
 // TODO BatchUpdateSupport    
     
@@ -561,6 +548,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         { 
             propertyChangeSupport.removePropertyChangeListener(this);
             task.cancel();
+            
+            for(SourceProvider provider : sources.values())
+            {
+                provider.projectClosed();
+            }
         } 
 
         @Override
@@ -613,7 +605,36 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return RaindropProject.this;
         }
-    }     
+    }    
+    
+// TODO Sources    
+    
+    private final class SourcesImpl implements Sources
+    {  
+        private final ChangeSupport changeSupport = new ChangeSupport(this);         
+        
+        @Override
+        public SourceGroup[] getSourceGroups(String string) 
+        {
+            if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
+            {
+                return sources.values().toArray(new SourceGroup[0]);                
+            }
+            return new SourceGroup[0];
+        } 
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+    }          
   
 // TODO IconProvider    
     
@@ -1808,7 +1829,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO SourceGroup    
 
-    private final class ContentSourceProviderImpl extends ContentSourceProvider implements FileChangeListener, PropertyChangeListener
+    private final class ContentSourceProviderImpl extends ContentSourceProvider implements FileChangeListener
     {  
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/book_edit.png";         
@@ -1825,13 +1846,51 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(Content content : getContents())
+                {
+                    SourceState state = content.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(content.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    content.save(os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }
+        
+        @Override
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
         }        
         
         @Override
-        public synchronized Map<String, Content> getContents()
+        public synchronized Map<String, Content> getContentsById()
         {
             if(contents == null)
             {
@@ -1844,7 +1903,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         try
                         {
                             Content content = provider.getContent(Utils.getProperties(file)); 
-                            content.addPropertyChangeListener(this);
                             contents.put(content.getSourceID(), content);
                         }
                         catch(IOException e)
@@ -1944,8 +2002,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 Content content = provider.getContent(Utils.getProperties(file)); 
-                content.addPropertyChangeListener(this);
-                getContents().put(content.getSourceID(), content);               
+                getContentsById().put(content.getSourceID(), content);               
                 setLastSource(content);                
             }           
             catch(IOException e)
@@ -1958,7 +2015,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Content content = getContents().get(file.getName());  
+            Content content = getContentsById().get(file.getName());  
             if(content != null)
             {
                 
@@ -1969,10 +2026,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Content content = getContents().remove(file.getName());  
+            Content content = getContentsById().remove(file.getName());  
             if(content != null)
             {
-                content.removePropertyChangeListener(this);
                 setLastSource(content);
             }
         }
@@ -1986,15 +2042,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            new SavableImpl(this, evt);
-        }
     } 
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener, PropertyChangeListener
+    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
     {               
         public ReferenceSourceProviderImpl(ReferenceProvider provider) 
         {
@@ -2008,7 +2058,45 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }  
         
         @Override
-        public synchronized Map<String, Reference> getReferences()
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(Reference reference : getReferences())
+                {
+                    SourceState state = reference.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    reference.save(os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }        
+        
+        @Override
+        public synchronized Map<String, Reference> getReferencesById()
         {
             if(references == null)
             {
@@ -2021,7 +2109,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         try
                         {
                             Reference reference = provider.getReference(Utils.getProperties(file)); 
-                            reference.addPropertyChangeListener(this);
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2121,8 +2208,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
-                reference.addPropertyChangeListener(this);
-                getReferences().put(reference.getSourceID(), reference);               
+                getReferencesById().put(reference.getSourceID(), reference);               
                 setLastSource(reference);                
             }           
             catch(IOException e)
@@ -2135,7 +2221,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Reference reference = getReferences().get(file.getName());  
+            Reference reference = getReferencesById().get(file.getName());  
             if(reference != null)
             {
                 
@@ -2146,10 +2232,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Reference reference = getReferences().remove(file.getName());  
+            Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                reference.removePropertyChangeListener(this);
                 setLastSource(reference);
             }
         }
@@ -2163,12 +2248,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            new SavableImpl(this, evt);
-        }
     } 
     
     private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 
@@ -2185,7 +2264,45 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public synchronized Map<String, Raindrop> getRaindrops()
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(Raindrop raindrop : getRaindrops())
+                {
+                    SourceState state = raindrop.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(raindrop.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    raindrop.save(os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
+        
+        @Override
+        public synchronized Map<String, Raindrop> getRaindropsById()
         {
             if(raindrops == null)
             {
@@ -2379,7 +2496,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 Raindrop raindrop = AbstractRaindrop.getRaindrop(Utils.getProperties(file)); 
-                getRaindrops().put(raindrop.getSourceID(), raindrop);  
+                getRaindropsById().put(raindrop.getSourceID(), raindrop);  
 
                 if(Utils.getAppID().equals(raindrop.getAppID()))
                 {
@@ -2423,7 +2540,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileChanged(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Raindrop raindrop = getRaindrops().get(file.getName());  
+            Raindrop raindrop = getRaindropsById().get(file.getName());  
             if(raindrop != null)
             {
                 
@@ -2434,7 +2551,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Raindrop raindrop = getRaindrops().remove(file.getName());  
+            Raindrop raindrop = getRaindropsById().remove(file.getName());  
             if(raindrop != null)
             {
                 setLastSource(raindrop);
@@ -2464,6 +2581,44 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             return RaindropProject.this;
         } 
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(YouTubeVideo video : getVideos())
+                {
+                    SourceState state = video.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(video.getVideoID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    video.save(os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
         
         @Override
         public synchronized Map<String, YouTubeVideo> getVideosById()

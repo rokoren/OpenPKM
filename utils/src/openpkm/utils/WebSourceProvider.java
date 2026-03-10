@@ -4,6 +4,8 @@
  */
 package openpkm.utils;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
@@ -34,12 +36,17 @@ public abstract class WebSourceProvider implements SourceProvider<WebPage>
         return provider;
     }
     
-    public abstract Map<String, WebPage> getLinks();
+    public abstract Map<String, WebPage> getLinksById();
+    
+    public Collection<WebPage> getLinks()
+    {
+        return Collections.unmodifiableCollection(getLinksById().values());
+    }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getLinks().get(sourceID);
+        return getLinksById().get(sourceID);
     }                                  
 
     @Override
@@ -57,6 +64,6 @@ public abstract class WebSourceProvider implements SourceProvider<WebPage>
     @Override
     public boolean contains(FileObject file) 
     {
-        return getLinks().containsKey(file.getName());
+        return getLinksById().containsKey(file.getName());
     }     
 }

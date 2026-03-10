@@ -16,7 +16,7 @@ import openpkm.base.WatchLater;
  *
  * @author Rok Koren
  */
-public interface YouTubeVideo extends Source, PropertiesProvider, Video, WatchLater
+public interface YouTubeVideo extends Source, Video, WatchLater
 {    
     //String YOUTUBE_URL = "https://www.youtube.com/";
     String YOUTUBE_URL = "https://www.youtube-nocookie.com/";

@@ -18,4 +18,5 @@ public interface SourceProvider<T extends Source> extends SourceGroup
     Source getSource(String sourceID);
     FileObject createData(T source, FileTypeProvider fileTypeProvider) throws IOException;
     Lookup.Provider getLookupProvider();
+    void projectClosed();
 }

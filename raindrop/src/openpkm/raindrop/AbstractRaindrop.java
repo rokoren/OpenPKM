@@ -26,6 +26,7 @@ import openpkm.base.TagsProvider;
 import openpkm.base.Video;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.TitleProvider;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.openide.awt.NotificationDisplayer;
 import org.openide.util.ImageUtilities;
@@ -36,7 +37,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider
+public abstract class AbstractRaindrop implements Raindrop, PropertiesProvider, IconProvider, TagsProvider
 {
     private static final Logger LOG = Logger.getLogger(AbstractRaindrop.class.getName());  
     
@@ -45,7 +46,8 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     protected final Properties props;    
     protected final PropertyChangeSupport propertyChangeSupport;
     
-    private Lookup lkp;    
+    protected Lookup lkp; 
+    protected SourceState state;    
 
     public AbstractRaindrop(Properties props) 
     {
@@ -61,52 +63,29 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
             lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
         }
         return lkp;
-    }      
+    }          
     
     @Override
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    public SourceState getState()
     {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-        }
+        return state;
     }
 
     @Override
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+    public void markModified()
     {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-        }                        
-    }      
+        SourceState oldValue = getState();
+        state = SourceState.MODIFIED;
+        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+    }   
     
     @Override
-    public boolean isDeleted()
+    public void notifyDeleted()
     {
-        String string = props.getProperty(PROP_DELETED);
-        if(string != null)
-        {
-            return Boolean.parseBoolean(string);
-        }
-        return false;
-    }
-
-    @Override
-    public void setDeleted(boolean isDeleted)
-    {
-        boolean oldValue = isDeleted();
-        props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-        propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
-    } 
+        SourceState oldValue = getState();
+        state = SourceState.DELETED;
+        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+    }  
     
     @Override
     public int getRaindropID() 
@@ -227,23 +206,37 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     }
 
     @Override
-    public String getTitle() 
+    public String getTitle()
     {
-        return props.getProperty(PROP_TITLE);
+        return props.getProperty(TitleProvider.PROP_TITLE);
     }
 
     @Override
-    public void setTitle(String title) 
+    public void setTitle(String title)
     {
         if(title == null)
         {
-            props.remove(PROP_TITLE);
+            Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+            propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
         }
         else
         {
-            props.setProperty(PROP_TITLE, title);
+            Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+            propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
         }
+    }  
+    
+    @Override
+    public void addTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
     }
+    
+    @Override
+    public void removeTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+    }  
 
     @Override
     public String getExcerpt() 
@@ -763,14 +756,37 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         }
 
         @Override
-        public String getDescription() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        public String getDescription()
+        {
+            return props.getProperty(PROP_DESCRIPTION);
+        } 
+        
+        @Override
+        public void setDescription(String description)
+        {
+            if(description == null)
+            {
+                Object oldValue = props.remove(PROP_DESCRIPTION);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
+            }
+        } 
+
+        @Override
+        public void addDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
         }
 
         @Override
-        public void setDescription(String description) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
+        public void removeDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+        }  
     }     
     
     public static final class VideoImpl extends AbstractRaindrop implements Video

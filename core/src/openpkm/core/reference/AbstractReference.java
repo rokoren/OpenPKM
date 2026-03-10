@@ -35,7 +35,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rokor
  */
-public abstract class AbstractReference implements Reference, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
+public abstract class AbstractReference implements Reference, TitleProvider, PropertiesProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
 {
     public static final String EXT_GIF = "gif";
     public static final String EXT_JPG = "jpg";
@@ -49,7 +49,7 @@ public abstract class AbstractReference implements Reference, IconProvider, Shor
     protected final PropertyChangeSupport propertyChangeSupport;
 
     protected Lookup lkp;  
-    protected boolean isDeleted, isModified;
+    protected SourceState state;
 
     public AbstractReference(Properties props) 
     {
@@ -80,58 +80,32 @@ public abstract class AbstractReference implements Reference, IconProvider, Shor
     }        
 
     @Override
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-        }
-    }
-
-    @Override
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-    {
-        if(propertyName == null)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);    
-        }
-        else
-        {
-            propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-        }                        
-    } 
-
-    @Override
     public String getAppID()
     {
         return props.getProperty(PROP_APP_ID);
     }          
 
     @Override
-    public boolean isDeleted()
+    public SourceState getState()
     {
-        return isDeleted;
+        return state;
     }
-
-    @Override
-    public void setDeleted(boolean newValue)
-    {
-        boolean oldValue = isDeleted;
-        this.isDeleted = newValue;
-        propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, newValue);        
-    } 
 
     @Override
     public void markModified()
     {
-        boolean oldValue = isModified;
-        this.isModified = true;
-        propertyChangeSupport.firePropertyChange(PROP_MODIFIED, oldValue, isModified);        
-    }     
+        SourceState oldValue = getState();
+        state = SourceState.MODIFIED;
+        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+    }   
+    
+    @Override
+    public void notifyDeleted()
+    {
+        SourceState oldValue = getState();
+        state = SourceState.DELETED;
+        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+    }      
 
     @Override
     public LocalDateTime getTimeCreated() 
@@ -144,11 +118,13 @@ public abstract class AbstractReference implements Reference, IconProvider, Shor
         return null;
     } 
     
+    @Override
     public String getTitle()
     {
         return props.getProperty(TitleProvider.PROP_TITLE);
     }
 
+    @Override
     public void setTitle(String title)
     {
         if(title == null)
@@ -161,6 +137,18 @@ public abstract class AbstractReference implements Reference, IconProvider, Shor
             Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
             propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
         }
+    }  
+    
+    @Override
+    public void addTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+    }
+    
+    @Override
+    public void removeTitleListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
     }     
 
     @Override
@@ -217,7 +205,6 @@ public abstract class AbstractReference implements Reference, IconProvider, Shor
     public void save(OutputStream os, String comments) throws IOException
     {
         props.store(os, comments);
-        isModified = false;
         LOG.info("Reference Properties saved");      
     }  
 

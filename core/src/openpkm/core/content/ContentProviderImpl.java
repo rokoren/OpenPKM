@@ -85,14 +85,15 @@ public class ContentProviderImpl implements ContentProvider
         return null;
     }  
     
-    private static abstract class AbstractContent implements Content, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractContent implements Content, TitleProvider, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {          
         protected static final Logger LOG = Logger.getLogger(AbstractContent.class.getName());     
 
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;
         
-        private Lookup lkp;          
+        private Lookup lkp;   
+        private SourceState state;        
 
         public AbstractContent(Properties props) 
         {
@@ -108,7 +109,40 @@ public class ContentProviderImpl implements ContentProvider
                 lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
             }
             return lkp;
-        }          
+        } 
+        
+        @Override
+        public String getTitle()
+        {
+            return props.getProperty(TitleProvider.PROP_TITLE);
+        }
+
+        @Override
+        public void setTitle(String title)
+        {
+            if(title == null)
+            {
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
+            }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }         
                 
         @Override
         public Properties getProperties()
@@ -123,55 +157,32 @@ public class ContentProviderImpl implements ContentProvider
         }        
         
         @Override
-        public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+        public SourceState getState()
         {
-            if(propertyName == null)
-            {
-                propertyChangeSupport.addPropertyChangeListener(listener);    
-            }
-            else
-            {
-                propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-            }
+            return state;
         }
 
         @Override
-        public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+        public void markModified()
         {
-            if(propertyName == null)
-            {
-                propertyChangeSupport.removePropertyChangeListener(listener);    
-            }
-            else
-            {
-                propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-            }                        
-        }          
+            SourceState oldValue = getState();
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
+
+        @Override
+        public void notifyDeleted()
+        {
+            SourceState oldValue = getState();
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }           
         
         @Override
         public String getAppID()
         {
             return props.getProperty(PROP_APP_ID);
-        }          
-
-        @Override
-        public boolean isDeleted()
-        {
-            String string = props.getProperty(PROP_DELETED);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
-        }
-
-        @Override
-        public void setDeleted(boolean isDeleted)
-        {
-            boolean oldValue = isDeleted();
-            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
-        }       
+        }                
 
         @Override
         public LocalDateTime getTimeCreated() 
@@ -419,19 +430,33 @@ public class ContentProviderImpl implements ContentProvider
         public String getDescription()
         {
             return props.getProperty(PROP_DESCRIPTION);
-        }
-
+        } 
+        
         @Override
-        public void setDescription(String desc)
+        public void setDescription(String description)
         {
-            if(desc == null)
+            if(description == null)
             {
-                props.remove(PROP_DESCRIPTION);
+                Object oldValue = props.remove(PROP_DESCRIPTION);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
             }
             else
             {
-                props.setProperty(PROP_DESCRIPTION, desc);
+                Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
             }
+        } 
+
+        @Override
+        public void addDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+        }
+
+        @Override
+        public void removeDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
         } 
         
         @Override

@@ -4,6 +4,8 @@
  */
 package openpkm.base;
 
+import java.beans.PropertyChangeListener;
+
 /**
  *
  * @author rokor
@@ -13,5 +15,7 @@ public interface DescriptionProvider
     String PROP_DESCRIPTION = "description";
     
     String getDescription();
-    void setDescription(String description);    
+    void setDescription(String description);   
+    void addDescriptionListener(PropertyChangeListener listener);
+    void removeDescriptionListener(PropertyChangeListener listener);      
 }

@@ -10,7 +10,6 @@ import com.google.api.services.youtube.model.VideoListResponse;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -204,13 +203,13 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return null;
     }    
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, DisplayNameProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, DisplayNameProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;       
         
         private Lookup lkp;  
-        private boolean isDeleted, isModified;        
+        private SourceState state;      
 
         public YouTubeVideoImpl(Properties props)
         {
@@ -229,25 +228,25 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         }            
 
         @Override
-        public boolean isDeleted()
+        public SourceState getState()
         {
-            return isDeleted;
+            return state;
         }
-
-        @Override
-        public void setDeleted(boolean newValue)
-        {
-            boolean oldValue = isDeleted;
-            this.isDeleted = newValue;
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, newValue);        
-        } 
 
         @Override
         public void markModified()
         {
-            boolean oldValue = isModified;
-            this.isModified = true;
-            propertyChangeSupport.firePropertyChange(PROP_MODIFIED, oldValue, isModified);        
+            SourceState oldValue = getState();
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
+
+        @Override
+        public void notifyDeleted()
+        {
+            SourceState oldValue = getState();
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }        
         
         @Override
@@ -260,32 +259,6 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }  
-        
-        @Override
-        public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
-        {
-            if(propertyName == null)
-            {
-                propertyChangeSupport.addPropertyChangeListener(listener);    
-            }
-            else
-            {
-                propertyChangeSupport.addPropertyChangeListener(propertyName, listener);            
-            }
-        }
-
-        @Override
-        public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
-        {
-            if(propertyName == null)
-            {
-                propertyChangeSupport.removePropertyChangeListener(listener);    
-            }
-            else
-            {
-                propertyChangeSupport.removePropertyChangeListener(propertyName, listener);            
-            }                        
         }          
 
         @Override
@@ -587,7 +560,6 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public void save(OutputStream os, String comments) throws IOException
         {
             props.store(os, comments); 
-            isModified = false;
             LOG.info("YouTube video saved");
         } 
         

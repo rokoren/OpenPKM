@@ -4,6 +4,8 @@
  */
 package openpkm.raindrop;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -30,7 +32,12 @@ public abstract class RaindropSourceProvider implements SourceProvider<Raindrop>
         this.provider = provider;
     }        
     
-    public abstract Map<String, Raindrop> getRaindrops();    
+    public abstract Map<String, Raindrop> getRaindropsById();   
+    
+    public Collection<Raindrop> getRaindrops()
+    {
+        return Collections.unmodifiableCollection(getRaindropsById().values());
+    }
 
     public RaindropProvider getRaindropProvider()
     {
@@ -40,7 +47,7 @@ public abstract class RaindropSourceProvider implements SourceProvider<Raindrop>
     @Override
     public Source getSource(String sourceID) 
     {
-        return getRaindrops().get(sourceID);
+        return getRaindropsById().get(sourceID);
     }                    
 
     @Override
@@ -64,6 +71,6 @@ public abstract class RaindropSourceProvider implements SourceProvider<Raindrop>
     @Override
     public boolean contains(FileObject file) 
     {                                   
-        return getRaindrops().containsKey(file.getName());
+        return getRaindropsById().containsKey(file.getName());
     }
 }

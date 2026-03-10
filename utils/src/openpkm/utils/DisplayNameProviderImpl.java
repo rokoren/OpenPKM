@@ -9,7 +9,6 @@ import java.beans.PropertyChangeListener;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
-import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
 import org.openide.util.ChangeSupport;
 
@@ -20,13 +19,13 @@ import org.openide.util.ChangeSupport;
 public class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener 
 {
     private final ChangeSupport changeSupport;         
-    private final PropertiesProvider provider;
+    private final TitleProvider provider;
 
-    public DisplayNameProviderImpl(PropertiesProvider provider) 
+    public DisplayNameProviderImpl(TitleProvider provider) 
     {
         this.provider = provider;
         changeSupport = new ChangeSupport(this);
-        provider.addPropertyChangeListener(TitleProvider.PROP_TITLE, this);
+        provider.addTitleListener(this);
     }    
 
     @Override
@@ -42,7 +41,7 @@ public class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSuppo
         {
             return null;
         }
-        return provider.getProperties().getProperty(TitleProvider.PROP_TITLE);
+        return provider.getTitle();
     }
 
     @Override

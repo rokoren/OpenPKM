@@ -13,6 +13,7 @@ import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.beans.BeanInfo;
+import java.beans.PropertyChangeListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -357,7 +358,19 @@ public class ReferenceProviderImpl implements ReferenceProvider
                 Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
                 propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
             }
-        }         
+        } 
+
+        @Override
+        public void addDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+        }
+
+        @Override
+        public void removeDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+        }          
 
         @Override
         public com.gluonhq.richtextarea.model.Document getTextOnPage()

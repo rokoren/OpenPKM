@@ -4,6 +4,8 @@
  */
 package openpkm.utils;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import openpkm.base.Content;
 import openpkm.base.Source;
@@ -34,12 +36,17 @@ public abstract class ContentSourceProvider implements SourceProvider<Content>
         return provider;
     }
     
-    public abstract Map<String, Content> getContents();
+    public abstract Map<String, Content> getContentsById();
+    
+    public Collection<Content> getContents()
+    {
+        return Collections.unmodifiableCollection(getContentsById().values());
+    }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getContents().get(sourceID);
+        return getContentsById().get(sourceID);
     }                                  
 
     @Override
@@ -57,6 +64,6 @@ public abstract class ContentSourceProvider implements SourceProvider<Content>
     @Override
     public boolean contains(FileObject file) 
     {
-        return getContents().containsKey(file.getName());
+        return getContentsById().containsKey(file.getName());
     }      
 }
