@@ -4,21 +4,17 @@
  */
 package openpkm.base;
 
-import java.awt.Image;
 import org.openide.nodes.Children;
-import org.openide.util.*;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public interface NodeProvider extends DisplayNameProvider, IconProvider, ActionsProvider
+public interface NodeProvider extends Lookup.Provider
 {
     String getName();
-    String getShortDescription();
-    String getHtmlDisplayName();    
-    Image getIcon(int type);
-    Image getOpenedIcon(int type);
     Children getChildren();
     HelpCtx getHelpCtx();        
 }

@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.GroupProvider;
-import openpkm.core.GroupNode;
+import openpkm.core.SourceGroupNode;
 import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
@@ -47,7 +47,7 @@ public class TrelloCardNodeFactoryImpl implements NodeFactory
             {
                 if(group instanceof SourceGroupProvider nodeGroup)
                 {
-                    list.add(new GroupNode(nodeGroup));                     
+                    list.add(new SourceGroupNode(nodeGroup));                     
                 }
                 else if(group instanceof DataGroupProvider provider)
                 {
