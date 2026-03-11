@@ -31,7 +31,7 @@ public interface TrelloCard extends Source, PropertiesProvider
     String getCardRole();
     List<String> getCardLabelsID();
     void setCardLabelsID(List<String> ids);
-    boolean isCardLink();
+    boolean isCardLink();    
     /*
     String getCardDescription();    
     LocalDate getDueDate();

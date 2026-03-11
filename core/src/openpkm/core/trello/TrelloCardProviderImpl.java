@@ -6,6 +6,8 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Card;
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,12 +19,15 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
+import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
+import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
@@ -125,12 +130,13 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                 List list = new ArrayList();
 
                 list.add(this);
+                list.add(new DisplayNameProviderImpl(this));
                 if(isCardLink())
                 {
                     YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
                     if(provider != null)
                     {
-                        YouTubeVideo video = provider.getVideo(props);
+                        YouTubeVideo video = provider.getVideo(props, false);
                         if(video != null)
                         {
                             list.add(video.getLookup());
@@ -311,6 +317,16 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                 propertyChangeSupport.firePropertyChange(PROP_CARD_DUE_COMPLETE, oldValue, complete);                
             }
         }
+        
+        public void addCardDueCompleteListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_CARD_DUE_COMPLETE, listener);
+        }
+        
+        public void removeCardDueCompleteListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_CARD_DUE_COMPLETE, listener);
+        }
 
         @Override
         public Boolean isCardTemplate()
@@ -414,6 +430,56 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }
         */
     } 
+    
+    private static final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final TrelloCardImpl card;
+        private final ChangeSupport changeSupport;
+
+        public DisplayNameProviderImpl(TrelloCardImpl card) 
+        {
+            this.card = card;
+            card.addCardDueCompleteListener(this);
+            changeSupport = new ChangeSupport(this);
+        }                
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return card.getCardName();
+            }
+            else if(format == TextFormat.HTML)
+            {
+                if(card.isCardDueComplete())
+                {
+                    return "<html><s>" + card.getCardName() + "</s></html>";
+                }
+                return "<html><b>" + card.getCardName() + "</b></html>";                
+            }
+            return null;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent pce) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+        
+    }
     
     public static final class CardComplete extends AbstractAction
     {             
