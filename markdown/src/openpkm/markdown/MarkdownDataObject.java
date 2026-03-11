@@ -103,26 +103,7 @@ public class MarkdownDataObject extends MultiDataObject
     {
         super(pf, loader);    
         registerEditor(MarkdownLanguageConfig.MIME_TYPE, true);
-    }
-    
-    @Override
-    protected void handleDelete() throws IOException 
-    {
-        RemoteDataProvider provider = getLookup().lookup(RemoteDataProvider.class);
-        if(provider != null)
-        {
-            provider.delete();
-        }
-        
-        Source source = getLookup().lookup(Source.class);
-        if(source != null)
-        {
-            source.notifyDeleted();
-        }
-
-        // pokličeš privzeto brisanje datoteke
-        super.handleDelete();
-    }       
+    }     
 
     @Override
     protected int associateLookup() {
@@ -146,6 +127,25 @@ public class MarkdownDataObject extends MultiDataObject
         }
         return lookup;   
     } 
+    
+    @Override
+    protected void handleDelete() throws IOException 
+    {
+        RemoteDataProvider provider = getLookup().lookup(RemoteDataProvider.class);
+        if(provider != null)
+        {
+            provider.delete();
+        }
+        
+        Source source = getLookup().lookup(Source.class);
+        if(source != null)
+        {
+            source.notifyDeleted();
+        }
+
+        // pokličeš privzeto brisanje datoteke
+        super.handleDelete();
+    }      
 
     @Override
     protected Node createNodeDelegate() 

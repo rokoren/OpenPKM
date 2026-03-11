@@ -7,7 +7,7 @@ package openpkm.asciidoc;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
+import openpkm.base.RemoteDataProvider;
 import openpkm.base.Source;
 import openpkm.utils.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;
@@ -22,7 +22,6 @@ import org.openide.loaders.DataObjectExistsException;
 import org.openide.loaders.MultiDataObject;
 import org.openide.loaders.MultiFileLoader;
 import org.openide.nodes.Node;
-import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.Lookups;
@@ -98,27 +97,14 @@ import org.openide.windows.TopComponent;
 public class AsciiDocDataObject extends MultiDataObject
 {    
     private static final Logger LOG = Logger.getLogger(AsciiDocDataObject.class.getName());
-
-    private final ChangeSupport changeSupport;
     
     private Lookup lookup;    
     
     public AsciiDocDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException 
     {
         super(pf, loader); 
-        changeSupport = new ChangeSupport(this);
         registerEditor(AsciidocLanguageConfig.MIME_TYPE, true);        
-    }   
-    
-    public void addChangeListener(ChangeListener listener)
-    {
-        changeSupport.addChangeListener(listener);
-    }
-    
-    public void removeChangeListener(ChangeListener listener)
-    {
-        changeSupport.removeChangeListener(listener);
-    }      
+    }     
     
     @Override
     protected int associateLookup() {
@@ -129,19 +115,38 @@ public class AsciiDocDataObject extends MultiDataObject
     public Lookup getLookup()
     { 
         if(lookup == null)
-        {             
+        { 
             Source source = Utils.getSource(getPrimaryFile());
             if(source == null)
             {
                 lookup = super.getLookup();
             }  
             else
-            {                  
+            {                   
                 lookup = new ProxyLookup(super.getLookup(), Lookups.proxy(source));                
             }
         }
-        return lookup;
+        return lookup; 
     } 
+    
+    @Override
+    protected void handleDelete() throws IOException 
+    {
+        RemoteDataProvider provider = getLookup().lookup(RemoteDataProvider.class);
+        if(provider != null)
+        {
+            provider.delete();
+        }
+        
+        Source source = getLookup().lookup(Source.class);
+        if(source != null)
+        {
+            source.notifyDeleted();
+        }
+
+        // pokličeš privzeto brisanje datoteke
+        super.handleDelete();
+    }     
     
     @Override
     protected Node createNodeDelegate() 
