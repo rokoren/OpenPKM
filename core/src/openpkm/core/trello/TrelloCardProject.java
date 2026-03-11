@@ -78,7 +78,6 @@ import openpkm.base.RemoteDataProvider;
 import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
-import openpkm.core.TopComponentProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;

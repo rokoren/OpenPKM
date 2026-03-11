@@ -11,18 +11,23 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.NodeDateTimeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloCardAction;
 import openpkm.utils.UserIcon;
 import org.openide.nodes.Children;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTimeProvider
+public abstract class AbstractTrelloAction implements TrelloAction, DisplayNameProvider, IconProvider, NodeDateTimeProvider
 {
     public static final String PROP_ACTION_ID        = "action.id";
     public static final String PROP_ACTION_TYPE      = "action.type";    
@@ -56,7 +61,9 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
     public static final String TYPE_REMOVE_CHECKLIST_TO_CARD = "removeChecklistFromCard";
     public static final String TYPE_UPDATE_ITEM_STATE        = "updateCheckItemStateOnCard";        
 
-    protected final Properties props;   
+    protected final Properties props; 
+    
+    protected Lookup lkp;    
 
     public AbstractTrelloAction(Properties props) 
     {
@@ -114,6 +121,27 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
     {
         props.putAll(provider.getProperties());
     } 
+  
+// TODO DisplayNameProvider
+
+    @Override
+    public String getDisplayName(boolean isHtml)
+    {
+        if(isHtml)
+        {
+            return null;
+        }
+        return toString();
+    } 
+
+// TODO IconProvider   
+    
+    @Override
+    public Image getIcon(int type) 
+    {
+        StringTokenizer st = new StringTokenizer(getMemberFullName());
+        return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
+    }     
     
 // TODO NodeProvider         
 
@@ -121,20 +149,17 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
     public String getName() 
     {
         return getActionID();
-    }
-
+    }  
+    
     @Override
-    public String getDisplayName()
+    public Lookup getLookup() 
     {
-        return toString();
-    }        
-
-    @Override
-    public Image getIcon(int type) 
-    {
-        StringTokenizer st = new StringTokenizer(getMemberFullName());
-        return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
-    } 
+        if (lkp == null) 
+        {
+            lkp = Lookups.fixed(this);              
+        }
+        return lkp;
+    }      
     
     @Override
     public LocalDateTime getDateTime()
@@ -146,7 +171,13 @@ public abstract class AbstractTrelloAction implements TrelloAction, NodeDateTime
     public Children getChildren() 
     {
         return Children.LEAF;
-    }     
+    }  
+    
+    @Override
+    public HelpCtx getHelp()
+    {
+        return HelpCtx.DEFAULT_HELP;
+    }
     
     public static final class CardUpdate extends AbstractTrelloAction implements TrelloCardAction
     {        

@@ -18,6 +18,8 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
@@ -33,7 +35,9 @@ import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileObject;
 import org.openide.nodes.Children;
 import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 
 /**
  *
@@ -86,11 +90,12 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         return new TrelloCheckListItemImpl(props);
     } 
     
-    private final class TrelloCheckListItemImpl implements TrelloCheckListItem
+    private final class TrelloCheckListItemImpl implements TrelloCheckListItem, DisplayNameProvider, IconProvider
     {          
         private final Properties props; 
         
         private ChangeSupport changeSupport;
+        private Lookup lkp;         
         
         public TrelloCheckListItemImpl(Properties props)
         {
@@ -179,24 +184,24 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }        
-
-// TODO NodeProvider         
-
-        @Override
-        public String getName() 
-        {
-            return getCheckListItemID();
-        }
+        } 
+        
+// TODO DisplayNameProvider        
         
         @Override
-        public String getDisplayName() 
+        public String getDisplayName(boolean isHtml) 
         {
+            if(isHtml)
+            {
+                return null;
+            }
             return getCheckListItemName();
-        }
+        } 
+
+// TODO IconProvider  
         
         @Override
-        public Image getIcon(boolean opened) 
+        public Image getIcon(int type) 
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             State state = getCheckListItemState();
@@ -205,13 +210,37 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                 return provider.getImage(IconsProvider.ICON.CHECK);
             }
             return provider.getImage(IconsProvider.ICON.UNCHECK);
-        }  
+        }         
+
+// TODO NodeProvider         
+
+        @Override
+        public String getName() 
+        {
+            return getCheckListItemID();
+        } 
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            {
+                lkp = Lookups.fixed(this);              
+            }
+            return lkp;
+        }         
         
         @Override
         public Children getChildren() 
         {
             return Children.LEAF;
         }  
+        
+        @Override
+        public HelpCtx getHelp()
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }         
         
         @Override
         public int getPosition() 

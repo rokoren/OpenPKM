@@ -15,7 +15,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.TitleProvider;
-import openpkm.core.TopComponentProvider;
+import openpkm.utils.TopComponentProvider;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;

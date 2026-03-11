@@ -16,5 +16,5 @@ public interface NodeProvider extends Lookup.Provider
 {
     String getName();
     Children getChildren();
-    HelpCtx getHelpCtx();        
+    HelpCtx getHelp();        
 }

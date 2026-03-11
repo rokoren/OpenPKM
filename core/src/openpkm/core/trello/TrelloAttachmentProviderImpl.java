@@ -8,13 +8,17 @@ import com.julienvey.trello.domain.Attachment;
 import java.awt.Image;
 import java.util.Properties;
 import java.util.logging.Logger;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAttachment;
 import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.youtube.YouTubeUtils;
 import org.openide.nodes.Children;
+import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -46,9 +50,11 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         return getAttachment(props);
     } 
     
-    private static final class TrelloAttachmentImpl implements TrelloAttachment
+    private static final class TrelloAttachmentImpl implements TrelloAttachment, DisplayNameProvider, IconProvider
     {         
-        private final Properties props;     
+        private final Properties props;    
+        
+        private Lookup lkp;        
         
         public TrelloAttachmentImpl(Properties props)
         {
@@ -111,24 +117,24 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
+        } 
+        
+// TODO DisplayNameProvider        
+        
+        @Override
+        public String getDisplayName(boolean isHtml) 
+        {
+            if(isHtml)
+            {
+                return null;
+            }
+            return getAttachmentName();
         }        
 
-// TODO NodeProvider         
-
-        @Override
-        public String getName() 
-        {
-            return getAttachmentID();
-        }
+// TODO IconProvider  
         
         @Override
-        public String getDisplayName() 
-        {
-            return getAttachmentName();
-        }
-        
-        @Override
-        public Image getIcon(boolean opened) 
+        public Image getIcon(int type) 
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             String mimeType = getAttachmentMimeType();
@@ -157,13 +163,37 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
                 return provider.getImage(IconsProvider.ICON.FILE_JPG);
             }             
             return provider.getImage(IconsProvider.ICON.ATTACHMENT);
-        } 
+        }         
+        
+// TODO NodeProvider         
+
+        @Override
+        public String getName() 
+        {
+            return getAttachmentID();
+        }
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            {
+                lkp = Lookups.fixed(this);              
+            }
+            return lkp;
+        }                  
         
         @Override
         public Children getChildren() 
         {
             return Children.LEAF;
         }  
+        
+        @Override
+        public HelpCtx getHelp()
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }        
         
         @Override
         public int getPosition() 
