@@ -64,13 +64,17 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
     private static final Logger LOG = Logger.getLogger(YouTubeVideoProvider.class.getName());     
     
     @Override
-    public YouTubeVideo getVideo(Properties props) 
+    public YouTubeVideo getVideo(Properties props, boolean displayName) 
     {
+        if(displayName)
+        {
+            return new YouTubeVideoExtImpl(props);            
+        }
         return new YouTubeVideoImpl(props);
     }
     
     @Override
-    public YouTubeVideo getVideo(String videoID)
+    public YouTubeVideo getVideo(String videoID, boolean displayName)
     {
         try
         {         
@@ -189,7 +193,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
                     }                     
                 }                 
 
-                return getVideo(props);
+                return getVideo(props, displayName);
             }                 
         }
         catch (IOException e)
@@ -203,7 +207,25 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return null;
     }    
  
-    private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, DisplayNameProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoExtImpl extends YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, DisplayNameProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    {    
+        public YouTubeVideoExtImpl(Properties props)
+        {
+            super(props);
+        }
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getVideoTitle();
+            }
+            return null; 
+        }          
+    }
+    
+    private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;       
@@ -278,16 +300,6 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         {
             Date date = new Date(getPublishedAt().getValue());
             return DateTimeUtils.convertToLocalDateTime(date);
-        }
-
-        @Override
-        public String getDisplayName(boolean isHtml) 
-        {
-            if(isHtml)
-            {
-                return null;
-            }
-            return getVideoTitle();
         } 
         
         @Override
@@ -610,7 +622,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
             }         
             return getThumbnailDefault();
         }          
-    }
+    }    
     
     private static final class MultiViewElementImpl extends JPanel implements MultiViewElement, ItemListener
     {
