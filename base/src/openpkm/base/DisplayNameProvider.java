@@ -19,8 +19,17 @@ import org.openide.util.ImageUtilities;
  */
 public interface DisplayNameProvider 
 {
-    String getDisplayName(boolean isHtml);    
+    String getDisplayName(TextFormat format);    
 
+    public enum TextFormat 
+    {
+        PLAIN,
+        HTML,
+        MARKDOWN,
+        ASCIIDOC,
+        RTF;    
+    }      
+    
     public static Comparator<DisplayNameProvider> displayNameComparator() 
     {
         return new Comparator<DisplayNameProvider>() 
@@ -28,20 +37,28 @@ public interface DisplayNameProvider
             @Override
             public int compare(DisplayNameProvider provider1, DisplayNameProvider provider2) 
             {
-                return provider1.getDisplayName(false).compareTo(provider2.getDisplayName(false));
+                return provider1.getDisplayName(TextFormat.PLAIN).compareTo(provider2.getDisplayName(TextFormat.PLAIN));
             }
         };
-    }  
+    }    
     
     public static class ListCellRendererImpl extends JLabel implements ListCellRenderer<DisplayNameProvider>
     {
+        private final TextFormat format;
+        
         public ListCellRendererImpl() 
         {
+            this(TextFormat.PLAIN);
+        }  
+        
+        public ListCellRendererImpl(TextFormat format) 
+        {
+            this.format = format;
             setOpaque(true);
             setHorizontalAlignment(SwingConstants.LEADING);
             setVerticalAlignment(CENTER);
             setIconTextGap(10);
-        }   
+        }        
 
         @Override
         public Component getListCellRendererComponent(JList list, DisplayNameProvider provider, int index, boolean isSelected, boolean cellHasFocus) 
@@ -61,7 +78,7 @@ public interface DisplayNameProvider
             }
             else
             {                
-                setText(provider.getDisplayName(false)); 
+                setText(provider.getDisplayName(format)); 
                 
                 if(provider instanceof IconProvider)
                 {

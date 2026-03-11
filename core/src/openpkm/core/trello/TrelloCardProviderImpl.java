@@ -6,7 +6,6 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Card;
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,7 +17,6 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
-import openpkm.base.HtmlDisplayNameProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloCard;
@@ -105,12 +103,13 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     }
     */    
     
-    private static final class TrelloCardImpl implements TrelloCard, HtmlDisplayNameProvider
+    private static final class TrelloCardImpl implements TrelloCard
     {         
         private final Properties props;
         private final PropertyChangeSupport propertyChangeSupport;
         
-        private Lookup lkp;                 
+        private Lookup lkp;  
+        private SourceState state;        
         
         public TrelloCardImpl(Properties props)
         {
@@ -134,7 +133,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                         YouTubeVideo video = provider.getVideo(props);
                         if(video != null)
                         {
-                            list.add(video);
+                            list.add(video.getLookup());
                         }
                     }
                 }
@@ -144,19 +143,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             return lkp;
         }         
         
-// TODO TrelloCard        
-        
-        @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(listener);
-        }
-
-        @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        }         
+// TODO TrelloCard                
         
         @Override
         public String getAppID() 
@@ -182,22 +169,25 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }
         
         @Override
-        public boolean isDeleted()
+        public SourceState getState()
         {
-            String string = props.getProperty(PROP_DELETED);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
+            return state;
         }
 
         @Override
-        public void setDeleted(boolean isDeleted)
+        public void markModified()
         {
-            boolean oldValue = isDeleted();
-            props.setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
+            SourceState oldValue = getState();
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
+
+        @Override
+        public void notifyDeleted()
+        {
+            SourceState oldValue = getState();
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }  
 
         @Override
@@ -299,7 +289,28 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             return null;
         }
         
-        public 
+        @Override
+        public void setCardDueComplete(Boolean complete)
+        {
+            if(complete == null)
+            {
+                Object oldValue = props.remove(PROP_CARD_DUE_COMPLETE);
+                if(oldValue != null)
+                {
+                    oldValue = Boolean.parseBoolean(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_CARD_DUE_COMPLETE, oldValue, complete);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_CARD_DUE_COMPLETE, complete.toString());
+                if(oldValue != null)
+                {
+                    oldValue = Boolean.parseBoolean(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_CARD_DUE_COMPLETE, oldValue, complete);                
+            }
+        }
 
         @Override
         public Boolean isCardTemplate()
@@ -334,23 +345,23 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             return null;
         }
         
-    @Override
-    public void setCardLabelsID(List<String> ids) 
-    {
-        if(ids == null)
+        @Override
+        public void setCardLabelsID(List<String> ids) 
         {
-            Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_LABELS_ID);
-        }
-        else
-        {
-            StringJoiner joiner = new StringJoiner(",");
-            for(String id : ids)
+            if(ids == null)
             {
-                joiner.add(id);
+                Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_LABELS_ID);
             }
-            props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());        
-        }
-    }         
+            else
+            {
+                StringJoiner joiner = new StringJoiner(",");
+                for(String id : ids)
+                {
+                    joiner.add(id);
+                }
+                props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());        
+            }
+        }         
         
         @Override
         public String getCardRole() 
@@ -382,12 +393,12 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         {
             Object oldValue = props.clone();
             props.putAll(provider.getProperties());
-            propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
+            //propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
         }
 
 // TODO HtmlDisplayNameProvider         
         
-        @Override
+        /*
         public String getHtmlDisplayName()
         {
             TitleProvider provider = getLookup().lookup(TitleProvider.class);
@@ -401,6 +412,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             }
             return "<html><b>" + provider.getTitle() + "</b></html>";
         }
+        */
     } 
     
     public static final class CardComplete extends AbstractAction
@@ -434,5 +446,5 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                 card.setCardDueComplete(true);                
             }
         }
-    }     
+    } 
 }
