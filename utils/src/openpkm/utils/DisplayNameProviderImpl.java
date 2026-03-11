@@ -35,13 +35,13 @@ public class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSuppo
     }        
 
     @Override
-    public String getDisplayName(boolean isHtml) 
+    public String getDisplayName(TextFormat format) 
     {
-        if(isHtml)
+        if(format == TextFormat.PLAIN)
         {
-            return null;
+            return provider.getTitle();
         }
-        return provider.getTitle();
+        return null;        
     }
 
     @Override

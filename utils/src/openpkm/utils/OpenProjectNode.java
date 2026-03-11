@@ -12,6 +12,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
+import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
@@ -66,12 +67,12 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
                 {
                     provider.addChangeListener(this);                    
                 }                                
-                return displayNameProvider.getDisplayName(false);                
+                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
             }
         } 
         else
         {
-            return displayNameProvider.getDisplayName(false);             
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
         }
         return super.getDisplayName();
     } 
@@ -170,7 +171,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     {
         if(evt.getSource() == displayNameProvider)
         {
-            fireDisplayNameChange(null, displayNameProvider.getDisplayName(false));
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
         }
         else if(evt.getSource() == shortDescriptionProvider)
         {
