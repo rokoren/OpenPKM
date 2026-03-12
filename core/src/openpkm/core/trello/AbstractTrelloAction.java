@@ -125,13 +125,13 @@ public abstract class AbstractTrelloAction implements TrelloAction, DisplayNameP
 // TODO DisplayNameProvider
 
     @Override
-    public String getDisplayName(boolean isHtml)
+    public String getDisplayName(TextFormat format)
     {
-        if(isHtml)
+        if(format == TextFormat.PLAIN)
         {
-            return null;
+            return toString();
         }
-        return toString();
+        return null;        
     } 
 
 // TODO IconProvider   

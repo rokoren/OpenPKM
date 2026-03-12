@@ -122,13 +122,13 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
 // TODO DisplayNameProvider        
         
         @Override
-        public String getDisplayName(boolean isHtml) 
+        public String getDisplayName(TextFormat format) 
         {
-            if(isHtml)
+            if(format == TextFormat.PLAIN)
             {
-                return null;
+                return getAttachmentName();
             }
-            return getAttachmentName();
+            return null;            
         }        
 
 // TODO IconProvider  
