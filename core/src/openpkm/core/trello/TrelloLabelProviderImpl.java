@@ -7,15 +7,26 @@ package openpkm.core.trello;
 import com.julienvey.trello.domain.Label;
 import java.awt.Color;
 import java.awt.Image;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.Icon;
+import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.TrelloLabelProvider;
 import openpkm.utils.RoundRectIcon;
 import org.openide.nodes.Children;
+import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -49,11 +60,15 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
     
     private static final class TrelloLabelImpl implements TrelloLabel
     {        
-        private final Properties props;                
+        private final Properties props;
+        private final PropertyChangeSupport propertyChangeSupport; 
+        
+        private Lookup lkp;         
         
         public TrelloLabelImpl(Properties props)
         {
-            this.props = props;              
+            this.props = props;
+            propertyChangeSupport = new PropertyChangeSupport(this);
         }
         
 // TODO TrelloLabel
@@ -68,61 +83,79 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
         public String getLabelName() 
         {
             return props.getProperty(PROP_LABEL_NAME);
-        }        
+        }   
         
         @Override
-        public Color getLabelColor() 
+        public void setLabelName(String name)
         {
-            String string = props.getProperty(PROP_LABEL_COLOR);
-            if(string != null)
+            if(name == null)
             {
-                if(string.equalsIgnoreCase(COLOR_YELLOW))
+                Object oldValue = props.remove(PROP_LABEL_NAME);
+                if(oldValue != null)
                 {
-                    return Color.YELLOW;
+                    oldValue = oldValue.toString();
                 }
-                else if(string.equalsIgnoreCase(COLOR_MAGENTA))
-                {
-                    return Color.MAGENTA;
-                }
-                else if(string.equalsIgnoreCase(COLOR_BLUE))
-                {
-                    return Color.BLUE;
-                }                     
-                else if(string.equalsIgnoreCase(COLOR_RED))
-                {
-                    return Color.RED;
-                }
-                else if(string.equalsIgnoreCase(COLOR_GREEN))
-                {
-                    return Color.GREEN;
-                }  
-                else if(string.equalsIgnoreCase(COLOR_ORANGE))
-                {
-                    return Color.ORANGE;
-                }
-                else if(string.equalsIgnoreCase(COLOR_PINK))
-                {
-                    return Color.PINK;
-                }                 
-                else if(string.equalsIgnoreCase(COLOR_BLACK))
-                {
-                    return Color.BLACK;
-                }  
-                else if(string.equalsIgnoreCase(COLOR_SKY))
-                {
-                    return Color.CYAN;
-                }
-                else if(string.equalsIgnoreCase(COLOR_LIME))
-                {
-                    return Color.green.brighter();
-                }   
-                else if(string.equalsIgnoreCase(COLOR_PURPLE))
-                {
-                    return Color.PINK.darker();
-                }                   
+                propertyChangeSupport.firePropertyChange(PROP_LABEL_NAME, oldValue, name);
             }
-            return null;
+            else
+            {
+                Object oldValue = props.setProperty(PROP_LABEL_NAME, name);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_LABEL_NAME, oldValue, name);                
+            }            
+        }
+        
+        public void addLabelNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LABEL_NAME, listener);
+        }
+        
+        public void removeLabelNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LABEL_NAME, listener);
         }                  
+        
+        @Override
+        public String getLabelColor() 
+        {
+            return props.getProperty(PROP_LABEL_COLOR);
+        } 
+        
+        @Override
+        public void setLabelColor(String color)
+        {
+            if(color == null)
+            {
+                Object oldValue = props.remove(PROP_LABEL_COLOR);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_LABEL_COLOR, oldValue, color);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_LABEL_COLOR, color);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_LABEL_COLOR, oldValue, color);                
+            }            
+        }
+        
+        public void addLabelColorListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LABEL_COLOR, listener);
+        }
+        
+        public void removeLabelColorListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LABEL_COLOR, listener);
+        }         
         
 // TODO PropertiesProvider        
         
@@ -147,27 +180,162 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
         }
         
         @Override
-        public String getDisplayName() 
+        public Lookup getLookup() 
         {
-            return getLabelName();
-        }
-        
-        @Override
-        public Image getIcon(boolean opened) 
-        {
-            Color color = getLabelColor();
-            if(color != null)
+            if (lkp == null) 
             {
-                Icon icon = new RoundRectIcon(14, 14, color);
-                return ImageUtilities.icon2Image(icon);
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new IconProviderImpl(this));              
             }
-            return null;
-        }  
+            return lkp;
+        }                
         
         @Override
         public Children getChildren() 
         {
             return Children.LEAF;
+        }     
+        
+        @Override
+        public HelpCtx getHelp()
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }         
+    }
+    
+    private static final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final TrelloLabelImpl label;
+        private final ChangeSupport changeSupport;
+
+        public DisplayNameProviderImpl(TrelloLabelImpl label) 
+        {
+            this.label = label;
+            label.addLabelNameListener(this);
+            changeSupport = new ChangeSupport(this);
+        }                
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return label.getLabelName();
+            }
+            return null;        
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
         }        
-    }      
+    }    
+    
+    private static final class IconProviderImpl implements IconProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final TrelloLabelImpl label;
+        private final ChangeSupport changeSupport;
+
+        public IconProviderImpl(TrelloLabelImpl label) 
+        {
+            this.label = label;
+            label.addLabelColorListener(this);
+            changeSupport = new ChangeSupport(this);
+        } 
+        
+        private static Color getColor(String name)
+        {
+            if(name.equalsIgnoreCase(COLOR_YELLOW))
+            {
+                return Color.YELLOW;
+            }
+            else if(name.equalsIgnoreCase(COLOR_MAGENTA))
+            {
+                return Color.MAGENTA;
+            }
+            else if(name.equalsIgnoreCase(COLOR_BLUE))
+            {
+                return Color.BLUE;
+            }                     
+            else if(name.equalsIgnoreCase(COLOR_RED))
+            {
+                return Color.RED;
+            }
+            else if(name.equalsIgnoreCase(COLOR_GREEN))
+            {
+                return Color.GREEN;
+            }  
+            else if(name.equalsIgnoreCase(COLOR_ORANGE))
+            {
+                return Color.ORANGE;
+            }
+            else if(name.equalsIgnoreCase(COLOR_PINK))
+            {
+                return Color.PINK;
+            }                 
+            else if(name.equalsIgnoreCase(COLOR_BLACK))
+            {
+                return Color.BLACK;
+            }  
+            else if(name.equalsIgnoreCase(COLOR_SKY))
+            {
+                return Color.CYAN;
+            }
+            else if(name.equalsIgnoreCase(COLOR_LIME))
+            {
+                return Color.green.brighter();
+            }   
+            else if(name.equalsIgnoreCase(COLOR_PURPLE))
+            {
+                return Color.PINK.darker();
+            }  
+            return null;            
+        }        
+        
+        @Override
+        public Image getIcon(int type) 
+        {
+            String name = label.getLabelColor();
+            if(name != null)
+            {
+                Color color = getColor(name);
+                if(color != null)
+                {
+                    Icon icon = new RoundRectIcon(14, 14, color);
+                    return ImageUtilities.icon2Image(icon);
+                }                
+            }            
+            return null;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }        
+    }     
 }

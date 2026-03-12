@@ -6,7 +6,6 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.Trello;
 import java.awt.Image;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,16 +13,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.logging.Logger;
-import javax.swing.event.ChangeListener;
+import openpkm.base.DisplayNameProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.RemoteDataProvider;
-import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloCommentProvider;
 import openpkm.trello.TrelloService;
-import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
@@ -45,25 +42,24 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
         return null;
     }  
     
-    private static final class TrelloCommentImpl implements TrelloComment, RemoteDataProvider, TitleProvider, IconProvider
+    private static final class TrelloCommentImpl implements TrelloComment, RemoteDataProvider, DisplayNameProvider, IconProvider
     {
         private static final Logger LOG = Logger.getLogger(TrelloCommentImpl.class.getName());        
         
         private final PropertyChangeSupport propertyChangeSupport; 
-        private final ChangeSupport changeSupport;  
         private final AbstractTrelloAction.CommentCard comment;
         private final Trello trello;
         private final TrelloAccount account;
 
-        private Lookup lkp;                 
+        private Lookup lkp;    
+        private SourceState state;        
         
         public TrelloCommentImpl(AbstractTrelloAction.CommentCard comment, Trello trello, TrelloAccount account) 
         {
             this.comment = comment;
             this.trello = trello;
             this.account = account;
-            propertyChangeSupport = new PropertyChangeSupport(this);           
-            changeSupport = new ChangeSupport(this);              
+            propertyChangeSupport = new PropertyChangeSupport(this);                       
         } 
         
         @Override
@@ -74,49 +70,28 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
                 lkp = Lookups.fixed(this);              
             }
             return lkp;
-        }        
+        }                
         
         @Override
-        public void addPropertyChangeListener(PropertyChangeListener listener)
+        public SourceState getState()
         {
-            propertyChangeSupport.addPropertyChangeListener(listener);
+            return state;
         }
 
         @Override
-        public void removePropertyChangeListener(PropertyChangeListener listener)
+        public void markModified()
         {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        } 
-        
-        @Override
-        public void addChangeListener(ChangeListener listener)
-        {
-            changeSupport.addChangeListener(listener);
-        }
+            SourceState oldValue = getState();
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
 
         @Override
-        public void removeChangeListener(ChangeListener listener)
+        public void notifyDeleted()
         {
-            changeSupport.removeChangeListener(listener);
-        }         
-        
-        @Override
-        public boolean isDeleted()
-        {
-            String string = comment.getProperties().getProperty(PROP_DELETED);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
-        }
-
-        @Override
-        public void setDeleted(boolean isDeleted)
-        {
-            boolean oldValue = isDeleted();
-            comment.getProperties().setProperty(PROP_DELETED, Boolean.toString(isDeleted));
-            propertyChangeSupport.firePropertyChange(PROP_DELETED, oldValue, isDeleted);
+            SourceState oldValue = getState();
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         } 
         
         @Override
@@ -198,20 +173,19 @@ public class TrelloCommentProviderImpl implements TrelloCommentProvider
         }        
 
         @Override
-        public String getTitle() 
+        public String getDisplayName(TextFormat format)
         {
-            return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.MEDIUM).format(comment.getActionDate());
+            if(format == TextFormat.PLAIN)
+            {
+                return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.MEDIUM).format(comment.getActionDate());
+            }
+            return null;
         }
-
+        
         @Override
-        public void setTitle(String title) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public Image getIcon() 
+        public Image getIcon(int type) 
         {
-            return comment.getIcon(false);
+            return comment.getIcon(type);
         }
     }      
 }

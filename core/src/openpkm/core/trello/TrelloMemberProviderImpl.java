@@ -10,12 +10,17 @@ import java.awt.Image;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.IconProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloMember;
 import openpkm.trello.TrelloMemberProvider;
 import openpkm.utils.UserIcon;
 import org.openide.nodes.Children;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -67,9 +72,11 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         return new TrelloMemberImpl(props);
     } 
     
-    private static final class TrelloMemberImpl implements TrelloMember, NodeProvider
+    private static final class TrelloMemberImpl implements TrelloMember, DisplayNameProvider, IconProvider, NodeProvider
     {
-        private final Properties props;                
+        private final Properties props; 
+        
+        private Lookup lkp;         
         
         public TrelloMemberImpl(Properties props)
         {
@@ -120,6 +127,27 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
             return props.getProperty(PROP_MEMBER_TYPE);
         }
         
+// TODO DisplayNameProvider
+        
+        @Override
+        public String getDisplayName(TextFormat format)
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getMemberFullName();
+            }
+            return null;
+        }
+        
+// TODO IconProvider        
+        
+        @Override
+        public Image getIcon(int type) 
+        {
+            StringTokenizer st = new StringTokenizer(getMemberFullName());
+            return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
+        }
+        
 // TODO PropertiesProvider        
         
         @Override
@@ -143,22 +171,25 @@ public class TrelloMemberProviderImpl implements TrelloMemberProvider
         }
         
         @Override
-        public String getDisplayName() 
+        public Lookup getLookup() 
         {
-            return getMemberFullName();
-        }
-        
-        @Override
-        public Image getIcon(boolean opened) 
-        {
-            StringTokenizer st = new StringTokenizer(getMemberFullName());
-            return new UserIcon(st.nextToken(), st.nextToken(), UserIcon.Type.CIRCLE, Color.ORANGE).getImage();
-        }           
+            if (lkp == null) 
+            {
+                lkp = Lookups.fixed(this);              
+            }
+            return lkp;
+        }                           
 
         @Override
         public Children getChildren() 
         {
             return Children.LEAF;
         }
+        
+        @Override
+        public HelpCtx getHelp()
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }          
     }     
 }

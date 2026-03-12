@@ -15,5 +15,6 @@ public interface TrelloList extends PropertiesProvider
     String getBoardID();  
     String getListID();
     String getListName();
+    void setListName(String name);
     Integer getListPosition();      
 }
