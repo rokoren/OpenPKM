@@ -162,28 +162,25 @@ public class ReferenceProviderImpl implements ReferenceProvider
         @Override
         public void setPageNumber(Integer page)
         {
-            String string = props.getProperty(PROP_PAGE_NUMBER);
-            Integer oldValue = null;
-            if(string != null)
-            {
-                try
-                {
-                    oldValue = Integer.parseInt(string);                    
-                }
-                catch(NumberFormatException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }
             if(page == null)
             {
-                props.remove(PROP_PAGE_NUMBER);
+                Object oldValue = props.remove(PROP_PAGE_NUMBER);
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);                
             }
             else
             {
-                props.setProperty(PROP_PAGE_NUMBER, page.toString());
+                Object oldValue = props.setProperty(PROP_PAGE_NUMBER, page.toString());
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);                 
             }  
-            propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);
+            markModified();
         }          
         
         public String getWebPage()
@@ -512,12 +509,23 @@ public class ReferenceProviderImpl implements ReferenceProvider
         {
             if(page == null)
             {
-                props.remove(PROP_PAGE_NUMBER);
+                Object oldValue = props.remove(PROP_PAGE_NUMBER);
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);                
             }
             else
             {
-                props.setProperty(PROP_PAGE_NUMBER, page.toString());
+                Object oldValue = props.setProperty(PROP_PAGE_NUMBER, page.toString());
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);                 
             }  
+            markModified();
         }          
 
         @Override
@@ -644,12 +652,23 @@ public class ReferenceProviderImpl implements ReferenceProvider
         {
             if(page == null)
             {
-                props.remove(PROP_PAGE_NUMBER);
+                Object oldValue = props.remove(PROP_PAGE_NUMBER);
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);                
             }
             else
             {
-                props.setProperty(PROP_PAGE_NUMBER, page.toString());
+                Object oldValue = props.setProperty(PROP_PAGE_NUMBER, page.toString());
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_PAGE_NUMBER, oldValue, page);                 
             }  
+            markModified();
         }          
         
         @Override
