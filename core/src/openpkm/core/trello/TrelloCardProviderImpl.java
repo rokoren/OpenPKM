@@ -411,24 +411,6 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             props.putAll(provider.getProperties());
             //propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
         }
-
-// TODO HtmlDisplayNameProvider         
-        
-        /*
-        public String getHtmlDisplayName()
-        {
-            TitleProvider provider = getLookup().lookup(TitleProvider.class);
-            if(provider == null)
-            {
-                return null;
-            }
-            if(isCardDueComplete())
-            {
-                return "<html><s>" + provider.getTitle() + "</s></html>";
-            }
-            return "<html><b>" + provider.getTitle() + "</b></html>";
-        }
-        */
     } 
     
     private static final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener

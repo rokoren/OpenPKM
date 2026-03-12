@@ -253,7 +253,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         {
             if (lkp == null) 
             {
-                lkp = Lookups.fixed(this);              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
             }
             return lkp;
         }         
