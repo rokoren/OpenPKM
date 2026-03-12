@@ -103,7 +103,7 @@ public interface GroupProvider
         public Image getIcon(int type) 
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.BOOKS);
+            return provider.getImage(icon);
         }               
     }    
     

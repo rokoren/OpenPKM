@@ -39,7 +39,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport
     
     public DataGroupNode(DataGroupProvider provider) 
     {
-        super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
+        super(new ChildrenImpl(provider), Lookups.proxy(provider.getLookupProvider()));
         setName(provider.getName());
         setDisplayName(provider.getDisplayName());
         this.provider = provider;
