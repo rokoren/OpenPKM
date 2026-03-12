@@ -2633,7 +2633,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     {
                         try
                         {
-                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
+                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file), true); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2717,7 +2717,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
+                YouTubeVideo video = provider.getVideo(Utils.getProperties(file), true); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           

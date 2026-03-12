@@ -14,6 +14,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
+import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
@@ -116,12 +117,12 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
                 {
                     provider.addChangeListener(this);                    
                 }                                
-                return displayNameProvider.getDisplayName(false);                
+                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
             }
         } 
         else
         {
-            return displayNameProvider.getDisplayName(false);             
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
         }
         return super.getDisplayName();
     }     
@@ -138,12 +139,12 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
                 {
                     provider.addChangeListener(this);                    
                 }                                
-                return displayNameProvider.getDisplayName(true);                
+                return displayNameProvider.getDisplayName(TextFormat.HTML);                
             }
         } 
         else
         {
-            return displayNameProvider.getDisplayName(true);             
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN.HTML);             
         } 
         return super.getHtmlDisplayName();
     }    
@@ -175,7 +176,7 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
     {
         if(evt.getSource() == displayNameProvider)
         {
-            fireDisplayNameChange(null, displayNameProvider.getDisplayName(false));
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
         }
         else if(evt.getSource() == shortDescriptionProvider)
         {

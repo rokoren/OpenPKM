@@ -2250,7 +2250,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     {
                         try
                         {
-                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
+                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file), true); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2334,7 +2334,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = provider.getVideo(Utils.getProperties(file)); 
+                YouTubeVideo video = provider.getVideo(Utils.getProperties(file), true); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
@@ -2450,7 +2450,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 String description = activity.getSnippet().getDescription();
                                 String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
                                   
-                                YouTubeVideo video = provider.getVideo(getProperties(activity));                                
+                                YouTubeVideo video = provider.getVideo(getProperties(activity), true);                                
                                 FileObject file = createData(video, fileTypeProvider);
                                 
                                 FileObject root = getRootFolder();

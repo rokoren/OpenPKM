@@ -244,7 +244,7 @@ public final class YouTubeVideoAction implements ActionListener
                 FileObject root = provider.getRootFolder();
                 if(root != null)
                 {
-                    YouTubeVideo video = provider.getVideoProvider().getVideo(props);
+                    YouTubeVideo video = provider.getVideoProvider().getVideo(props, true);
                     try
                     {
                         FileObject file = provider.createData(video, fileType); 
