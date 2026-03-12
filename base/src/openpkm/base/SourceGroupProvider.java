@@ -4,7 +4,6 @@
  */
 package openpkm.base;
 
-import java.awt.Image;
 import java.util.SortedSet;
 
 /**
@@ -13,6 +12,5 @@ import java.util.SortedSet;
  */
 public interface SourceGroupProvider extends GroupProvider
 {  
-    Image getIcon(boolean isEmpty, boolean isOpen);
     SortedSet<? extends NodeProvider> getNodes();   
 }
