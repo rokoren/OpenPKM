@@ -19,6 +19,7 @@ public interface TrelloCheckList extends PropertiesProvider, NodePositionProvide
     String getCardID();
     String getCheckListID();
     String getCheckListName();
+    void setCheckListName(String name);
     Integer getCheckListPosition(); 
     Collection<TrelloCheckListItem> getItems();
     ChangeSupport getChangeSupport();

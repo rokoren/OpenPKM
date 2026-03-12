@@ -6,6 +6,9 @@ package openpkm.core.trello;
 
 import com.julienvey.trello.domain.CheckList;
 import java.awt.Image;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,6 +24,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import openpkm.base.ChangeSupportProvider;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.DisplayNameProvider.TextFormat;
+import openpkm.base.IconProvider;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckList;
@@ -33,7 +40,9 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ChangeSupport;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 
 /**
@@ -69,19 +78,22 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         return getCheckList(props);
     } 
     
-    private static final class TrelloCheckListImpl implements TrelloCheckList
+    private static final class TrelloCheckListImpl implements TrelloCheckList, IconProvider
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/check_box_list.png";  
         
         private final TrelloCheckListItemProvider checkListItemProvider;        
         private final Properties props; 
+        private final PropertyChangeSupport propertyChangeSupport;           
         
+        private Lookup lkp; 
         private ChangeSupport changeSupport;
         
         public TrelloCheckListImpl(Properties props, TrelloCheckListsProvider checkListsProvider)
         {
             this.props = props; 
+            propertyChangeSupport = new PropertyChangeSupport(this);
             checkListItemProvider = new TrelloCheckListItemProviderImpl(checkListsProvider, this);
         }         
         
@@ -136,6 +148,39 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         public String getCheckListName() 
         {
             return props.getProperty(PROP_CHECKLIST_NAME);
+        }  
+        
+        @Override
+        public void setCheckListName(String name)
+        {
+            if(name == null)
+            {
+                Object oldValue = props.remove(PROP_CHECKLIST_NAME);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_CHECKLIST_NAME, oldValue, name);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_CHECKLIST_NAME, name);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_CHECKLIST_NAME, oldValue, name);                
+            }            
+        }
+        
+        public void addCheckListNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_CHECKLIST_NAME, listener);
+        }
+        
+        public void removeCheckListNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_CHECKLIST_NAME, listener);
         }         
                 
         @Override
@@ -185,22 +230,32 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
         }
         
         @Override
-        public String getDisplayName() 
-        {
-            return getCheckListName();
-        }
-        
-        @Override
-        public Image getIcon(boolean opened) 
+        public Image getIcon(int type) 
         {
             return ImageUtilities.loadImage(ICON);
         }  
         
         @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            {
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }         
+        
+        @Override
         public Children getChildren() 
         {
             return new ChildrenImpl(this);
-        }        
+        }  
+        
+        @Override
+        public HelpCtx getHelp()
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }         
 
         @Override
         public int getPosition() 
@@ -213,6 +268,47 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
             return -1;
         }
     }  
+    
+    private static final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final TrelloCheckListImpl checkList;
+        private final ChangeSupport changeSupport;
+
+        public DisplayNameProviderImpl(TrelloCheckListImpl checkList) 
+        {
+            this.checkList = checkList;
+            checkList.addCheckListNameListener(this);
+            changeSupport = new ChangeSupport(this);
+        }                
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return checkList.getCheckListName();
+            }
+            return null;        
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }        
+    }     
     
     static final class ChildrenImpl extends Children.Keys<TrelloCheckListItem> implements ChangeListener
     {
@@ -269,15 +365,16 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
 
     private static final class ItemNode extends AbstractNode implements ChangeListener
     {
+        private DisplayNameProvider displayNameProvider;
+        private IconProvider iconProvider;
+        
         private final TrelloCheckListItem item;
 
         public ItemNode(TrelloCheckListItem item) 
         {
-            super(item.getChildren(), Lookups.singleton(item));
+            super(item.getChildren(), item.getLookup());
             setName(item.getName());
-            setDisplayName(item.getDisplayName());
             this.item = item;
-            item.getChangeSupport().addChangeListener(this);
         } 
         
         @Override
@@ -293,23 +390,62 @@ public class TrelloCheckListProviderImpl implements TrelloCheckListProvider
             actions.addAll(item.getActions());
             return actions.toArray(new Action[actions.size()]);
         }
-
-        @Override    
-        public Image getIcon(int type)     
-        {
-            return item.getIcon(false);
-        }
+        
+        @Override
+        public String getDisplayName() 
+        {        
+            if(displayNameProvider == null)
+            {
+                displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
+                if(displayNameProvider != null)
+                {
+                    if(displayNameProvider instanceof ChangeSupportProvider provider)
+                    {
+                        provider.addChangeListener(this);                    
+                    }                                
+                    return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
+                }
+            } 
+            else
+            {
+                return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
+            }
+            return super.getDisplayName();
+        }          
 
         @Override
-        public Image getOpenedIcon(int type) 
+        public Image getIcon(int type) 
         {
-            return item.getIcon(true);
+            if(iconProvider == null)
+            {
+                iconProvider = getLookup().lookup(IconProvider.class);
+                if(iconProvider != null)
+                {
+                    if(iconProvider instanceof ChangeSupportProvider provider)
+                    {
+                        provider.addChangeListener(this);                    
+                    }
+                    return iconProvider.getIcon(type);                
+                }
+            } 
+            else
+            {
+                return iconProvider.getIcon(type);             
+            }                  
+            return super.getIcon(type);
         }        
 
         @Override
-        public void stateChanged(ChangeEvent ce) 
+        public void stateChanged(ChangeEvent evt) 
         {
-            fireIconChange();
+            if(evt.getSource() == displayNameProvider)
+            {
+                fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
+            }
+            else if(evt.getSource() == iconProvider)
+            {
+                fireIconChange();
+            }         
         }
     }    
 }

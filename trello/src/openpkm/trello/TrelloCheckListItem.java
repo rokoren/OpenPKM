@@ -10,7 +10,6 @@ import openpkm.base.ActionsProvider;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.PreferredActionProvider;
 import openpkm.base.PropertiesProvider;
-import org.openide.util.ChangeSupport;
 
 /**
  *
@@ -23,8 +22,7 @@ public interface TrelloCheckListItem extends PropertiesProvider, NodePositionPro
     void setCheckListItemName(String name);
     Integer getCheckListItemPosition(); 
     State getCheckListItemState();
-    void setCheckListItemState(State state);
-    ChangeSupport getChangeSupport();    
+    void setCheckListItemState(State state);   
     
     public enum State 
     {
