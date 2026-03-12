@@ -128,6 +128,7 @@ import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
 import openpkm.base.Source.SourceState;
+import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.LogicalViewProviderImpl;
 
 /**
@@ -304,6 +305,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 list.add(this);
                 list.add(new Info());
                 list.add(new SourcesImpl());
+                list.add(new DisplayNameProviderImpl(this));
                 list.add(new IconProviderImpl());
                 list.add(new ProjectOpenedHookImpl());   
                 list.add(new SubprojectProviderImpl());

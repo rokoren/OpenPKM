@@ -104,7 +104,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     {
         if(iconProvider == null)
         {
-            iconProvider = getLookup().lookup(IconProvider.class);
+            iconProvider = project.getLookup().lookup(IconProvider.class);
             if(iconProvider != null)
             {
                 if(iconProvider instanceof ChangeSupportProvider provider)
@@ -126,7 +126,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     {
         if(openIconProvider == null)
         {
-            openIconProvider = getLookup().lookup(OpenIconProvider.class);
+            openIconProvider = project.getLookup().lookup(OpenIconProvider.class);
             if(openIconProvider != null)
             {
                 if(openIconProvider instanceof ChangeSupportProvider provider)
@@ -140,7 +140,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
         {
             return openIconProvider.getOpenedIcon(type);             
         }         
-        return super.getOpenedIcon(type);
+        return getIcon(type);
     }
     
     @Override

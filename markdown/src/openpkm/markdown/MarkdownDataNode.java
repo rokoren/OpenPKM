@@ -102,7 +102,7 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
         {
             return openIconProvider.getOpenedIcon(type);             
         }         
-        return super.getOpenedIcon(type);
+        return getIcon(type);
     }      
     
     @Override

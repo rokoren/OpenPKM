@@ -102,7 +102,7 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
         {
             return openIconProvider.getOpenedIcon(type);             
         }         
-        return super.getOpenedIcon(type);
+        return getIcon(type);
     }     
     
     @Override
