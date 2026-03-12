@@ -4,6 +4,8 @@
  */
 package openpkm.trello;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
 import openpkm.base.SourceProvider;
@@ -33,6 +35,11 @@ public abstract class TrelloActionsProvider implements SourceProvider<TrelloComm
     } 
     
     protected abstract Map<String, TrelloAction> getActivity();
+    
+    public Collection<TrelloAction> getTrelloActions()
+    {
+        return Collections.unmodifiableCollection(getActivity().values());
+    }
     
     public TrelloActionProvider getActionProvider()
     {

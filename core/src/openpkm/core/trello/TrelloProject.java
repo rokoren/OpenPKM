@@ -13,6 +13,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -43,8 +44,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.BatchUpdateSupport;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.MarkdownSupport;
@@ -53,9 +54,7 @@ import openpkm.base.NodeDateTimeProvider;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
-import openpkm.core.TopComponentProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
@@ -110,6 +109,7 @@ import org.openide.windows.TopComponent;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
 import openpkm.base.Source;
+import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
@@ -124,12 +124,13 @@ import openpkm.base.SourceGroupProvider;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloCommentProvider;
 import openpkm.utils.DateTimeUtils;
+import openpkm.utils.TopComponentProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider, TitleProvider, DescriptionProvider, Sources, SourceProviders, BatchUpdateSupport
+public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_ACCOUNT_USERNAME  = "account.username";
     public static final String PROP_WORKSPACE_ID      = "workspace.id";    
@@ -157,13 +158,12 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private static final RequestProcessor RP = new RequestProcessor(TrelloProject.class);   
     
     private final Map<String, SourceGroup> sources = new HashMap();  
-    private final List<UpdateCookie> cookies = new ArrayList();      
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);   
-    private final ChangeSupport changeSupport = new ChangeSupport(this);
+    private final List<UpdateCookie> cookies = new ArrayList();         
     
     private final FileObject projectDir;        
     private final ProjectState state;
     private final Properties props;   
+    private final PropertyChangeSupport propertyChangeSupport;
     
     private Lookup lkp; 
     private FileObject dataDir;
@@ -179,7 +179,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     {
         this.projectDir = projectDir; 
         this.state = state;
-        this.props = props;                  
+        this.props = props; 
+        propertyChangeSupport = new PropertyChangeSupport(this);
         
         TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
         TrelloCommentProvider commentProvider = Lookup.getDefault().lookup(TrelloCommentProvider.class);              
@@ -380,31 +381,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     public void removePropertyChangeListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.removePropertyChangeListener(listener);
-    } 
-    
-// TODO Sources    
-    
-    @Override
-    public SourceGroup[] getSourceGroups(String string) 
-    {
-        if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
-        {
-            return sources.values().toArray(new SourceGroup[0]);                
-        }
-        return new SourceGroup[0];
-    } 
-
-    @Override
-    public void addChangeListener(ChangeListener listener) 
-    {
-        changeSupport.addChangeListener(listener);
-    }
-
-    @Override
-    public void removeChangeListener(ChangeListener listener) 
-    {
-        changeSupport.removeChangeListener(listener);
-    }    
+    }     
     
 // TODO Project
     
@@ -423,6 +400,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
 
             list.add(this);
             list.add(new Info());
+            list.add(new SourcesImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -541,35 +519,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }    
-    
-// TODO TitleProvider  
-    
-    @Override
-    public String getTitle() 
-    {
-        return getBoardName();
-    }
-
-    @Override
-    public void setTitle(String title) 
-    {
-        throw new UnsupportedOperationException();
-    } 
-    
-// TODO DescriptionProvider  
-    
-    @Override
-    public String getDescription() 
-    {
-        return getBoardDescription();
-    }
-
-    @Override
-    public void setDescription(String desc) 
-    {
-        throw new UnsupportedOperationException();
-    }     
+    }        
 
 // TODO PropertiesProvider
     
@@ -670,7 +620,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Image getIcon() 
         {    
             IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getIcon();
+            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
         }  
         
         @Override
@@ -739,14 +689,22 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         protected void projectClosed() 
         {          
-            propertyChangeSupport.removePropertyChangeListener(this);            
+            propertyChangeSupport.removePropertyChangeListener(this);  
+            
+            for(SourceGroup sourceGroup : sources.values())
+            {
+                if(sourceGroup instanceof SourceProvider provider)
+                {
+                    provider.projectClosed();                    
+                }
+            }             
         }                  
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
             state.markModified(); 
-            if(evt.getPropertyName().equals(PROP_TITLE))
+            if(evt.getPropertyName().equals(PROP_BOARD_NAME))
             {
                 propertyChangeSupport.firePropertyChange(ProjectInformation.PROP_DISPLAY_NAME, evt.getOldValue(), evt.getNewValue());
             }
@@ -772,7 +730,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public String getDisplayName() 
         {                       
-            return getTitle();
+            return getBoardName();
         }
 
         @Override
@@ -792,16 +750,45 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             return TrelloProject.this;
         }
-    }     
+    } 
+
+    // TODO Sources    
+    
+    private final class SourcesImpl implements Sources
+    {  
+        private final ChangeSupport changeSupport = new ChangeSupport(this);         
+        
+        @Override
+        public SourceGroup[] getSourceGroups(String string) 
+        {
+            if(string.equalsIgnoreCase(Sources.TYPE_GENERIC))
+            {
+                return sources.values().toArray(new SourceGroup[0]);                
+            }
+            return new SourceGroup[0];
+        } 
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+    } 
   
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider
+    private final class IconProviderImpl implements IconProvider, ChangeSupportProvider
     {                
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
 
         @Override
-        public synchronized Image getIcon()
+        public synchronized Image getIcon(int type)
         { 
             Color color = getBoardBackground();
             if(color != null)
@@ -1139,7 +1126,45 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 }                           
             }
             return cards;
-        }  
+        } 
+        
+        @Override
+        public void projectClosed() 
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(TrelloCard card : getCards())
+                {
+                    SourceState state = card.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(card.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    card.save(os, "Updated by Blog project: " + getBoardName());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }        
 
         @Override
         public Collection<TrelloCard> getCards()
@@ -1162,7 +1187,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
                     if(youTubeVideoProvider != null)
                     {
-                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID);
+                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
                         if(video != null)
                         {
                             card.merge(video);
@@ -1177,7 +1202,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     fs.runAtomicAction(() -> {
                         FileObject file = root.createData(card.getCardID(), PropertiesProvider.EXTENSION);
                         OutputStream os = file.getOutputStream();
-                        card.save(os, "Saved by Trello project: " + getTitle());
+                        card.save(os, "Saved by Trello project: " + getBoardName());
                         os.close();  
                     });                                                             
                 }
@@ -1417,7 +1442,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                         try
                                         {
                                             OutputStream os = fo.getOutputStream();
-                                            oldCard.getProperties().store(os, "Updated by Trello project: " + getTitle()); 
+                                            oldCard.getProperties().store(os, "Updated by Trello project: " + getBoardName()); 
                                             os.close();
                                         }  
                                         catch(FileAlreadyLockedException e)
@@ -1446,7 +1471,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                     YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
                                     if(youTubeVideoProvider != null)
                                     {
-                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID);
+                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
                                         if(video != null)
                                         {
                                             trelloCard.merge(video);
@@ -1456,7 +1481,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 
                                 FileObject file = root.createData(card.getId(), PropertiesProvider.EXTENSION);
                                 OutputStream os = file.getOutputStream();
-                                trelloCard.save(os, "Saved by Trello project: " + getTitle());
+                                trelloCard.save(os, "Saved by Trello project: " + getBoardName());
                                 os.close();                                  
                             }
                             else
@@ -1520,7 +1545,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, PropertyChangeListener, FileChangeListener, Runnable
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
@@ -1616,6 +1641,46 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             }
             return rootDir;
         }
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(TrelloAction action : getTrelloActions())
+                {
+                    /*
+                    SourceState state = action.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    reference.save(os, "Updated by Blog project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                    */
+                }                
+            }
+        }        
 
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
@@ -1633,13 +1698,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Source getSource(String sourceID)
         {
             TrelloAction action = getActivity().get(sourceID);
-            TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());   
-            if(comment != null)
-            {
-                comment.addPropertyChangeListener(this);
-                return comment;
-            }
-            return null;
+            return commentProvider.getComment(action, getTrello(), getTrelloAccount());   
         }         
         
         @Override
@@ -1729,31 +1788,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }  
-        
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(evt.getPropertyName().equals(Source.PROP_DELETED))
-            {
-                if(evt.getNewValue().equals(Boolean.TRUE))
-                {
-                    Source source = (Source)evt.getSource();
-                    FileObject fo = getRootFolder().getFileObject(source.getSourceID(), PropertiesProvider.EXTENSION);       
-                    if(fo != null)
-                    {
-                        try
-                        {
-                            fo.delete();    
-                        }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                            
-                    }                    
-                }
-            }
-        }        
+        }                 
         
         public LocalDateTime getLastSync()
         {
@@ -1813,7 +1848,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 {
                                     FileObject file = root.createData(action.getActionID(), PropertiesProvider.EXTENSION);
                                     OutputStream os = file.getOutputStream();
-                                    action.getProperties().store(os, "Saved by Trello project: " + getTitle());
+                                    action.getProperties().store(os, "Saved by Trello project: " + getBoardName());
                                     os.close();   
                                 }   
                                 else
@@ -1821,7 +1856,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                     createData(comment, markdown);  
                                     FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);
                                     OutputStream os = file.getOutputStream();
-                                    comment.save(os, "Saved by Trello project: " + getTitle());
+                                    comment.save(os, "Saved by Trello project: " + getBoardName());
                                     os.close();                                 
                                 } 
                                 getActivity().put(action.getActionID(), action);  
@@ -2075,7 +2110,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         try
                         {
                             OutputStream os = getRootFolder().createAndOpen(label.getLabelID() + "." + PropertiesProvider.EXTENSION);                            
-                            label.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            label.getProperties().store(os, "Created by Trello project: " + getBoardName()); 
                             os.close();
                             LOG.info("Trello label saved: " + label.getLabelID());                              
                         }
@@ -2318,7 +2353,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         try
                         {
                             OutputStream os = getRootFolder().createAndOpen(member.getMemberID() + "." + PropertiesProvider.EXTENSION);                            
-                            member.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            member.getProperties().store(os, "Created by Trello project: " + getBoardName()); 
                             os.close();
                             LOG.info("Trello member saved: " + member.getMemberID());                              
                         }
@@ -2425,7 +2460,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             try
             {
                 OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);
-                list.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                list.getProperties().store(os, "Created by Trello project: " + getBoardName()); 
                 os.close();
                 LOG.info("Trello list saved: " + list.getListID());  
             }  
@@ -2589,7 +2624,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 try
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    list.getProperties().store(os, "Updated by Trello project: " + getTitle()); 
+                                    list.getProperties().store(os, "Updated by Trello project: " + getBoardName()); 
                                     os.close();
                                     LOG.info("Trello list saved: " + list.getListID());  
                                 }  
@@ -2609,7 +2644,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         try
                         {
                             OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);                            
-                            list.getProperties().store(os, "Created by Trello project: " + getTitle()); 
+                            list.getProperties().store(os, "Created by Trello project: " + getBoardName()); 
                             os.close();
                             LOG.info("Trello list saved: " + list.getListID());                              
                         }

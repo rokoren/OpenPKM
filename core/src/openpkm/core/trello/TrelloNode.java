@@ -6,15 +6,16 @@ package openpkm.core.trello;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import openpkm.base.DescriptionProvider;
+import openpkm.base.ChangeSupportProvider;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
-import openpkm.base.TitleProvider;
+import openpkm.base.OpenIconProvider;
+import openpkm.base.ShortDescriptionProvider;
 import openpkm.utils.TopComponentProvider;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
@@ -22,7 +23,6 @@ import org.netbeans.spi.project.ui.support.CommonProjectActions;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 import org.openide.nodes.FilterNode;
 import org.openide.nodes.Node;
-import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
@@ -31,8 +31,13 @@ import org.openide.util.lookup.ProxyLookup;
  *
  * @author Rok Koren
  */
-public class TrelloNode extends FilterNode implements ChangeListener, PropertyChangeListener
+public class TrelloNode extends FilterNode implements ChangeListener
 {
+    private DisplayNameProvider displayNameProvider;
+    private ShortDescriptionProvider shortDescriptionProvider;
+    private IconProvider iconProvider;
+    private OpenIconProvider openIconProvider;     
+    
     private final TrelloProject project;
     
     public TrelloNode(Node node, TrelloProject project) 
@@ -47,45 +52,118 @@ public class TrelloNode extends FilterNode implements ChangeListener, PropertyCh
                         }));  
         ProjectInformation info = ProjectUtils.getInformation(project);
         setName(info.getName());
-        this.project = project;
-        project.addPropertyChangeListener(this);
-        
-        IconProvider iconProvider = project.getLookup().lookup(IconProvider.class);
-        if(iconProvider != null)
-        {
-            iconProvider.addChangeListener(this);
-        }         
+        this.project = project;         
     }
 
     @Override
     public String getDisplayName() 
-    {
-        return project.getTitle();
-    } 
+    {        
+        if(displayNameProvider == null)
+        {
+            displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
+            if(displayNameProvider != null)
+            {
+                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                
+                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
+            }
+        } 
+        else
+        {
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
+        }
+        return super.getDisplayName();
+    }  
     
     @Override
-    public String getShortDescription()
+    public String getHtmlDisplayName() 
     {
-        return project.getDescription();
+        if(displayNameProvider == null)
+        {
+            displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
+            if(displayNameProvider != null)
+            {
+                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                
+                return displayNameProvider.getDisplayName(TextFormat.HTML);                
+            }
+        } 
+        else
+        {
+            return displayNameProvider.getDisplayName(TextFormat.HTML);             
+        } 
+        return super.getHtmlDisplayName();
     }    
     
     @Override
     public Image getIcon(int type) 
     {
-        IconProvider provider = project.getLookup().lookup(IconProvider.class);
-        if(provider != null)
+        if(iconProvider == null)
         {
-            return provider.getIcon();
-        }
-        
-        ProjectInformation info = ProjectUtils.getInformation(project);        
-        return ImageUtilities.icon2Image(info.getIcon());
-    }
-
+            iconProvider = getLookup().lookup(IconProvider.class);
+            if(iconProvider != null)
+            {
+                if(iconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
+                return iconProvider.getIcon(type);                
+            }
+        } 
+        else
+        {
+            return iconProvider.getIcon(type);             
+        }                  
+        return super.getIcon(type);
+    }    
+    
     @Override
-    public Image getOpenedIcon(int type) {
-        return getIcon(type);
+    public Image getOpenedIcon(int type) 
+    {
+        if(openIconProvider == null)
+        {
+            openIconProvider = getLookup().lookup(OpenIconProvider.class);
+            if(openIconProvider != null)
+            {
+                if(openIconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
+                return openIconProvider.getOpenedIcon(type);                
+            }
+        } 
+        else
+        {
+            return openIconProvider.getOpenedIcon(type);             
+        }         
+        return super.getOpenedIcon(type);
     }
+    
+    @Override
+    public String getShortDescription()
+    {
+        if(shortDescriptionProvider == null)
+        {
+            shortDescriptionProvider = getLookup().lookup(ShortDescriptionProvider.class);
+            if(shortDescriptionProvider != null)
+            {
+                if(shortDescriptionProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                  
+                return shortDescriptionProvider.getShortDescription();                
+            }
+        } 
+        else
+        {
+            return shortDescriptionProvider.getShortDescription();             
+        }
+        return super.getShortDescription();       
+    } 
     
     @Override
     public Action[] getActions(boolean arg0) {
@@ -111,23 +189,25 @@ public class TrelloNode extends FilterNode implements ChangeListener, PropertyCh
     }     
 
     @Override
-    public void stateChanged(ChangeEvent e) 
+    public void stateChanged(ChangeEvent evt) 
     {
-        fireIconChange();                        
-    }     
-    
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-        if(evt.getPropertyName().equals(TitleProvider.PROP_TITLE))
+        if(evt.getSource() == displayNameProvider)
         {
-            fireDisplayNameChange((String)evt.getOldValue(), (String)evt.getNewValue());
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
         }
-        else if(evt.getPropertyName().equals(DescriptionProvider.PROP_DESCRIPTION))
+        else if(evt.getSource() == shortDescriptionProvider)
         {
-            fireShortDescriptionChange((String)evt.getOldValue(), (String)evt.getNewValue());
-        }        
-    } 
+            fireShortDescriptionChange(null, shortDescriptionProvider.getShortDescription());
+        }
+        else if(evt.getSource() == iconProvider)
+        {
+            fireIconChange();
+        }         
+        else if(evt.getSource() == openIconProvider)
+        {
+            fireOpenedIconChange();
+        }                        
+    }     
 
     private static final class OpenTopComponentAction extends AbstractAction 
     {

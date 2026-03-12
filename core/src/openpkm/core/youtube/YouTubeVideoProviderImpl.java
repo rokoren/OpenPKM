@@ -207,7 +207,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return null;
     }    
  
-    private static class YouTubeVideoExtImpl extends YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, DisplayNameProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoExtImpl extends YouTubeVideoImpl implements DisplayNameProvider
     {    
         public YouTubeVideoExtImpl(Properties props)
         {
@@ -225,7 +225,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         }          
     }
     
-    private static class YouTubeVideoImpl implements YouTubeVideo, PropertiesProvider, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;       

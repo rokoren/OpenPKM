@@ -4,7 +4,6 @@
  */
 package openpkm.core.trello;
 
-import java.awt.Image;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +25,9 @@ import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.Children;
 import org.openide.nodes.FilterNode;
 import org.openide.nodes.Node;
-import org.openide.util.ImageUtilities;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 
 /**
  *
@@ -39,7 +40,9 @@ public class TrelloListNode implements NodePositionProvider, ActionsProvider
     
     private static final Logger LOG = Logger.getLogger(TrelloListNode.class.getName());     
 
-    private final DataGroupProvider provider;
+    private Lookup lkp; 
+    
+    private final DataGroupProvider provider;        
 
     public TrelloListNode(DataGroupProvider provider)
     {
@@ -51,18 +54,17 @@ public class TrelloListNode implements NodePositionProvider, ActionsProvider
     {
         return provider.getName();
     }
-
+    
     @Override
-    public String getDisplayName() 
+    public Lookup getLookup() 
     {
-        return provider.getDisplayName();
-    }
-
-    @Override
-    public Image getIcon(boolean opened) 
-    {
-        return ImageUtilities.loadImage(ICON);
-    } 
+        if (lkp == null) 
+        {
+            lkp = Lookups.fixed(this);              
+            //lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new IconProviderImpl(this));              
+        }
+        return lkp;
+    }     
 
     @Override
     public List<Action> getActions() 
@@ -76,7 +78,13 @@ public class TrelloListNode implements NodePositionProvider, ActionsProvider
     public Children getChildren() 
     {
         return new ChildrenImpl(provider);
-    }        
+    }    
+
+    @Override
+    public HelpCtx getHelp()
+    {
+        return HelpCtx.DEFAULT_HELP;
+    }      
 
     @Override
     public int getPosition() 
