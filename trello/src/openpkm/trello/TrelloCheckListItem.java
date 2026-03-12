@@ -20,6 +20,7 @@ public interface TrelloCheckListItem extends PropertiesProvider, NodePositionPro
 {
     String getCheckListItemID();
     String getCheckListItemName();
+    void setCheckListItemName(String name);
     Integer getCheckListItemPosition(); 
     State getCheckListItemState();
     void setCheckListItemState(State state);

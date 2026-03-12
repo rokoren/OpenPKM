@@ -462,7 +462,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent pce) 
+        public void propertyChange(PropertyChangeEvent evt) 
         {
             changeSupport.fireChange();
         }
@@ -477,8 +477,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public void removeChangeListener(ChangeListener listener)
         {
             changeSupport.removeChangeListener(listener);
-        }
-        
+        }        
     }
     
     public static final class CardComplete extends AbstractAction

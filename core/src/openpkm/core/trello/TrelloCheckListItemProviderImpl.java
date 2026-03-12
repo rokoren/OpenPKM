@@ -7,6 +7,9 @@ package openpkm.core.trello;
 import com.julienvey.trello.domain.CheckItem;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -16,8 +19,10 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -49,11 +54,13 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
     
     private final TrelloCheckListsProvider provider; 
     private final TrelloCheckList checkList;
+    private final PropertyChangeSupport propertyChangeSupport;
 
     public TrelloCheckListItemProviderImpl(TrelloCheckListsProvider provider, TrelloCheckList checkList) 
     {
         this.provider = provider;
         this.checkList = checkList;
+        propertyChangeSupport = new PropertyChangeSupport(this);
     }    
     
     @Override
@@ -90,7 +97,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         return new TrelloCheckListItemImpl(props);
     } 
     
-    private final class TrelloCheckListItemImpl implements TrelloCheckListItem, DisplayNameProvider, IconProvider
+    private final class TrelloCheckListItemImpl implements TrelloCheckListItem, IconProvider
     {          
         private final Properties props; 
         
@@ -114,7 +121,40 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         public String getCheckListItemName() 
         {
             return props.getProperty(PROP_CHECKLIST_ITEM_NAME);
-        }         
+        } 
+        
+        @Override
+        public void setCheckListItemName(String name)
+        {
+            if(name == null)
+            {
+                Object oldValue = props.remove(PROP_CHECKLIST_ITEM_NAME);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_CHECKLIST_ITEM_NAME, oldValue, name);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_CHECKLIST_ITEM_NAME, name);
+                if(oldValue != null)
+                {
+                    oldValue = oldValue.toString();
+                }
+                propertyChangeSupport.firePropertyChange(PROP_CHECKLIST_ITEM_NAME, oldValue, name);                
+            }
+        }
+
+        public void addCheckListItemNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_CHECKLIST_ITEM_NAME, listener);
+        }
+        
+        public void removeCheckListItemNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_CHECKLIST_ITEM_NAME, listener);
+        }        
                 
         @Override
         public Integer getCheckListItemPosition() 
@@ -184,18 +224,6 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        } 
-        
-// TODO DisplayNameProvider        
-        
-        @Override
-        public String getDisplayName(boolean isHtml) 
-        {
-            if(isHtml)
-            {
-                return null;
-            }
-            return getCheckListItemName();
         } 
 
 // TODO IconProvider  
@@ -267,7 +295,48 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
         {
             return new CheckUncheckAction(this, TrelloCheckListItemProviderImpl.this);
         }
-    }  
+    } 
+    
+    private static final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final TrelloCheckListItemImpl item;
+        private final ChangeSupport changeSupport;
+
+        public DisplayNameProviderImpl(TrelloCheckListItemImpl item) 
+        {
+            this.item = item;
+            item.addCheckListItemNameListener(this);
+            changeSupport = new ChangeSupport(this);
+        }                
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return item.getCheckListItemName();
+            }
+            return null;        
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }        
+    }    
     
     private static final class DeleteCheckListItem extends AbstractAction
     {          
