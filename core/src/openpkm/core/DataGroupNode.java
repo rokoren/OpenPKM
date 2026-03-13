@@ -15,7 +15,12 @@ import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.DisplayNameProvider.TextFormat;
+import openpkm.base.IconProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObject;
@@ -26,14 +31,19 @@ import org.openide.nodes.FilterNode;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.NodeSupport;
+import openpkm.base.OpenIconProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public class DataGroupNode extends AbstractNode implements NodeSupport
+public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeListener
 {    
     private static final Logger LOG = Logger.getLogger(DataGroupNode.class.getName());    
+    
+    private DisplayNameProvider displayNameProvider;
+    private IconProvider iconProvider;
+    private OpenIconProvider openIconProvider;    
     
     private final DataGroupProvider provider;
     
@@ -41,34 +51,103 @@ public class DataGroupNode extends AbstractNode implements NodeSupport
     {
         super(new ChildrenImpl(provider), Lookups.proxy(provider.getLookupProvider()));
         setName(provider.getName());
-        setDisplayName(provider.getDisplayName());
         this.provider = provider;
     }      
 
+    @Override
+    public String getDisplayName() 
+    {        
+        if(displayNameProvider == null)
+        {
+            displayNameProvider = provider.getDisplayNameProvider();
+            if(displayNameProvider != null)
+            {
+                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                
+                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
+            }
+        } 
+        else
+        {
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
+        }
+        return super.getDisplayName();
+    } 
+    
+    @Override
+    public Image getIcon(int type) 
+    {
+        if(iconProvider == null)
+        {
+            iconProvider = provider.getIconProvider();
+            if(iconProvider != null)
+            {
+                if(iconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
+                return iconProvider.getIcon(type);                
+            }
+        } 
+        else
+        {
+            return iconProvider.getIcon(type);             
+        }                  
+        return super.getIcon(type);
+    }   
+    
+    @Override
+    public Image getOpenedIcon(int type) 
+    {
+        if(openIconProvider == null)
+        {
+            openIconProvider = getLookup().lookup(OpenIconProvider.class);
+            if(openIconProvider != null)
+            {
+                if(openIconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
+                return openIconProvider.getOpenedIcon(type);                
+            }
+        } 
+        else
+        {
+            return openIconProvider.getOpenedIcon(type);             
+        }         
+        return getIcon(type);
+    }      
+    
     @Override    
     public Action[] getActions(boolean context) 
     {
         List<Action> actions = new ArrayList();
-        actions.addAll(provider.getActions());
+        ActionsProvider actionsProvider = provider.getActionsProvider();
+        if(actionsProvider != null)
+        {
+            actions.addAll(actionsProvider.getActions());            
+        }
         return actions.toArray(new Action[actions.size()]);
-    }
-
-    private Image getIcon(boolean opened) 
-    {
-        return provider.getIcon(true);
-    } 
+    }   
     
-    @Override    
-    public Image getIcon(int type)     
-    {
-        return getIcon(false);
-    }
-
     @Override
-    public Image getOpenedIcon(int type) 
+    public void stateChanged(ChangeEvent evt) 
     {
-        return getIcon(true);
-    }     
+        if(evt.getSource() == displayNameProvider)
+        {
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
+        }
+        else if(evt.getSource() == iconProvider)
+        {
+            fireIconChange();
+        }         
+        else if(evt.getSource() == openIconProvider)
+        {
+            fireOpenedIconChange();
+        }        
+    }      
     
     @Override
     public Node findNode(Node root, Object target) 

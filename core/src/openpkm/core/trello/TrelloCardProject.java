@@ -1018,7 +1018,12 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     private final class CommentDataGroupProviderImpl implements DataGroupProvider
     {
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/comments.png";         
+        private static final String ICON = "openpkm/core/resources/comments.png";   
+        
+        // COMMENTS
+        DisplayNameProvider DISPLAY_NAME_PROVIDER_COMMENT = new DisplayNameProviderImpl("Comments");
+        IconProvider ICON_PROVIDER_COMMENT = new IconProviderImpl(IconsProvider.ICON.NOTES);    
+        ActionsProvider ACTIONS_PROVIDER_COMMENT = new ActionsProviderImpl("Actions/OpenPKM/Note,Actions/OpenPKM/Idea,Actions/OpenPKM/Comment");           
         
         private final TrelloActionsProvider provider;
                 

@@ -33,44 +33,117 @@ import openpkm.base.ShortDescriptionProvider;
  *
  * @author Rok Koren
  */
-public class SourceGroupNode extends AbstractNode implements NodeSupport
+public class SourceGroupNode extends AbstractNode implements NodeSupport, ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(SourceGroupNode.class.getName());    
+    
+    private DisplayNameProvider displayNameProvider;
+    private IconProvider iconProvider;
+    private OpenIconProvider openIconProvider;     
     
     private final SourceGroupProvider provider;
     
     public SourceGroupNode(SourceGroupProvider provider) 
     {
-        super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
+        super(new ChildrenImpl(provider), Lookups.proxy(provider.getLookupProvider()));
         setName(provider.getName());
-        setDisplayName(provider.getDisplayName());
         this.provider = provider;
     }      
 
+    @Override
+    public String getDisplayName() 
+    {        
+        if(displayNameProvider == null)
+        {
+            displayNameProvider = provider.getDisplayNameProvider();
+            if(displayNameProvider != null)
+            {
+                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                
+                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
+            }
+        } 
+        else
+        {
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
+        }
+        return super.getDisplayName();
+    } 
+    
+    @Override
+    public Image getIcon(int type) 
+    {
+        if(iconProvider == null)
+        {
+            iconProvider = provider.getIconProvider();
+            if(iconProvider != null)
+            {
+                if(iconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
+                return iconProvider.getIcon(type);                
+            }
+        } 
+        else
+        {
+            return iconProvider.getIcon(type);             
+        }                  
+        return super.getIcon(type);
+    }   
+    
+    @Override
+    public Image getOpenedIcon(int type) 
+    {
+        if(openIconProvider == null)
+        {
+            openIconProvider = getLookup().lookup(OpenIconProvider.class);
+            if(openIconProvider != null)
+            {
+                if(openIconProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }
+                return openIconProvider.getOpenedIcon(type);                
+            }
+        } 
+        else
+        {
+            return openIconProvider.getOpenedIcon(type);             
+        }         
+        return getIcon(type);
+    }      
+    
     @Override    
     public Action[] getActions(boolean context) 
     {
         List<Action> actions = new ArrayList();
-        actions.addAll(provider.getActions());
+        ActionsProvider actionsProvider = provider.getActionsProvider();
+        if(actionsProvider != null)
+        {
+            actions.addAll(actionsProvider.getActions());            
+        }
         return actions.toArray(new Action[actions.size()]);
     }
 
-    private Image getIcon(boolean opened) 
-    {
-        return provider.getIcon(true, opened);
-    } 
-    
-    @Override    
-    public Image getIcon(int type)     
-    {
-        return getIcon(false);
-    }
-
     @Override
-    public Image getOpenedIcon(int type) 
+    public void stateChanged(ChangeEvent evt) 
     {
-        return getIcon(true);
-    }     
+        if(evt.getSource() == displayNameProvider)
+        {
+            fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
+        }
+        else if(evt.getSource() == iconProvider)
+        {
+            fireIconChange();
+        }         
+        else if(evt.getSource() == openIconProvider)
+        {
+            fireOpenedIconChange();
+        }        
+    }    
     
     @Override
     public Node findNode(Node root, Object target) 
