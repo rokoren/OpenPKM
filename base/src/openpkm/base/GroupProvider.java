@@ -8,6 +8,7 @@ import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.StringTokenizer;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import org.openide.util.Lookup;
@@ -53,6 +54,11 @@ public interface GroupProvider
     DisplayNameProvider DISPLAY_NAME_PROVIDER_WATCH_LATER = new DisplayNameProviderImpl("Watch Later");
     IconProvider ICON_PROVIDER_WATCH_LATER = new IconProviderImpl(IconsProvider.ICON.WATCH_LATER);    
     ActionsProvider ACTIONS_PROVIDER_WATCH_LATER = new ActionsProviderImpl("Actions/OpenPKM/WatchLater"); 
+    
+    // NOTES
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_NOTE = new DisplayNameProviderImpl("Notes");
+    IconProvider ICON_PROVIDER_NOTE = new IconProviderImpl(IconsProvider.ICON.NOTES);    
+    ActionsProvider ACTIONS_PROVIDER_NOTE = new ActionsProviderImpl("Actions/OpenPKM/Note,Actions/OpenPKM/Idea,Actions/OpenPKM/Comment");     
     
     String getName();  
     Lookup.Provider getLookupProvider();     
@@ -124,8 +130,12 @@ public interface GroupProvider
         @Override
         public List<Action> getActions() 
         {
+            StringTokenizer st = new StringTokenizer(path, ",");
             List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath(path));         
+            while(st.hasMoreTokens())
+            {
+                actions.addAll(Utilities.actionsForPath(st.nextToken()));                         
+            }            
             return actions;
         }        
     }    
