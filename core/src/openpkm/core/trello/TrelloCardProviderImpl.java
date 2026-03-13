@@ -139,7 +139,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                         YouTubeVideo video = provider.getVideo(props, false);
                         if(video != null)
                         {
-                            list.add(video.getLookup());
+                            list.add(Lookups.proxy(video));
                         }
                     }
                 }

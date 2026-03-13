@@ -651,6 +651,12 @@ public class TrelloServiceImpl implements TrelloService
         {
             return board.getName();
         }
+        
+        @Override
+        public void setBoardName(String name) 
+        {
+            throw new UnsupportedOperationException();
+        }        
 
         @Override
         public String getBoardDescription() 

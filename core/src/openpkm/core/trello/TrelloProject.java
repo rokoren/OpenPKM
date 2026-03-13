@@ -404,6 +404,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             list.add(this);
             list.add(new Info());
             list.add(new SourcesImpl());
+            list.add(new DisplayNameProviderImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -444,7 +445,32 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     public String getBoardName()
     {
         return props.getProperty(PROP_BOARD_NAME);
-    }     
+    } 
+
+    @Override
+    public void setBoardName(String name)
+    {
+        if(name == null)
+        {
+            Object oldValue = props.remove(PROP_BOARD_NAME);
+            propertyChangeSupport.firePropertyChange(PROP_BOARD_NAME, oldValue, name);
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_BOARD_NAME, name);
+            propertyChangeSupport.firePropertyChange(PROP_BOARD_NAME, oldValue, name);            
+        }
+    }
+    
+    public void addBoardNameListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+    
+    public void removeBoardNameListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }    
     
     @Override
     public String getBoardDescription()
@@ -560,6 +586,45 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         cookies.clear();
         return true;
     }  
+    
+    private final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final ChangeSupport changeSupport;
+
+        public DisplayNameProviderImpl() 
+        {            
+            changeSupport = new ChangeSupport(this);
+            addBoardNameListener(this);
+        }                
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getBoardName();
+            }
+            return null;        
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }        
+    }     
     
 // TODO TopComponentProvider
     

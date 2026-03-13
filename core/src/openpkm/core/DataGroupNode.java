@@ -62,9 +62,10 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             displayNameProvider = provider.getDisplayNameProvider();
             if(displayNameProvider != null)
             {
-                if(displayNameProvider instanceof ChangeSupportProvider provider)
+                if(displayNameProvider instanceof ChangeSupportProvider)
                 {
-                    provider.addChangeListener(this);                    
+                    ChangeSupportProvider changeSupportProvider = (ChangeSupportProvider)displayNameProvider;
+                    changeSupportProvider.addChangeListener(this);                    
                 }                                
                 return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
             }
@@ -84,9 +85,10 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             iconProvider = provider.getIconProvider();
             if(iconProvider != null)
             {
-                if(iconProvider instanceof ChangeSupportProvider provider)
+                if(iconProvider instanceof ChangeSupportProvider)
                 {
-                    provider.addChangeListener(this);                    
+                    ChangeSupportProvider changeSupportProvider = (ChangeSupportProvider)iconProvider;
+                    changeSupportProvider.addChangeListener(this);                    
                 }
                 return iconProvider.getIcon(type);                
             }
@@ -106,9 +108,10 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             openIconProvider = getLookup().lookup(OpenIconProvider.class);
             if(openIconProvider != null)
             {
-                if(openIconProvider instanceof ChangeSupportProvider provider)
+                if(openIconProvider instanceof ChangeSupportProvider)
                 {
-                    provider.addChangeListener(this);                    
+                    ChangeSupportProvider changeSupportProvider = (ChangeSupportProvider)openIconProvider;
+                    changeSupportProvider.addChangeListener(this);                    
                 }
                 return openIconProvider.getOpenedIcon(type);                
             }
