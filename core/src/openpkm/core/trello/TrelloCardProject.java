@@ -296,6 +296,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             list.add(this);
             list.add(new Info());
             list.add(new SourcesImpl());
+            list.add(new DisplayNameProviderImpl());
             
             AbstractTrelloLabelsProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(AbstractTrelloLabelsProvider.class);
             if(labelsProvider != null)
@@ -411,7 +412,32 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     public String getCardName() 
     {
         return props.getProperty(TrelloCardProvider.PROP_CARD_NAME);
-    }      
+    }  
+
+    @Override
+    public void setCardName(String name)
+    {
+        if(name == null)
+        {
+            Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_NAME);
+            propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_NAME, oldValue, name);
+        }
+        else
+        {
+            Object oldValue = props.setProperty(TrelloCardProvider.PROP_CARD_NAME, name);
+            propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_NAME, oldValue, name);            
+        }
+    }
+    
+    public void addCardNameListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.addPropertyChangeListener(TrelloCardProvider.PROP_CARD_NAME, listener);
+    }
+
+    public void removeCardNameListener(PropertyChangeListener listener)
+    {
+        propertyChangeSupport.removePropertyChangeListener(TrelloCardProvider.PROP_CARD_NAME, listener);
+    }    
     
     @Override
     public Integer getCardPosition() 
@@ -622,6 +648,47 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         cookies.clear();
         return true;
     }
+    
+// TODO DisplayNameProvider    
+    
+    private final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
+    {
+        private final ChangeSupport changeSupport;
+
+        public DisplayNameProviderImpl() 
+        {            
+            changeSupport = new ChangeSupport(this);
+            addCardNameListener(this);
+        }                
+        
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getCardName();
+            }
+            return null;        
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener)
+        {
+            changeSupport.removeChangeListener(listener);
+        }        
+    }      
     
 // TODO TopComponentProvider
     

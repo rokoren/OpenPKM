@@ -464,12 +464,12 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
     public void addBoardNameListener(PropertyChangeListener listener)
     {
-        propertyChangeSupport.addPropertyChangeListener(listener);
+        propertyChangeSupport.addPropertyChangeListener(PROP_BOARD_NAME, listener);
     }
     
     public void removeBoardNameListener(PropertyChangeListener listener)
     {
-        propertyChangeSupport.removePropertyChangeListener(listener);
+        propertyChangeSupport.removePropertyChangeListener(PROP_BOARD_NAME, listener);
     }    
     
     @Override
@@ -586,6 +586,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         cookies.clear();
         return true;
     }  
+    
+// TODO DisplayNameProvider     
     
     private final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
     {

@@ -20,6 +20,7 @@ public interface TrelloCard extends Source, PropertiesProvider
     String getListID();
     String getCardID();
     String getCardName();
+    void setCardName(String name);
     Integer getCardPosition();
     Boolean isCardClosed();
     Boolean isCardSubsribed();

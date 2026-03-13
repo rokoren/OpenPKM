@@ -231,7 +231,22 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public String getCardName() 
         {
             return props.getProperty(PROP_CARD_NAME);
-        }     
+        } 
+        
+        @Override
+        public void setCardName(String name)
+        {
+            if(name == null)
+            {
+                Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_NAME);
+                propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_NAME, oldValue, name);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(TrelloCardProvider.PROP_CARD_NAME, name);
+                propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_NAME, oldValue, name);            
+            }
+        }        
 
         @Override
         public Integer getCardPosition() 
