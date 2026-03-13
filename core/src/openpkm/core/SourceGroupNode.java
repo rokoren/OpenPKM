@@ -291,7 +291,7 @@ public class SourceGroupNode extends AbstractNode implements NodeSupport, Change
             {
                 return openIconProvider.getOpenedIcon(type);             
             }         
-            return super.getOpenedIcon(type);
+            return getIcon(type);
         }        
     
         @Override
