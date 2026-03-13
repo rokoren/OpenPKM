@@ -33,7 +33,7 @@ public abstract class TrelloCheckListsProvider implements SourceGroup
     
     public abstract void createCheckList(String name);
     public abstract TrelloAccount getAccount(); 
-    public abstract Lookup.Provider getProvider();
+    public abstract Lookup.Provider getLookupProvider();
     
     public void addChangeListener(ChangeListener listener) 
     {

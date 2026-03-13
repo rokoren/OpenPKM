@@ -43,10 +43,13 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.DisplayNameProvider;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.GroupProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.MarkdownSupport;
 import openpkm.base.NodeActionsProvider;
@@ -867,11 +870,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }          
     } 
 
-    private final class ListDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/core/resources/application_view_list.png";         
-        
+    private final class ListDataGroupProviderImpl implements DataGroupProvider, ActionsProvider, PropertyChangeListener
+    {        
         private final TrelloList list;
         private final ChangeSupport changeSupport; 
                 
@@ -893,10 +893,28 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
+        }   
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return list.getLookup().lookup(DisplayNameProvider.class);
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return list.getLookup().lookup(IconProvider.class);
         }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }           
         
         @Override
         public Integer getPosition() 
@@ -938,18 +956,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public String getName() 
         {
             return list.getListID();
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return list.getListName();
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            return ImageUtilities.loadImage(ICON);
         }
 
         @Override
@@ -1545,7 +1551,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, IconProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
@@ -1559,43 +1565,49 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }              
         
         @Override
-        public Lookup.Provider getProvider()
-        {
-            return TrelloProject.this;
-        }   
-        
-        @Override
         public Integer getPosition() 
         {
             return POSITION_ACTIVITY;
-        }  
+        }          
         
         @Override
-        public List<Action> getActions() 
-        {      
-            return Collections.EMPTY_LIST;
-        }         
+        public Image getIcon(int type)
+        {
+            return ImageUtilities.loadImage(ICON);
+        }          
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
-        }         
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return new GroupProvider.DisplayNameProviderImpl(this);
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_EMPTY;
+        }        
 
         @Override
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
-        } 
+        }               
         
         @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }        
-        
-        @Override
-        protected synchronized Map<String, TrelloAction> getActivity()
+        protected synchronized Map<String, TrelloAction> getActionsById()
         {
             if(activity == null)
             {
@@ -1649,7 +1661,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             {
                 rootDir.removeFileChangeListener(this);
                 
-                for(TrelloAction action : getTrelloActions())
+                for(TrelloAction action : getActions())
                 {
                     /*
                     SourceState state = action.getState();
@@ -1697,7 +1709,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public Source getSource(String sourceID)
         {
-            TrelloAction action = getActivity().get(sourceID);
+            TrelloAction action = getActionsById().get(sourceID);
             return commentProvider.getComment(action, getTrello(), getTrelloAccount());   
         }         
         
@@ -1720,7 +1732,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public SortedSet<? extends NodeProvider> getNodes()
         {
-            List<NodeDateTimeProvider> list = getActivity().values().stream()
+            List<NodeDateTimeProvider> list = getActionsById().values().stream()
                     .filter(NodeDateTimeProvider.class::isInstance)
                     .map(NodeDateTimeProvider.class::cast)
                     .toList();        
@@ -1744,7 +1756,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             try
             {
                 TrelloAction action = actionProvider.getAction(Utils.getProperties(file)); 
-                getActivity().put(action.getActionID(), action);               
+                getActionsById().put(action.getActionID(), action);               
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1771,7 +1783,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            TrelloAction action = getActivity().remove(file.getName());  
+            TrelloAction action = getActionsById().remove(file.getName());  
             if(action != null)
             {
                 changeSupport.fireChange();
@@ -1839,7 +1851,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), actionProvider, getTrello());
                     for(TrelloAction action : actions)
                     {
-                        if(!getActivity().containsKey(action.getActionID()))
+                        if(!getActionsById().containsKey(action.getActionID()))
                         {
                             TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());                       
                             try
@@ -1859,7 +1871,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                     comment.save(os, "Saved by Trello project: " + getBoardName());
                                     os.close();                                 
                                 } 
-                                getActivity().put(action.getActionID(), action);  
+                                getActionsById().put(action.getActionID(), action);  
                             }
                             catch(IOException e)
                             {
@@ -1883,7 +1895,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }           
     }      
     
-    private final class TrelloLabelsProviderImpl extends AbstractTrelloLabelsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
+    private final class TrelloLabelsProviderImpl extends AbstractTrelloLabelsProvider implements SourceGroupProvider, IconProvider, ActionsProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png"; 
@@ -1897,10 +1909,42 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }          
         
         @Override
-        public Lookup.Provider getProvider()
+        public Image getIcon(int type)
+        {
+            return ImageUtilities.loadImage(ICON);
+        }  
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddLabel(this));         
+            return actions;
+        }        
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
-        }         
+        }   
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return new GroupProvider.DisplayNameProviderImpl(this);
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }          
         
         @Override
         public Integer getPosition() 
@@ -1912,21 +1956,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
-        }        
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddLabel(this));         
-            return actions;
-        } 
+        }                        
         
         @Override
         public List<Action> getActions(TrelloLabel label)
@@ -2125,7 +2155,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
     }  
     
-    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements SourceGroupProvider, IconProvider, ActionsProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/group.png"; 
@@ -2139,12 +2169,44 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             {
                 RP.post(this);                
             }            
-        }          
+        } 
         
         @Override
-        public Lookup.Provider getProvider()
+        public Image getIcon(int type)
+        {
+            return ImageUtilities.loadImage(ICON);
+        }  
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddMember(this));         
+            return actions;
+        }         
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
+        } 
+
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return new GroupProvider.DisplayNameProviderImpl(this);
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
         }         
         
         @Override
@@ -2157,21 +2219,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
-        }        
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddMember(this));         
-            return actions;
-        } 
+        }                        
         
         @Override
         public SortedSet<NodeProvider> getNodes()
@@ -2368,7 +2416,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }        
     }      
 
-    private final class TrelloListsProviderImpl extends TrelloListsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloListsProviderImpl extends TrelloListsProvider implements SourceGroupProvider, IconProvider, ActionsProvider, FileChangeListener, Runnable
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_columns.png"; 
@@ -2382,10 +2430,42 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }          
         
         @Override
-        public Lookup.Provider getProvider()
+        public Image getIcon(int type)
+        {
+            return ImageUtilities.loadImage(ICON);
+        }
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddList(this));         
+            return actions;
+        }         
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloProject.this;
-        }         
+        }
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return new GroupProvider.DisplayNameProviderImpl(this);
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }          
         
         @Override
         public Integer getPosition() 
@@ -2397,21 +2477,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
-        }        
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddList(this));         
-            return actions;
-        } 
+        }               
         
         @Override
         public SortedSet<? extends NodeProvider> getNodes()

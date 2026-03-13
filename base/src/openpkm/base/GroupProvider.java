@@ -6,11 +6,13 @@ package openpkm.base;
 
 import java.awt.Image;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.StringTokenizer;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
+import org.netbeans.api.project.SourceGroup;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 
@@ -20,6 +22,8 @@ import org.openide.util.Utilities;
  */
 public interface GroupProvider 
 {
+    ActionsProvider ACTIONS_PROVIDER_EMPTY = new ActionsProviderEmptyImpl();  
+    
     // BOOKS
     DisplayNameProvider DISPLAY_NAME_PROVIDER_BOOK = new DisplayNameProviderImpl("Books");
     IconProvider ICON_PROVIDER_BOOK = new IconProviderImpl(IconsProvider.ICON.BOOKS);    
@@ -89,6 +93,11 @@ public interface GroupProvider
         {
             this.displayName = displayName;
         }
+        
+        public DisplayNameProviderImpl(SourceGroup sourceGroup) 
+        {
+            this(sourceGroup.getDisplayName());
+        }        
 
         @Override
         public String getDisplayName(TextFormat format) 
@@ -99,7 +108,7 @@ public interface GroupProvider
             }
             return null;
         }                
-    }
+    }  
     
     public static class IconProviderImpl implements IconProvider
     {
@@ -139,4 +148,13 @@ public interface GroupProvider
             return actions;
         }        
     }    
+    
+    public static class ActionsProviderEmptyImpl implements ActionsProvider
+    {                       
+        @Override
+        public List<Action> getActions() 
+        {          
+            return Collections.EMPTY_LIST;
+        }        
+    }     
 }

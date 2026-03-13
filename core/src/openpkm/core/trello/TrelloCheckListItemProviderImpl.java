@@ -432,7 +432,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                         try
                         {
                             OutputStream os = file.getOutputStream();
-                            TitleProvider titleProvider = provider.getProvider().getProvider().getLookup().lookup(TitleProvider.class);
+                            TitleProvider titleProvider = provider.getProvider().getLookupProvider().getLookup().lookup(TitleProvider.class);
                             provider.getCheckList().getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
                             os.close();
                             provider.getCheckList().getChangeSupport().fireChange();
@@ -517,7 +517,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                     try
                     {
                         OutputStream os = file.getOutputStream();
-                        TitleProvider titleProvider = provider.getProvider().getProvider().getLookup().lookup(TitleProvider.class);
+                        TitleProvider titleProvider = provider.getProvider().getLookupProvider().getLookup().lookup(TitleProvider.class);
                         provider.getCheckList().getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
                         os.close();
                         LOG.info("Trello checklist saved: " + provider.getCheckList().getCheckListID()); 

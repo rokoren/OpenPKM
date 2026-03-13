@@ -54,7 +54,7 @@ public class TrelloListProviderImpl implements TrelloListProvider
         return new TrelloListImpl(props);
     } 
     
-    private static final class TrelloListImpl implements TrelloList, IconProvider, NodePositionProvider
+    private static final class TrelloListImpl implements TrelloList, IconProvider
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_list.png";  

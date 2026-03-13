@@ -34,11 +34,11 @@ public abstract class TrelloActionsProvider implements SourceProvider<TrelloComm
         changeSupport = new ChangeSupport(this); 
     } 
     
-    protected abstract Map<String, TrelloAction> getActivity();
+    protected abstract Map<String, TrelloAction> getActionsById();
     
-    public Collection<TrelloAction> getTrelloActions()
+    public Collection<TrelloAction> getActions()
     {
-        return Collections.unmodifiableCollection(getActivity().values());
+        return Collections.unmodifiableCollection(getActionsById().values());
     }
     
     public TrelloActionProvider getActionProvider()
@@ -63,7 +63,7 @@ public abstract class TrelloActionsProvider implements SourceProvider<TrelloComm
 
     public TrelloAction getAction(String actionID) 
     {
-        return getActivity().get(actionID);
+        return getActionsById().get(actionID);
     }                                  
 
     @Override
@@ -81,6 +81,6 @@ public abstract class TrelloActionsProvider implements SourceProvider<TrelloComm
     @Override
     public boolean contains(FileObject file) 
     {
-        return getActivity().containsKey(file.getName());
+        return getActionsById().containsKey(file.getName());
     }     
 }

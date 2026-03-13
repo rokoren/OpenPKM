@@ -65,6 +65,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import openpkm.base.ActionsProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
@@ -1015,7 +1016,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     
 // TODO DataGroupProvider
 
-    private final class CommentDataGroupProviderImpl implements DataGroupProvider
+    private final class CommentDataGroupProviderImpl implements DataGroupProvider, DisplayNameProvider, IconProvider, ActionsProvider
     {
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/comments.png";   
@@ -1033,6 +1034,22 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         } 
 
         @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return "Comments";                
+            }
+            return null;
+        }
+
+        @Override
+        public Image getIcon(int type) 
+        {
+            return ImageUtilities.loadImage(ICON);
+        }
+        
+        @Override
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();            
@@ -1041,10 +1058,28 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
         
         @Override
-        public Lookup.Provider getProvider()
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloCardProject.this;
+        } 
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return this;
+        }  
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
         }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1091,18 +1126,6 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Comments";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-
-        @Override
         public boolean contains(DataObject data) 
         {
             if(data != null)
@@ -1122,7 +1145,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     
 // TODO SourceGroup    
     
-    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, NodeActionsProvider<TrelloLabel>
+    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, DisplayNameProvider, IconProvider, ActionsProvider, NodeActionsProvider<TrelloLabel>
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png"; 
@@ -1138,22 +1161,20 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }          
         
         @Override
-        public Lookup.Provider getProvider()
+        public String getDisplayName(TextFormat format) 
         {
-            return TrelloCardProject.this;
-        }         
+            if(format == TextFormat.PLAIN)
+            {
+                return provider.getDisplayName();                
+            }
+            return null;
+        }   
         
         @Override
-        public Integer getPosition() 
-        {
-            return POSITION_LABELS;
-        }        
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
+        public Image getIcon(int type)
         {
             return ImageUtilities.loadImage(ICON);
-        }
+        } 
         
         @Override
         public List<Action> getActions() 
@@ -1161,7 +1182,37 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             List<Action> actions = new ArrayList();
             actions.add(new AddLabel(this));         
             return actions;
-        } 
+        }         
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
+        {
+            return TrelloCardProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return this;
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_LABELS;
+        }                       
         
         @Override
         public List<Action> getActions(TrelloLabel label)
@@ -1241,12 +1292,6 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return provider.getDisplayName();
-        }
-
-        @Override
         public void addChangeListener(ChangeListener listener)
         {
             changeSupport.addChangeListener(listener);
@@ -1259,7 +1304,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
     }      
     
-    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloAttachment>, MultiViewDescription, FileChangeListener, Runnable
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, DisplayNameProvider, IconProvider, ActionsProvider, NodeActionsProvider<TrelloAttachment>, MultiViewDescription, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/attach.png"; 
@@ -1284,10 +1329,53 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
         
         @Override
-        public Lookup.Provider getProvider()
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getDisplayName();                
+            }
+            return null;
+        }
+
+        @Override
+        public Image getIcon(int type) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.ATTACHMENT);
+        }   
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddAttachmentLink(this));         
+            return actions;
+        }         
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloCardProject.this;
-        }         
+        } 
+
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return this;
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }  
         
         @Override
         public Integer getPosition() 
@@ -1299,21 +1387,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         public Icon getIcon(boolean bln) 
         {
             return new ImageIcon(ImageUtilities.loadImage(ICON));
-        }        
-        
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddAttachmentLink(this));         
-            return actions;
-        } 
+        }                   
         
         @Override
         public SortedSet<? extends NodeProvider> getNodes()
@@ -1587,19 +1661,6 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Attachments";
-        }
-
-        @Override
-        public Image getIcon() 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.ATTACHMENT);
-        }
-
-        @Override
         public HelpCtx getHelpCtx() 
         {
             return HelpCtx.DEFAULT_HELP;
@@ -1610,6 +1671,13 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             return "attachment";
         }
+        
+        @Override
+        public Image getIcon() 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.ATTACHMENT);
+        }          
 
         @Override
         public MultiViewElement createElement() 
@@ -1618,7 +1686,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }           
     }  
     
-    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloCheckList>, FileChangeListener, Runnable
+    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, DisplayNameProvider, IconProvider, ActionsProvider, NodeActionsProvider<TrelloCheckList>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/to_do_list_checked_1.png"; 
@@ -1634,10 +1702,52 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }          
         
         @Override
-        public Lookup.Provider getProvider()
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getDisplayName();                
+            }
+            return null;
+        }   
+        
+        @Override
+        public Image getIcon(int type)
+        {
+            return ImageUtilities.loadImage(ICON);
+        } 
+        
+        @Override
+        public List<Action> getActions() 
+        {
+            List<Action> actions = new ArrayList();
+            actions.add(new AddCheckList(this));         
+            return actions;
+        }         
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
         {
             return TrelloCardProject.this;
         }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return this;
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return this;
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return this;
+        }          
         
         @Override
         public TrelloAccount getAccount()
@@ -1654,22 +1764,8 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public Icon getIcon(boolean isOpen)
         {
-            return ImageUtilities.image2Icon(getIcon(false, isOpen));
+            return ImageUtilities.image2Icon(getIcon(BeanInfo.ICON_COLOR_16x16));
         }        
-
-        @Override
-        public Image getIcon(boolean isEmpty, boolean isOpen)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddCheckList(this));         
-            return actions;
-        } 
         
         @Override
         public List<Action> getActions(TrelloCheckList checkList) 
@@ -2179,7 +2275,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
                     try
                     {
                         OutputStream os = file.getOutputStream();
-                        TitleProvider titleProvider = provider.getProvider().getLookup().lookup(TitleProvider.class);
+                        TitleProvider titleProvider = provider.getLookupProvider().getLookup().lookup(TitleProvider.class);
                         checkList.getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
                         os.close();
                         checkList.getChangeSupport().fireChange();

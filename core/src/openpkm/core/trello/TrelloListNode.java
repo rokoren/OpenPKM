@@ -5,16 +5,12 @@
 package openpkm.core.trello;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import openpkm.base.ActionsProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.NodePositionProvider;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -33,7 +29,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public class TrelloListNode implements NodePositionProvider, ActionsProvider
+public class TrelloListNode implements NodePositionProvider
 {
     @StaticResource()
     private static final String ICON = "openpkm/core/resources/application_view_list.png";  
@@ -59,20 +55,11 @@ public class TrelloListNode implements NodePositionProvider, ActionsProvider
     public Lookup getLookup() 
     {
         if (lkp == null) 
-        {
-            lkp = Lookups.fixed(this);              
-            //lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new IconProviderImpl(this));              
+        {          
+            lkp = Lookups.fixed(this, provider.getDisplayNameProvider(), provider.getIconProvider(), provider.getActionsProvider());              
         }
         return lkp;
     }     
-
-    @Override
-    public List<Action> getActions() 
-    {
-        List<Action> actions = new ArrayList();
-        actions.addAll(provider.getActions());         
-        return actions;
-    } 
 
     @Override
     public Children getChildren() 
