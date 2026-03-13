@@ -71,6 +71,7 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
+import openpkm.base.GroupProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -1083,38 +1084,14 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     
 // TODO DataGroupProvider
 
-    private final class CommentDataGroupProviderImpl implements DataGroupProvider, DisplayNameProvider, IconProvider, ActionsProvider
-    {
-        @StaticResource()
-        private static final String ICON = "openpkm/core/resources/comments.png";   
-        
-        // COMMENTS
-        DisplayNameProvider DISPLAY_NAME_PROVIDER_COMMENT = new DisplayNameProviderImpl("Comments");
-        IconProvider ICON_PROVIDER_COMMENT = new IconProviderImpl(IconsProvider.ICON.NOTES);    
-        ActionsProvider ACTIONS_PROVIDER_COMMENT = new ActionsProviderImpl("Actions/OpenPKM/Note,Actions/OpenPKM/Idea,Actions/OpenPKM/Comment");           
-        
+    private final class CommentDataGroupProviderImpl implements DataGroupProvider, ActionsProvider
+    {                
         private final TrelloActionsProvider provider;
                 
         public CommentDataGroupProviderImpl(TrelloActionsProvider provider)
         {
             this.provider = provider;
         } 
-
-        @Override
-        public String getDisplayName(TextFormat format) 
-        {
-            if(format == TextFormat.PLAIN)
-            {
-                return "Comments";                
-            }
-            return null;
-        }
-
-        @Override
-        public Image getIcon(int type) 
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
         
         @Override
         public List<Action> getActions() 
@@ -1133,13 +1110,13 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
-            return this;
+            return new GroupProvider.DisplayNameProviderImpl(provider);
         }  
         
         @Override
         public IconProvider getIconProvider()
         {
-            return this;
+            return new GroupProvider.IconProviderSourceGroupImpl(provider);
         }        
         
         @Override
@@ -1212,11 +1189,8 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     
 // TODO SourceGroup    
     
-    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, DisplayNameProvider, IconProvider, ActionsProvider, NodeActionsProvider<TrelloLabel>
-    { 
-        @StaticResource()
-        private static final String ICON = "openpkm/core/resources/palette.png"; 
-            
+    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, ActionsProvider, NodeActionsProvider<TrelloLabel>
+    {             
         private final AbstractTrelloLabelsProvider provider;
         
         protected final ChangeSupport changeSupport;         
@@ -1225,23 +1199,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             this.provider = provider;
             changeSupport = new ChangeSupport(this); 
-        }          
-        
-        @Override
-        public String getDisplayName(TextFormat format) 
-        {
-            if(format == TextFormat.PLAIN)
-            {
-                return provider.getDisplayName();                
-            }
-            return null;
-        }   
-        
-        @Override
-        public Image getIcon(int type)
-        {
-            return ImageUtilities.loadImage(ICON);
-        } 
+        }            
         
         @Override
         public List<Action> getActions() 
@@ -1260,13 +1218,13 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public DisplayNameProvider getDisplayNameProvider()
         {
-            return this;
+            return new GroupProvider.DisplayNameProviderImpl(provider);
         }
         
         @Override
         public IconProvider getIconProvider()
         {
-            return this;
+            return new GroupProvider.IconProviderSourceGroupImpl(provider);
         }        
         
         @Override

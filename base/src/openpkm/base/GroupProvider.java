@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import org.netbeans.api.project.SourceGroup;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 
@@ -126,6 +127,23 @@ public interface GroupProvider
             return provider.getImage(icon);
         }               
     }    
+    
+    public static class IconProviderSourceGroupImpl implements IconProvider
+    {
+        private final SourceGroup sourceGroup;
+
+        public IconProviderSourceGroupImpl(SourceGroup sourceGroup) 
+        {
+            this.sourceGroup = sourceGroup;
+        }
+
+        @Override
+        public Image getIcon(int type) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return ImageUtilities.icon2Image(sourceGroup.getIcon(false));
+        }               
+    }     
     
     public static class ActionsProviderImpl implements ActionsProvider
     {
