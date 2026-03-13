@@ -47,7 +47,12 @@ public interface GroupProvider
     // VIDEOS
     DisplayNameProvider DISPLAY_NAME_PROVIDER_VIDEO = new DisplayNameProviderImpl("Videos");
     IconProvider ICON_PROVIDER_VIDEO = new IconProviderImpl(IconsProvider.ICON.VIDEOS);    
-    ActionsProvider ACTIONS_PROVIDER_VIDEO = new ActionsProviderImpl("Actions/OpenPKM/Video");     
+    ActionsProvider ACTIONS_PROVIDER_VIDEO = new ActionsProviderImpl("Actions/OpenPKM/Video"); 
+
+    // WATCH LATER
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_WATCH_LATER = new DisplayNameProviderImpl("Watch Later");
+    IconProvider ICON_PROVIDER_WATCH_LATER = new IconProviderImpl(IconsProvider.ICON.WATCH_LATER);    
+    ActionsProvider ACTIONS_PROVIDER_WATCH_LATER = new ActionsProviderImpl("Actions/OpenPKM/WatchLater"); 
     
     String getName();  
     Lookup.Provider getLookupProvider();     

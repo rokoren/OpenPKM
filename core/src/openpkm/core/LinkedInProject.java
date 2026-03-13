@@ -35,6 +35,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
@@ -43,6 +44,7 @@ import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DescriptionProvider;
+import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
@@ -934,21 +936,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
+        {
+            return LinkedInProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_BOOK;
         } 
         
         @Override
-        public List<Action> getActions() 
+        public IconProvider getIconProvider()
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Book"));         
-            return actions;
-        }        
+            return ICON_PROVIDER_BOOK;
+        }
         
         @Override
-        public Lookup.Provider getProvider()
+        public ActionsProvider getActionsProvider() 
         {
-            return LinkedInProject.this;
-        }         
+            return ACTIONS_PROVIDER_BOOK;
+        }          
         
         @Override
         public Integer getPosition() 
@@ -993,19 +1005,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Books";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.BOOKS);
-        }
-
-        @Override
         public boolean contains(DataObject data) 
         {
             if(data != null)
@@ -1037,20 +1036,30 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }               
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
+        {
+            return LinkedInProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_ARTICLE;
         } 
         
         @Override
-        public List<Action> getActions() 
+        public IconProvider getIconProvider()
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Article"));         
-            return actions;
-        }        
+            return ICON_PROVIDER_ARTICLE;
+        }
         
         @Override
-        public Lookup.Provider getProvider()
+        public ActionsProvider getActionsProvider() 
         {
-            return LinkedInProject.this;
+            return ACTIONS_PROVIDER_ARTICLE;
         }         
         
         @Override
@@ -1096,19 +1105,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Articles";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.ARTICLES);
-        }
-
-        @Override
         public boolean contains(DataObject data) 
         {
             if(data != null)
@@ -1140,21 +1136,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }               
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
+        {
+            return LinkedInProject.this;
+        } 
+
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_DOCUMENT;
         } 
         
         @Override
-        public List<Action> getActions() 
+        public IconProvider getIconProvider()
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Document"));         
-            return actions;
-        }        
+            return ICON_PROVIDER_DOCUMENT;
+        }
         
         @Override
-        public Lookup.Provider getProvider()
+        public ActionsProvider getActionsProvider() 
         {
-            return LinkedInProject.this;
-        }         
+            return ACTIONS_PROVIDER_DOCUMENT;
+        }  
         
         @Override
         public Integer getPosition() 
@@ -1199,19 +1205,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Documents";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.DOCUMENTS);
-        }
-
-        @Override
         public boolean contains(DataObject data) 
         {
             if(data != null)
@@ -1243,21 +1236,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }               
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
+        {
+            return LinkedInProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_LINK;
         } 
         
         @Override
-        public List<Action> getActions() 
+        public IconProvider getIconProvider()
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Link"));         
-            return actions;
-        }        
+            return ICON_PROVIDER_LINK;
+        }
         
         @Override
-        public Lookup.Provider getProvider()
+        public ActionsProvider getActionsProvider() 
         {
-            return LinkedInProject.this;
-        }        
+            return ACTIONS_PROVIDER_LINK;
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1302,19 +1305,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Links";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.LINKS);
-        }
-
-        @Override
         public boolean contains(DataObject data) 
         {
             if(data != null)
@@ -1347,20 +1337,30 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
-
+        
         @Override
-        public List<Action> getActions() 
+        public Lookup.Provider getLookupProvider()
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Picture"));         
-            return actions;
+            return LinkedInProject.this;
+        }    
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_PICTURE;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_PICTURE;
         }
         
         @Override
-        public Lookup.Provider getProvider()
+        public ActionsProvider getActionsProvider() 
         {
-            return LinkedInProject.this;
-        }        
+            return ACTIONS_PROVIDER_PICTURE;
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1405,19 +1405,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         }
 
         @Override
-        public String getDisplayName() 
-        {
-            return "Pictures";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.PICTURES);
-        }
-
-        @Override
         public boolean contains(DataObject data) 
         {
             if(data != null)
@@ -1450,20 +1437,30 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
-
+        
         @Override
-        public List<Action> getActions() 
+        public Lookup.Provider getLookupProvider()
         {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Video"));         
-            return actions;
+            return LinkedInProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_VIDEO;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_VIDEO;
         }
         
         @Override
-        public Lookup.Provider getProvider()
+        public ActionsProvider getActionsProvider() 
         {
-            return LinkedInProject.this;
-        }        
+            return ACTIONS_PROVIDER_VIDEO;
+        }           
         
         @Override
         public Integer getPosition() 
@@ -1505,19 +1502,6 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public String getName() 
         {
             return "video";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "Videos";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.VIDEOS);
         }
 
         @Override
