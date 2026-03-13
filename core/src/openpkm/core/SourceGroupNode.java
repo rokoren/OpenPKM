@@ -244,7 +244,7 @@ public class SourceGroupNode extends AbstractNode implements NodeSupport, Change
             ActionsProvider provider = getLookup().lookup(ActionsProvider.class);
             if(provider != null)
             {
-                actions.addAll(provider.getActions());
+                list.addAll(provider.getActions());
             }
                                    
             return list.toArray(new Action[list.size()]);

@@ -30,6 +30,7 @@ import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -131,6 +132,8 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
 
                 list.add(this);
                 list.add(new DisplayNameProviderImpl(this));
+                Lookup lookup = Lookups.fixed(list.toArray(new Object[list.size()]));  
+                
                 if(isCardLink())
                 {
                     YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
@@ -139,12 +142,14 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                         YouTubeVideo video = provider.getVideo(props, false);
                         if(video != null)
                         {
-                            list.add(Lookups.proxy(video));
+                            lkp = new ProxyLookup(lookup, Lookups.proxy(video));
                         }
                     }
+                } 
+                else
+                {
+                    lkp = lookup;
                 }
-
-                lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
             }
             return lkp;
         }         
