@@ -443,17 +443,28 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         @Override
         public String getDisplayName(TextFormat format) 
         {
+            String displayName = null;
+            YouTubeVideo video = card.getLookup().lookup(YouTubeVideo.class);
+            if(video != null)
+            {
+                displayName = video.getVideoTitle();
+            }
+            else
+            {
+                displayName = card.getCardName();
+            }
+            
             if(format == TextFormat.PLAIN)
             {
-                return card.getCardName();
+                return displayName;
             }
             else if(format == TextFormat.HTML)
             {
                 if(card.isCardDueComplete())
                 {
-                    return "<html><s>" + card.getCardName() + "</s></html>";
+                    return "<html><s>" + displayName + "</s></html>";
                 }
-                return "<html><b>" + card.getCardName() + "</b></html>";                
+                return "<html><b>" + displayName + "</b></html>";                
             }
             return null;
         }
