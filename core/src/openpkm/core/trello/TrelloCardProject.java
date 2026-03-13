@@ -664,12 +664,20 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         
         @Override
         public String getDisplayName(TextFormat format) 
-        {
+        {            
             if(format == TextFormat.PLAIN)
             {
                 return getCardName();
             }
-            return null;        
+            else if(format == TextFormat.HTML)
+            {
+                if(isCardDueComplete())
+                {
+                    return "<html><s>" + getCardName() + "</s></html>";
+                }
+                return "<html><b>" + getCardName() + "</b></html>";                
+            }
+            return null;            
         }
 
         @Override
