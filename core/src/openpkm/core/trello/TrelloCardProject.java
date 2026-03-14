@@ -2439,7 +2439,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             sorted.addAll(provider.getAttachments());
             attachments.addAll(sorted.reversed());
             comboBox = new JComboBox(attachments);
-            comboBox.setRenderer(new DisplayNameProvider.ListCellRendererImpl(TextFormat.PLAIN));                          
+            comboBox.setRenderer(new NodeProvider.ListCellRendererImpl(TextFormat.PLAIN));                          
         }                
         
         @Override

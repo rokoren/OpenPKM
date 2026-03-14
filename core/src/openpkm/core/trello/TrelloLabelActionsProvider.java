@@ -12,7 +12,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
-import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.NodeProvider;
 import openpkm.trello.AbstractLabelActionsProvider;
@@ -58,7 +57,7 @@ public class TrelloLabelActionsProvider extends AbstractLabelActionsProvider
             sorted.addAll(provider.getLabels());
             labels.addAll(sorted);
             comboBox = new JComboBox(labels);
-            comboBox.setRenderer(new DisplayNameProvider.ListCellRendererImpl(TextFormat.PLAIN));               
+            comboBox.setRenderer(new NodeProvider.ListCellRendererImpl(TextFormat.PLAIN));               
         }
 
         @Override
