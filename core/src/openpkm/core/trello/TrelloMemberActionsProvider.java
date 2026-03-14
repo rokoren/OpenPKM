@@ -12,8 +12,8 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
-import openpkm.trello.AbstractLabelActionsProvider;
-import openpkm.trello.AbstractTrelloLabelsProvider;
+import openpkm.trello.AbstractMemberActionsProvider;
+import openpkm.trello.TrelloMembersProvider;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 
@@ -21,28 +21,28 @@ import org.openide.WizardDescriptor;
  *
  * @author rokor
  */
-public class TrelloLabelActionsProvider extends AbstractLabelActionsProvider
+public class TrelloMemberActionsProvider extends AbstractMemberActionsProvider
 {
-    private final AbstractTrelloLabelsProvider provider; 
+    private final TrelloMembersProvider provider;  
 
-    public TrelloLabelActionsProvider(AbstractTrelloLabelsProvider provider) 
+    public TrelloMemberActionsProvider(TrelloMembersProvider provider) 
     {
         this.provider = provider;
     }        
     
     @Override
-    public Action addLabel() 
+    public Action addMember() 
     {
-        return new AddLabel(provider);
+        return new AddMember(provider);
     }
     
-    private static final class AddLabel extends AbstractAction
+    private static final class AddMember extends AbstractAction
     {                          
-        private final AbstractTrelloLabelsProvider provider;            
+        private final TrelloMembersProvider provider;            
 
-        public AddLabel(AbstractTrelloLabelsProvider provider) 
+        public AddMember(TrelloMembersProvider provider) 
         {
-            super("Add Label");
+            super("Add Member");
             this.provider = provider;
         }
 
@@ -69,14 +69,14 @@ public class TrelloLabelActionsProvider extends AbstractLabelActionsProvider
             WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
             // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
             wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Label");  
+            wiz.setTitle("Add Member");  
             /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));  
+            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
             wiz.putProperty("project", provider.getProject());
             */
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {  
-                //sourceGroup.getRootFolder();
+
             }
         }
     }     

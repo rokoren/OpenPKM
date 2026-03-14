@@ -7,7 +7,7 @@ package openpkm.core.trello;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import openpkm.trello.AbstractListActionsProvider;
+import openpkm.trello.AbstractCardActionsProvider;
 import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloList;
 import org.openide.DialogDisplayer;
@@ -17,12 +17,12 @@ import org.openide.NotifyDescriptor;
  *
  * @author rokor
  */
-public class ListActionsProvider extends AbstractListActionsProvider
+public class TrelloCardActionsProvider extends AbstractCardActionsProvider
 {
     private final TrelloList list;       
     private final TrelloCardsProvider provider;   
 
-    public ListActionsProvider(TrelloList list, TrelloCardsProvider provider) {
+    public TrelloCardActionsProvider(TrelloList list, TrelloCardsProvider provider) {
         this.list = list;
         this.provider = provider;
     }        

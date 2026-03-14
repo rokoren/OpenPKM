@@ -1226,7 +1226,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return new TrelloLabelActionsProvider(this);
+            return new TrelloCardLabelsActionsProvider(this);
         }         
         
         @Override

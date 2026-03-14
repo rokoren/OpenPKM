@@ -10,7 +10,6 @@ import com.julienvey.trello.impl.TrelloImpl;
 import com.julienvey.trello.impl.http.JDKTrelloHttpClient;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.beans.BeanInfo;
@@ -21,7 +20,6 @@ import java.beans.PropertyVetoException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -41,7 +39,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.BatchUpdateSupport;
@@ -92,7 +89,6 @@ import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.DialogDisplayer;
-import org.openide.WizardDescriptor;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
@@ -955,7 +951,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return new ListActionsProvider(list, cardsProvider);
+            return new TrelloCardActionsProvider(list, cardsProvider);
         }           
         
         @Override
@@ -1943,32 +1939,18 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }           
     }      
     
-    private final class TrelloLabelsProviderImpl extends AbstractTrelloLabelsProvider implements SourceGroupProvider, IconProvider, ActionsProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
+    private final class TrelloLabelsProviderImpl extends AbstractTrelloLabelsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/palette.png"; 
-
+        private static final String ICON = "openpkm/core/resources/palette.png";         
+        
         private static final String PROP_TRELLO_SYNC_LABEL = "trello.sync.label"; 
                 
         public TrelloLabelsProviderImpl(TrelloLabelProvider provider) 
         {
             super(provider);  
             RP.post(this);             
-        }          
-        
-        @Override
-        public Image getIcon(int type)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }  
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddLabel(this));         
-            return actions;
-        }        
+        }               
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1985,13 +1967,13 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public IconProvider getIconProvider()
         {
-            return this;
+            return new GroupProvider.IconProviderSourceGroupImpl(this);
         }        
         
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloLabelActionsProvider(this);
         }          
         
         @Override
@@ -2203,7 +2185,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
     }  
     
-    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements SourceGroupProvider, IconProvider, ActionsProvider, FileChangeListener, Runnable
+    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/group.png"; 
@@ -2217,20 +2199,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             {
                 RP.post(this);                
             }            
-        } 
-        
-        @Override
-        public Image getIcon(int type)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }  
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddMember(this));         
-            return actions;
         }         
         
         @Override
@@ -2248,13 +2216,13 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public IconProvider getIconProvider()
         {
-            return this;
+            return new GroupProvider.IconProviderSourceGroupImpl(this);
         }        
         
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloMemberActionsProvider(this);
         }         
         
         @Override
@@ -2464,7 +2432,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }        
     }      
 
-    private final class TrelloListsProviderImpl extends TrelloListsProvider implements SourceGroupProvider, IconProvider, ActionsProvider, FileChangeListener, Runnable
+    private final class TrelloListsProviderImpl extends TrelloListsProvider implements SourceGroupProvider, FileChangeListener, Runnable
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_columns.png"; 
@@ -2475,21 +2443,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             super(provider);  
             RP.post(this); 
-        }          
-        
-        @Override
-        public Image getIcon(int type)
-        {
-            return ImageUtilities.loadImage(ICON);
-        }
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddList(this));         
-            return actions;
-        }         
+        }               
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -2506,13 +2460,13 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public IconProvider getIconProvider()
         {
-            return this;
+            return new GroupProvider.IconProviderSourceGroupImpl(this);
         }        
         
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloListActionsProvider(this);
         }          
         
         @Override
@@ -2789,75 +2743,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 setLastSync(LocalDateTime.now());
             }
         }
-    }     
-
-    private static final class AddList extends AbstractAction
-    {                         
-        protected final TrelloListsProvider provider;            
-
-        public AddList(TrelloListsProvider provider) 
-        {
-            super("Add List");
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add List");
-            Object retVal = DialogDisplayer.getDefault().notify(d);
-            if (retVal == NotifyDescriptor.OK_OPTION) 
-            {
-                String name = ((NotifyDescriptor.InputLine) d).getInputText();
-                provider.createList(name);
-            }
-        }
-    }     
-    
-    private static final class AddLabel extends AbstractAction
-    {                          
-        private final AbstractTrelloLabelsProvider provider;            
-
-        public AddLabel(AbstractTrelloLabelsProvider provider) 
-        {
-            super("Add Label");
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new MemberWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
-            {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Label");  
-            /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));  
-            wiz.putProperty("project", provider.getProject());
-            */
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {  
-                //sourceGroup.getRootFolder();
-            }
-        }
-    } 
+    }        
     
     private static final class DeleteLabel extends AbstractAction
     {  
@@ -2895,52 +2781,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 } 
             }                                   
         }
-    }     
-
-    private static final class AddMember extends AbstractAction
-    {                          
-        protected final TrelloMembersProvider sourceGroup;            
-
-        public AddMember(TrelloMembersProvider sourceGroup) 
-        {
-            super("Add Member");
-            this.sourceGroup = sourceGroup;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new MemberWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
-            {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Member");  
-            /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("project", provider.getProject());
-            */
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {  
-
-            }
-        }
-    }  
+    }      
     
     private static Comparator<DataObject> positionComparator() 
     {

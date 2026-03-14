@@ -13,15 +13,17 @@ import openpkm.base.ActionsProvider;
  *
  * @author rokor
  */
-public abstract class AbstractLabelActionsProvider implements ActionsProvider 
+public abstract class AbstractCardActionsProvider implements ActionsProvider
 {
-    public abstract Action addLabel();
+    public abstract Action addLink();
+    public abstract Action addCard();
     
     @Override
     public List<Action> getActions() 
     {   
         List<Action> actions = new ArrayList();
-        actions.add(addLabel());         
+        actions.add(addLink());         
+        actions.add(addCard()); 
         return actions;
-    }          
+    }       
 }
