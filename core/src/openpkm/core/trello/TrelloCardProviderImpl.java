@@ -19,28 +19,40 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
+import openpkm.trello.TrelloCardsProvider;
+import openpkm.trello.TrelloService;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
-import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloCardProvider.class)
 public class TrelloCardProviderImpl implements TrelloCardProvider
 {    
     private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());  
+    
+    private final TrelloCardsProvider provider;
+
+    public TrelloCardProviderImpl(TrelloCardsProvider provider) 
+    {
+        this.provider = provider;
+    } 
         
     @Override
     public TrelloCard getCard(Properties props)
@@ -109,7 +121,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     }
     */    
     
-    private static final class TrelloCardImpl implements TrelloCard
+    private final class TrelloCardImpl implements TrelloCard, ActionsProvider
     {         
         private final Properties props;
         private final PropertyChangeSupport propertyChangeSupport;
@@ -243,14 +255,24 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         {
             if(name == null)
             {
-                Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_NAME);
-                propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_NAME, oldValue, name);
+                Object oldValue = props.remove(PROP_CARD_NAME);
+                propertyChangeSupport.firePropertyChange(PROP_CARD_NAME, oldValue, name);
             }
             else
             {
-                Object oldValue = props.setProperty(TrelloCardProvider.PROP_CARD_NAME, name);
-                propertyChangeSupport.firePropertyChange(TrelloCardProvider.PROP_CARD_NAME, oldValue, name);            
+                Object oldValue = props.setProperty(PROP_CARD_NAME, name);
+                propertyChangeSupport.firePropertyChange(PROP_CARD_NAME, oldValue, name);            
             }
+        } 
+        
+        public void addCardNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_CARD_NAME, listener);
+        }
+        
+        public void removeCardNameListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_CARD_NAME, listener);
         }        
 
         @Override
@@ -431,7 +453,17 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             props.putAll(provider.getProperties());
             //propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
         }
-    } 
+        
+// ActionsProvider
+
+        @Override
+        public List<Action> getActions()
+        {
+            List<Action> actions = new ArrayList<>();
+            actions.add(new CardComplete(this, provider.getAccount()));
+            return actions;
+        }        
+    }     
     
     private static final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
     {
@@ -441,6 +473,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public DisplayNameProviderImpl(TrelloCardImpl card) 
         {
             this.card = card;
+            card.addCardNameListener(this);
             card.addCardDueCompleteListener(this);
             changeSupport = new ChangeSupport(this);
         }                
@@ -496,11 +529,13 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     public static final class CardComplete extends AbstractAction
     {             
         private final TrelloCard card;
+        private final TrelloAccount account;
 
-        public CardComplete(TrelloCard card) 
+        public CardComplete(TrelloCard card, TrelloAccount account) 
         {
             super(getActionName(card));       
             this.card = card;
+            this.account = account;
         }
         
         private static String getActionName(TrelloCard card)
@@ -511,17 +546,32 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             }
             return "Complete";
         }
+        
+        private static boolean getComplete(Boolean dueComplete)
+        {
+            if(dueComplete != null)
+            {
+                return !dueComplete;
+            }
+            return false;
+        }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
         {
-            if(Boolean.TRUE.equals(card.isCardDueComplete()))
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service == null)
             {
-                card.setCardDueComplete(false);  
+                LOG.warning("No Trello service found");
+                NotifyDescriptor descriptor = new NotifyDescriptor.Message("No Trello service found", NotifyDescriptor.WARNING_MESSAGE);
+                DialogDisplayer.getDefault().notify(descriptor);                
             }
             else
             {
-                card.setCardDueComplete(true);                
+                boolean complete = getComplete(card.isCardDueComplete());
+                int status = service.setCardDueComplete(card.getCardID(), complete, account);
+                card.setCardDueComplete(complete);         
+                card.markModified();                  
             }
         }
     } 

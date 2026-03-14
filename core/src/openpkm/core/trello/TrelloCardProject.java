@@ -660,6 +660,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {            
             changeSupport = new ChangeSupport(this);
             addCardNameListener(this);
+            addCardDueCompleteListener(this);
         }                
         
         @Override

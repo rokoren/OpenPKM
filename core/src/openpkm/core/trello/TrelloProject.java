@@ -167,6 +167,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private final ProjectState state;
     private final Properties props;   
     private final PropertyChangeSupport propertyChangeSupport;
+    private final TrelloCardsProvider cardsProvider;
     
     private Lookup lkp; 
     private FileObject dataDir;
@@ -175,8 +176,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
     private TrelloAccount trelloAccount;
     private Trello trello;    
-    private TrelloBoard trelloBoard;
-    private TrelloCardsProvider cardsProvider;
+    private TrelloBoard trelloBoard;    
     
     public TrelloProject(FileObject projectDir, ProjectState state, Properties props) 
     {
@@ -184,6 +184,9 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         this.state = state;
         this.props = props; 
         propertyChangeSupport = new PropertyChangeSupport(this);
+        cardsProvider = new TrelloCardsProviderImpl();   
+        
+        sources.put(cardsProvider.getName(), cardsProvider);        
         
         TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
         TrelloCommentProvider commentProvider = Lookup.getDefault().lookup(TrelloCommentProvider.class);              
@@ -213,26 +216,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             SourceGroup lists = new TrelloListsProviderImpl(listProvider);
             sources.put(lists.getName(), lists);                       
         }  
-        
-        SourceGroup cards = getCardsProvider();
-        if(cards != null)
-        {
-            sources.put(cards.getName(), cards);             
-        }
     } 
-    
-    private TrelloCardsProvider getCardsProvider()
-    {
-        if(cardsProvider == null)
-        {
-            TrelloCardProvider cardProvider = Lookup.getDefault().lookup(TrelloCardProvider.class);            
-            if(cardProvider != null)
-            {
-                cardsProvider = new TrelloCardsProviderImpl(cardProvider);   
-            }             
-        }
-        return cardsProvider;
-    }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -954,8 +938,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.add(new AddLink(list, getCardsProvider()));         
-            actions.add(new AddCard(list, getCardsProvider())); 
+            actions.add(new AddLink(list, cardsProvider));         
+            actions.add(new AddCard(list, cardsProvider)); 
             return actions;
         }
         
@@ -1076,11 +1060,23 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         
         private final TrelloCardProvider provider;    
 
-        public TrelloCardsProviderImpl(TrelloCardProvider provider)
+        public TrelloCardsProviderImpl()
         {
-            this.provider = provider;
+            provider = new TrelloCardProviderImpl(this);
             RP.post(this);                              
         } 
+        
+        @Override
+        public TrelloCardProvider getCardProvider()
+        {
+            return provider;
+        }         
+        
+        @Override
+        public TrelloAccount getAccount()
+        {
+            return getTrelloAccount();
+        }
         
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 
@@ -1104,13 +1100,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public String getDisplayName() 
         {
             return "Cards";
-        }        
-        
-        @Override
-        public TrelloCardProvider getCardProvider()
-        {
-            return provider;
-        }         
+        }                
         
         @Override
         public Source getSource(String sourceID)
