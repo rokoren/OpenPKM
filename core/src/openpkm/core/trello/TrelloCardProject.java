@@ -1332,7 +1332,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
     }      
     
-    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, ActionsProvider, NodeActionsProvider<TrelloAttachment>, MultiViewDescription, FileChangeListener, Runnable
+    private final class TrelloAttachmentsProviderImpl extends TrelloAttachmentsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloAttachment>, MultiViewDescription, FileChangeListener, Runnable
     { 
         private static final String PROP_TRELLO_SYNC_ATTACHMENT = "trello.sync.attachment";        
                 
@@ -1351,15 +1351,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("Authorization", "OAuth oauth_consumer_key=\"" + account.getApiKey() + "\", oauth_token=\"" + account.getAccessToken() + "\"");              
             return conn;
-        }        
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddAttachmentLink(this));         
-            return actions;
-        }         
+        }                      
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1382,7 +1374,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloAttachmentActionsProvider(this);
         }  
         
         @Override
@@ -2254,54 +2246,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
                 } 
             }
         }
-    }         
-
-    private static final class AddAttachmentLink extends AbstractAction
-    {  
-        @StaticResource()
-        public static final String BANNER = "openpkm/core/resources/banner.png";          
-        
-        protected final TrelloAttachmentsProvider provider;            
-
-        public AddAttachmentLink(TrelloAttachmentsProvider provider) 
-        {
-            super("Add Link Attachment");
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {            
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new AttachmentLinkWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
-            {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Link Attachment");  
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            { 
-                String url = (String)wiz.getProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL);
-                String name = (String)wiz.getProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME);
-                provider.createAttachmentLink(url, name);
-            }
-        }
-    }  
+    }          
     
     private static final class DeleteAttachment extends AbstractAction
     {  
