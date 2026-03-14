@@ -1,0 +1,91 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package openpkm.core.trello;
+
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import openpkm.trello.AbstractListActionsProvider;
+import openpkm.trello.TrelloCardsProvider;
+import openpkm.trello.TrelloList;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+
+/**
+ *
+ * @author rokor
+ */
+public class ListActionsProvider extends AbstractListActionsProvider
+{
+    private final TrelloList list;       
+    private final TrelloCardsProvider provider;   
+
+    public ListActionsProvider(TrelloList list, TrelloCardsProvider provider) {
+        this.list = list;
+        this.provider = provider;
+    }        
+    
+    @Override
+    public Action addLink() 
+    {
+        return new AddLink(list, provider);
+    }
+
+    @Override
+    public Action addCard() 
+    {
+        return new AddCard(list, provider);
+    }
+    
+    private static final class AddLink extends AbstractAction
+    {          
+        private final TrelloList list;       
+        private final TrelloCardsProvider provider;  
+
+        public AddLink(TrelloList list, TrelloCardsProvider provider) 
+        {
+            super("Add Link");
+            this.list = list;
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("URL:", "Add Link");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
+            {
+                String url = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createLink(list, url);
+            }            
+        }
+    }  
+    
+    private static final class AddCard extends AbstractAction
+    {          
+        private final TrelloList list;       
+        private final TrelloCardsProvider provider;  
+
+        public AddCard(TrelloList list, TrelloCardsProvider provider) 
+        {
+            super("Add Card");
+            this.list = list;
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Card");
+            Object retVal = DialogDisplayer.getDefault().notify(d);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
+            {
+                String name = ((NotifyDescriptor.InputLine) d).getInputText();
+                provider.createCard(list, name);
+            }            
+        }
+    }     
+}

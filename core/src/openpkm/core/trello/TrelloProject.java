@@ -921,7 +921,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }          
     } 
 
-    private final class ListDataGroupProviderImpl implements DataGroupProvider, ActionsProvider, PropertyChangeListener
+    private final class ListDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final TrelloList list;
         private final ChangeSupport changeSupport; 
@@ -932,15 +932,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(TrelloCardsProviderImpl.PROP_TRELLO_SYNC_CARD, this);
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        } 
-
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddLink(list, cardsProvider));         
-            actions.add(new AddCard(list, cardsProvider)); 
-            return actions;
         }
         
         @Override
@@ -964,7 +955,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new ListActionsProvider(list, cardsProvider);
         }           
         
         @Override
@@ -2948,56 +2939,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             {  
 
             }
-        }
-    }  
-    
-    private static final class AddLink extends AbstractAction
-    {          
-        private final TrelloList list;       
-        private final TrelloCardsProvider provider;  
-
-        public AddLink(TrelloList list, TrelloCardsProvider provider) 
-        {
-            super("Add Link");
-            this.list = list;
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            NotifyDescriptor d = new NotifyDescriptor.InputLine("URL:", "Add Link");
-            Object retVal = DialogDisplayer.getDefault().notify(d);
-            if (retVal == NotifyDescriptor.OK_OPTION) 
-            {
-                String url = ((NotifyDescriptor.InputLine) d).getInputText();
-                provider.createLink(list, url);
-            }            
-        }
-    }  
-    
-    private static final class AddCard extends AbstractAction
-    {          
-        private final TrelloList list;       
-        private final TrelloCardsProvider provider;  
-
-        public AddCard(TrelloList list, TrelloCardsProvider provider) 
-        {
-            super("Add Card");
-            this.list = list;
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Card");
-            Object retVal = DialogDisplayer.getDefault().notify(d);
-            if (retVal == NotifyDescriptor.OK_OPTION) 
-            {
-                String name = ((NotifyDescriptor.InputLine) d).getInputText();
-                provider.createCard(list, name);
-            }            
         }
     }  
     
