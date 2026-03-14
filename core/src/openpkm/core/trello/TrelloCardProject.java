@@ -1103,22 +1103,14 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     
 // TODO DataGroupProvider
 
-    private final class CommentDataGroupProviderImpl implements DataGroupProvider, ActionsProvider
+    private final class CommentDataGroupProviderImpl implements DataGroupProvider
     {                
         private final TrelloActionsProvider provider;
                 
         public CommentDataGroupProviderImpl(TrelloActionsProvider provider)
         {
             this.provider = provider;
-        } 
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();            
-            actions.add(new AddComment(getCardID(), provider, getTrelloAccount(), getTrello()));        
-            return actions;
-        }
+        }        
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1141,7 +1133,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloCommentActionsProvider(getTrello(), getTrelloAccount(), provider, TrelloCardProject.this);
         }         
         
         @Override
@@ -1208,7 +1200,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     
 // TODO SourceGroup    
     
-    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, ActionsProvider, NodeActionsProvider<TrelloLabel>
+    private final class TrelloLabelsProviderImpl implements TrelloLabelsProvider, SourceGroupProvider, NodeActionsProvider<TrelloLabel>
     {             
         private final AbstractTrelloLabelsProvider provider;
         
@@ -1218,15 +1210,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             this.provider = provider;
             changeSupport = new ChangeSupport(this); 
-        }            
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddLabel(this));         
-            return actions;
-        }         
+        }                            
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1249,7 +1233,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloLabelActionsProvider(this);
         }         
         
         @Override
@@ -1711,7 +1695,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }           
     }  
     
-    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, ActionsProvider, NodeActionsProvider<TrelloCheckList>, FileChangeListener, Runnable
+    private final class TrelloCheckListsProviderImpl extends TrelloCheckListsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloCheckList>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/to_do_list_checked_1.png"; 
@@ -1724,15 +1708,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             provider = new TrelloCheckListProviderImpl(this);
             RP.post(this);    
-        }                  
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.add(new AddCheckList(this));         
-            return actions;
-        }         
+        }                        
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -1755,7 +1731,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return this;
+            return new TrelloCheckListActionsProvider(this);
         }          
         
         @Override
@@ -2222,30 +2198,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             return TrelloCardProject.this;
         }                 
-    } 
-    
-    private static final class AddCheckList extends AbstractAction
-    {                  
-        private final TrelloCheckListsProvider provider;             
-
-        public AddCheckList(TrelloCheckListsProvider provider) 
-        {
-            super("Add Checklist");
-            this.provider = provider;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {            
-            NotifyDescriptor d = new NotifyDescriptor.InputLine("Name:", "Add Checklist");
-            Object retVal = DialogDisplayer.getDefault().notify(d);
-            if (retVal == NotifyDescriptor.OK_OPTION) 
-            {
-                String name = ((NotifyDescriptor.InputLine) d).getInputText();
-                provider.createCheckList(name);
-            }
-        }
-    }  
+    }      
     
     private static final class AddCheckListItem extends AbstractAction
     {          
@@ -2388,120 +2341,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
                 } 
             }                                   
         }
-    }     
-    
-    private static final class AddComment extends AbstractAction implements ActionListener
-    { 
-        private static final String ACTION_COMMAND_ADD_COMMENT = "Add Comment";
-        private static final String ACTION_COMMAND_OK          = "OK";
-        
-        private final Trello trello;  
-        private final String cardID;   
-        private final TrelloAccount account;   
-        private final TrelloActionsProvider provider; 
-        private final JTextArea area;
-
-        public AddComment(String cardID, TrelloActionsProvider provider, TrelloAccount account, Trello trello) 
-        {
-            super(ACTION_COMMAND_ADD_COMMENT);
-            this.cardID = cardID;
-            this.provider = provider;
-            this.account = account;
-            this.trello = trello;
-            area = new JTextArea();
-            area.setFont(area.getFont().deriveFont(18f));
-            area.setPreferredSize(new Dimension(400, 200));
-            area.setLineWrap(true);
-            area.setWrapStyleWord(true);
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {             
-            if(evt.getActionCommand().equals(ACTION_COMMAND_ADD_COMMENT))
-            {                
-                DialogDescriptor d = new DialogDescriptor(
-                area, // Component
-                "Add Comment", // title
-                true, // modality
-                this); // ActionListener
-                DialogDisplayer.getDefault().createDialog(d).setVisible(true);                  
-            }
-            else if(evt.getActionCommand().equals(ACTION_COMMAND_OK))
-            {
-                FileObject root = provider.getRootFolder();                  
-                TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-                MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
-
-                if(root != null && service != null && markdown != null)
-                {                                                                                                     
-                    TrelloComment comment = service.createComment(cardID, area.getText().trim(), provider.getActionProvider(), provider.getCommentProvider(), account, trello);
-                    if(comment != null)
-                    {
-                        try
-                        {                                                                                                                                            
-                            provider.createData(comment, markdown);  
-                            
-                            FileSystem fs = root.getFileSystem();
-                            fs.runAtomicAction(() -> {
-                                OutputStream os = root.createAndOpen(comment.getActionID() + "." + PropertiesProvider.EXTENSION);
-                                comment.save(os, "Saved by Add Comment Action");
-                                os.close();  
-                            });                                                                                                              
-                        }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }
-                    }              
-                }                 
-            }                                                           
-        }
-    } 
-    
-    private static final class AddLabel extends AbstractAction implements ActionListener
-    { 
-        private static final String ACTION_COMMAND_ADD_LABEL = "Add Label";
-        private static final String ACTION_COMMAND_OK        = "OK";        
-        
-        private final DefaultComboBoxModel<TrelloLabel> labels = new DefaultComboBoxModel<>(); 
-        private final JComboBox comboBox;
-
-        private final TrelloLabelsProvider provider;  
-
-        public AddLabel(TrelloLabelsProvider provider) 
-        {
-            super(ACTION_COMMAND_ADD_LABEL);
-            this.provider = provider;
-            SortedSet<TrelloLabel> sorted = new TreeSet<TrelloLabel>(NodeProvider.displayNameComparator());
-            sorted.addAll(provider.getLabels());
-            labels.addAll(sorted);
-            comboBox = new JComboBox(labels);
-            comboBox.setRenderer(new DisplayNameProvider.ListCellRendererImpl(TextFormat.PLAIN));               
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            if(evt.getActionCommand().equals(ACTION_COMMAND_ADD_LABEL))
-            {                
-                DialogDescriptor d = new DialogDescriptor(
-                comboBox, // Component
-                "Add Label", // title
-                true, // modality
-                this); // ActionListener
-                DialogDisplayer.getDefault().createDialog(d).setVisible(true);                  
-            }
-            else if(evt.getActionCommand().equals(ACTION_COMMAND_OK))
-            {
-                TrelloLabel label = (TrelloLabel)labels.getSelectedItem();
-                if(label != null)
-                {
-                    provider.addLabel(label);
-                }                
-            }    
-        }
-    }  
+    }            
     
     private static final class RemoveLabel extends AbstractAction
     {             

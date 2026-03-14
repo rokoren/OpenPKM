@@ -6,10 +6,13 @@ package openpkm.core.trello;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
@@ -166,7 +169,19 @@ public class TrelloCardNode extends FilterNode implements ChangeListener
     }     
     
     @Override
-    public Action[] getActions(boolean arg0) {
+    public Action[] getActions(boolean context) 
+    {
+        List<Action> actions = new ArrayList();
+        ActionsProvider actionsProvider = project.getLookup().lookup(ActionsProvider.class);
+        if(actionsProvider != null)
+        {
+            actions.addAll(actionsProvider.getActions());            
+        }
+        actions.add(CommonProjectActions.closeProjectAction());
+        actions.add(CommonProjectActions.customizeProjectAction());
+        return actions.toArray(new Action[actions.size()]);        
+        
+        /*
         return new Action[]{
             CommonProjectActions.newFileAction(),
             CommonProjectActions.moveProjectAction(),
@@ -175,6 +190,7 @@ public class TrelloCardNode extends FilterNode implements ChangeListener
             CommonProjectActions.customizeProjectAction(),
             CommonProjectActions.closeProjectAction()
         };
+        */
     } 
     
     @Override
