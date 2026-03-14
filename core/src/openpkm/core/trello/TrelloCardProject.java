@@ -153,7 +153,7 @@ import org.netbeans.core.spi.multiview.MultiViewElementCallback;
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, PropertiesProvider, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, PropertiesProvider, ActionsProvider, BatchUpdateSupport
 { 
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -612,6 +612,16 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         }
         return false;
     } 
+    
+// ActionsProvider
+
+    @Override
+    public List<Action> getActions()
+    {
+        List<Action> actions = new ArrayList<>();
+        actions.add(new CardComplete(this, getTrelloAccount()));
+        return actions;
+    }        
 
 // TODO PropertiesProvider
     
@@ -1034,7 +1044,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             changeSupport.fireChange();
         }
-    }    
+    }          
 
 // TODO RootProjectProvider     
 
@@ -2516,6 +2526,56 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             }                                    
         }
     }  
+    
+    public static final class CardComplete extends AbstractAction
+    {             
+        private final TrelloCard card;
+        private final TrelloAccount account;
+
+        public CardComplete(TrelloCard card, TrelloAccount account) 
+        {
+            super(getActionName(card));       
+            this.card = card;
+            this.account = account;
+        }
+        
+        private static String getActionName(TrelloCard card)
+        {
+            if(Boolean.TRUE.equals(card.isCardDueComplete()))
+            {
+                return "Uncomplete";
+            }
+            return "Complete";
+        }
+        
+        private static boolean getComplete(Boolean dueComplete)
+        {
+            if(dueComplete != null)
+            {
+                return !dueComplete;
+            }
+            return false;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service == null)
+            {
+                LOG.warning("No Trello service found");
+                NotifyDescriptor descriptor = new NotifyDescriptor.Message("No Trello service found", NotifyDescriptor.WARNING_MESSAGE);
+                DialogDisplayer.getDefault().notify(descriptor);                
+            }
+            else
+            {
+                boolean complete = getComplete(card.isCardDueComplete());
+                int status = service.setCardDueComplete(card.getCardID(), complete, account);
+                card.setCardDueComplete(complete);         
+                card.markModified();                  
+            }
+        }
+    }     
     
     private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement, ActionListener, CefLoadHandler
     {

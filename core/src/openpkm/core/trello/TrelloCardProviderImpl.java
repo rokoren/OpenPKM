@@ -5,7 +5,6 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Card;
-import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -18,22 +17,17 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCardsProvider;
-import openpkm.trello.TrelloService;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
-import org.openide.DialogDisplayer;
-import org.openide.NotifyDescriptor;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -460,7 +454,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public List<Action> getActions()
         {
             List<Action> actions = new ArrayList<>();
-            actions.add(new CardComplete(this, provider.getAccount()));
+            actions.add(new TrelloCardProject.CardComplete(this, provider.getAccount()));
             return actions;
         }        
     }     
@@ -525,54 +519,4 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
             changeSupport.removeChangeListener(listener);
         }        
     }
-    
-    public static final class CardComplete extends AbstractAction
-    {             
-        private final TrelloCard card;
-        private final TrelloAccount account;
-
-        public CardComplete(TrelloCard card, TrelloAccount account) 
-        {
-            super(getActionName(card));       
-            this.card = card;
-            this.account = account;
-        }
-        
-        private static String getActionName(TrelloCard card)
-        {
-            if(Boolean.TRUE.equals(card.isCardDueComplete()))
-            {
-                return "Uncomplete";
-            }
-            return "Complete";
-        }
-        
-        private static boolean getComplete(Boolean dueComplete)
-        {
-            if(dueComplete != null)
-            {
-                return !dueComplete;
-            }
-            return false;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            if(service == null)
-            {
-                LOG.warning("No Trello service found");
-                NotifyDescriptor descriptor = new NotifyDescriptor.Message("No Trello service found", NotifyDescriptor.WARNING_MESSAGE);
-                DialogDisplayer.getDefault().notify(descriptor);                
-            }
-            else
-            {
-                boolean complete = getComplete(card.isCardDueComplete());
-                int status = service.setCardDueComplete(card.getCardID(), complete, account);
-                card.setCardDueComplete(complete);         
-                card.markModified();                  
-            }
-        }
-    } 
 }
