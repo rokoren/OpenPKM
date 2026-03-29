@@ -1127,19 +1127,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
-            return DISPLAY_NAME_PROVIDER_VIDEO;
+            return DISPLAY_NAME_PROVIDER_NOTE;
         } 
         
         @Override
         public IconProvider getIconProvider()
         {
-            return ICON_PROVIDER_VIDEO;
+            return ICON_PROVIDER_NOTE;
         }
         
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return ACTIONS_PROVIDER_VIDEO;
+            return ACTIONS_PROVIDER_NOTE;
         }          
         
         @Override

@@ -1,0 +1,74 @@
+{
+    "id": "68e1879fd39c3cfbc867b7dd",
+    "agent": {
+        "name": null,
+        "conversationId": null
+    },
+    "badges": {
+        "attachments": 0,
+        "fogbugz": "",
+        "checkItems": 0,
+        "checkItemsChecked": 0,
+        "checkItemsEarliestDue": null,
+        "comments": 0,
+        "description": false,
+        "due": null,
+        "dueComplete": false,
+        "lastUpdatedByAi": false,
+        "start": null,
+        "externalSource": null,
+        "attachmentsByType": {
+            "trello": {
+                "board": 0,
+                "card": 0
+            }
+        },
+        "location": false,
+        "votes": 0,
+        "maliciousAttachments": 0,
+        "viewingMemberVoted": false,
+        "subscribed": false
+    },
+    "checkItemStates": [],
+    "closed": false,
+    "dueComplete": false,
+    "dateLastActivity": "2025-10-05T09:13:05.495Z",
+    "desc": "",
+    "descData": {
+        "emoji": {}
+    },
+    "due": null,
+    "dueReminder": null,
+    "email": null,
+    "idBoard": "66325349fb2cb1d8bbcaeeb9",
+    "idChecklists": [],
+    "idList": "66325ddfd95d2fa0bd80d561",
+    "idMembers": [],
+    "idMembersVoted": [],
+    "idShort": 229,
+    "idAttachmentCover": null,
+    "labels": [],
+    "idLabels": [],
+    "manualCoverAttachment": false,
+    "name": "https://www.youtube.com/watch?v=j1ZJWFJlrH8",
+    "nodeId": "ari:cloud:trello::card/workspace/66325ae349bed889b0d60e10/68e1879fd39c3cfbc867b7dd",
+    "pinned": false,
+    "pos": 57344,
+    "shortLink": "O3BWApNk",
+    "shortUrl": "https://trello.com/c/O3BWApNk",
+    "start": null,
+    "subscribed": false,
+    "url": "https://trello.com/c/O3BWApNk/229-https-wwwyoutubecom-watchvj1zjwfjlrh8",
+    "cover": {
+        "idAttachment": null,
+        "color": null,
+        "idUploadedBackground": null,
+        "size": "normal",
+        "brightness": "dark",
+        "yPosition": 0.5,
+        "idPlugin": null
+    },
+    "isTemplate": false,
+    "cardRole": "link",
+    "mirrorSourceId": null
+}
