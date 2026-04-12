@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -47,9 +48,9 @@ import org.openide.util.lookup.ProxyLookup;
 @TopComponent.Description(
         preferredID = "TagsTopComponent",
         iconBase = "openpkm/core/resources/document_hash_tag.png",
-        persistenceType = TopComponent.PERSISTENCE_ALWAYS
+        persistenceType = TopComponent.PERSISTENCE_NEVER
 )
-@TopComponent.Registration(mode = "commonpalette", openAtStartup = true)
+@TopComponent.Registration(mode = "properties", openAtStartup = true)
 @ActionID(category = "Window", id = "openpkm.core.TagsTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
@@ -127,14 +128,44 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
     @Override
-    public void componentOpened() {
+    public void componentOpened() 
+    {
         // TODO add custom code on component opening
+        
+        FilterTagsProvider filterProvider = Lookup.getDefault().lookup(FilterTagsProvider.class);
+        if(filterProvider != null)
+        {
+            filterProvider.addChangeListener(this);                    
+        }        
+
+        result.addLookupListener(tags);        
     }
 
     @Override
-    public void componentClosed() {
+    public void componentClosed() 
+    {
         // TODO add custom code on component closing
+        
+        FilterTagsProvider filterProvider = Lookup.getDefault().lookup(FilterTagsProvider.class);
+        if(filterProvider != null)
+        {
+            filterProvider.removeChangeListener(this);                    
+        } 
+        
+        result.removeLookupListener(tags);        
     }
+    
+    @Override
+    public Action[] getActions() 
+    {
+        List<Action> actions = new ArrayList();
+        for (Action action : super.getActions())
+        {
+            actions.add(action);
+        }
+        actions.add(new ClearFilterTagsAction());
+        return actions.toArray(new Action[actions.size()]);
+    }     
 
     void writeProperties(java.util.Properties p) {
         // better to version settings since initial version as advocated at
