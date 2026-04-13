@@ -926,7 +926,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         public String pull() 
         {
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            return service.getCardDescription(getCardID(), trello);
+            return service.getCardDescription(getCardID(), getTrello());
         }
 
         @Override
