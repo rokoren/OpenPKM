@@ -20,6 +20,7 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
+import openpkm.base.FilterTagsProvider;
 import openpkm.base.IconProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
@@ -32,6 +33,8 @@ import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.NodeSupport;
 import openpkm.base.OpenIconProvider;
+import openpkm.base.TagsProvider;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -177,12 +180,18 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
     
     private static final class ChildrenImpl extends Children.Keys<DataObject> implements ChangeListener 
     {
-        private final DataGroupProvider provider;            
+        private final DataGroupProvider provider;   
+        private final FilterTagsProvider filter;
 
         public ChildrenImpl(DataGroupProvider provider)
         {
             this.provider = provider;   
-            provider.addChangeListener(this);             
+            provider.addChangeListener(this); 
+            filter = Lookup.getDefault().lookup(FilterTagsProvider.class);
+            if(filter != null) 
+            {
+                filter.addChangeListener(this);
+            }
         }  
 
         @Override
@@ -217,7 +226,11 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
 
                     if(provider.contains(data))
                     {
-                        sorted.add(data);
+                        TagsProvider tagsProvider = data.getLookup().lookup(TagsProvider.class);
+                        if(tagsProvider == null || FilterTagsProvider.isTag(filter, tagsProvider))
+                        {
+                            sorted.add(data);                            
+                        }
                     }
                 } 
                 if(provider.isReversed())
@@ -244,7 +257,11 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
         @Override
         protected void removeNotify()
         {
-            provider.removeChangeListener(this);            
+            provider.removeChangeListener(this);  
+            if(filter != null) 
+            {
+                filter.removeChangeListener(this);
+            }
             setKeys(Collections.<DataObject>emptySet());
         }
 
