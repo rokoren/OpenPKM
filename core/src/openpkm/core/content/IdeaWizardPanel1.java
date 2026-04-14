@@ -87,9 +87,13 @@ public class IdeaWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
         if(knowledgeGraph != null)
         {
             Collection<Topic> topics = knowledgeGraph.getSelectedTopics();
-            if(!topics.isEmpty())
+            if(topics.isEmpty())
             {
-                return knowledgeGraph.getTags(topics);
+                return knowledgeGraph.getTags(knowledgeGraph.getRootTopics());
+            }
+            else
+            {
+                return knowledgeGraph.getTags(topics);                
             }
         }        
         return new HashSet<>();

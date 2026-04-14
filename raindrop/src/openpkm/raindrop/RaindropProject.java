@@ -2346,6 +2346,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void run() 
         {
+            RaindropUtils.getTags(getRaindropCollection().getAccount(), getRaindropCollection());
+            
             //System.out.println(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " Raindrop RSS : " + getTitle());
             String source = RAINDROP_FEED_URL + getRaindropCollection().getCollectionID() + "/feed";
             try

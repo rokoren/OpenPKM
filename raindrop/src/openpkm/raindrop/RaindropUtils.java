@@ -131,7 +131,74 @@ public class RaindropUtils
         */
 
         return raindropUser;
-    }     
+    }  
+    
+    public static List<Raindrop> getTags(RaindropAccount account, RaindropCollection collection)
+    {
+        // Construct the URL for the Raindrop.io API endpoint
+        String apiUrl = "https://api.raindrop.io/rest/v1/tags/";
+
+        HttpURLConnection connection = null;
+        try
+        {
+            URL url = new URL(apiUrl + collection.getCollectionID());
+
+            // Open a connection to the URL
+            connection = (HttpURLConnection) url.openConnection();
+
+            // Set the request method to GET
+            connection.setRequestMethod("GET");
+
+            // Set the API key in the request header
+            connection.setRequestProperty("Authorization", "Bearer " + account.getToken());
+
+            // Get the response code
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Read the response from the API
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                reader.close();
+                
+                System.out.println("Get Tags Response: " + response.toString());
+
+                // Parse the JSON response
+                //return getRaindrops(account, collection, response.toString());
+            } 
+            else 
+            {
+                NotifyDescriptor d = new NotifyDescriptor(
+                        "Get Tags Raindrop.io API Request failed. Response Code: " + responseCode, // message
+                        collection.getTitle(), // title
+                        NotifyDescriptor.DEFAULT_OPTION, // option type
+                        NotifyDescriptor.WARNING_MESSAGE, // message type
+                        null, // custom buttons (as Object[])
+                        null); // default value
+                DialogDisplayer.getDefault().notify(d);
+            }                
+        }
+        catch(IOException e)
+        {
+            Exceptions.printStackTrace(e);
+        }
+        finally
+        {
+            if(connection != null)
+            {
+                // Close the connection
+                connection.disconnect();                  
+            }
+        }
+
+        return Collections.EMPTY_LIST;
+    }      
     
     public static List<RaindropCollection> getRootCollections(RaindropAccount account)
     {
