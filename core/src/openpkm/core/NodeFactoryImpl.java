@@ -22,7 +22,7 @@ import org.netbeans.spi.project.ui.support.NodeFactorySupport;
  *
  * @author Rok Koren
  */
-@NodeFactory.Registration(projectType="openpkm-project", position=100)
+@NodeFactory.Registration(projectType="openpkm-project", position=200)
 public class NodeFactoryImpl implements NodeFactory
 {
     private static final Logger LOG = Logger.getLogger(NodeFactoryImpl.class.getName());
