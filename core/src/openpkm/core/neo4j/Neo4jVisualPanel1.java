@@ -85,8 +85,6 @@ public final class Neo4jVisualPanel1 extends JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel2, gridBagConstraints);
-
-        jTextField2.setText(org.openide.util.NbBundle.getMessage(Neo4jVisualPanel1.class, "Neo4jVisualPanel1.jTextField2.text")); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
@@ -107,8 +105,6 @@ public final class Neo4jVisualPanel1 extends JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel3, gridBagConstraints);
-
-        jTextField3.setText(org.openide.util.NbBundle.getMessage(Neo4jVisualPanel1.class, "Neo4jVisualPanel1.jTextField3.text")); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
