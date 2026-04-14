@@ -70,9 +70,9 @@ public class Neo4jWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizar
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {
-        descriptor.putProperty(Neo4jInstance.PROP_URI, getComponent().getNeo4jUri()); 
-        descriptor.putProperty(Neo4jInstance.PROP_USERNAME, getComponent().getNeo4jUsername());   
-        descriptor.putProperty(Neo4jInstance.PROP_PASSWORD, getComponent().getNeo4jPassword());   
+        descriptor.putProperty(Neo4jInstance.PROP_NEO4J_URI, getComponent().getNeo4jUri()); 
+        descriptor.putProperty(Neo4jInstance.PROP_NEO4J_USERNAME, getComponent().getNeo4jUsername());   
+        descriptor.putProperty(Neo4jInstance.PROP_NEO4J_PASSWORD, getComponent().getNeo4jPassword());   
     }
 
     @Override

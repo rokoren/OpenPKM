@@ -45,8 +45,8 @@ public class Neo4jInstanceImpl implements Neo4jInstance
 
     private final String instanceID;
     
-    private String uri, name, username, password;  
-    private Type type;
+    private String neo4jUri, instanceName, neo4jUsername, neo4jPassword, neo4jDatabase;  
+    private Type neo4jType;
     
     private Driver driver;
 
@@ -61,7 +61,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         {
             try
             {
-                driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
+                driver = GraphDatabase.driver(getNeo4jUri(), AuthTokens.basic(getNeo4jUsername(), getNeo4jPassword()));
                 driver.verifyConnectivity();                
             }
             catch(Exception e)
@@ -79,63 +79,75 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     }
 
     @Override
-    public String getUri() 
+    public String getNeo4jUri() 
     {
-        return uri;
+        return neo4jUri;
     }
 
     @Override
-    public void setUri(String uri) 
+    public void setNeo4jUri(String uri) 
     {
-        this.uri = uri;
+        neo4jUri = uri;
     }
 
     @Override
-    public String getUsername() 
+    public String getNeo4jUsername() 
     {
-        return username;
+        return neo4jUsername;
     }
 
     @Override
-    public void setUsername(String username) 
+    public void setNeo4jUsername(String username) 
     {
-        this.username = username;
+        neo4jUsername = username;
     }
 
     @Override
-    public String getPassword() 
+    public String getNeo4jPassword() 
     {
-        return password;
+        return neo4jPassword;
     }
 
     @Override
-    public void setPassword(String password) 
+    public void setNeo4jPassword(String password) 
     {
-        this.password = password;
+        neo4jPassword = password;
+    }
+    
+    @Override
+    public String getNeo4jDatabase() 
+    {
+        return neo4jDatabase;
     }
 
     @Override
-    public String getName() 
+    public void setNeo4jDatabase(String database) 
     {
-        return name;
+        neo4jDatabase = database;
+    }    
+
+    @Override
+    public String getInstanceName() 
+    {
+        return instanceName;
     }
 
     @Override
-    public void setName(String name) 
+    public void setInstanceName(String name) 
     {
-        this.name = name;
+        instanceName = name;
     } 
     
     @Override
-    public Type getType()
+    public Type getNeo4jType()
     {
-        return type;
+        return neo4jType;
     }
     
     @Override
-    public void setType(Type type)
+    public void setNeo4jType(Type type)
     {
-        this.type = type;
+        neo4jType = type;
     }
     
     @Override
@@ -150,7 +162,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         List<Topic> topics = new ArrayList<>();
         EagerResult result = getDriver().executableQuery("MATCH (t:Topic {project: $project}) RETURN t.id AS ID, t.name AS name, t.tag AS tag")
                 .withParameters(Map.of("project", projectID))
-                .withConfig(QueryConfig.builder().withDatabase("neo4j").build())
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
                 .execute();    
         
         var records = result.records();
@@ -169,7 +181,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         List<ChildrenTopic> topics = new ArrayList<>();
         EagerResult result = getDriver().executableQuery("MATCH (t:Topic)-[:SUBCLASS]->(:Topic {id: $id}) RETURN t.id AS ID, t.name AS name, t.tag AS tag")
                 .withParameters(Map.of("id", parentID))
-                .withConfig(QueryConfig.builder().withDatabase("neo4j").build())
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
                 .execute();    
         
         var records = result.records();
@@ -194,7 +206,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         Session session = null;
         try
         {
-            session = driver.session(SessionConfig.builder().withDatabase("neo4j").build());    
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
             String topicID = session.executeWrite(tx -> createRootTopic(tx, projectID, name, tag));
             Topic t = new TopicImpl(topicID);
             t.setName(name);
@@ -226,7 +238,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         Session session = null;
         try
         {
-            session = driver.session(SessionConfig.builder().withDatabase("neo4j").build());    
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
             String topicID = session.executeWrite(tx -> createChildrenTopic(tx, parentID, name, tag, modifier));
             ChildrenTopicImpl t = new ChildrenTopicImpl(topicID);
             t.setParentID(parentID);
@@ -260,7 +272,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         List<Goal> goals = new ArrayList<>();
         EagerResult result = getDriver().executableQuery("MATCH (goal:Goal {project: $project}) RETURN goal.id AS ID, goal.name AS name, goal.tag AS tag, goal.level AS level, goal.startDate AS startDate, goal.endDate AS endDate, goal.vision AS vision, goal.accountability AS accountability, goal.rewards AS rewards, goal.obstacles AS obstacles, goal.support AS support, goal.brainstorming AS brainstorming")
                 .withParameters(Map.of("project", projectID))
-                .withConfig(QueryConfig.builder().withDatabase("neo4j").build())
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
                 .execute();    
         
         var records = result.records();
@@ -300,7 +312,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         List<ChildrenGoal> goals = new ArrayList<>();
         EagerResult result = getDriver().executableQuery("MATCH (goal:Goal)-[:SUBCLASS]->(:Goal {id: $id}) RETURN goal.id AS ID, goal.name AS name, goal.tag AS tag, goal.level AS level, goal.startDate AS startDate, goal.endDate AS endDate, goal.vision AS vision, goal.accountability AS accountability, goal.rewards AS rewards, goal.obstacles AS obstacles, goal.support AS support, goal.brainstorming AS brainstorming")
                 .withParameters(Map.of("id", parentID))
-                .withConfig(QueryConfig.builder().withDatabase("neo4j").build())
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
                 .execute();    
         
         var records = result.records();
@@ -346,7 +358,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         Session session = null;
         try
         {
-            session = driver.session(SessionConfig.builder().withDatabase("neo4j").build());    
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
             String goalID = session.executeWrite(tx -> createRootGoal(tx, projectID, name, tag, level, startDate, endDate, vision, accountability, rewards, obstacles, support, brainstorming));
             Goal goal = new GoalImpl(goalID);
             goal.setName(name);
@@ -394,7 +406,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         Session session = null;
         try
         {
-            session = driver.session(SessionConfig.builder().withDatabase("neo4j").build());    
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
             String goalID = session.executeWrite(tx -> createChildrenGoal(tx, parentID, name, tag, level, startDate, endDate, vision, accountability, rewards, obstacles, support, brainstorming, modifier));
             ChildrenGoalImpl goal = new ChildrenGoalImpl(goalID);
             goal.setParentID(parentID);
@@ -441,7 +453,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     @Override
     public String toString()
     {
-        return name;
+        return getInstanceName();
     }
     
     private static class TopicImpl implements Topic

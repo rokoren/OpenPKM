@@ -181,7 +181,7 @@ public class GraphNodeFactory implements NodeFactory
             
             public AddNode(KnowledgeGraphProvider provider) 
             {
-                super("Add Root Node");
+                super("Add Root Topic");
                 this.provider = provider;
             }
 
@@ -224,7 +224,7 @@ public class GraphNodeFactory implements NodeFactory
             
             public ClearSelectedNodes(KnowledgeGraphProvider provider) 
             {
-                super("Clear Selected Nodes");
+                super("Clear Selected Topics");
                 this.provider = provider;
             }
 

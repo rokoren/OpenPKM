@@ -60,12 +60,13 @@ public class Neo4jProviderImpl implements Neo4jProvider
     {
         // Store the instance
         Preferences preferences =  instance.getPreferences();   
-        preferences.put(Neo4jInstance.PROP_ID, instance.getInstanceID());
-        preferences.put(Neo4jInstance.PROP_URI, instance.getUri());
-        preferences.put(Neo4jInstance.PROP_NAME, instance.getName());
-        preferences.put(Neo4jInstance.PROP_USERNAME, instance.getUsername());
-        preferences.put(Neo4jInstance.PROP_PASSWORD, instance.getPassword());
-        preferences.put(Neo4jInstance.PROP_TYPE, instance.getType().toString());
+        preferences.put(Neo4jInstance.PROP_INSTANCE_ID, instance.getInstanceID());
+        preferences.put(Neo4jInstance.PROP_NEO4J_URI, instance.getNeo4jUri());
+        preferences.put(Neo4jInstance.PROP_INSTANCE_NAME, instance.getInstanceName());
+        preferences.put(Neo4jInstance.PROP_NEO4J_USERNAME, instance.getNeo4jUsername());
+        preferences.put(Neo4jInstance.PROP_NEO4J_PASSWORD, instance.getNeo4jPassword());
+        preferences.put(Neo4jInstance.PROP_NEO4J_DATABASE, instance.getNeo4jDatabase());
+        preferences.put(Neo4jInstance.PROP_NEO4J_TYPE, instance.getNeo4jType().toString());
     }
 
     @Override
@@ -112,20 +113,22 @@ public class Neo4jProviderImpl implements Neo4jProvider
 
         private Neo4jInstance getInstance(Preferences preferences)
         {
-            String instanceID = preferences.get(Neo4jInstance.PROP_ID, null);
-            String uri = preferences.get(Neo4jInstance.PROP_URI, "");
-            String name = preferences.get(Neo4jInstance.PROP_NAME, "");
-            String username = preferences.get(Neo4jInstance.PROP_USERNAME, "");
-            String password = preferences.get(Neo4jInstance.PROP_PASSWORD, "");
-            Optional<Type> type = Type.get(preferences.get(Neo4jInstance.PROP_TYPE, Neo4jInstance.Type.NEO4J_DESKTOP.name()));
-            if(instanceID != null && type.isPresent())
+            String instanceID = preferences.get(Neo4jInstance.PROP_INSTANCE_ID, null);
+            String neo4jUri = preferences.get(Neo4jInstance.PROP_NEO4J_URI, "");
+            String instanceName = preferences.get(Neo4jInstance.PROP_INSTANCE_NAME, "");
+            String neo4jUsername = preferences.get(Neo4jInstance.PROP_NEO4J_USERNAME, "");
+            String neo4jPassword = preferences.get(Neo4jInstance.PROP_NEO4J_PASSWORD, "");
+            String neo4jDatabase = preferences.get(Neo4jInstance.PROP_NEO4J_DATABASE, "");
+            Optional<Type> neo4jType = Type.get(preferences.get(Neo4jInstance.PROP_NEO4J_TYPE, Neo4jInstance.Type.NEO4J_DESKTOP.name()));
+            if(instanceID != null && neo4jType.isPresent())
             {
                 Neo4jInstance instance = new Neo4jInstanceImpl(instanceID);
-                instance.setUri(uri);
-                instance.setName(name);
-                instance.setUsername(username);
-                instance.setPassword(password);
-                instance.setType(type.get());
+                instance.setNeo4jUri(neo4jUri);
+                instance.setInstanceName(instanceName);
+                instance.setNeo4jUsername(neo4jUsername);
+                instance.setNeo4jPassword(neo4jPassword);
+                instance.setNeo4jDatabase(neo4jDatabase);
+                instance.setNeo4jType(neo4jType.get());
                 return instance;            
             }
             return null;

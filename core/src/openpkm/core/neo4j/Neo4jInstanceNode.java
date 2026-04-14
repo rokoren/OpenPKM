@@ -36,8 +36,8 @@ public class Neo4jInstanceNode extends AbstractNode
     {
         super(Children.LEAF, Lookups.fixed(instance));
         setName(instance.getInstanceID());
-        setDisplayName(instance.getName());   
-        setShortDescription(instance.getType().toString());
+        setDisplayName(instance.getInstanceName());   
+        setShortDescription(instance.getNeo4jType().toString());
         setIconBaseWithExtension(ICON);
         this.instance = instance;
     }   
@@ -66,7 +66,7 @@ public class Neo4jInstanceNode extends AbstractNode
         {
             NotifyDescriptor d = new NotifyDescriptor(
                     "Do you want to remove instance?", // message
-                    instance.getName(), // title
+                    instance.getInstanceName(), // title
                     NotifyDescriptor.YES_NO_OPTION, // option type
                     NotifyDescriptor.QUESTION_MESSAGE, // message type
                     null, // custom buttons (as Object[])

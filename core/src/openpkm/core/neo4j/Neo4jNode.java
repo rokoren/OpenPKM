@@ -141,18 +141,20 @@ public class Neo4jNode extends AbstractNode
             wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));            
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {
-                String instanceID = (String) wiz.getProperty(Neo4jInstance.PROP_ID);
-                String uri = (String) wiz.getProperty(Neo4jInstance.PROP_URI);
-                String username = (String) wiz.getProperty(Neo4jInstance.PROP_USERNAME);
-                String password = (String) wiz.getProperty(Neo4jInstance.PROP_PASSWORD);
-                String name = (String) wiz.getProperty(Neo4jInstance.PROP_NAME);
-                Type type = (Type) wiz.getProperty(Neo4jInstance.PROP_TYPE);
+                String instanceID = (String) wiz.getProperty(Neo4jInstance.PROP_INSTANCE_ID);
+                String neo4jUri = (String) wiz.getProperty(Neo4jInstance.PROP_NEO4J_URI);
+                String neo4Username = (String) wiz.getProperty(Neo4jInstance.PROP_NEO4J_USERNAME);
+                String neo4jPassword = (String) wiz.getProperty(Neo4jInstance.PROP_NEO4J_PASSWORD);
+                String neo4jDatabase = (String) wiz.getProperty(Neo4jInstance.PROP_NEO4J_DATABASE);
+                String instanceName = (String) wiz.getProperty(Neo4jInstance.PROP_INSTANCE_NAME);
+                Type neo4jType = (Type) wiz.getProperty(Neo4jInstance.PROP_NEO4J_TYPE);
                 Neo4jInstance instance = new Neo4jInstanceImpl(instanceID);  
-                instance.setUri(uri);
-                instance.setUsername(username);
-                instance.setPassword(password);
-                instance.setName(name);
-                instance.setType(type);
+                instance.setNeo4jUri(neo4jUri);
+                instance.setNeo4jUsername(neo4Username);
+                instance.setNeo4jPassword(neo4jPassword);
+                instance.setNeo4jDatabase(neo4jDatabase);
+                instance.setInstanceName(instanceName);
+                instance.setNeo4jType(neo4jType);
                 Neo4jProvider provider = Lookup.getDefault().lookup(Neo4jProvider.class);
                 provider.addInstance(instance);
                 provider.store(instance);                

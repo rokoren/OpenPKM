@@ -22,24 +22,27 @@ import openpkm.base.VisibilityProvider;
  */
 public interface Neo4jInstance
 {
-    String PROP_ID       = "instance.id";     
-    String PROP_NAME     = "instance.name";   
-    String PROP_URI      = "connection.uri";
-    String PROP_USERNAME = "db.username";   
-    String PROP_PASSWORD = "db.password";   
-    String PROP_TYPE     = "db.type"; 
+    String PROP_NEO4J_TYPE     = "neo4j.type";     
+    String PROP_NEO4J_URI      = "neo4j.uri";
+    String PROP_NEO4J_USERNAME = "neo4j.username";   
+    String PROP_NEO4J_PASSWORD = "neo4j.password";               
+    String PROP_NEO4J_DATABASE = "neo4j.database";
+    String PROP_INSTANCE_ID    = "instance.id";     
+    String PROP_INSTANCE_NAME  = "instance.name";   
     
     String getInstanceID();
-    String getUri();
-    void setUri(String uri);
-    String getUsername();
-    void setUsername(String username);
-    String getPassword();
-    void setPassword(String password);
-    String getName();
-    void setName(String name);
-    Type getType();
-    void setType(Type type);
+    String getNeo4jUri();
+    void setNeo4jUri(String uri);
+    String getNeo4jUsername();
+    void setNeo4jUsername(String username);
+    String getNeo4jPassword();
+    void setNeo4jPassword(String password);    
+    String getNeo4jDatabase();
+    void setNeo4jDatabase(String database);        
+    String getInstanceName();
+    void setInstanceName(String name);
+    Type getNeo4jType();
+    void setNeo4jType(Type type);
     Preferences getPreferences();
     
     List<Topic> getRootTopics(String topicID);
@@ -88,8 +91,8 @@ public interface Neo4jInstance
             @Override
             public int compare(Neo4jInstance instance1, Neo4jInstance instance2) 
             {
-                String name1 = instance1.getName();
-                String name2 = instance2.getName();
+                String name1 = instance1.getInstanceName();
+                String name2 = instance2.getInstanceName();
                 return name1.compareTo(name2);
             }
         };

@@ -63,8 +63,8 @@ public class Neo4jWizardPanel2 implements WizardDescriptor.Panel<WizardDescripto
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {
-        descriptor.putProperty(Neo4jInstance.PROP_ID, getComponent().getNeo4jInstanceID()); 
-        descriptor.putProperty(Neo4jInstance.PROP_NAME, getComponent().getNeo4jName());   
-        descriptor.putProperty(Neo4jInstance.PROP_TYPE, getComponent().getNeo4jType());  
+        descriptor.putProperty(Neo4jInstance.PROP_INSTANCE_ID, getComponent().getNeo4jInstanceID()); 
+        descriptor.putProperty(Neo4jInstance.PROP_INSTANCE_NAME, getComponent().getNeo4jName());   
+        descriptor.putProperty(Neo4jInstance.PROP_NEO4J_TYPE, getComponent().getNeo4jType());  
     }
 }
