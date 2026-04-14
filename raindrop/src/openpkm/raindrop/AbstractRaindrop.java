@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
 import openpkm.base.Article;
 import openpkm.base.Book;
@@ -296,14 +297,14 @@ public abstract class AbstractRaindrop implements Raindrop, PropertiesProvider, 
     }
 
     @Override
-    public List<String> getTags() 
+    public Set<String> getTags() 
     {
         String tags = props.getProperty(PROP_TAGS);
         if(tags != null)
         {
-            return List.of(tags.split(","));                   
+            return Set.of(tags.split(","));                   
         }                
-        return Collections.EMPTY_LIST;
+        return Collections.EMPTY_SET;
     }
 
     @Override

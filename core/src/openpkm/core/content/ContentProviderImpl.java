@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
 import openpkm.base.Article;
 import openpkm.base.Book;
@@ -215,14 +216,14 @@ public class ContentProviderImpl implements ContentProvider
         }                   
 
         @Override
-        public List<String> getTags()
+        public Set<String> getTags()
         {
             if(props.containsKey(PROP_TAGS))
             {
                 String string = props.getProperty(PROP_TAGS);
-                return List.of(string.split(","));
+                return Set.of(string.split(","));
             }   
-            return Collections.EMPTY_LIST;
+            return Collections.EMPTY_SET;
         } 
 
         @Override

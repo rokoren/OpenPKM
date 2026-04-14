@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
@@ -2231,12 +2232,89 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 
+    private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, TagsProvider, Runnable 
     { 
+        private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
+        
         public RaindropSourceProviderImpl(RaindropProvider provider) 
         {
             super(provider);
-        }        
+            RP.post(this);             
+        }   
+        
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_RAINDROP_SYNC);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_RAINDROP_SYNC);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_RAINDROP_SYNC, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_RAINDROP_SYNC, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_RAINDROP_SYNC, oldValue, time); 
+            }
+        } 
+        
+        @Override
+        public Set<String> getTags()
+        {
+            if(props.containsKey(PROP_TAGS))
+            {
+                String string = props.getProperty(PROP_TAGS);
+                return Set.of(string.split(","));
+            }   
+            return Collections.EMPTY_SET;
+        }    
+        
+        public void setTags(Set<String> tags)
+        {
+            if(tags == null)
+            {
+                Object oldValue = props.remove(PROP_TAGS);
+                if(oldValue != null)
+                {
+                    oldValue = Set.of(oldValue.toString().split(","));
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TAGS, oldValue, tags);
+            }
+            else        
+            {
+                StringJoiner joiner = new StringJoiner(",");
+                Iterator<String> iterator = tags.iterator();
+                while(iterator.hasNext())
+                {
+                    joiner.add(iterator.next());
+                }                  
+                
+                Object oldValue = props.setProperty(PROP_TAGS, joiner.toString()); 
+                
+                if(oldValue != null)
+                {
+                    oldValue = Set.of(oldValue.toString().split(","));
+                }                
+                
+                propertyChangeSupport.firePropertyChange(PROP_TAGS, oldValue, tags);
+            }             
+        }
         
         @Override
         public Lookup.Provider getLookupProvider()
@@ -2346,7 +2424,20 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void run() 
         {
-            RaindropUtils.getTags(getRaindropCollection().getAccount(), getRaindropCollection());
+            List<RaindropTag> list = RaindropUtils.getTags(getRaindropCollection().getAccount(), getRaindropCollection());
+            
+            Set<String> tags = new HashSet<>();
+            tags.addAll(getTags());
+            
+            if(!list.isEmpty())
+            {
+                for(RaindropTag tag : list)
+                {
+                    tags.add(tag.getTag());
+                }             
+            } 
+            
+            setTags(tags);
             
             //System.out.println(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " Raindrop RSS : " + getTitle());
             String source = RAINDROP_FEED_URL + getRaindropCollection().getCollectionID() + "/feed";

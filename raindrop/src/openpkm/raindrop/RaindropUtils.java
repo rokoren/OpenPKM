@@ -133,7 +133,7 @@ public class RaindropUtils
         return raindropUser;
     }  
     
-    public static List<Raindrop> getTags(RaindropAccount account, RaindropCollection collection)
+    public static List<RaindropTag> getTags(RaindropAccount account, RaindropCollection collection)
     {
         // Construct the URL for the Raindrop.io API endpoint
         String apiUrl = "https://api.raindrop.io/rest/v1/tags/";
@@ -166,11 +166,9 @@ public class RaindropUtils
                 }
 
                 reader.close();
-                
-                System.out.println("Get Tags Response: " + response.toString());
 
                 // Parse the JSON response
-                //return getRaindrops(account, collection, response.toString());
+                return getTags(account, collection, response.toString());
             } 
             else 
             {
@@ -198,7 +196,30 @@ public class RaindropUtils
         }
 
         return Collections.EMPTY_LIST;
-    }      
+    }  
+
+    private static List<RaindropTag> getTags(RaindropAccount account, RaindropCollection collection, String jsonResponse)
+    {
+        List<RaindropTag> tags = new ArrayList<>();
+        // Create a JSON object from the response string
+        JSONObject jsonObject = new JSONObject(jsonResponse);
+
+        // Example: Extracting an array from the JSON response
+        JSONArray raindropsArray = jsonObject.getJSONArray("items");
+
+        // Iterate through the array and print some information
+        for (int i = 0; i < raindropsArray.length(); i++) 
+        {
+            JSONObject json = raindropsArray.getJSONObject(i);
+            String tag = json.getString("_id");
+            int count = json.getInt("count");        
+
+            RaindropTag raindropTag = new RaindropTag(account, collection, tag);
+            raindropTag.setCount(count);
+            tags.add(raindropTag);
+        }
+        return tags;
+    } 
     
     public static List<RaindropCollection> getRootCollections(RaindropAccount account)
     {

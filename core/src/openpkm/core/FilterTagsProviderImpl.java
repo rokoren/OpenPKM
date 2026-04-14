@@ -7,6 +7,7 @@ package openpkm.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.TagsProvider;
@@ -30,7 +31,7 @@ public class FilterTagsProviderImpl implements FilterTagsProvider
         {
             return true;
         }
-        List<String> tags = provider.getTags();
+        Set<String> tags = provider.getTags();
         if(tags.isEmpty())
         {
             return false;
