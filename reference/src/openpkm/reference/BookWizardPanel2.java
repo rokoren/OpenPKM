@@ -7,13 +7,14 @@ package openpkm.reference;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Book;
 import org.openide.WizardDescriptor;
+import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 
 /**
  *
  * @author Rok Koren
  */
-public class BookWizardPanel2 implements WizardDescriptor.Panel<WizardDescriptor>
+public class BookWizardPanel2 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
     /**
      * The visual component that displays this panel. If you need to access the
@@ -50,6 +51,15 @@ public class BookWizardPanel2 implements WizardDescriptor.Panel<WizardDescriptor
         // use ChangeSupport to implement add/removeChangeListener below.
         // WizardDescriptor.ERROR/WARNING/INFORMATION_MESSAGE will also be useful.
     }    
+    
+    @Override
+    public void validate() throws WizardValidationException 
+    {      
+        if(getComponent().getBookIsbn().isBlank()) 
+        {
+            throw new WizardValidationException(null, "ISBN can not be empty", null);
+        } 
+    }      
 
     @Override
     public void addChangeListener(ChangeListener l) {
