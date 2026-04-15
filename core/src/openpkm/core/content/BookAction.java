@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -30,6 +31,7 @@ import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.core.TopicWizardPanel;
 import openpkm.reference.BookWizardPanel2;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.Utils;
@@ -73,6 +75,7 @@ public class BookAction implements ActionListener
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new NoteWizardPanel1());
+        panels.add(new TopicWizardPanel());
         panels.add(new BookWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
@@ -101,8 +104,8 @@ public class BookAction implements ActionListener
             
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);      
-            List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
 
             Properties props = new Properties();
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
