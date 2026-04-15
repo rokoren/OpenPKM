@@ -4,17 +4,10 @@
  */
 package openpkm.core.content;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
-import openpkm.base.Topic;
-import org.netbeans.api.project.Project;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -83,46 +76,19 @@ public class NoteWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
 
     @Override
     public void removeChangeListener(ChangeListener l) {
-    }
-    
-    private Set<String> getSelectedTags(Lookup.Provider provider)
-    {
-        KnowledgeGraphProvider knowledgeGraph = provider.getLookup().lookup(KnowledgeGraphProvider.class);
-        if(knowledgeGraph != null)
-        {
-            Collection<Topic> topics = knowledgeGraph.getSelectedTopics();
-            if(topics.isEmpty())
-            {
-                return knowledgeGraph.getTags(knowledgeGraph.getRootTopics());
-            }
-            else
-            {
-                return knowledgeGraph.getTags(topics);                
-            }
-        }        
-        return new HashSet<>();
-    }    
+    }  
 
     @Override
     public void readSettings(WizardDescriptor wiz) 
     {
-        Lookup.Provider provider = (Project)wiz.getProperty("provider");
-        if(provider != null)
+        Lookup.Provider lookupProvider = (Lookup.Provider)wiz.getProperty("provider");
+        if(lookupProvider != null)
         {
-            Set<String> tags = getSelectedTags(provider);
-            if(tags.isEmpty())
+            TagsProvider tagsProvider = lookupProvider.getLookup().lookup(TagsProvider.class);
+            if(tagsProvider != null)
             {
-                Collection<TagsProvider> providers = (Collection<TagsProvider>)provider.getLookup().lookupAll(TagsProvider.class);
-                if(!providers.isEmpty())
-                {
-                    Iterator<TagsProvider> iterator = providers.iterator();
-                    while(iterator.hasNext())
-                    {
-                        tags.addAll(iterator.next().getTags());  
-                    }                     
-                }                
-            }
-            getComponent().setTags(tags);            
+                getComponent().setTags(tagsProvider.getTags());                                 
+            }            
         }
     }
 

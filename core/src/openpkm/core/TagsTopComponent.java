@@ -19,7 +19,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.TagsProvider;
-import org.netbeans.api.project.Project;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -68,7 +67,7 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
     private final UndoRedo.Manager undoRedoManager = new UndoRedo.Manager();  
     private final Tags tags = new Tags();
     
-    private Lookup.Result<Project> result;    
+    private Lookup.Result<TagsProvider> result;    
     
     public TagsTopComponent() {
         initComponents();
@@ -79,7 +78,7 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
         putClientProperty(TopComponent.PROP_UNDOCKING_DISABLED, Boolean.TRUE);
         associateLookup(new ProxyLookup(ExplorerUtils.createLookup(explorerManager, getActionMap()), Lookups.singleton(this)));  
         explorerManager.setRootContext(new AbstractNode(tags));   
-        result = Utilities.actionsGlobalContext().lookupResult(Project.class);          
+        result = Utilities.actionsGlobalContext().lookupResult(TagsProvider.class);          
     }
     
     private String getFilterTags(List<String> tags)
@@ -113,19 +112,14 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
+        listView1 = new org.openide.explorer.view.ListView();
+
+        setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.LINE_AXIS));
+        add(listView1);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private org.openide.explorer.view.ListView listView1;
     // End of variables declaration//GEN-END:variables
     @Override
     public void componentOpened() 
@@ -200,14 +194,11 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
         @Override
         public void resultChanged(LookupEvent event) 
         { 
-            Collection<Project> projects = (Collection<Project>) result.allInstances();
-            if(!projects.isEmpty())
+            Collection<TagsProvider> coll = (Collection<TagsProvider>) result.allInstances();
+            if(!coll.isEmpty())
             {
                 providers.clear();
-                for(Project project : projects)
-                {
-                    providers.addAll(project.getLookup().lookupAll(TagsProvider.class));                    
-                }
+                providers.addAll(coll);
                 updateKeys();                
             }
         }           

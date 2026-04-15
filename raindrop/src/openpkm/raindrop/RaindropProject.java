@@ -138,7 +138,7 @@ import openpkm.utils.LogicalViewProviderImpl;
  *
  * @author Rok Koren
  */
-public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, TagsProvider, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_RAINDROP_USER_ID         = "raindrop.user.id";    
     public static final String PROP_RAINDROP_COLLECTION_ID   = "raindrop.collection.id";
@@ -431,7 +431,51 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }     
+    } 
+
+// TODO TagsProvider
+
+    @Override
+    public Set<String> getTags()
+    {
+        if(props.containsKey(PROP_TAGS))
+        {
+            String string = props.getProperty(PROP_TAGS);
+            return Set.of(string.split(","));
+        }   
+        return Collections.EMPTY_SET;
+    }    
+
+    public void setTags(Set<String> tags)
+    {
+        if(tags == null)
+        {
+            Object oldValue = props.remove(PROP_TAGS);
+            if(oldValue != null)
+            {
+                oldValue = Set.of(oldValue.toString().split(","));
+            }
+            propertyChangeSupport.firePropertyChange(PROP_TAGS, oldValue, tags);
+        }
+        else        
+        {
+            StringJoiner joiner = new StringJoiner(",");
+            Iterator<String> iterator = tags.iterator();
+            while(iterator.hasNext())
+            {
+                joiner.add(iterator.next());
+            }                  
+
+            Object oldValue = props.setProperty(PROP_TAGS, joiner.toString()); 
+
+            if(oldValue != null)
+            {
+                oldValue = Set.of(oldValue.toString().split(","));
+            }                
+
+            propertyChangeSupport.firePropertyChange(PROP_TAGS, oldValue, tags);
+        }             
+    }    
     
 // TODO BatchUpdateSupport    
     
@@ -2232,7 +2276,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, TagsProvider, Runnable 
+    private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
         
@@ -2273,48 +2317,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 propertyChangeSupport.firePropertyChange(PROP_RAINDROP_SYNC, oldValue, time); 
             }
         } 
-        
-        @Override
-        public Set<String> getTags()
-        {
-            if(props.containsKey(PROP_TAGS))
-            {
-                String string = props.getProperty(PROP_TAGS);
-                return Set.of(string.split(","));
-            }   
-            return Collections.EMPTY_SET;
-        }    
-        
-        public void setTags(Set<String> tags)
-        {
-            if(tags == null)
-            {
-                Object oldValue = props.remove(PROP_TAGS);
-                if(oldValue != null)
-                {
-                    oldValue = Set.of(oldValue.toString().split(","));
-                }
-                propertyChangeSupport.firePropertyChange(PROP_TAGS, oldValue, tags);
-            }
-            else        
-            {
-                StringJoiner joiner = new StringJoiner(",");
-                Iterator<String> iterator = tags.iterator();
-                while(iterator.hasNext())
-                {
-                    joiner.add(iterator.next());
-                }                  
-                
-                Object oldValue = props.setProperty(PROP_TAGS, joiner.toString()); 
-                
-                if(oldValue != null)
-                {
-                    oldValue = Set.of(oldValue.toString().split(","));
-                }                
-                
-                propertyChangeSupport.firePropertyChange(PROP_TAGS, oldValue, tags);
-            }             
-        }
         
         @Override
         public Lookup.Provider getLookupProvider()
