@@ -415,14 +415,14 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         } 
 
         @Override
-        public List<String> getTopics() 
+        public Set<String> getTopics() 
         {
             String topics = props.getProperty(PROP_TOPICS);
             if(topics != null)
             {
-                return List.of(topics.split(","));                   
+                return Set.of(topics.split(","));                   
             }                
-            return Collections.EMPTY_LIST;
+            return Collections.EMPTY_SET;
         } 
 
         @Override

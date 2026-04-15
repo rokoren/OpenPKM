@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -227,14 +226,14 @@ public class ContentProviderImpl implements ContentProvider
         } 
 
         @Override
-        public List<String> getTopics()
+        public Set<String> getTopics()
         {
             String topics = props.getProperty(PROP_TOPICS);
             if(topics != null)
             {
-                return List.of(topics.split(","));                   
+                return Set.of(topics.split(","));                   
             }                
-            return Collections.EMPTY_LIST;
+            return Collections.EMPTY_SET;
         }
 
         @Override

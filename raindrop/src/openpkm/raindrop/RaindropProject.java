@@ -3012,7 +3012,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public boolean isTopic(TopicsProvider provider)
         {
-            List<String> topics = provider.getTopics();
+            Set<String> topics = provider.getTopics();
             if(selectedTopics.isEmpty() || topics.isEmpty())
             {
                 return true;

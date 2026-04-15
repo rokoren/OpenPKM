@@ -4,7 +4,7 @@
  */
 package openpkm.base;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -14,5 +14,5 @@ public interface TopicsProvider
 {
     String PROP_TOPICS = "topics"; 
     
-    List<String> getTopics();      
+    Set<String> getTopics();      
 }
