@@ -4,6 +4,7 @@
  */
 package openpkm.core.content;
 
+import java.util.HashSet;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.TagsProvider;
@@ -97,6 +98,6 @@ public class NoteWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
     {
         descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getNoteFileType()); 
         descriptor.putProperty(TitleProvider.PROP_TITLE, getComponent().getNoteTitle());
-        descriptor.putProperty(TagsProvider.PROP_TAGS, getComponent().getNoteTags()); 
+        descriptor.putProperty(TagsProvider.PROP_TAGS, new HashSet<String>(getComponent().getNoteTags())); 
     }    
 }
