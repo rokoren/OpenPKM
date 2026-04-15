@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -97,7 +98,7 @@ public class NoteAction implements ActionListener
         {  
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);      
-            List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+            Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
 
             LocalDateTime now = LocalDateTime.now();
 
