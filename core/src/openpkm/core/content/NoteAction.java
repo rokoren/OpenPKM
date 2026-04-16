@@ -13,7 +13,6 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -23,14 +22,19 @@ import javax.swing.JComponent;
 import openpkm.base.Content;
 import openpkm.base.ContentProvider;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
+import openpkm.base.Topic;
+import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.core.TopicWizardPanel;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.Utils;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -73,6 +77,7 @@ public class NoteAction implements ActionListener
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new NoteWizardPanel1());
+        panels.add(new TopicWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -99,6 +104,7 @@ public class NoteAction implements ActionListener
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);      
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -113,13 +119,29 @@ public class NoteAction implements ActionListener
             }          
             props.setProperty(TitleProvider.PROP_TITLE, title);
 
-            StringJoiner joiner = new StringJoiner(",");
-            Iterator<String> iterator = tags.iterator();
-            while(iterator.hasNext())
+            if(tags != null)
             {
-                joiner.add(iterator.next());
-            } 
-            props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());                                                  
+                StringJoiner joiner = new StringJoiner(",");
+                for(String tag : tags)
+                {
+                    joiner.add(tag);
+                }
+                props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());
+            }  
+            
+            if(topics != null)
+            {
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                if(knowledgeGraphProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Topic topic : topics)
+                    {
+                        joiner.add(knowledgeGraphProvider.getTreeID(topic));
+                    }
+                    props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
+                }
+            }                                                  
 
             FileObject root = provider.getRootFolder();
             if(root != null)
@@ -132,16 +154,23 @@ public class NoteAction implements ActionListener
                     content.save(os, "New note content created");
                     os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Note content saved with title: " + title);                         
-
-                    DataObject data = DataObject.find(file);
-                    OpenCookie open = data.getCookie(OpenCookie.class);
-                    open.open();                         
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                       
+                    StatusDisplayer.getDefault().setStatusText("Note content saved with title: " + title); 
+                    
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open note in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                            
+                }                      
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());

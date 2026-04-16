@@ -35,6 +35,7 @@ import openpkm.reference.ArticleWizardPanel2;
 import openpkm.utils.ContentSourceProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -158,16 +159,23 @@ public class ArticleAction implements ActionListener
                     content.save(os, "New article content created");
                     os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Article content saved with title: " + title);                         
-
-                    DataObject data = DataObject.find(file);
-                    OpenCookie open = data.getCookie(OpenCookie.class);
-                    open.open();                         
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                       
+                    StatusDisplayer.getDefault().setStatusText("Article content saved with title: " + title);   
+                    
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open article in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                           
+                }                      
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());
