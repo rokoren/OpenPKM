@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -27,6 +28,7 @@ import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.core.TopicWizardPanel;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.ArticleWizardPanel2;
 import openpkm.reference.FileWizardPanel1;
@@ -35,6 +37,7 @@ import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -74,6 +77,7 @@ public class ArticleAction implements ActionListener
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new FileWizardPanel1(AbstractFilesProvider.ARTICLES));
+        panels.add(new TopicWizardPanel());
         panels.add(new ArticleWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
@@ -104,8 +108,8 @@ public class ArticleAction implements ActionListener
             String fileExt = (String)wiz.getProperty(Reference.PROP_FILE_EXT);
             String filePath = (String)wiz.getProperty(Reference.PROP_FILE_PATH);
             String title = (String)wiz.getProperty(TitleProvider.PROP_TITLE);
-            List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);    
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);    
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));             
@@ -160,16 +164,23 @@ public class ArticleAction implements ActionListener
                     reference.save(os, "New Article Created by Wizard");
                     os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Article saved with title: " + title);                        
-
-                    DataObject data = DataObject.find(file);
-                    OpenCookie open = data.getCookie(OpenCookie.class);
-                    open.open();                         
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                       
+                    StatusDisplayer.getDefault().setStatusText("Article reference saved with title: " + title); 
+                    
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open article in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                            
+                }                     
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());

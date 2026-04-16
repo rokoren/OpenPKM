@@ -27,27 +27,22 @@ import openpkm.base.VisibilityProvider;
 import openpkm.utils.TopicNode;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.SearchableComboBox;
-import org.openide.explorer.ExplorerManager;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
-import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
-import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
+public class FileVisualPanel1 extends javax.swing.JPanel
 {
     private final DefaultComboBoxModel<FileTypeProvider> fileTypes = new DefaultComboBoxModel<>(); 
     private final DefaultComboBoxModel<VisibilityProvider.Modifier> modifiers = new DefaultComboBoxModel<>();  
     
     private final ObservableList<ReferenceFile> files = FXCollections.observableArrayList();  
-    private final ObservableList<String> tags = FXCollections.observableArrayList();  
-    
-    private final ExplorerManager explorerManager = new ExplorerManager();
+    private final ObservableList<String> tags = FXCollections.observableArrayList();      
     
     private SearchableComboBox comboBox1;  
     private CheckComboBox<String> comboBox2;
@@ -88,12 +83,6 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
     public String getName() 
     {
         return "General";
-    } 
-    
-    @Override
-    public ExplorerManager getExplorerManager() 
-    {
-        return explorerManager;
     }      
     
     private void setFileTypes()
@@ -155,17 +144,7 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
                 }            
             }
         });                 
-    } 
-
-    public void setTopics(Lookup.Provider provider)
-    {
-        KnowledgeGraphProvider knowledgeGraph = provider.getLookup().lookup(KnowledgeGraphProvider.class);
-        if(knowledgeGraph != null)
-        {
-            TopicsChildren topics = new TopicsChildren(knowledgeGraph);
-            explorerManager.setRootContext(new AbstractNode(topics));
-        }        
-    }    
+    }   
     
     public FileTypeProvider getReferenceFileType()
     {
@@ -185,26 +164,7 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
     public List<String> getReferenceTags()
     {
         return comboBox2.getCheckModel().getCheckedItems();
-    }
-    
-    public List<Topic> getReferenceTopics()
-    {
-        Node[] nodes = explorerManager.getSelectedNodes();
-        if(nodes.length > 0)
-        {
-            List<Topic> topics = new ArrayList<>();
-            for(Node node : nodes)
-            {
-                Topic topic = node.getLookup().lookup(Topic.class);
-                if(topic != null)
-                {
-                    topics.add(topic);
-                }
-            }
-            return topics;
-        }
-        return null;
-    }    
+    }  
     
     public String getReferenceFileRelativePath()
     {
@@ -331,9 +291,6 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel4 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
-        filler4 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jLabel5 = new javax.swing.JLabel();
-        iconView1 = new org.openide.explorer.view.IconView();
         filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel6 = new javax.swing.JLabel();
         jComboBox2 = new javax.swing.JComboBox<>();
@@ -430,27 +387,6 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
         add(jComboBox1, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 9;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler4, gridBagConstraints);
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel5, org.openide.util.NbBundle.getMessage(FileVisualPanel1.class, "FileVisualPanel1.jLabel5.text") + ":"); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 10;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel5, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 10;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        add(iconView1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 7;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
@@ -479,16 +415,13 @@ public class FileVisualPanel1 extends javax.swing.JPanel implements ExplorerMana
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.Box.Filler filler3;
-    private javax.swing.Box.Filler filler4;
     private javax.swing.Box.Filler filler5;
-    private org.openide.explorer.view.IconView iconView1;
     private javax.swing.JComboBox<FileTypeProvider> jComboBox1;
     private javax.swing.JComboBox<VisibilityProvider.Modifier> jComboBox2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
