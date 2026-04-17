@@ -6,6 +6,10 @@ package openpkm.utils;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.StringJoiner;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
@@ -14,8 +18,10 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
+import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
+import openpkm.base.Topic;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
@@ -33,10 +39,13 @@ import org.openide.util.lookup.ProxyLookup;
  */
 public class OpenProjectNode extends FilterNode implements ChangeListener
 {
+    private static final Logger LOG = Logger.getLogger(OpenProjectNode.class.getName());    
+    
     private DisplayNameProvider displayNameProvider;
     private ShortDescriptionProvider shortDescriptionProvider;
     private IconProvider iconProvider;
-    private OpenIconProvider openIconProvider;    
+    private OpenIconProvider openIconProvider;  
+    private KnowledgeGraphProvider topicProvider;
     
     private final Project project;
     
@@ -55,8 +64,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
         this.project = project;       
     }
 
-    @Override
-    public String getDisplayName() 
+    private String getDisplayName(TextFormat format)
     {
         if(displayNameProvider == null)
         {
@@ -67,14 +75,64 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
                 {
                     provider.addChangeListener(this);                    
                 }                                
-                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
+                return displayNameProvider.getDisplayName(format);                
             }
         } 
         else
         {
-            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
+            return displayNameProvider.getDisplayName(format);             
         }
-        return super.getDisplayName();
+        return super.getDisplayName();        
+    }
+
+    private String getTopicsName(Collection<Topic> topics)
+    {
+        if(!topics.isEmpty())
+        {
+            StringJoiner joiner = new StringJoiner(", ");
+            Iterator<Topic> iterator = topics.iterator();
+            while(iterator.hasNext())
+            {
+                joiner.add(iterator.next().getName());
+            } 
+
+            LOG.info("Topics: " + joiner.toString());
+
+            return joiner.toString();                
+        }
+        return null;
+    }
+    
+    private String getTopicsName()
+    {
+        if(topicProvider == null)
+        {
+            topicProvider = project.getLookup().lookup(KnowledgeGraphProvider.class);
+            if(topicProvider != null)
+            {                
+                if(topicProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                                   
+                return getTopicsName(topicProvider.getSelectedTopics());
+            }             
+        } 
+        else
+        {
+            return getTopicsName(topicProvider.getSelectedTopics());
+        }
+        return null;
+    }
+    
+    @Override
+    public String getDisplayName() 
+    {
+        String topicsName = getTopicsName();
+        if(topicsName != null)
+        {
+            return getDisplayName(TextFormat.PLAIN) + " [" + topicsName + "]";      
+        }
+        return getDisplayName(TextFormat.PLAIN);
     } 
     
     @Override
@@ -169,9 +227,9 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     @Override
     public void stateChanged(ChangeEvent evt) 
     {
-        if(evt.getSource() == displayNameProvider)
+        if(evt.getSource() == displayNameProvider || evt.getSource() == topicProvider)
         {
-            fireDisplayNameChange(null, displayNameProvider.getDisplayName(TextFormat.PLAIN));
+            fireDisplayNameChange(null, getDisplayName());
         }
         else if(evt.getSource() == shortDescriptionProvider)
         {

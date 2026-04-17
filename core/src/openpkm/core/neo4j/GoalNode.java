@@ -20,6 +20,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.VisibilityProvider;
@@ -80,15 +81,19 @@ public class GoalNode extends AbstractNode
     static final class GoalChildren extends Children.Keys<Goal> implements ChangeListener 
     {
         private final Project project;
-        private final GoalsGraphProvider provider;
+        private final GoalsGraphProvider goalProvider;
         private final Goal goal;        
 
-        public GoalChildren(Project project, GoalsGraphProvider provider, Goal goal)
+        public GoalChildren(Project project, GoalsGraphProvider goalProvider, Goal goal)
         {
             this.project = project;
-            this.provider = provider;
+            this.goalProvider = goalProvider;
             this.goal = goal;
-            provider.addChangeListener(this);
+            
+            if(goalProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.addChangeListener(this);                    
+            }             
         }  
 
         @Override
@@ -105,7 +110,7 @@ public class GoalNode extends AbstractNode
                 public void run()
                 {                                                
                     SortedSet<Goal> goals = new TreeSet<Goal>(Goal.nameComparator());
-                    goals.addAll(provider.getChildrenGoals(goal.getGoalID()));           
+                    goals.addAll(goalProvider.getChildrenGoals(goal.getGoalID()));           
                     setKeys(goals);                   
                 }
             });
@@ -114,14 +119,18 @@ public class GoalNode extends AbstractNode
         @Override
         protected void removeNotify() 
         {
-            provider.removeChangeListener(this);                               
+            if(goalProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.removeChangeListener(this);                    
+            }             
+                                       
             setKeys(Collections.<Goal>emptySet());
         }
 
         @Override
         protected Node[] createNodes(Goal goal) 
         {
-            return new Node[] {new GoalNode(project, provider, goal)};
+            return new Node[] {new GoalNode(project, goalProvider, goal)};
         }
 
         @Override

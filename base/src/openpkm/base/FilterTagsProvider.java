@@ -20,14 +20,5 @@ public interface FilterTagsProvider
     void clearFilterTags();    
     List<String> getFilterTags();    
     void addChangeListener(ChangeListener listener);
-    void removeChangeListener(ChangeListener listener); 
-    
-    public static boolean isTag(FilterTagsProvider filterProvider, TagsProvider tagsProvider)
-    {
-        if(filterProvider == null)
-        {
-            return true;
-        }
-        return filterProvider.isTag(tagsProvider);
-    }     
+    void removeChangeListener(ChangeListener listener);         
 }

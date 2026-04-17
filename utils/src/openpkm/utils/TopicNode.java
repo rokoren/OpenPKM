@@ -19,6 +19,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
@@ -77,14 +78,18 @@ public class TopicNode extends AbstractNode
     
     static final class TopicChildren extends Children.Keys<Topic> implements ChangeListener 
     {
-        private final KnowledgeGraphProvider provider;
+        private final KnowledgeGraphProvider topicProvider;
         private final Topic topic;        
 
-        public TopicChildren(KnowledgeGraphProvider provider, Topic topic)
+        public TopicChildren(KnowledgeGraphProvider topicProvider, Topic topic)
         {
-            this.provider = provider;
+            this.topicProvider = topicProvider;
             this.topic = topic;
-            provider.addChangeListener(this);
+            
+            if(topicProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.addChangeListener(this);                    
+            }              
         }  
 
         @Override
@@ -101,7 +106,7 @@ public class TopicNode extends AbstractNode
                 public void run()
                 {                                                
                     SortedSet<Topic> topics = new TreeSet<Topic>(Topic.nameComparator());
-                    topics.addAll(provider.getChildrenTopics(topic.getTopicID()));           
+                    topics.addAll(topicProvider.getChildrenTopics(topic.getTopicID()));           
                     setKeys(topics);                   
                 }
             });
@@ -110,14 +115,18 @@ public class TopicNode extends AbstractNode
         @Override
         protected void removeNotify() 
         {
-            provider.removeChangeListener(this);                               
+            if(topicProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.removeChangeListener(this);                    
+            }             
+                                        
             setKeys(Collections.<Topic>emptySet());
         }
 
         @Override
         protected Node[] createNodes(Topic topic) 
         {
-            return new Node[] {new TopicNode(provider, topic)};
+            return new Node[] {new TopicNode(topicProvider, topic)};
         }
 
         @Override
@@ -137,6 +146,7 @@ public class TopicNode extends AbstractNode
             super("Select Topic");
             this.provider = provider;
             this.topic = topic;
+            setEnabled(!provider.getSelectedTopics().contains(topic));
         }
 
         @Override

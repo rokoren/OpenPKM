@@ -4,7 +4,6 @@
  */
 package openpkm.base;
 
-import javax.swing.event.ChangeListener;
 import org.openide.util.Lookup;
 
 /**
@@ -13,8 +12,6 @@ import org.openide.util.Lookup;
  */
 public interface GraphProvider 
 {
-    boolean isTag(TagsProvider provider);
-    void addChangeListener(ChangeListener listener);
-    void removeChangeListener(ChangeListener listener);     
+    boolean isTag(TagsProvider provider);  
     Lookup.Provider getProvider();    
 }

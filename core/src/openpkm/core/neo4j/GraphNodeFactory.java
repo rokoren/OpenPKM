@@ -21,6 +21,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.KnowledgeGraphProvider;
@@ -81,15 +82,19 @@ public class GraphNodeFactory implements NodeFactory
         
     static final class TopicsNode extends AbstractNode implements ChangeListener 
     {        
-        private final KnowledgeGraphProvider provider;
+        private final KnowledgeGraphProvider topicProvider;
 
-        TopicsNode(Project project, KnowledgeGraphProvider provider)
+        TopicsNode(Project project, KnowledgeGraphProvider topicProvider)
         {
-            super(new TopicsChildren(project, provider), Lookups.fixed(project));
-            this.provider = provider;
+            super(new TopicsChildren(project, topicProvider), Lookups.fixed(project));
+            this.topicProvider = topicProvider;
             setName("topics"); // NOI18N
             setDisplayName("Topics ");
-            provider.addChangeListener(this);
+            
+            if(topicProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.addChangeListener(this);                    
+            }             
         }       
 
         @Override
@@ -97,8 +102,8 @@ public class GraphNodeFactory implements NodeFactory
         {
             return new Action[]
             {
-                new AddNode(provider),
-                new ClearSelectedNodes(provider)
+                new AddNode(topicProvider),
+                new ClearSelectedNodes(topicProvider)
             };
         }
 
@@ -128,13 +133,17 @@ public class GraphNodeFactory implements NodeFactory
         static final class TopicsChildren extends Children.Keys<Topic> implements ChangeListener 
         {
             private final Project project;
-            private final KnowledgeGraphProvider provider;
+            private final KnowledgeGraphProvider topicProvider;
 
-            public TopicsChildren(Project project, KnowledgeGraphProvider provider)
+            public TopicsChildren(Project project, KnowledgeGraphProvider topicProvider)
             {
                 this.project = project;
-                this.provider = provider;
-                provider.addChangeListener(this);
+                this.topicProvider = topicProvider;
+                
+                if(topicProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                 
             }  
                         
             protected @Override void addNotify() 
@@ -149,7 +158,7 @@ public class GraphNodeFactory implements NodeFactory
                     public void run()
                     {                                                
                         SortedSet<Topic> topics = new TreeSet<Topic>(Topic.nameComparator());
-                        topics.addAll(provider.getRootTopics());           
+                        topics.addAll(topicProvider.getRootTopics());           
                         setKeys(topics);                   
                     }
                 });
@@ -158,14 +167,18 @@ public class GraphNodeFactory implements NodeFactory
             @Override
             protected void removeNotify() 
             {
-                provider.removeChangeListener(this);                               
+                if(topicProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.removeChangeListener(this);                    
+                }                  
+                                             
                 setKeys(Collections.<Topic>emptySet());
             }
 
             @Override
             protected Node[] createNodes(Topic topic) 
             {
-                return new Node[] {new TopicNode(project, provider, topic)};
+                return new Node[] {new TopicNode(project, topicProvider, topic)};
             }
 
             @Override
@@ -238,15 +251,19 @@ public class GraphNodeFactory implements NodeFactory
     
     static final class GoalsNode extends AbstractNode implements ChangeListener 
     {        
-        private final GoalsGraphProvider provider;
+        private final GoalsGraphProvider goalProvider;
 
-        GoalsNode(Project project, GoalsGraphProvider provider)
+        GoalsNode(Project project, GoalsGraphProvider goalProvider)
         {
-            super(new GoalsChildren(project, provider), Lookups.fixed(project));
-            this.provider = provider;
+            super(new GoalsChildren(project, goalProvider), Lookups.fixed(project));
+            this.goalProvider = goalProvider;
             setName("goals"); // NOI18N
             setDisplayName("Goals ");
-            provider.addChangeListener(this);
+            
+            if(goalProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.addChangeListener(this);                    
+            }             
         }       
 
         @Override
@@ -254,8 +271,8 @@ public class GraphNodeFactory implements NodeFactory
         {
             return new Action[]
             {
-                new AddGoal(provider),
-                new ResetSelectedGoals(provider)
+                new AddGoal(goalProvider),
+                new ResetSelectedGoals(goalProvider)
             };
         }
 
@@ -285,13 +302,17 @@ public class GraphNodeFactory implements NodeFactory
         static final class GoalsChildren extends Children.Keys<Goal> implements ChangeListener 
         {
             private final Project project;
-            private final GoalsGraphProvider provider;
+            private final GoalsGraphProvider goalProvider;
 
-            public GoalsChildren(Project project, GoalsGraphProvider provider)
+            public GoalsChildren(Project project, GoalsGraphProvider goalProvider)
             {
                 this.project = project;
-                this.provider = provider;
-                provider.addChangeListener(this);
+                this.goalProvider = goalProvider;
+                
+                if(goalProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                 
             }  
                         
             protected @Override void addNotify() 
@@ -306,7 +327,7 @@ public class GraphNodeFactory implements NodeFactory
                     public void run()
                     {                                                
                         SortedSet<Goal> goals = new TreeSet<Goal>(Goal.nameComparator());
-                        goals.addAll(provider.getRootGoals());           
+                        goals.addAll(goalProvider.getRootGoals());           
                         setKeys(goals);                   
                     }
                 });
@@ -315,14 +336,18 @@ public class GraphNodeFactory implements NodeFactory
             @Override
             protected void removeNotify() 
             {
-                provider.removeChangeListener(this);                               
+                if(goalProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.removeChangeListener(this);                    
+                }                  
+                                             
                 setKeys(Collections.<Goal>emptySet());
             }
 
             @Override
             protected Node[] createNodes(Goal goal) 
             {
-                return new Node[] {new GoalNode(project, provider, goal)};
+                return new Node[] {new GoalNode(project, goalProvider, goal)};
             }
 
             @Override

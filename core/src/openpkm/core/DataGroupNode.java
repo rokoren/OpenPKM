@@ -22,6 +22,7 @@ import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.KnowledgeGraphProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObject;
@@ -34,6 +35,7 @@ import org.openide.util.lookup.Lookups;
 import openpkm.base.NodeSupport;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.TopicsProvider;
 import org.openide.util.Lookup;
 
 /**
@@ -181,16 +183,23 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
     private static final class ChildrenImpl extends Children.Keys<DataObject> implements ChangeListener 
     {
         private final DataGroupProvider provider;   
-        private final FilterTagsProvider filter;
+        private final FilterTagsProvider filterTags;
+        private final KnowledgeGraphProvider topicProvider;
 
         public ChildrenImpl(DataGroupProvider provider)
         {
             this.provider = provider;   
             provider.addChangeListener(this); 
-            filter = Lookup.getDefault().lookup(FilterTagsProvider.class);
-            if(filter != null) 
+            filterTags = Lookup.getDefault().lookup(FilterTagsProvider.class);
+            if(filterTags != null) 
             {
-                filter.addChangeListener(this);
+                filterTags.addChangeListener(this);
+            }
+            
+            topicProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+            if(topicProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.addChangeListener(this);
             }
         }  
 
@@ -225,12 +234,32 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                     }                     
 
                     if(provider.contains(data))
-                    {
-                        TagsProvider tagsProvider = data.getLookup().lookup(TagsProvider.class);
-                        if(tagsProvider == null || FilterTagsProvider.isTag(filter, tagsProvider))
+                    {                        
+                        boolean isTag = true;
+                        boolean isTopic = true;
+                        
+                        if(filterTags != null)
                         {
-                            sorted.add(data);                            
+                            TagsProvider tagsProvider = data.getLookup().lookup(TagsProvider.class);
+                            if(tagsProvider != null)
+                            {
+                                isTag = filterTags.isTag(tagsProvider);
+                            }                            
                         }
+                        
+                        if(topicProvider != null)
+                        {
+                            TopicsProvider topicsProvider = data.getLookup().lookup(TopicsProvider.class);
+                            if(topicsProvider != null)
+                            {
+                                isTopic = topicProvider.isTopic(topicsProvider);
+                            }                             
+                        }
+                        
+                        if(isTag && isTopic)                    
+                        {
+                            sorted.add(data);                  
+                        }                        
                     }
                 } 
                 if(provider.isReversed())
@@ -258,10 +287,17 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
         protected void removeNotify()
         {
             provider.removeChangeListener(this);  
-            if(filter != null) 
+            
+            if(filterTags != null) 
             {
-                filter.removeChangeListener(this);
+                filterTags.removeChangeListener(this);
             }
+            
+            if(topicProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.removeChangeListener(this);
+            }            
+            
             setKeys(Collections.<DataObject>emptySet());
         }
 

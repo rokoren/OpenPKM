@@ -2838,7 +2838,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
 // TODO KnowledgeGraphProvider     
     
-    private final class KnowledgeGraphProviderImpl implements KnowledgeGraphProvider
+    private final class KnowledgeGraphProviderImpl implements KnowledgeGraphProvider, ChangeSupportProvider
     {
         private List<Topic> rootTopics; 
         
@@ -3104,7 +3104,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO GoalsGraphProvider    
     
-    private final class GoalsGraphProviderImpl implements GoalsGraphProvider
+    private final class GoalsGraphProviderImpl implements GoalsGraphProvider, ChangeSupportProvider
     {
         private List<Goal> rootGoals; 
         
