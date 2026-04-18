@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -86,7 +87,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeWizardPanel1());
         panels.add(new TopicWizardPanel());
-        panels.add(new YouTubeDownloadWizardPanel());
+        //panels.add(new YouTubeDownloadWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -131,7 +132,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
             String thumbnailHigh = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH);
             String thumbnailStandard = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD);
             List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
             List<String> youTubeTags = (List<String>) wiz.getProperty(YouTubeVideo.PROP_YOUTUBE_TAGS);        
 
             Properties props = new Properties();
@@ -260,6 +261,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
             try
             {
                 Youtube youtube = new Youtube("https://www.youtube.com/watch?v=" + videoID);
+                /*
                 if(resolution == Video.Resolution.LOWEST || resolution == Video.Resolution.LOW)
                 {
                     youtube.streams().getLowestResolution().download(AbstractFilesProvider.VIDEOS.getDirectory().getPath() + File.separator, videoID);                                                                                        
@@ -268,6 +270,9 @@ public class YouTubeVideoDownloadAction implements ActionListener
                 {
                     youtube.streams().getHighestResolution().download(AbstractFilesProvider.VIDEOS.getDirectory().getPath() + File.separator, videoID);                                                                                        
                 }
+                */
+                
+                youtube.streams().getProgressive().getDefaultResolution().download(AbstractFilesProvider.VIDEOS.getDirectory().getPath() + File.separator, videoID);                                                                                        
                 
                 FileObject root = provider.getRootFolder();
                 if(root != null)

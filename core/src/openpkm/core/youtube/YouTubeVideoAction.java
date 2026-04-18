@@ -4,10 +4,7 @@
  */
 package openpkm.core.youtube;
 
-import openpkm.youtube.YouTubeDownloadWizardPanel;
 import openpkm.youtube.YouTubeWizardPanel1;
-import openpkm.youtube.YouTubeWizardPanel3;
-import openpkm.youtube.YouTubeWizardPanel2;
 import com.google.api.client.util.DateTime;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -33,7 +30,6 @@ import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.core.TopicWizardPanel;
 import openpkm.reference.Reference;
-import openpkm.youtube.YouTubeDownloadWizardPanel.DownloadType;
 import openpkm.utils.Utils;
 import openpkm.youtube.YouTubeSourceProvider;
 import openpkm.youtube.YouTubeVideo;
@@ -75,8 +71,10 @@ public final class YouTubeVideoAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeWizardPanel1());
         panels.add(new TopicWizardPanel());
+        /*
         panels.add(new YouTubeWizardPanel2());
         panels.add(new YouTubeWizardPanel3());
+        */
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
