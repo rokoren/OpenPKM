@@ -40,8 +40,6 @@ import openpkm.youtube.YouTubeDownloadWizardPanel;
 import openpkm.youtube.YouTubeDownloadWizardPanel.DownloadType;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeWizardPanel1;
-import openpkm.youtube.YouTubeWizardPanel2;
-import openpkm.youtube.YouTubeWizardPanel3;
 import org.netbeans.api.progress.ProgressHandle;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -89,8 +87,6 @@ public class YouTubeVideoDownloadAction implements ActionListener
         panels.add(new YouTubeWizardPanel1());
         panels.add(new TopicWizardPanel());
         panels.add(new YouTubeDownloadWizardPanel());
-        panels.add(new YouTubeWizardPanel2());
-        panels.add(new YouTubeWizardPanel3());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -229,43 +225,10 @@ public class YouTubeVideoDownloadAction implements ActionListener
             props.setProperty(TitleProvider.PROP_TITLE, title);                     
             props.setProperty(Reference.PROP_FILE_NAME, videoID); 
             props.setProperty(Reference.PROP_FILE_EXT, "mp4");
-            props.setProperty(Reference.PROP_FILE_PATH, videoID + ".mp4");               
+            props.setProperty(Reference.PROP_FILE_PATH, videoID + ".mp4");   
 
-            FileObject root = provider.getRootFolder();
-            if(root != null)
-            {
-                /*
-                YouTubeVideo video = provider.getVideoProvider().getVideo(props, true);
-                try
-                {
-                    FileObject file = provider.createData(video, fileType); 
-                    OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                    video.save(os, "New YouTube Video Created by Wizard");
-                    os.close();  
-
-                    StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                         
-
-                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube video in editor?", title, NotifyDescriptor.YES_NO_OPTION);
-                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
-                    {
-                        try
-                        {
-                            DataObject data = DataObject.find(file);
-                            OpenCookie open = data.getCookie(OpenCookie.class);
-                            open.open();                            
-                        }
-                        catch(DataObjectNotFoundException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }
-                    }                                             
-                }                    
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-                */
-            }                                             
+            YouTubeDownload downloader = new YouTubeDownload(props, provider, resolution, videoID, title, fileType);
+            RP.post(downloader);                                                          
         }               
     }
     
@@ -306,13 +269,38 @@ public class YouTubeVideoDownloadAction implements ActionListener
                     youtube.streams().getHighestResolution().download(AbstractFilesProvider.VIDEOS.getDirectory().getPath() + File.separator, videoID);                                                                                        
                 }
                 
-                FileObject folder = provider.getRootFolder();
-                if(folder != null)
+                FileObject root = provider.getRootFolder();
+                if(root != null)
                 {
-                    OutputStream os = folder.createAndOpen(videoID + "." + PropertiesProvider.EXTENSION);
-                    props.store(os, "New YouTube Video Created by Wizard"); 
-                    os.close();                           
-                    StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                    
+                    Reference reference = provider.getReferenceProvider().getReference(props);
+                    try
+                    {
+                        FileObject file = provider.createData(reference, fileType); 
+                        OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                        reference.save(os, "New video Created by Wizard");
+                        os.close();  
+
+                        StatusDisplayer.getDefault().setStatusText("Video reference saved with title: " + title);  
+
+                        NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open video in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                        if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                        {
+                            try
+                            {
+                                DataObject data = DataObject.find(file);
+                                OpenCookie open = data.getCookie(OpenCookie.class);
+                                open.open();                            
+                            }
+                            catch(DataObjectNotFoundException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }                                            
+                    }                      
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                                           
                 }                                 
             }
             catch(Exception e)
