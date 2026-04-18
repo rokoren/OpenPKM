@@ -9,7 +9,6 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
 import javax.swing.event.ChangeListener;
-import openpkm.base.TagsProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.openide.WizardDescriptor;
 import org.openide.util.HelpCtx;
@@ -82,7 +81,7 @@ public class YouTubeWizardPanel2 implements WizardDescriptor.FinishablePanel<Wiz
         getComponent().setYouTubeVideoViewCount(views);
         List<String> topicCategories = (List<String>)descriptor.getProperty(YouTubeVideo.PROP_TOPIC_CATEGORIES);
         getComponent().setYouTubeVideoTopicCategories(topicCategories);        
-        List<String> tags = (List<String>)descriptor.getProperty(TagsProvider.PROP_TAGS);
+        List<String> tags = (List<String>)descriptor.getProperty(YouTubeVideo.PROP_YOUTUBE_TAGS);
         if(tags != null)
         {
             getComponent().setYouTubeVideoTags(tags);               
