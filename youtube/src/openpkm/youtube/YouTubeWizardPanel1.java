@@ -14,18 +14,11 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.Topic;
-import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
@@ -116,44 +109,21 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
 
     @Override
     public void removeChangeListener(ChangeListener l) {
-    }
-
-    private Set<String> getSelectedTags(Lookup lookup)
-    {
-        KnowledgeGraphProvider provider = lookup.lookup(KnowledgeGraphProvider.class);
-        if(provider != null)
-        {
-            Collection<Topic> topics = provider.getSelectedTopics();
-            if(!topics.isEmpty())
-            {
-                return provider.getTags(topics);
-            }
-        }        
-        return new HashSet<>();
-    }    
+    }   
     
     @Override
     public void readSettings(WizardDescriptor descriptor) 
     {        
-        Lookup.Provider provider = (Lookup.Provider)descriptor.getProperty("provider");
-        if(provider != null)
+        Lookup.Provider lookupProvider = (Lookup.Provider)descriptor.getProperty("provider");
+        if(lookupProvider != null)
         {
-            Set<String> tags = getSelectedTags(provider.getLookup());
-            if(tags.isEmpty())
+            TagsProvider tagsProvider = lookupProvider.getLookup().lookup(TagsProvider.class);
+            if(tagsProvider != null)
             {
-                Collection<TagsProvider> providers = (Collection<TagsProvider>)provider.getLookup().lookupAll(TagsProvider.class);
-                if(!providers.isEmpty())
-                {
-                    Iterator<TagsProvider> iterator = providers.iterator();
-                    while(iterator.hasNext())
-                    {
-                        tags.addAll(iterator.next().getTags());  
-                    }                     
-                }                
-            }
-            getComponent().setTags(tags);  
-            getComponent().setTopics(provider.getLookup());
-        }   
+                getComponent().setTags(tagsProvider.getTags());                                 
+            }            
+        }
+        
         String videoID = (String)descriptor.getProperty(YouTubeVideo.PROP_VIDEO_ID);
         if(videoID != null)
         {
@@ -165,14 +135,8 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     public void storeSettings(WizardDescriptor descriptor) 
     {
         descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getVideoFileType()); 
-        descriptor.putProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, getComponent().getVideoVisibilityModifier()); 
-        List<String> tags = getComponent().getVideoTags();        
-        descriptor.putProperty(TagsProvider.PROP_TAGS, tags);
-        List<Topic> topics = getComponent().getVideoTopics();
-        if(topics != null)
-        {
-            descriptor.putProperty(TopicsProvider.PROP_TOPICS, topics);
-        }
+        descriptor.putProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, getComponent().getVideoVisibilityModifier());      
+        descriptor.putProperty(TagsProvider.PROP_TAGS, getComponent().getVideoTags());
 
         if(response != null)
         {

@@ -4,14 +4,10 @@
  */
 package openpkm.youtube;
 
-import java.awt.EventQueue;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,24 +16,14 @@ import javafx.scene.Scene;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JPanel;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.KnowledgeGraphProvider;
-import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
-import openpkm.utils.TopicNode;
 import org.controlsfx.control.CheckComboBox;
-import org.openide.explorer.ExplorerManager;
-import org.openide.nodes.AbstractNode;
-import org.openide.nodes.Children;
-import org.openide.nodes.Node;
-import org.openide.util.Lookup;
 
-public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager.Provider
+public final class YouTubeVisualPanel1 extends JPanel
 { 
     private final DefaultComboBoxModel<FileTypeProvider> fileTypes = new DefaultComboBoxModel<>(); 
     private final DefaultComboBoxModel<VisibilityProvider.Modifier> modifiers = new DefaultComboBoxModel<>();  
-    private final ObservableList<String> tags = FXCollections.observableArrayList();  
-    
-    private final ExplorerManager explorerManager = new ExplorerManager();
+    private final ObservableList<String> tags = FXCollections.observableArrayList();      
     
     private CheckComboBox<String> comboBox;
     private JFXPanel panel;    
@@ -63,13 +49,7 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
                 panel.setScene(scene);                
             }
         });         
-    }
-    
-    @Override
-    public ExplorerManager getExplorerManager() 
-    {
-        return explorerManager;
-    }    
+    }  
     
     private void setFileTypes()
     {
@@ -106,16 +86,6 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
             }
         });                 
     }  
-    
-    public void setTopics(Lookup lookup)
-    {
-        KnowledgeGraphProvider provider = lookup.lookup(KnowledgeGraphProvider.class);
-        if(provider != null)
-        {
-            TopicsChildren topics = new TopicsChildren(provider);
-            explorerManager.setRootContext(new AbstractNode(topics));
-        }        
-    }
 
     @Override
     public String getName() 
@@ -146,66 +116,6 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
     public List<String> getVideoTags()
     {
         return comboBox.getCheckModel().getCheckedItems();
-    } 
-    
-    public List<Topic> getVideoTopics()
-    {
-        Node[] nodes = explorerManager.getSelectedNodes();
-        if(nodes.length > 0)
-        {
-            List<Topic> topics = new ArrayList<>();
-            for(Node node : nodes)
-            {
-                Topic topic = node.getLookup().lookup(Topic.class);
-                if(topic != null)
-                {
-                    topics.add(topic);
-                }
-            }
-            return topics;
-        }
-        return null;
-    }
-    
-    static final class TopicsChildren extends Children.Keys<Topic> 
-    {
-        private final KnowledgeGraphProvider provider;
-
-        public TopicsChildren(KnowledgeGraphProvider provider)
-        {
-            this.provider = provider;
-        }  
-
-        @Override
-        protected void addNotify() 
-        {
-            updateKeys();                             
-        }
-
-        private void updateKeys() 
-        {
-            EventQueue.invokeLater(new Runnable() 
-            {
-                public void run()
-                {                                                
-                    SortedSet<Topic> topics = new TreeSet<Topic>(Topic.nameComparator());
-                    topics.addAll(provider.getRootTopics());           
-                    setKeys(topics);                   
-                }
-            });
-        }        
-
-        @Override
-        protected void removeNotify() 
-        {                            
-            setKeys(Collections.<Topic>emptySet());
-        }
-
-        @Override
-        protected Node[] createNodes(Topic topic) 
-        {
-            return new Node[] {new TopicNode(provider, topic)};
-        }           
     }     
 
     /**
@@ -225,15 +135,10 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel3 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
-        jComboBox1.setFocusable(false);
-        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jLabel1 = new javax.swing.JLabel();
-        iconView1 = new org.openide.explorer.view.IconView();
         filler4 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
         jLabel4 = new javax.swing.JLabel();
         jComboBox2 = new javax.swing.JComboBox<>();
-        jComboBox2.setFocusable(false);
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -302,28 +207,6 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
         add(jComboBox1, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridwidth = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler2, gridBagConstraints);
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(YouTubeVisualPanel1.class, "YouTubeVisualPanel1.jLabel1.text") + ":"); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 8;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 8;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        add(iconView1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
@@ -355,14 +238,11 @@ public final class YouTubeVisualPanel1 extends JPanel implements ExplorerManager
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.Box.Filler filler1;
-    private javax.swing.Box.Filler filler2;
     private javax.swing.Box.Filler filler3;
     private javax.swing.Box.Filler filler4;
     private javax.swing.Box.Filler filler5;
-    private org.openide.explorer.view.IconView iconView1;
     private javax.swing.JComboBox<FileTypeProvider> jComboBox1;
     private javax.swing.JComboBox<VisibilityProvider.Modifier> jComboBox2;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
