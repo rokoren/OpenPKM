@@ -265,7 +265,8 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
 
             list.add(this);
             list.add(new Info());
-            list.add(new SourcesImpl());            
+            list.add(new SourcesImpl());  
+            list.add(new DisplayNameProviderImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -706,6 +707,47 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             changeSupport.removeChangeListener(listener);
         }
     }     
+  
+// TODO GisplayNameProvider
+
+    private final class DisplayNameProviderImpl implements DisplayNameProvider, PropertyChangeListener, ChangeSupportProvider
+    {
+        private final ChangeSupport changeSupport;  
+
+        public DisplayNameProviderImpl() 
+        {
+            changeSupport = new ChangeSupport(this);  
+            addTitleListener(this);
+        }
+
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getTitle();
+            }
+            return null;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }    
+    }
     
 // TODO IconProvider    
     
