@@ -6,6 +6,7 @@ package openpkm.core.youtube;
 
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
+import openpkm.base.WatchLater;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.cef.browser.CefBrowser;
@@ -21,7 +22,7 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterWizardPanel.class.getName());     
     
-    private final YouTubeVideo video;
+    private final WatchLater watchLater;
     
     private CefBrowser browser;
     
@@ -31,14 +32,14 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
      */
     private WatchLaterVisualPanel component;
 
-    public WatchLaterWizardPanel(YouTubeVideo video) 
+    public WatchLaterWizardPanel(WatchLater watchLater) 
     {
-        this.video = video;
+        this.watchLater = watchLater;
     }  
     
     public void finish(boolean isFinish)
     {
-        if(isFinish) video.setWatchLater(false);
+        if(isFinish) watchLater.setWatchLater(false);
         if(browser != null)
         {
             browser.close(true);
@@ -54,22 +55,25 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     {
         if(browser == null)
         {
-            YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
-            if(provider != null)
+            if(watchLater instanceof YouTubeVideo video)
             {
-                try
+                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+                if(provider != null)
                 {
-                    browser = provider.getBrowser(video);                     
-                }
-                catch(Exception e)
-                {
-                    LOG.warning(e.getMessage());
-                }                   
+                    try
+                    {
+                        browser = provider.getBrowser(video);                     
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                   
+                }                
             }
         }        
         if (component == null) 
         {
-            component = new WatchLaterVisualPanel(video, browser);                                   
+            component = new WatchLaterVisualPanel(watchLater, browser);                                   
         }
         return component;
     }

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.WatchLater;
 import openpkm.youtube.YouTubeSourceProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.openide.DialogDisplayer;
@@ -50,10 +51,13 @@ public class WatchLaterAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         for(YouTubeVideo video : provider.getVideos())
         {
-            if(video.isWatchLater())
+            if(video instanceof WatchLater watchLater)
             {
-                panels.add(new WatchLaterWizardPanel(video));                  
-            }          
+                if(watchLater.isWatchLater())
+                {
+                    panels.add(new WatchLaterWizardPanel(watchLater));                  
+                }                   
+            }       
         }
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 

@@ -123,7 +123,6 @@ import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
-import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 
@@ -2231,7 +2230,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     {
                         try
                         {
-                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file), true); 
+                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.WATCH_LATER); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2315,7 +2314,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = provider.getVideo(Utils.getProperties(file), true); 
+                YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.WATCH_LATER); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 setLastSource(video);                
             }           
@@ -2431,7 +2430,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 String description = activity.getSnippet().getDescription();
                                 String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
                                   
-                                YouTubeVideo video = provider.getVideo(getProperties(activity), true);                                
+                                YouTubeVideo video = provider.getVideo(getProperties(activity), YouTubeVideoProvider.Type.WATCH_LATER);                                
                                 FileObject file = createData(video, fileTypeProvider);
                                 
                                 FileObject root = getRootFolder();

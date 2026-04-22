@@ -33,6 +33,7 @@ import openpkm.reference.Reference;
 import openpkm.utils.Utils;
 import openpkm.youtube.YouTubeSourceProvider;
 import openpkm.youtube.YouTubeVideo;
+import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
@@ -210,7 +211,7 @@ public final class YouTubeVideoAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                YouTubeVideo video = provider.getVideoProvider().getVideo(props, true);
+                YouTubeVideo video = provider.getVideoProvider().getVideo(props, YouTubeVideoProvider.Type.STANDARD);
                 try
                 {
                     FileObject file = provider.createData(video, fileType); 

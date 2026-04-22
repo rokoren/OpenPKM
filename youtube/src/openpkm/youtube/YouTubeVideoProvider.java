@@ -12,6 +12,13 @@ import java.util.Properties;
  */
 public interface YouTubeVideoProvider 
 {
-    YouTubeVideo getVideo(Properties props, boolean displayName);       
-    YouTubeVideo getVideo(String videoID, boolean displayName);  
+    YouTubeVideo getVideo(Properties props, Type type);       
+    YouTubeVideo getVideo(String videoID, Type type);  
+    
+    public enum Type 
+    {
+        BASIC,
+        STANDARD,
+        WATCH_LATER;    
+    }      
 }

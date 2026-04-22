@@ -145,7 +145,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                     YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
                     if(provider != null)
                     {
-                        YouTubeVideo video = provider.getVideo(props, false);
+                        YouTubeVideo video = provider.getVideo(props, YouTubeVideoProvider.Type.BASIC);
                         if(video != null)
                         {
                             lkp = new ProxyLookup(lookup, Lookups.proxy(video));

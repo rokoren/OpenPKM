@@ -1237,7 +1237,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
                     if(youTubeVideoProvider != null)
                     {
-                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
+                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoProvider.Type.BASIC);
                         if(video != null)
                         {
                             card.merge(video);
@@ -1521,7 +1521,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                     YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
                                     if(youTubeVideoProvider != null)
                                     {
-                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
+                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoProvider.Type.BASIC);
                                         if(video != null)
                                         {
                                             trelloCard.merge(video);

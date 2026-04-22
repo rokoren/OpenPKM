@@ -8,8 +8,6 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.VideoListResponse;
 import java.awt.Image;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,7 +24,6 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
@@ -37,6 +34,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.base.WatchLater;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
@@ -65,17 +63,21 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
     private static final Logger LOG = Logger.getLogger(YouTubeVideoProvider.class.getName());     
     
     @Override
-    public YouTubeVideo getVideo(Properties props, boolean displayName) 
+    public YouTubeVideo getVideo(Properties props, Type type) 
     {
-        if(displayName)
+        if(type == Type.WATCH_LATER)
         {
-            return new YouTubeVideoExtImpl(props);            
+            return new WatchLaterImpl(props);            
+        }
+        else if(type == Type.STANDARD)
+        {
+            return new StandardImpl(props);
         }
         return new YouTubeVideoImpl(props);
     }
     
     @Override
-    public YouTubeVideo getVideo(String videoID, boolean displayName)
+    public YouTubeVideo getVideo(String videoID, Type type)
     {
         try
         {         
@@ -194,7 +196,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
                     }                     
                 }                 
 
-                return getVideo(props, displayName);
+                return getVideo(props, type);
             }                 
         }
         catch (IOException e)
@@ -208,9 +210,45 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         return null;
     }    
  
-    private static class YouTubeVideoExtImpl extends YouTubeVideoImpl implements DisplayNameProvider
+    private static class WatchLaterImpl extends StandardImpl implements WatchLater
     {    
-        public YouTubeVideoExtImpl(Properties props)
+        public WatchLaterImpl(Properties props)
+        {
+            super(props);
+        }
+        
+        @Override
+        public boolean isWatchLater()
+        {
+            String string = props.getProperty(PROP_WATCH_LATER);
+            if(string != null)
+            {
+                return Boolean.parseBoolean(string);
+            }
+            return false;
+        }
+        
+        @Override
+        public void setWatchLater(boolean watchLater)
+        {
+            Object oldValue = props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater)); 
+            if(oldValue != null)
+            {
+                oldValue = Boolean.parseBoolean(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_WATCH_LATER, oldValue, watchLater);
+        }  
+        
+        @Override
+        public String toString()
+        {
+            return getVideoTitle();
+        }
+    }    
+    
+    private static class StandardImpl extends YouTubeVideoImpl implements DisplayNameProvider
+    {    
+        public StandardImpl(Properties props)
         {
             super(props);
         }
@@ -228,8 +266,8 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
     
     private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
     {    
-        private final Properties props; 
-        private final PropertyChangeSupport propertyChangeSupport;       
+        protected final Properties props; 
+        protected final PropertyChangeSupport propertyChangeSupport;       
         
         private Lookup lkp;  
         private SourceState state;      
@@ -538,29 +576,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
             {
                 props.setProperty(PROP_THUMBNAIL_STANDARD, thumbnail);
             }
-        } 
-        
-        @Override
-        public boolean isWatchLater()
-        {
-            String string = props.getProperty(PROP_WATCH_LATER);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
-        }
-        
-        @Override
-        public void setWatchLater(boolean watchLater)
-        {
-            Object oldValue = props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater)); 
-            if(oldValue != null)
-            {
-                oldValue = Boolean.parseBoolean(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_WATCH_LATER, oldValue, watchLater);
-        }
+        }        
 
         @Override
         public Image getIcon() 
@@ -625,7 +641,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         }          
     }    
     
-    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement, ItemListener
+    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
     {
         private CefBrowser browser; 
         private JToolBar toolbar;
@@ -689,11 +705,12 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
             if(toolbar == null)
             {
                 toolbar = new JToolBar();
+                /*
                 JCheckBox watchLater = new JCheckBox("Watch Later");
                 watchLater.setFocusable(false);
-                watchLater.setSelected(video.isWatchLater());
                 watchLater.addItemListener(this);
                 toolbar.add(watchLater);
+                */
             }
             return toolbar;
         }
@@ -747,13 +764,6 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         public void componentDeactivated() 
         {
             
-        }
-
-        @Override
-        public void itemStateChanged(ItemEvent evt) 
-        {
-            boolean isWatchLater = evt.getStateChange() == ItemEvent.SELECTED;
-            video.setWatchLater(isWatchLater);
         }
     }
 }

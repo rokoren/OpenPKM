@@ -10,13 +10,12 @@ import java.util.regex.Pattern;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.Video;
-import openpkm.base.WatchLater;
 
 /**
  *
  * @author Rok Koren
  */
-public interface YouTubeVideo extends Source, Video, PropertiesProvider, WatchLater
+public interface YouTubeVideo extends Source, Video, PropertiesProvider
 {    
     //String YOUTUBE_URL = "https://www.youtube.com/";
     String YOUTUBE_URL = "https://www.youtube-nocookie.com/";

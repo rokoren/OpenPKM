@@ -4,7 +4,7 @@
  */
 package openpkm.core.youtube;
 
-import openpkm.youtube.YouTubeVideo;
+import openpkm.base.WatchLater;
 import org.cef.browser.CefBrowser;
 
 /**
@@ -13,14 +13,14 @@ import org.cef.browser.CefBrowser;
  */
 public class WatchLaterVisualPanel extends javax.swing.JPanel 
 { 
-    private final YouTubeVideo video;
+    private final WatchLater watchLater;
     
     /**
      * Creates new form WatchLaterVisualPanel
      */
-    public WatchLaterVisualPanel(YouTubeVideo video, CefBrowser browser) 
+    public WatchLaterVisualPanel(WatchLater watchLater, CefBrowser browser) 
     {
-        this.video = video;
+        this.watchLater = watchLater;
         initComponents(); 
         add(browser.getUIComponent());        
     }
@@ -28,7 +28,7 @@ public class WatchLaterVisualPanel extends javax.swing.JPanel
     @Override
     public String getName() 
     {
-        return video.getVideoTitle();
+        return watchLater.toString();
     } 
 
     /**
