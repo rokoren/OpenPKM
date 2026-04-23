@@ -265,6 +265,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(this);
             list.add(new Info());
             list.add(new SourcesImpl());
+            list.add(new DisplayNameProviderImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -1114,6 +1115,47 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
     }      
   
+// TODO DisplayNameProvider
+
+    private final class DisplayNameProviderImpl implements DisplayNameProvider, PropertyChangeListener, ChangeSupportProvider
+    {
+        private final ChangeSupport changeSupport;  
+
+        public DisplayNameProviderImpl() 
+        {
+            changeSupport = new ChangeSupport(this);  
+            addTitleListener(this);
+        }
+
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getTitle();
+            }
+            return null;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }    
+    }    
+    
 // TODO IconProvider    
     
     private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
@@ -2206,7 +2248,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    video.save(os, "Updated by Raindrop project: " + getTitle());
+                                    video.save(os, "Updated by YouTube Channel project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)

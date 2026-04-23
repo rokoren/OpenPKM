@@ -237,6 +237,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
                 oldValue = Boolean.parseBoolean(oldValue.toString());
             }
             propertyChangeSupport.firePropertyChange(PROP_WATCH_LATER, oldValue, watchLater);
+            markModified();
         }  
         
         @Override

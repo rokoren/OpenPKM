@@ -708,7 +708,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         }
     }     
   
-// TODO GisplayNameProvider
+// TODO DisplayNameProvider
 
     private final class DisplayNameProviderImpl implements DisplayNameProvider, PropertyChangeListener, ChangeSupportProvider
     {
