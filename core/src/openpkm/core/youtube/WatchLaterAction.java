@@ -7,18 +7,22 @@ package openpkm.core.youtube;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.WatchLater;
-import openpkm.youtube.YouTubeSourceProvider;
-import openpkm.youtube.YouTubeVideo;
+import openpkm.base.WatchLaterProvider;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -38,9 +42,9 @@ public class WatchLaterAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterAction.class.getName());     
     
-    private final YouTubeSourceProvider provider;
+    private final WatchLaterProvider provider;
 
-    public WatchLaterAction(YouTubeSourceProvider provider)
+    public WatchLaterAction(WatchLaterProvider provider)
     {
         this.provider = provider;
     }
@@ -49,16 +53,43 @@ public class WatchLaterAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        for(YouTubeVideo video : provider.getVideos())
+        
+        try
         {
-            if(video instanceof WatchLater watchLater)
+            for(FileObject file : provider.getRootFolder().getChildren())
             {
-                if(watchLater.isWatchLater())
+                DataObject data = null;
+                if(file.isData())
                 {
-                    panels.add(new WatchLaterWizardPanel(watchLater));                  
-                }                   
-            }       
+                    try
+                    {
+                        data = DataObject.find(file);                    
+                    }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
+                else if(file.isFolder())
+                {
+                    data = DataFolder.findFolder(file);
+                }  
+                
+                WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
+                if(watchLater != null)
+                {
+                    if(watchLater.isWatchLater())
+                    {
+                        panels.add(new WatchLaterWizardPanel(watchLater));                  
+                    }                       
+                }
+            }              
+        } 
+        catch(IOException e)
+        {
+            LOG.warning(e.getMessage());
         }
+        
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -80,12 +111,16 @@ public class WatchLaterAction implements ActionListener
         wiz.setTitle("Watch YouTube Videos");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         boolean isFinish = DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION;
-        for(WizardDescriptor.Panel panel : panels)
+        if(isFinish)
         {
-            if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
+            for(WizardDescriptor.Panel panel : panels)
             {
-                watchLaterPanel.finish(isFinish);
-            }           
-        }                                                             
+                if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
+                {
+                    watchLaterPanel.finish(isFinish);
+                }           
+            }
+            provider.fireChange();
+        }                                                           
     }      
 }

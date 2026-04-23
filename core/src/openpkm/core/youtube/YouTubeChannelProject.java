@@ -79,6 +79,7 @@ import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WatchLater;
+import openpkm.base.WatchLaterProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
@@ -283,7 +284,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
             list.add(new VideoDataGroupProviderImpl());             
-            list.add(new WatchLaterDataGroupProviderImpl()); 
+            list.add(new WatchLaterProviderImpl()); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -1236,11 +1237,11 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     
 // TODO DataGroup     
 
-    private final class WatchLaterDataGroupProviderImpl implements DataGroupProvider, BulletIconProvider, PropertyChangeListener
+    private final class WatchLaterProviderImpl implements WatchLaterProvider, BulletIconProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public WatchLaterDataGroupProviderImpl()
+        public WatchLaterProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
@@ -1355,6 +1356,12 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             {
                 changeSupport.fireChange();
             }
+        }
+
+        @Override
+        public void fireChange() 
+        {
+            changeSupport.fireChange();
         }
     } 
     
