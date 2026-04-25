@@ -179,11 +179,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
     private Source lastSource; 
-    
-    private RaindropSourceProviderImpl raindrops;    
+      
     private RaindropCollection raindropCollection;  
-    private Neo4jInstance neo4jInstance;   
-    private RequestProcessor.Task task;     
+    private Neo4jInstance neo4jInstance;       
     
     public RaindropProject(FileObject projectDir, ProjectState state, Properties props) 
     {
@@ -195,7 +193,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         RaindropProvider raindropProvider = Lookup.getDefault().lookup(RaindropProvider.class);
         if(raindropProvider != null)
         {
-            raindrops = new RaindropSourceProviderImpl(raindropProvider);  
+            SourceProvider raindrops = new RaindropSourceProviderImpl(raindropProvider);  
             sources.put(raindrops.getName(), raindrops);             
         }
 
@@ -587,8 +585,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         protected void projectOpened() 
         {  
-            task = RP.create(raindrops);  
-            task.schedule(60000);    
             propertyChangeSupport.addPropertyChangeListener(this);
         }
 
@@ -596,7 +592,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         protected void projectClosed() 
         { 
             propertyChangeSupport.removePropertyChangeListener(this);
-            task.cancel();
             
             for(SourceProvider provider : sources.values())
             {
@@ -2471,7 +2466,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 LOG.warning("Raindrop feed: " + e.getMessage());
             }              
-            task.schedule(100000);
         } 
         
         private void saveRaindrops(String comments) throws IOException
