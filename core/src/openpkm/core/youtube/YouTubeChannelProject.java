@@ -118,7 +118,9 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
+import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
@@ -363,6 +365,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         if(time == null)
         {
             Object oldValue = props.remove(PROP_PUBLISHED_AT);
+            if(oldValue != null)
+            {
+                oldValue = new DateTime(oldValue.toString());
+            }            
             propertyChangeSupport.firePropertyChange(PROP_PUBLISHED_AT, oldValue, time);            
         }
         else
@@ -537,6 +543,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         if(videoCount == null)
         {
             Object oldValue = props.remove(PROP_VIDEO_COUNT);
+            if(oldValue != null)
+            {
+                oldValue = Long.getLong(oldValue.toString());
+            }             
             propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, videoCount);            
         }
         else
@@ -651,6 +661,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         if(time == null)
         {
             Object oldValue = props.remove(PROP_LAST_UPLOAD_TIME);
+            if(oldValue != null)
+            {
+                oldValue = new DateTime(oldValue.toString());
+            }            
             propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
         }
         else
@@ -1347,8 +1361,50 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         public boolean isReversed()
         {
             return true;
-        }          
+        } 
+        
+        @Override
+        public boolean isEnabled()
+        {
+            try
+            {
+                for(FileObject file : getRootFolder().getChildren())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    }  
 
+                    WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
+                    if(watchLater != null)
+                    {
+                        if(watchLater.isWatchLater())
+                        {
+                            return true;                  
+                        }                       
+                    }
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }                 
+                
         @Override
         public String getName() 
         {

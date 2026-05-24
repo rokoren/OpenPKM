@@ -19,6 +19,7 @@ import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
+import org.openide.awt.ActionState;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObject;
@@ -35,7 +36,11 @@ import org.openide.util.NbBundle.Messages;
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/eye.png",
-        displayName = "#CTL_WatchLaterAction"
+        displayName = "#CTL_WatchLaterAction",
+        enabledOn = @ActionState(
+        type = WatchLaterProvider.class,
+        property = "enabled"
+    )
 )
 @Messages("CTL_WatchLaterAction=Watch YouTube Videos")
 public class WatchLaterAction implements ActionListener

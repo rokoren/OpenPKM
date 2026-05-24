@@ -95,7 +95,10 @@ public class AsciidocStructureItem implements StructureItem, ElementHandle
         if(endPosition == null)
         {
             Document document = source.getDocument(false); 
-            endPosition = document.getEndPosition().getOffset();                         
+            if(document != null)
+            {
+                endPosition = document.getEndPosition().getOffset();                 
+            }                        
         }
         return endPosition;
     }     
@@ -179,7 +182,12 @@ public class AsciidocStructureItem implements StructureItem, ElementHandle
     @Override
     public long getEndPosition() 
     { 
-        return getEndPosition1().longValue();
+        Integer pos = getEndPosition1();
+        if(pos != null)
+        {
+            return getEndPosition1().longValue();            
+        }
+        return -1;
     }
 
     @Override

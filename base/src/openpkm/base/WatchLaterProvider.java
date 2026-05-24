@@ -11,4 +11,5 @@ package openpkm.base;
 public interface WatchLaterProvider extends DataGroupProvider
 {
     void fireChange();
+    boolean isEnabled();
 }
