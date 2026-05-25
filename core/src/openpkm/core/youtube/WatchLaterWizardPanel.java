@@ -18,7 +18,7 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescriptor>
+public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterWizardPanel.class.getName());     
     
@@ -111,4 +111,10 @@ public class WatchLaterWizardPanel implements WizardDescriptor.Panel<WizardDescr
     @Override
     public void storeSettings(WizardDescriptor descriptor) {
     }     
+
+    @Override
+    public boolean isFinishPanel() 
+    {
+        return true;
+    }
 }
