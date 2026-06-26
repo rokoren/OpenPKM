@@ -19,6 +19,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
+import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JToolBar;
 import openpkm.base.Article;
 import openpkm.base.Book;
 import openpkm.base.Document;
@@ -28,17 +33,26 @@ import openpkm.base.Video;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
+import openpkm.jcef.CefClientProvider;
 import openpkm.utils.DisplayNameProviderImpl;
+import org.cef.browser.CefBrowser;
+import org.netbeans.core.spi.multiview.CloseOperationState;
+import org.netbeans.core.spi.multiview.MultiViewDescription;
+import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.NotificationDisplayer;
+import org.openide.awt.UndoRedo;
+import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import org.openide.windows.TopComponent;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider
+public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, MultiViewDescription
 {
     private static final Logger LOG = Logger.getLogger(AbstractRaindrop.class.getName());  
     
@@ -430,7 +444,43 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     {
         props.store(os, comments); 
         LOG.info("Raindrop saved");
-    }     
+    }  
+    
+    @Override
+    public String preferredID() 
+    {
+        return "raindrop";
+    }        
+
+    @Override
+    public MultiViewElement createElement() 
+    {
+        return new MultiViewElementImpl(this);
+    }  
+
+    @Override
+    public HelpCtx getHelpCtx() 
+    {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    @Override
+    public String getDisplayName() 
+    {
+        return "Raindrop";
+    }   
+
+    @Override
+    public int getPersistenceType() 
+    {
+        return TopComponent.PERSISTENCE_NEVER;
+    }  
+
+    @Override
+    public Image getIcon() 
+    {
+        return ImageUtilities.loadImage(Raindrop.ICON);
+    }
     
     @Override
     public boolean equals(Object obj)
@@ -852,5 +902,131 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
                     .filter(type -> type.string.equalsIgnoreCase(string))
                     .findFirst();
         }     
+    }  
+    
+    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
+    {
+        private CefBrowser browser; 
+        private JToolBar toolbar;
+        
+        private transient MultiViewElementCallback callback;  
+        
+        private final Raindrop raindrop;
+
+        public MultiViewElementImpl(Raindrop raindrop) 
+        {
+            this.raindrop = raindrop;
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+        }                
+        
+        @Override
+        public UndoRedo getUndoRedo() 
+        {
+            return UndoRedo.NONE;
+        }
+
+        @Override
+        public void setMultiViewCallback(MultiViewElementCallback callback) 
+        {
+            this.callback = callback;
+        }
+
+        @Override
+        public CloseOperationState canCloseElement() 
+        {
+            return CloseOperationState.STATE_OK;
+        } 
+        
+        @Override
+        public JComponent getVisualRepresentation() 
+        {
+            if(browser == null)
+            {
+                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+                if(provider != null)
+                {
+                    try
+                    {
+                        browser = provider.getCefClient().createBrowser(raindrop.getLink(), false, false);   
+                        if(browser != null)
+                        {
+                            add(browser.getUIComponent());
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public JComponent getToolbarRepresentation() 
+        {
+            if(toolbar == null)
+            {
+                toolbar = new JToolBar();
+                /*
+                JCheckBox watchLater = new JCheckBox("Watch Later");
+                watchLater.setFocusable(false);
+                watchLater.addItemListener(this);
+                toolbar.add(watchLater);
+                */
+            }
+            return toolbar;
+        }
+
+        @Override
+        public Action[] getActions() 
+        {
+            return new Action[0];
+        }
+
+        @Override
+        public Lookup getLookup() 
+        {
+            return Lookup.EMPTY;
+        }        
+
+        @Override
+        public void componentOpened() 
+        {
+            
+        }
+
+        @Override
+        public void componentClosed() 
+        {
+            if(browser != null)
+            {
+                browser.close(true);
+            }
+        }
+
+        @Override
+        public void componentShowing() 
+        {
+            
+        }
+
+        @Override
+        public void componentHidden() 
+        {
+            
+        }
+
+        @Override
+        public void componentActivated() 
+        {
+            
+        }
+
+        @Override
+        public void componentDeactivated() 
+        {
+            
+        }
     }    
 }
