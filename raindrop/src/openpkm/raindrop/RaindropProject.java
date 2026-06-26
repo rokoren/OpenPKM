@@ -4,10 +4,6 @@
  */
 package openpkm.raindrop;
 
-import com.rometools.rome.feed.synd.SyndFeed;
-import com.rometools.rome.io.FeedException;
-import com.rometools.rome.io.SyndFeedInput;
-import com.rometools.rome.io.XmlReader;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Image;
@@ -19,7 +15,6 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -101,7 +96,6 @@ import org.openide.awt.NotificationDisplayer;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
-import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.loaders.DataObject;
@@ -123,7 +117,6 @@ import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.ContentSourceProvider;
-import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.YouTubeSourceProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
@@ -133,6 +126,9 @@ import openpkm.base.Notebook;
 import openpkm.base.Source.SourceState;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.LogicalViewProviderImpl;
+import org.netbeans.api.progress.ProgressHandle;
+import org.netbeans.api.progress.ProgressHandleFactory;
+import org.openide.filesystems.FileAlreadyLockedException;
 
 /**
  *
@@ -2436,41 +2432,110 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             
             setTags(tags);
             
-            //System.out.println(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " Raindrop RSS : " + getTitle());
-            String source = RAINDROP_FEED_URL + getRaindropCollection().getCollectionID() + "/feed";
-            try
+            FileObject root = getRootFolder();
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
+            if(root != null && markdown != null)
             {
-                URL url = new URL(source);
-                SyndFeedInput input = new SyndFeedInput();
-                SyndFeed feed = input.build(new XmlReader(url));
-                if(feed.getPublishedDate() != null)
-                {
-                    LocalDateTime newPublishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
-                    LocalDateTime publishedDate = getRaindropPublishedDate();
-                    if(publishedDate == null || newPublishedDate.isAfter(publishedDate))
-                    {                      
-                        setRaindropPublishedDate(newPublishedDate);
-                        saveRaindrops("Saving raindrops by project: " + getTitle());                                                              
+                ProgressHandle handle = ProgressHandleFactory.createHandle("Syncing Raindrops");
+                handle.start();
+                handle.switchToIndeterminate();                
+                
+                List<Raindrop> raindrops = getRaindropCollection().getRaindrops();
+
+                Set<String> keys = new HashSet<>(getRaindropsById().keySet());
+                for(Raindrop raindrop : raindrops)
+                {                    
+                    if(keys.remove(raindrop.getSourceID()))
+                    {
+                        boolean isTime = false;
+                        LocalDateTime lastSync = getLastSync();
+                        if(lastSync == null)
+                        {
+                            isTime = true;
+                        }
+                        else
+                        {
+                            if(lastSync.isBefore(raindrop.getLastUpdate()))
+                            {
+                                isTime = true;
+                            }                            
+                        }
+                        
+                        if(isTime)
+                        {
+                            Raindrop oldRaindrop = getRaindropsById().get(raindrop.getSourceID()); 
+                            if(!oldRaindrop.getProperties().equals(raindrop.getProperties()))
+                            {
+                                oldRaindrop.merge(raindrop);
+                                
+                                FileObject file = root.getFileObject(raindrop.getSourceID(), PropertiesProvider.EXTENSION);
+                                if(file != null)
+                                {
+                                    try
+                                    {
+                                        OutputStream os = file.getOutputStream();
+                                        oldRaindrop.getProperties().store(os, "Updated by Raindrop project: " + getTitle()); 
+                                        os.close();
+                                        LOG.info("Raindrop updated: " + raindrop.getSourceID());  
+                                    }  
+                                    catch(FileAlreadyLockedException e)
+                                    {
+                                        LOG.warning(e.getMessage());
+                                    }                             
+                                    catch(IOException e)
+                                    {
+                                        LOG.warning(e.getMessage());
+                                    }                                                             
+                                }                                                                
+                            }                              
+                        }                                                                                                                             
                     }
-                }                                                        
-            }
-            catch (MalformedURLException e)
-            {
-                LOG.warning("Raindrop malformed URL: " + e.getMessage());
-            }
-            catch (IOException e)
-            {
-                LOG.warning("Raindrop IO: " + e.getMessage());
-            }    
-            catch (FeedException e)
-            {
-                LOG.warning("Raindrop feed: " + e.getMessage());
-            }              
-        } 
-        
-        private void saveRaindrops(String comments) throws IOException
-        {
-            List<Raindrop> raindrops = getRaindropCollection().getRaindrops();
+                    else
+                    {                                
+                        try
+                        {
+                            OutputStream os = root.createAndOpen(raindrop.getSourceID() + "." + PropertiesProvider.EXTENSION);                            
+                            raindrop.getProperties().store(os, "Created by Raindrop project: " + getTitle()); 
+                            os.close();
+                            createData(raindrop, markdown); 
+                            LOG.info("Raindrop saved: " + raindrop.getSourceID());                             
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                 
+                    }
+                }
+                if(!keys.isEmpty())
+                {
+                    for(String key : keys)
+                    {
+                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {  
+                            try
+                            {
+                                file.delete();                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }                      
+                    }
+                } 
+
+                setLastSync(LocalDateTime.now());   
+
+                LOG.info("Syncing Raindrops succeeded");
+                handle.finish();  
+                
+            }            
+            
+            
+             
+            
+            /*
             for(Raindrop raindrop : raindrops)
             {
                 FileObject folder = getRootFolder();
@@ -2506,47 +2571,38 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         }                     
                     }                    
                 }
-            } 
-        }  
+            }             
+            */          
+        } 
         
         @Override
-        public FileObject createData(Raindrop raindrop, FileTypeProvider fileTypeProvider)     
+        public FileObject createData(Raindrop raindrop, FileTypeProvider fileTypeProvider) throws IOException    
         {
-            /*
-            YouTubeVideo video = provider.getVideo(props);
-            if(video != null)
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID()); 
+            
+            if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
             {
-                try
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
-                    FileObject file = getFileWithAttrs(getDataDirectory().createData(fileName, fileTypeProvider.getExtension()), true);
-                    file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
-                    
-                    if(fileTypeProvider instanceof ArticleProvider)
-                    {
-                        ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
-                        OutputStream output = file.getOutputStream();
-                        output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
-                        output.close();
-                    }                     
-                    
-                    FileObject folder = getRootFolder();
-                    if(folder != null)
-                    {  
-                        OutputStream os = folder.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                        video.save(os, "New YouTube Video Created");
-                        os.close();  
-                        return true;
-                    }                                                          
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }  
-            */
-            return null;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(raindrop.getNote().getBytes());
+                output.close();
+            }               
+            
+            URL url = new URL(raindrop.getCover());
+            Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
+            Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
+            Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
+            JLabel baloonDetails = new JLabel(picture);
+            baloonDetails.addMouseListener(FileUtils.clicked2open(primaryFile));
+            baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            JComponent details = createDetails(raindrop.getExcerpt(), FileUtils.action2open(primaryFile), picture); 
+            String title = getTitle() + ": " + raindrop.getTitle();                                                                  
+            NotificationDisplayer.getDefault().notify(title, icon, baloonDetails, details, AbstractRaindrop.getPriority(raindrop), AbstractRaindrop.getCategory(raindrop));             
+            
+            return primaryFile;             
         }          
         
         @Override
@@ -2561,49 +2617,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
         @Override
         public void fileDataCreated(FileEvent evt) 
-        {
+        {                        
             FileObject file = evt.getFile();
             try
             {
                 Raindrop raindrop = AbstractRaindrop.getRaindrop(Utils.getProperties(file)); 
-                getRaindropsById().put(raindrop.getSourceID(), raindrop);  
-
-                if(Utils.getAppID().equals(raindrop.getAppID()))
-                {
-                    String fileName = FileUtils.getFileName(getDataDirectory(), MarkdownSupport.EXTENSION);
-                    FileObject fo = getFileSystem().getRoot().createData(fileName, MarkdownSupport.EXTENSION); 
-                    fo.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-                    fo.setAttribute(ATTR_SOURCE_ID, raindrop.getSourceID());                  
-
-                    if(raindrop.getNote() != null && !raindrop.getNote().isBlank())
-                    {
-                        OutputStream output = fo.getOutputStream();
-                        output.write(raindrop.getNote().getBytes());
-                        output.close();
-                    }  
-                    
-                    URL url = new URL(raindrop.getCover());
-                    Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
-                    Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
-                    Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
-                    JLabel baloonDetails = new JLabel(picture);
-                    baloonDetails.addMouseListener(FileUtils.clicked2open(fo));
-                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                    JComponent details = createDetails(raindrop.getExcerpt(), FileUtils.action2open(fo), picture); 
-                    String title = getTitle() + ": " + raindrop.getTitle();                                                                  
-                    NotificationDisplayer.getDefault().notify(title, icon, baloonDetails, details, AbstractRaindrop.getPriority(raindrop), AbstractRaindrop.getCategory(raindrop));                        
-                }                
-
+                getRaindropsById().put(raindrop.getSourceID(), raindrop);               
                 setLastSource(raindrop);                               
             }           
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }   
-            catch(PropertyVetoException e)
-            {
-                LOG.warning(e.getMessage());
-            }             
+            }              
         }
 
         @Override
@@ -2613,7 +2638,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Raindrop raindrop = getRaindropsById().get(file.getName());  
             if(raindrop != null)
             {
-                
+                setLastSource(raindrop);      
             }
         }
 

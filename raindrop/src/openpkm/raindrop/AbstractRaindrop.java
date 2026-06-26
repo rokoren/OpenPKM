@@ -38,7 +38,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, PropertiesProvider, IconProvider, TagsProvider
+public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider
 {
     private static final Logger LOG = Logger.getLogger(AbstractRaindrop.class.getName());  
     

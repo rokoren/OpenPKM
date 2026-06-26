@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -16,7 +17,7 @@ import org.netbeans.api.annotations.common.StaticResource;
  *
  * @author Rok Koren
  */
-public interface Raindrop extends Source, TitleProvider
+public interface Raindrop extends Source, TitleProvider, PropertiesProvider
 {
     @StaticResource()
     String ICON = "openpkm/raindrop/resources/raindrop.png";      
