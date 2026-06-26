@@ -5,6 +5,7 @@
 package openpkm.raindrop;
 
 import java.awt.Image;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -24,10 +25,13 @@ import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
 import openpkm.base.Book;
+import openpkm.base.BulletIconProvider;
 import openpkm.base.Document;
 import openpkm.base.IconProvider;
+import openpkm.base.IconsProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Video;
 import openpkm.base.Link;
@@ -42,6 +46,7 @@ import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.NotificationDisplayer;
 import org.openide.awt.UndoRedo;
+import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
@@ -75,7 +80,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     {
         if (lkp == null) 
         { 
-            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new BulletIconProviderImpl());              
         }
         return lkp;
     }          
@@ -852,7 +857,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         {
             return Raindrop.Type.VIDEO;
         }         
-    }  
+    }         
     
     public static NotificationDisplayer.Priority getPriority(Raindrop raindrop)
     {
@@ -903,6 +908,46 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
                     .findFirst();
         }     
     }  
+    
+    private final class BulletIconProviderImpl implements BulletIconProvider, PropertyChangeListener
+    {
+        private final ChangeSupport changeSupport; 
+        
+        public BulletIconProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROPS_IMPORTANT, this);
+        }          
+        
+        @Override
+        public Image getBullet() 
+        {
+            if(isImportant())
+            {
+                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                return provider.getImage(IconsProvider.ICON.BULLET_STAR);                
+            }
+            return null;
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }  
+        
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }        
+    }
     
     private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
     {

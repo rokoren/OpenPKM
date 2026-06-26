@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -2455,7 +2456,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         }
                         else
                         {
-                            if(lastSync.isBefore(raindrop.getLastUpdate()))
+                            LocalDateTime lastUpdate = raindrop.getLastUpdate().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();   
+                            if(lastSync.isBefore(lastUpdate))
                             {
                                 isTime = true;
                             }                            
