@@ -12,6 +12,7 @@ import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
+import openpkm.base.BulletIconProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
@@ -20,6 +21,7 @@ import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.Children;
+import org.openide.util.ImageUtilities;
 
 /**
  *
@@ -32,7 +34,8 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
     private DisplayNameProvider displayNameProvider;
     private ShortDescriptionProvider shortDescriptionProvider;
     private IconProvider iconProvider;
-    private OpenIconProvider openIconProvider;    
+    private OpenIconProvider openIconProvider;  
+    private BulletIconProvider bulletIconProvider;    
     
     public AsciiDocDataNode(AsciiDocDataObject data) 
     {
@@ -64,6 +67,15 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
     @Override
     public Image getIcon(int type) 
     {
+        if(bulletIconProvider == null)
+        {
+            bulletIconProvider = getLookup().lookup(BulletIconProvider.class);
+            if(bulletIconProvider != null)
+            {
+                bulletIconProvider.addChangeListener(this);                  
+            }            
+        }        
+        
         if(iconProvider == null)
         {
             iconProvider = getLookup().lookup(IconProvider.class);
@@ -73,11 +85,27 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
                 {
                     provider.addChangeListener(this);                    
                 }
+                if(bulletIconProvider != null)
+                {
+                    Image bullet = bulletIconProvider.getBullet();
+                    if(bullet != null)
+                    {
+                        return ImageUtilities.mergeImages(iconProvider.getIcon(type), bullet, 7, -4);                
+                    }                    
+                }                
                 return iconProvider.getIcon(type);                
             }
         } 
         else
         {
+            if(bulletIconProvider != null)
+            {
+                Image bullet = bulletIconProvider.getBullet();
+                if(bullet != null)
+                {
+                    return ImageUtilities.mergeImages(iconProvider.getIcon(type), bullet, 7, -4);                
+                }                    
+            }             
             return iconProvider.getIcon(type);             
         }                  
         return super.getIcon(type);
@@ -182,7 +210,7 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
         {
             fireShortDescriptionChange(null, shortDescriptionProvider.getShortDescription());
         }
-        else if(evt.getSource() == iconProvider)
+        else if(evt.getSource() == iconProvider || evt.getSource() == bulletIconProvider)
         {
             fireIconChange();
         }         

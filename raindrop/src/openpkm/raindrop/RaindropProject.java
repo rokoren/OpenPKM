@@ -2863,23 +2863,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             YouTubeVideo video = getVideosById().get(file.getName());  
             if(video != null)
             {
                 
             }
+            */
         }
 
         @Override
         public void fileDeleted(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
                 setLastSource(video);
             }
+            */
         }
 
         @Override

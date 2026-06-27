@@ -35,6 +35,7 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
+import openpkm.utils.BulletIconProviderImpl;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
@@ -284,7 +285,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         {
             if (lkp == null) 
             { 
-                lkp = Lookups.fixed(this);              
+                lkp = Lookups.fixed(this, new BulletIconProviderImpl(this, propertyChangeSupport));              
             }
             return lkp;
         }            
