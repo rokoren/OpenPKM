@@ -210,7 +210,7 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
         {
             fireShortDescriptionChange(null, shortDescriptionProvider.getShortDescription());
         }
-        else if(evt.getSource() == iconProvider)
+        else if(evt.getSource() == iconProvider || evt.getSource() == bulletIconProvider)
         {
             fireIconChange();
         }         

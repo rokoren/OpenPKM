@@ -340,7 +340,12 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     @Override
     public void setImportant(boolean important) 
     {
-        props.setProperty(PROPS_IMPORTANT, Boolean.toString(important));
+        Object oldValue = props.setProperty(PROPS_IMPORTANT, Boolean.toString(important));
+        if(oldValue != null)
+        {
+            oldValue = Boolean.parseBoolean(oldValue.toString());
+        }
+        propertyChangeSupport.firePropertyChange(PROPS_IMPORTANT, oldValue, important);
     }
 
     @Override

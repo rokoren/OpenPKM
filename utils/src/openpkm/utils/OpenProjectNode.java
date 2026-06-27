@@ -6,14 +6,17 @@ package openpkm.utils;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
@@ -202,15 +205,26 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     }
     
     @Override
-    public Action[] getActions(boolean arg0) {
-        return new Action[]{
-            CommonProjectActions.newFileAction(),
-            CommonProjectActions.moveProjectAction(),
-            CommonProjectActions.copyProjectAction(),
-            CommonProjectActions.deleteProjectAction(),
-            CommonProjectActions.customizeProjectAction(),
-            CommonProjectActions.closeProjectAction()
-        };
+    public Action[] getActions(boolean arg0) 
+    {
+        ActionsProvider provider = project.getLookup().lookup(ActionsProvider.class);
+        if(provider == null)
+        {
+            return new Action[]{
+                CommonProjectActions.newFileAction(),
+                CommonProjectActions.moveProjectAction(),
+                CommonProjectActions.copyProjectAction(),
+                CommonProjectActions.deleteProjectAction(),
+                CommonProjectActions.customizeProjectAction(),
+                CommonProjectActions.closeProjectAction()
+            };            
+        }
+        List<Action> actions = new ArrayList();
+        actions.add(CommonProjectActions.deleteProjectAction()); 
+        actions.add(CommonProjectActions.customizeProjectAction()); 
+        actions.add(CommonProjectActions.closeProjectAction()); 
+        actions.addAll(provider.getActions());
+        return actions.toArray(new Action[actions.size()]);
     } 
     
     @Override

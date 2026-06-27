@@ -7,6 +7,7 @@ package openpkm.raindrop;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
@@ -35,6 +36,7 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -190,7 +192,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         RaindropProvider raindropProvider = Lookup.getDefault().lookup(RaindropProvider.class);
         if(raindropProvider != null)
         {
-            SourceProvider raindrops = new RaindropSourceProviderImpl(raindropProvider);  
+            SourceProvider raindrops = new RaindropSourceProvider(raindropProvider);  
             sources.put(raindrops.getName(), raindrops);             
         }
 
@@ -2268,13 +2270,21 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceProviderImpl extends RaindropSourceProvider implements FileChangeListener, Runnable 
+    private final class RaindropSourceProvider extends AbstractAction implements SourceProvider<Raindrop>, FileChangeListener, ActionsProvider, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
         
-        public RaindropSourceProviderImpl(RaindropProvider provider) 
+        private static final String ROOT_FOLDER = "raindrop";                            
+        
+        private Map<String, Raindrop> raindrops; 
+        private FileObject rootDir; 
+
+        private final RaindropProvider provider;           
+        
+        public RaindropSourceProvider(RaindropProvider provider) 
         {
-            super(provider);
+            super("Synchronize Raindrops");
+            this.provider = provider;
             RP.post(this);             
         }   
         
@@ -2316,6 +2326,46 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             return RaindropProject.this;
         } 
         
+        public Collection<Raindrop> getRaindrops()
+        {
+            return Collections.unmodifiableCollection(getRaindropsById().values());
+        }
+
+        public RaindropProvider getRaindropProvider()
+        {
+            return provider;
+        }
+
+        @Override
+        public Source getSource(String sourceID) 
+        {
+            return getRaindropsById().get(sourceID);
+        }                    
+
+        @Override
+        public String getName() 
+        {
+            return ROOT_FOLDER;
+        }
+
+        @Override
+        public String getDisplayName() 
+        {
+            return "Raindrop";
+        }
+
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(Raindrop.ICON));
+        }
+
+        @Override
+        public boolean contains(FileObject file) 
+        {                                   
+            return getRaindropsById().containsKey(file.getName());
+        }        
+        
         @Override
         public void projectClosed()
         {
@@ -2354,8 +2404,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
         }         
         
-        @Override
-        public synchronized Map<String, Raindrop> getRaindropsById()
+        private synchronized Map<String, Raindrop> getRaindropsById()
         {
             if(raindrops == null)
             {
@@ -2468,6 +2517,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             Raindrop oldRaindrop = getRaindropsById().get(raindrop.getSourceID()); 
                             if(!oldRaindrop.getProperties().equals(raindrop.getProperties()))
                             {
+                                oldRaindrop.setImportant(raindrop.isImportant());
                                 oldRaindrop.merge(raindrop);
                                 
                                 FileObject file = root.getFileObject(raindrop.getSourceID(), PropertiesProvider.EXTENSION);
@@ -2532,10 +2582,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 LOG.info("Syncing Raindrops succeeded");
                 handle.finish();  
                 
-            }            
-            
-            
-             
+            }                                                 
             
             /*
             for(Raindrop raindrop : raindrops)
@@ -2663,7 +2710,21 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }          
+        }  
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            RP.post(this);            
+        }
+        
+        @Override
+        public List<Action> getActions()
+        {
+            List<Action> actions = new ArrayList<>();
+            actions.add(this);
+            return actions;
+        }
     }  
     
     private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener
