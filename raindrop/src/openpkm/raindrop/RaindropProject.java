@@ -131,7 +131,6 @@ import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.LogicalViewProviderImpl;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
-import org.openide.filesystems.FileAlreadyLockedException;
 
 /**
  *
@@ -2517,28 +2516,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             Raindrop oldRaindrop = getRaindropsById().get(raindrop.getSourceID()); 
                             if(!oldRaindrop.getProperties().equals(raindrop.getProperties()))
                             {
-                                oldRaindrop.setImportant(raindrop.isImportant());
-                                oldRaindrop.merge(raindrop);
-                                
-                                FileObject file = root.getFileObject(raindrop.getSourceID(), PropertiesProvider.EXTENSION);
-                                if(file != null)
-                                {
-                                    try
-                                    {
-                                        OutputStream os = file.getOutputStream();
-                                        oldRaindrop.getProperties().store(os, "Updated by Raindrop project: " + getTitle()); 
-                                        os.close();
-                                        LOG.info("Raindrop updated: " + raindrop.getSourceID());  
-                                    }  
-                                    catch(FileAlreadyLockedException e)
-                                    {
-                                        LOG.warning(e.getMessage());
-                                    }                             
-                                    catch(IOException e)
-                                    {
-                                        LOG.warning(e.getMessage());
-                                    }                                                             
-                                }                                                                
+                                oldRaindrop.merge(raindrop);                                                               
                             }                              
                         }                                                                                                                             
                     }
@@ -2562,18 +2540,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 {
                     for(String key : keys)
                     {
-                        FileObject file = getRootFolder().getFileObject(key, PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {  
-                            try
-                            {
-                                file.delete();                                
-                            }
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }
-                        }                      
+                        Raindrop raindrop = getRaindropsById().get(key);
+                        if (raindrop != null)
+                        {
+                            raindrop.notifyDeleted();
+                        }                     
                     }
                 } 
 
@@ -2683,23 +2654,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             Raindrop raindrop = getRaindropsById().get(file.getName());  
             if(raindrop != null)
             {
                 setLastSource(raindrop);      
             }
+            */
         }
 
         @Override
         public void fileDeleted(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             Raindrop raindrop = getRaindropsById().remove(file.getName());  
             if(raindrop != null)
             {
                 setLastSource(raindrop);
             }
+            */
         }
 
         @Override

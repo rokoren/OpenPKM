@@ -103,6 +103,9 @@ public class IconsProviderImpl implements IconsProvider
     public static final String ICON_BULLET_STAR = "openpkm/core/resources/bullet_star.png";  
     
     @StaticResource()
+    public static final String ICON_BULLET_DELETE = "openpkm/core/resources/bullet_delete.png";      
+    
+    @StaticResource()
     public static final String ICON_TAG_YELLOW = "openpkm/core/resources/tag_yellow.png";    
     
     @StaticResource()
@@ -200,7 +203,9 @@ public class IconsProviderImpl implements IconsProvider
             case BULLET_BELL:
             return ICON_BULLET_BELL; 
             case BULLET_STAR:
-            return ICON_BULLET_STAR; 
+            return ICON_BULLET_STAR;             
+            case BULLET_DELETE:
+            return ICON_BULLET_DELETE;                         
             case TAG_YELLOW:
             return ICON_TAG_YELLOW;                                      
             case TAG_PURPLE:

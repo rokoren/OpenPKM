@@ -147,6 +147,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
+        markModified();
     }    
     
     @Override
@@ -921,13 +922,18 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         public BulletIconProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROPS_IMPORTANT, this);
+            propertyChangeSupport.addPropertyChangeListener(this);
         }          
         
         @Override
         public Image getBullet() 
         {
-            if(isImportant())
+            if(getState() == SourceState.DELETED)
+            {
+                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                return provider.getImage(IconsProvider.ICON.BULLET_DELETE);                 
+            }
+            else if(isImportant())
             {
                 IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
                 return provider.getImage(IconsProvider.ICON.BULLET_STAR);                
@@ -950,7 +956,10 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            changeSupport.fireChange();
+            if(evt.getPropertyName().equals(PROP_STATE) || evt.getPropertyName().equals(PROPS_IMPORTANT))
+            {
+                changeSupport.fireChange();                
+            }
         }        
     }
     
