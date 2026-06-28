@@ -26,6 +26,7 @@ import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
+import openpkm.utils.BulletIconProviderImpl;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Lookup;
@@ -62,7 +63,7 @@ public abstract class AbstractReference implements Reference, TitleProvider, Pro
     {
         if (lkp == null) 
         {
-            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new BulletIconProviderImpl(this, propertyChangeSupport));              
         }
         return lkp;
     }         
