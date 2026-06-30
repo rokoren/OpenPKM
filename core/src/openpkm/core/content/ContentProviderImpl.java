@@ -31,6 +31,7 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.utils.BulletIconProviderImpl;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.util.ImageUtilities;
@@ -106,7 +107,7 @@ public class ContentProviderImpl implements ContentProvider
         {
             if (lkp == null) 
             { 
-                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new BulletIconProviderImpl(this, propertyChangeSupport));              
             }
             return lkp;
         } 
