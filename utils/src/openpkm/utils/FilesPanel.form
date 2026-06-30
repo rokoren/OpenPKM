@@ -62,7 +62,7 @@
     <Component class="javax.swing.JButton" name="jButton1">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/utils/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="COMMAND_BOOK" type="code"/>
@@ -123,7 +123,7 @@
     <Component class="javax.swing.JButton" name="jButton2">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/utils/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="COMMAND_DOCUMENT" type="code"/>
@@ -184,7 +184,7 @@
     <Component class="javax.swing.JButton" name="jButton3">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/utils/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="COMMAND_PICTURE" type="code"/>
@@ -326,7 +326,7 @@
     <Component class="javax.swing.JButton" name="jButton4">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/utils/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="COMMAND_PDF" type="code"/>
@@ -405,7 +405,7 @@
     <Component class="javax.swing.JButton" name="jButton5">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/utils/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="COMMAND_VIDEO" type="code"/>
@@ -463,7 +463,7 @@
     <Component class="javax.swing.JButton" name="jButton6">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/openpkm/core/resources/explorer.png"/>
+          <Image iconType="3" name="/openpkm/utils/resources/explorer.png"/>
         </Property>
         <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
           <Connection code="COMMAND_ARTICLE" type="code"/>

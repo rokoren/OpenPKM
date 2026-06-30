@@ -2,16 +2,17 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/template_mypluginPanel.java to edit this template
  */
-package openpkm.core;
+package openpkm.utils;
 
 import java.io.File;
 import javax.swing.JFileChooser;
 import openpkm.base.PdfFilesProvider;
 import openpkm.reference.AbstractFilesProvider;
+import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.NbPreferences;
 
-final class FilesPanel extends javax.swing.JPanel 
+public final class FilesPanel extends javax.swing.JPanel 
 {
     public static final String COMMAND_BOOK     = "book";    
     public static final String COMMAND_ARTICLE  = "article"; 
@@ -20,9 +21,9 @@ final class FilesPanel extends javax.swing.JPanel
     public static final String COMMAND_VIDEO    = "video";     
     public static final String COMMAND_PDF      = "pdf";     
     
-    private final FilesOptionsPanelController controller;
+    private final OptionsPanelController controller;
 
-    FilesPanel(FilesOptionsPanelController controller) {
+    public FilesPanel(OptionsPanelController controller) {
         this.controller = controller;
         initComponents();
         // TODO listen to changes in form fields and call controller.changed()
@@ -84,7 +85,7 @@ final class FilesPanel extends javax.swing.JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField1, gridBagConstraints);
 
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton1.setActionCommand(COMMAND_BOOK);
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -119,7 +120,7 @@ final class FilesPanel extends javax.swing.JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField2, gridBagConstraints);
 
-        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton2.setActionCommand(COMMAND_DOCUMENT);
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -154,7 +155,7 @@ final class FilesPanel extends javax.swing.JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField3, gridBagConstraints);
 
-        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton3.setActionCommand(COMMAND_PICTURE);
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -207,7 +208,7 @@ final class FilesPanel extends javax.swing.JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(filler3, gridBagConstraints);
 
-        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton4.setActionCommand(COMMAND_PDF);
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -245,7 +246,7 @@ final class FilesPanel extends javax.swing.JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(filler9, gridBagConstraints);
 
-        jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton5.setActionCommand(COMMAND_VIDEO);
         jButton5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -278,7 +279,7 @@ final class FilesPanel extends javax.swing.JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField6, gridBagConstraints);
 
-        jButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton6.setActionCommand(COMMAND_ARTICLE);
         jButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -430,7 +431,7 @@ final class FilesPanel extends javax.swing.JPanel
         }
     }//GEN-LAST:event_article
 
-    void load() {
+    public void load() {
         // TODO read settings and initialize GUI
         // Example:        
         // someCheckBox.setSelected(Preferences.userNodeForPackage(FilesPanel.class).getBoolean("someFlag", false));
@@ -446,7 +447,7 @@ final class FilesPanel extends javax.swing.JPanel
         jTextField4.setText(NbPreferences.forModule(PdfFilesProvider.class).get(PdfFilesProvider.PROP_DIR, "")); 
     }
 
-    void store() {
+    public void store() {
         // TODO store modified settings
         // Example:
         // Preferences.userNodeForPackage(FilesPanel.class).putBoolean("someFlag", someCheckBox.isSelected());
@@ -462,7 +463,7 @@ final class FilesPanel extends javax.swing.JPanel
         NbPreferences.forModule(PdfFilesProvider.class).put(PdfFilesProvider.PROP_DIR, jTextField4.getText().trim());        
     }
 
-    boolean valid() {
+    public boolean valid() {
         // TODO check whether form is consistent and complete
         return true;
     }

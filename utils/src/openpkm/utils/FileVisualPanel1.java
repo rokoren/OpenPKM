@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
-package openpkm.reference;
+package openpkm.utils;
 
 import java.awt.EventQueue;
 import java.io.IOException;
@@ -24,7 +24,7 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
-import openpkm.utils.TopicNode;
+import openpkm.reference.AbstractFilesProvider;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.SearchableComboBox;
 import org.openide.filesystems.FileObject;

@@ -144,7 +144,7 @@ public final class RootProjectVisualPanel1 extends JPanel
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField2, gridBagConstraints);
 
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/core/resources/explorer.png"))); // NOI18N
+        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/openpkm/utils/resources/explorer.png"))); // NOI18N
         jButton1.setActionCommand("BROWSE"); // NOI18N
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

@@ -8,6 +8,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
+import openpkm.utils.FilesPanel;
 import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
@@ -18,7 +19,7 @@ import org.openide.util.Lookup;
         keywords = "#AdvancedOption_Keywords_Files",
         keywordsCategory = "OpenPKM/Files"
 )
-@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_Files=Folders", "AdvancedOption_Keywords_Files=book document picture pdf"})
+@org.openide.util.NbBundle.Messages({"AdvancedOption_DisplayName_Files=Folders", "AdvancedOption_Keywords_Files=book article document picture video pdf"})
 public final class FilesOptionsPanelController extends OptionsPanelController {
 
     private FilesPanel panel;

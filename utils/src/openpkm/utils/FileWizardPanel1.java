@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.reference;
+package openpkm.utils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -12,6 +12,8 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.reference.AbstractFilesProvider;
+import openpkm.reference.Reference;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
