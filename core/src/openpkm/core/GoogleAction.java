@@ -24,7 +24,7 @@ import org.openide.windows.TopComponent;
 )
 @ActionReferences({
     @ActionReference(path = "Toolbars/OpenPKM", position = 0),
-    @ActionReference(path = "Shortcuts", name = "D-0")
+    @ActionReference(path = "Shortcuts", name = "D-G")
 })
 @Messages("CTL_GoogleAction=Google")
 public final class GoogleAction implements ActionListener

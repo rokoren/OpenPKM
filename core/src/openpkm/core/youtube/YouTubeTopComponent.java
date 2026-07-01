@@ -6,6 +6,7 @@ package openpkm.core.youtube;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
+import openpkm.base.LinkProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.settings.ConvertAsProperties;
@@ -14,6 +15,7 @@ import org.openide.awt.ActionReference;
 import org.openide.util.Lookup;
 import org.openide.windows.TopComponent;
 import org.openide.util.NbBundle.Messages;
+import org.openide.util.lookup.Lookups;
 
 /**
  * Top component which displays something.
@@ -39,7 +41,7 @@ import org.openide.util.NbBundle.Messages;
     "CTL_YouTubeTopComponent=YouTube Window",
     "HINT_YouTubeTopComponent=This is a YouTube window"
 })
-public final class YouTubeTopComponent extends TopComponent 
+public final class YouTubeTopComponent extends TopComponent implements LinkProvider
 {
     public static final String YOUTUBE_URL = "https://www.youtube.com";
     
@@ -67,7 +69,13 @@ public final class YouTubeTopComponent extends TopComponent
             }
         }         
     }
-
+    
+    @Override
+    public Lookup getLookup()
+    {
+        return Lookups.singleton(this);
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -105,5 +113,11 @@ public final class YouTubeTopComponent extends TopComponent
     void readProperties(java.util.Properties p) {
         String version = p.getProperty("version");
         // TODO read your settings according to their version
+    }
+
+    @Override
+    public String getLink() 
+    {
+        return browser.getURL();
     }
 }

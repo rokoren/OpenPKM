@@ -7,6 +7,9 @@ package openpkm.raindrop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -501,121 +504,219 @@ public class RaindropUtils
         // Iterate through the array and print some information
         for (int i = 0; i < raindropsArray.length(); i++) 
         {
-            JSONObject json1 = raindropsArray.getJSONObject(i);
-            int raindropID = json1.getInt("_id");
-            //System.out.println("Type: " + json1.getString("type"));
-            Optional<AbstractRaindrop.Type> type = AbstractRaindrop.Type.get(json1.getString("type"));
-            if(type.isPresent())
+            JSONObject json = raindropsArray.getJSONObject(i);                             
+            Raindrop raindrop = getRaindrop(account, collection, json);
+            if(raindrop != null)
             {
-                RaindropUser creator = null; 
-                JSONObject json2 = json1.getJSONObject("creatorRef");
-                int creatorID = json2.getInt("_id");
-                RaindropAccount creatorAccount = RaindropService.getDefault().getAccount(creatorID);
-                if(creatorAccount != null)
-                {
-                    creator = creatorAccount.getUser();
-                }
-                else
-                {
-                    creator = new RaindropUser(creatorID);
-                    String name = json2.getString("name");
-                    String email = json2.getString("email");
-                    creator.setName(name);
-                    creator.setEmail(email);
-                }
-
-                String link = json1.getString("link");
-                String title = json1.getString("title");
-                String excerpt = json1.getString("excerpt");
-                String note = json1.getString("note");
-                String cover = json1.getString("cover");  
-                
-                Boolean important = null;
-                if(json1.has("important"))
-                {
-                    important = json1.getBoolean("important");                    
-                }
-                
-                boolean removed = json1.getBoolean("removed");
-                String domain = json1.getString("domain");
-                String created = json1.getString("created");
-                String lastUpdate = json1.getString("lastUpdate");   
-                
-                JSONArray tagsArray = json1.getJSONArray("tags");
-                List<String> tags = new ArrayList<>();
-                for (int k = 0; k < tagsArray.length(); k++) 
-                {  
-                    tags.add(tagsArray.getString(k));
-                } 
-                
-                String reminder = null;
-                if(json1.has("reminder"))
-                {
-                    JSONObject reminderJson = json1.getJSONObject("reminder");
-                    if(!reminderJson.isNull("date"))
-                    {
-                        reminder = reminderJson.getString("date");
-                    }                          
-                } 
-                
-                JSONArray highlightsArray = json1.getJSONArray("highlights");
-                List<String> highlights = new ArrayList<>();
-                for (int k = 0; k < highlightsArray.length(); k++) 
-                {  
-                    //highlights.add(highlightsArray.getString(k));
-                }               
-               
-                Properties props = new Properties();
-                props.setProperty(Raindrop.PROPS_TYPE, type.get().toString()); 
-                props.setProperty(Raindrop.PROPS_RAINDROP_ID, raindropID + "");
-                props.setProperty(Raindrop.PROPS_RAINDROP_USER_ID, account.getUser().getUserID() + "");
-                props.setProperty(Raindrop.PROPS_RAINDROP_CREATOR_ID, creator.getUserID() + "");
-                props.setProperty(Raindrop.PROPS_RAINDROP_COLLECTION_ID, collection.getCollectionID() + "");
-                props.setProperty(Raindrop.PROPS_LINK, link);
-                props.setProperty(TitleProvider.PROP_TITLE, title);
-                props.setProperty(Raindrop.PROPS_REMOVED, Boolean.toString(removed));
-                props.setProperty(Raindrop.PROPS_EXCERPT, excerpt);
-                props.setProperty(Raindrop.PROPS_COVER, cover); 
-                props.setProperty(Raindrop.PROPS_NOTE, note); 
-                if(!tags.isEmpty())
-                {
-                    props.setProperty(TagsProvider.PROP_TAGS, String.join(",", tags));                        
-                }
-                if(important != null)
-                {
-                    props.setProperty(Raindrop.PROPS_IMPORTANT, important.toString());                    
-                }
-                if(reminder != null)
-                {
-                    props.setProperty(Raindrop.PROPS_REMINDER, reminder);                        
-                }
-                props.setProperty(Source.PROP_TIME_CREATED, created);                  
-                props.setProperty(Raindrop.PROPS_LAST_UPDATE, lastUpdate);
-                if(!highlights.isEmpty())
-                {
-                    props.setProperty(Raindrop.PROPS_HIGHLIGHTS, String.join(",", highlights));                    
-                }
-                props.setProperty(Raindrop.PROPS_DOMAIN, domain); 
-
-                if(type.get() == Type.DOCUMENT)
-                {
-                    JSONObject file = json1.getJSONObject("file");
-                    String fileName = file.getString("name");
-                    long fileSize = file.getLong("size");
-                    String fileType = file.getString("type");                   
-                    
-                    props.setProperty(Raindrop.PROPS_FILE_NAME, fileName);
-                    props.setProperty(Raindrop.PROPS_FILE_SIZE, fileSize + "");
-                    props.setProperty(Raindrop.PROPS_FILE_TYPE, fileType); 
-                }
-                             
-                Raindrop raindrop = AbstractRaindrop.getRaindrop(props);
-                if(raindrop != null)
-                {
-                    raindrops.add(raindrop);                      
-                }              
-            }
+                raindrops.add(raindrop);                      
+            }              
         }
         return raindrops;
+    }  
+
+    public static Raindrop createRaindrop(RaindropAccount account, RaindropCollection collection, String link)
+    {
+        // Construct the URL for the Raindrop.io API endpoint
+        String apiUrl = "https://api.raindrop.io/rest/v1/raindrop/";
+
+        HttpURLConnection connection = null;
+        try
+        {
+            URL url = new URL(apiUrl + collection.getCollectionID());
+
+            // Open a connection to the URL
+            connection = (HttpURLConnection) url.openConnection();
+
+            // Set the request method to GET
+            connection.setRequestMethod("POST");
+
+            // Set the API key in the request header
+            connection.setRequestProperty("Authorization", "Bearer " + account.getToken());
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setDoOutput(true);
+            
+            JSONObject json = new JSONObject();
+            json.append("link", link);
+            
+            try (OutputStream os = connection.getOutputStream()) {
+                Writer writer = new OutputStreamWriter(os);
+                json.write(writer);
+                writer.close();
+            }         
+
+            // Get the response code
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Read the response from the API
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                reader.close();
+
+                // Parse the JSON response
+                return getRaindrop(account, collection, response.toString());
+            } 
+            else 
+            {
+                NotifyDescriptor d = new NotifyDescriptor(
+                        "Create Raindrop Raindrop.io API Request failed. Response Code: " + responseCode, // message
+                        collection.getTitle(), // title
+                        NotifyDescriptor.DEFAULT_OPTION, // option type
+                        NotifyDescriptor.WARNING_MESSAGE, // message type
+                        null, // custom buttons (as Object[])
+                        null); // default value
+                DialogDisplayer.getDefault().notify(d);
+            }                
+        }
+        catch(IOException e)
+        {
+            Exceptions.printStackTrace(e);
+        }
+        finally
+        {
+            if(connection != null)
+            {
+                // Close the connection
+                connection.disconnect();                  
+            }
+        }
+
+        return null;
+    }  
+    
+    private static Raindrop getRaindrop(RaindropAccount account, RaindropCollection collection, String jsonResponse)
+    {
+        // Create a JSON object from the response string
+        JSONObject jsonObject = new JSONObject(jsonResponse);
+        
+        boolean result = jsonObject.getBoolean("result");
+        
+        if(result)
+        {
+            JSONObject item = jsonObject.getJSONObject("item");
+            return getRaindrop(account, collection, item);
+        }
+        return null;
+    }   
+    
+    private static Raindrop getRaindrop(RaindropAccount account, RaindropCollection collection, JSONObject json)
+    {
+        int raindropID = json.getInt("_id");
+        //System.out.println("Type: " + json1.getString("type"));
+        Optional<AbstractRaindrop.Type> type = AbstractRaindrop.Type.get(json.getString("type"));
+        if(type.isPresent())
+        {
+            RaindropUser creator = null; 
+            JSONObject json2 = json.getJSONObject("creatorRef");
+            int creatorID = json2.getInt("_id");
+            RaindropAccount creatorAccount = RaindropService.getDefault().getAccount(creatorID);
+            if(creatorAccount != null)
+            {
+                creator = creatorAccount.getUser();
+            }
+            else
+            {
+                creator = new RaindropUser(creatorID);
+                String name = json2.getString("name");
+                String email = json2.getString("email");
+                creator.setName(name);
+                creator.setEmail(email);
+            }
+
+            String link = json.getString("link");
+            String title = json.getString("title");
+            String excerpt = json.getString("excerpt");
+            String note = json.getString("note");
+            String cover = json.getString("cover");  
+
+            Boolean important = null;
+            if(json.has("important"))
+            {
+                important = json.getBoolean("important");                    
+            }
+
+            boolean removed = json.getBoolean("removed");
+            String domain = json.getString("domain");
+            String created = json.getString("created");
+            String lastUpdate = json.getString("lastUpdate");   
+
+            JSONArray tagsArray = json.getJSONArray("tags");
+            List<String> tags = new ArrayList<>();
+            for (int k = 0; k < tagsArray.length(); k++) 
+            {  
+                tags.add(tagsArray.getString(k));
+            } 
+
+            String reminder = null;
+            if(json.has("reminder"))
+            {
+                JSONObject reminderJson = json.getJSONObject("reminder");
+                if(!reminderJson.isNull("date"))
+                {
+                    reminder = reminderJson.getString("date");
+                }                          
+            } 
+
+            JSONArray highlightsArray = json.getJSONArray("highlights");
+            List<String> highlights = new ArrayList<>();
+            for (int k = 0; k < highlightsArray.length(); k++) 
+            {  
+                //highlights.add(highlightsArray.getString(k));
+            }               
+
+            Properties props = new Properties();
+            props.setProperty(Raindrop.PROPS_TYPE, type.get().toString()); 
+            props.setProperty(Raindrop.PROPS_RAINDROP_ID, raindropID + "");
+            props.setProperty(Raindrop.PROPS_RAINDROP_USER_ID, account.getUser().getUserID() + "");
+            props.setProperty(Raindrop.PROPS_RAINDROP_CREATOR_ID, creator.getUserID() + "");
+            props.setProperty(Raindrop.PROPS_RAINDROP_COLLECTION_ID, collection.getCollectionID() + "");
+            props.setProperty(Raindrop.PROPS_LINK, link);
+            props.setProperty(TitleProvider.PROP_TITLE, title);
+            props.setProperty(Raindrop.PROPS_REMOVED, Boolean.toString(removed));
+            props.setProperty(Raindrop.PROPS_EXCERPT, excerpt);
+            props.setProperty(Raindrop.PROPS_COVER, cover); 
+            props.setProperty(Raindrop.PROPS_NOTE, note); 
+            if(!tags.isEmpty())
+            {
+                props.setProperty(TagsProvider.PROP_TAGS, String.join(",", tags));                        
+            }
+            if(important != null)
+            {
+                props.setProperty(Raindrop.PROPS_IMPORTANT, important.toString());                    
+            }
+            if(reminder != null)
+            {
+                props.setProperty(Raindrop.PROPS_REMINDER, reminder);                        
+            }
+            props.setProperty(Source.PROP_TIME_CREATED, created);                  
+            props.setProperty(Raindrop.PROPS_LAST_UPDATE, lastUpdate);
+            if(!highlights.isEmpty())
+            {
+                props.setProperty(Raindrop.PROPS_HIGHLIGHTS, String.join(",", highlights));                    
+            }
+            props.setProperty(Raindrop.PROPS_DOMAIN, domain); 
+
+            if(type.get() == Type.DOCUMENT)
+            {
+                JSONObject file = json.getJSONObject("file");
+                String fileName = file.getString("name");
+                long fileSize = file.getLong("size");
+                String fileType = file.getString("type");                   
+
+                props.setProperty(Raindrop.PROPS_FILE_NAME, fileName);
+                props.setProperty(Raindrop.PROPS_FILE_SIZE, fileSize + "");
+                props.setProperty(Raindrop.PROPS_FILE_TYPE, fileType); 
+            }
+
+            return AbstractRaindrop.getRaindrop(props);
+        }
+        return null;
     }      
 }

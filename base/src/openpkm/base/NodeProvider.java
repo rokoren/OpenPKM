@@ -45,7 +45,7 @@ public interface NodeProvider extends Lookup.Provider
         };
     } 
 
-        public static class ListCellRendererImpl extends JLabel implements ListCellRenderer<NodeProvider>
+    public static class ListCellRendererImpl extends JLabel implements ListCellRenderer<NodeProvider>
     {
         private final TextFormat format;
         
