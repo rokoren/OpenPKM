@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import openpkm.base.RemoteDataProvider;
 import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.utils.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
@@ -116,14 +117,14 @@ public class AsciiDocDataObject extends MultiDataObject
     { 
         if(lookup == null)
         { 
-            Source source = Utils.getSource(getPrimaryFile());
-            if(source == null)
+            SourceProviderWrapper provider = Utils.getSourceProvider(getPrimaryFile());
+            if(provider == null)
             {
                 lookup = super.getLookup();
             }  
             else
             {                   
-                lookup = new ProxyLookup(super.getLookup(), Lookups.proxy(source));                
+                lookup = new ProxyLookup(super.getLookup(), Lookups.singleton(provider));                
             }
         }
         return lookup; 
@@ -132,16 +133,20 @@ public class AsciiDocDataObject extends MultiDataObject
     @Override
     protected void handleDelete() throws IOException 
     {
-        RemoteDataProvider provider = getLookup().lookup(RemoteDataProvider.class);
-        if(provider != null)
+        RemoteDataProvider remoteProvider = getLookup().lookup(RemoteDataProvider.class);
+        if(remoteProvider != null)
         {
-            provider.delete();
+            remoteProvider.delete();
         }
         
-        Source source = getLookup().lookup(Source.class);
-        if(source != null)
+        SourceProviderWrapper sourceProvider = getLookup().lookup(SourceProviderWrapper.class);
+        if(sourceProvider != null)
         {
-            source.notifyDeleted();
+            Source source = sourceProvider.getSource();
+            if(source != null)
+            {
+                source.notifyDeleted();
+            }            
         }
 
         // pokličeš privzeto brisanje datoteke

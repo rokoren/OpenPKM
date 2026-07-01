@@ -1738,6 +1738,18 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         }
         
         @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
         public FileObject createData(WebPage webPage, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
@@ -1931,6 +1943,18 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
         
         @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    

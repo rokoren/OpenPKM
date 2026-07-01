@@ -517,17 +517,17 @@ public class RaindropUtils
     public static Raindrop createRaindrop(RaindropAccount account, RaindropCollection collection, String link)
     {
         // Construct the URL for the Raindrop.io API endpoint
-        String apiUrl = "https://api.raindrop.io/rest/v1/raindrop/";
+        String apiUrl = "https://api.raindrop.io/rest/v1/raindrop";
 
         HttpURLConnection connection = null;
         try
         {
-            URL url = new URL(apiUrl + collection.getCollectionID());
+            URL url = new URL(apiUrl);
 
             // Open a connection to the URL
             connection = (HttpURLConnection) url.openConnection();
 
-            // Set the request method to GET
+            // Set the request method to POST
             connection.setRequestMethod("POST");
 
             // Set the API key in the request header
@@ -537,9 +537,18 @@ public class RaindropUtils
             connection.setDoOutput(true);
             
             JSONObject json = new JSONObject();
-            json.append("link", link);
+            json.put("collection", new JSONObject().put("$id", collection.getCollectionID()));
+            json.put("link", link);
+            json.put("pleaseParse", new JSONObject());
             
             try (OutputStream os = connection.getOutputStream()) {
+                /*
+                System.out.println("JSON:" + json.toString());
+                byte[] input = json.toString().getBytes("utf-8");
+                os.write(input, 0, input.length);		
+                */
+
+                System.out.println("Link:" + link);
                 Writer writer = new OutputStreamWriter(os);
                 json.write(writer);
                 writer.close();
@@ -664,12 +673,15 @@ public class RaindropUtils
                 }                          
             } 
 
-            JSONArray highlightsArray = json.getJSONArray("highlights");
             List<String> highlights = new ArrayList<>();
-            for (int k = 0; k < highlightsArray.length(); k++) 
-            {  
-                //highlights.add(highlightsArray.getString(k));
-            }               
+            if(json.has("highlights"))
+            {
+                JSONArray highlightsArray = json.getJSONArray("highlights");
+                for (int k = 0; k < highlightsArray.length(); k++) 
+                {  
+                    //highlights.add(highlightsArray.getString(k));
+                }                  
+            }             
 
             Properties props = new Properties();
             props.setProperty(Raindrop.PROPS_TYPE, type.get().toString()); 

@@ -1075,7 +1075,19 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }        
+        }  
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
         
         @Override
         public String getName()
@@ -1748,7 +1760,19 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }  
+        } 
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
         
         @Override
         public Source getSource(String sourceID)

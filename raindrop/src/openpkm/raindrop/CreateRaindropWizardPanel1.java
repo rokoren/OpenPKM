@@ -60,8 +60,13 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.Panel<Wizard
     }
 
     @Override
-    public void storeSettings(WizardDescriptor wiz) {
+    public void storeSettings(WizardDescriptor wiz) 
+    {
         // use wiz.putProperty to remember current panel state
+        RaindropProject project = getComponent().getRaindropProject();
+        if(project != null)
+        {
+            wiz.putProperty("project", project); 
+        }
     }
-
 }

@@ -6,6 +6,9 @@ package openpkm.raindrop;
 
 import java.awt.Component;
 import java.beans.BeanInfo;
+import java.util.Comparator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -34,21 +37,29 @@ public final class CreateRaindropVisualPanel1 extends JPanel
     }
 
     @Override
-    public String getName() {
-        return "Step #1";
+    public String getName() 
+    {
+        return "General";
+    }
+    
+    public RaindropProject getRaindropProject()
+    {
+        return (RaindropProject)projects.getSelectedItem();
     }
     
     private void setProjects()
     {
         Project mainProject = OpenProjects.getDefault().getMainProject();
         Project[] openProjects = OpenProjects.getDefault().getOpenProjects();
+        SortedSet<RaindropProject> sorted = new TreeSet<RaindropProject>(titleComparator());
         for(Project project : openProjects)
         {
             if(project instanceof RaindropProject raindropProject)
             {
-                projects.addElement(raindropProject);
+                sorted.add(raindropProject);
             }
         }
+        projects.addAll(sorted);
         if(mainProject instanceof RaindropProject raindropProject)
         {
             projects.setSelectedItem(raindropProject);                     
@@ -98,6 +109,24 @@ public final class CreateRaindropVisualPanel1 extends JPanel
             
             return this;
         }
+    } 
+
+    private static Comparator<RaindropProject> titleComparator() 
+    {
+        return new Comparator<RaindropProject>() 
+        {
+            @Override
+            public int compare(RaindropProject project1, RaindropProject project2) 
+            {
+                TitleProvider titleProvider1 = project1.getLookup().lookup(TitleProvider.class);
+                TitleProvider titleProvider2 = project2.getLookup().lookup(TitleProvider.class);
+                if(titleProvider1 != null && titleProvider2 != null)
+                {
+                    return titleProvider1.getTitle().compareTo(titleProvider2.getTitle());                     
+                }
+                return -1;
+            }
+        };
     }     
 
     /**
@@ -111,10 +140,12 @@ public final class CreateRaindropVisualPanel1 extends JPanel
 
         jLabel1 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
+        jCheckBox1 = new javax.swing.JCheckBox();
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
 
         setLayout(new java.awt.GridBagLayout());
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel1.text") + ";"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel1.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -130,9 +161,24 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         add(jComboBox1, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jCheckBox1.text") + ";"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jCheckBox1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler2, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.Box.Filler filler2;
+    private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JComboBox<RaindropProject> jComboBox1;
     private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables

@@ -19,6 +19,8 @@ import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
+import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.Children;
 import org.openide.util.ImageUtilities;
@@ -31,6 +33,7 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(MarkdownDataNode.class.getName());    
     
+    private SourceProviderWrapper sourceProvider;
     private DisplayNameProvider displayNameProvider;
     private ShortDescriptionProvider shortDescriptionProvider;
     private IconProvider iconProvider;
@@ -41,6 +44,85 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     {
         super(data, Children.LEAF, data.getLookup());    
     }
+    
+    private SourceProviderWrapper getSourceProvider()
+    {
+        if(sourceProvider == null)
+        {
+            sourceProvider = getLookup().lookup(SourceProviderWrapper.class);
+            if(sourceProvider != null)
+            {
+                sourceProvider.addListener(this);
+            }            
+        }
+        return sourceProvider;
+    }
+    
+    private DisplayNameProvider getDisplayNameProvider()
+    {
+        if(displayNameProvider == null)
+        {
+            if(getSourceProvider() != null)
+            {
+                Source source = getSourceProvider().getSource();
+                if(source != null)
+                {
+                    displayNameProvider = source.getLookup().lookup(DisplayNameProvider.class);
+                    if(displayNameProvider != null)
+                    {
+                        if(displayNameProvider instanceof ChangeSupportProvider provider)
+                        {
+                            provider.addChangeListener(this);                    
+                        }                                             
+                    } 
+                }            
+            }                       
+        } 
+        return displayNameProvider;         
+    }  
+    
+    private IconProvider getIconProvider()
+    {
+        if(iconProvider == null)
+        {
+            if(getSourceProvider() != null)
+            {
+                Source source = getSourceProvider().getSource();
+                if(source != null)
+                {
+                    iconProvider = source.getLookup().lookup(IconProvider.class);
+                    if(iconProvider != null)
+                    {
+                        if(iconProvider instanceof ChangeSupportProvider provider)
+                        {
+                            provider.addChangeListener(this);                    
+                        }                                             
+                    } 
+                }            
+            }                       
+        } 
+        return iconProvider;         
+    }    
+    
+    private BulletIconProvider getBulletIconProvider()
+    {
+        if(bulletIconProvider == null)
+        {
+            if(getSourceProvider() != null)
+            {
+                Source source = getSourceProvider().getSource();
+                if(source != null)
+                {
+                    bulletIconProvider = source.getLookup().lookup(BulletIconProvider.class);
+                    if(bulletIconProvider != null)
+                    {
+                        bulletIconProvider.addChangeListener(this);                                            
+                    } 
+                }            
+            }                       
+        } 
+        return bulletIconProvider;         
+    }      
     
     @Override    
     public Action[] getActions(boolean context) 
@@ -67,46 +149,17 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     @Override
     public Image getIcon(int type) 
     {
-        if(bulletIconProvider == null)
+        if(getIconProvider() != null)
         {
-            bulletIconProvider = getLookup().lookup(BulletIconProvider.class);
-            if(bulletIconProvider != null)
-            {
-                bulletIconProvider.addChangeListener(this);                  
-            }            
-        }
-        
-        if(iconProvider == null)
-        {
-            iconProvider = getLookup().lookup(IconProvider.class);
-            if(iconProvider != null)
-            {
-                if(iconProvider instanceof ChangeSupportProvider provider)
-                {
-                    provider.addChangeListener(this);                    
-                }
-                if(bulletIconProvider != null)
-                {
-                    Image bullet = bulletIconProvider.getBullet();
-                    if(bullet != null)
-                    {
-                        return ImageUtilities.mergeImages(iconProvider.getIcon(type), bullet, 7, -4);                
-                    }                    
-                }
-                return iconProvider.getIcon(type);                
-            }
-        } 
-        else
-        {
-            if(bulletIconProvider != null)
+            if(getBulletIconProvider() != null)
             {
                 Image bullet = bulletIconProvider.getBullet();
                 if(bullet != null)
                 {
                     return ImageUtilities.mergeImages(iconProvider.getIcon(type), bullet, 7, -4);                
-                }                    
-            }            
-            return iconProvider.getIcon(type);             
+                }                  
+            }
+            return iconProvider.getIcon(type);              
         }                  
         return super.getIcon(type);
     }    
@@ -136,44 +189,22 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
     @Override
     public String getDisplayName() 
     {        
-        if(displayNameProvider == null)
+        DisplayNameProvider provider = getDisplayNameProvider();
+        if(provider != null)
         {
-            displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
-            if(displayNameProvider != null)
-            {
-                if(displayNameProvider instanceof ChangeSupportProvider provider)
-                {
-                    provider.addChangeListener(this);                    
-                }                                
-                return displayNameProvider.getDisplayName(TextFormat.PLAIN);                
-            }
+            return displayNameProvider.getDisplayName(TextFormat.PLAIN); 
         } 
-        else
-        {
-            return displayNameProvider.getDisplayName(TextFormat.PLAIN);             
-        }
         return super.getDisplayName();
     }  
     
     @Override
     public String getHtmlDisplayName() 
     {
-        if(displayNameProvider == null)
+        DisplayNameProvider provider = getDisplayNameProvider();
+        if(provider != null)
         {
-            displayNameProvider = getLookup().lookup(DisplayNameProvider.class);
-            if(displayNameProvider != null)
-            {
-                if(displayNameProvider instanceof ChangeSupportProvider provider)
-                {
-                    provider.addChangeListener(this);                    
-                }                                
-                return displayNameProvider.getDisplayName(TextFormat.HTML);                
-            }
-        } 
-        else
-        {
-            return displayNameProvider.getDisplayName(TextFormat.HTML);             
-        } 
+            return displayNameProvider.getDisplayName(TextFormat.HTML); 
+        }         
         return super.getHtmlDisplayName();
     }    
     
@@ -217,6 +248,14 @@ public class MarkdownDataNode extends DataNode implements ChangeListener
         else if(evt.getSource() == openIconProvider)
         {
             fireOpenedIconChange();
-        }        
+        }   
+        else if(evt.getSource() == sourceProvider)
+        {
+            displayNameProvider = null;
+            iconProvider = null;
+            bulletIconProvider = null;
+            openIconProvider = null;
+            shortDescriptionProvider = null;
+        }         
     }    
 }

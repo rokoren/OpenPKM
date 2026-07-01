@@ -127,6 +127,7 @@ import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
 import openpkm.base.Source.SourceState;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.LogicalViewProviderImpl;
 import org.netbeans.api.progress.ProgressHandle;
@@ -176,7 +177,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private Source lastSource; 
       
     private RaindropCollection raindropCollection;  
     private Neo4jInstance neo4jInstance;       
@@ -191,7 +191,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         RaindropProvider raindropProvider = Lookup.getDefault().lookup(RaindropProvider.class);
         if(raindropProvider != null)
         {
-            SourceProvider raindrops = new RaindropSourceProvider(raindropProvider);  
+            SourceProvider raindrops = new RaindropSourceProviderImpl(raindropProvider);  
             sources.put(raindrops.getName(), raindrops);             
         }
 
@@ -266,19 +266,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             LOG.warning(e.getMessage());
         }  
         return null;
-    }
-
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }     
+    }   
     
 // TODO Project
     
@@ -1227,11 +1215,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Note note = data.getLookup().lookup(Note.class);
-                if(note != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Note note = source.getLookup().lookup(Note.class);
+                        if(note != null)
+                        {
+                            return true;
+                        }  
+                    }            
+                }                                                               
             }                                    
             return false;
         }
@@ -1239,7 +1235,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Note)
+            if(evt.getOldValue() instanceof Note || evt.getNewValue() instanceof Note)
             {
                 changeSupport.fireChange();
             }
@@ -1327,11 +1323,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Book book = data.getLookup().lookup(Book.class);
-                if(book != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                } 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Book book = source.getLookup().lookup(Book.class);
+                        if(book != null)
+                        {
+                            return true;
+                        }  
+                    }            
+                }                                                 
             }                                  
             return false;
         }
@@ -1339,7 +1343,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Book)
+            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
             {
                 changeSupport.fireChange();
             }
@@ -1427,11 +1431,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Article article = data.getLookup().lookup(Article.class);
-                if(article != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Article article = source.getLookup().lookup(Article.class);
+                        if(article != null)
+                        {
+                            return true;
+                        }                      
+                    }            
+                }                                                                   
             }                                    
             return false;
         }
@@ -1439,7 +1451,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Article)
+            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
             {
                 changeSupport.fireChange();
             }
@@ -1527,11 +1539,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Document document = data.getLookup().lookup(Document.class);
-                if(document != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Document document = source.getLookup().lookup(Document.class);
+                        if(document != null)
+                        {
+                            return true;
+                        }                           
+                    }            
+                }                                                                            
             }                                    
             return false;
         }
@@ -1539,7 +1559,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Document)
+            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
             {
                 changeSupport.fireChange();
             }
@@ -1627,11 +1647,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Link link = data.getLookup().lookup(Link.class);
-                if(link != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Link link = source.getLookup().lookup(Link.class);
+                        if(link != null)
+                        {
+                            return true;
+                        }                                                  
+                    }            
+                }                                                                                  
             }                                    
             return false;
         }
@@ -1639,7 +1667,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Link)
+            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
             {
                 changeSupport.fireChange();
             }
@@ -1727,11 +1755,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Picture picture = data.getLookup().lookup(Picture.class);
-                if(picture != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Picture picture = source.getLookup().lookup(Picture.class);
+                        if(picture != null)
+                        {
+                            return true;
+                        }                                                                          
+                    }            
+                }                                                                                
             }                                   
             return false;
         }
@@ -1739,7 +1775,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Picture)
+            if(evt.getOldValue()instanceof Picture || evt.getNewValue() instanceof Picture)
             {
                 changeSupport.fireChange();
             }
@@ -1827,11 +1863,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             if(data != null)
             {
-                Video video = data.getLookup().lookup(Video.class);
-                if(video != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Video video = source.getLookup().lookup(Video.class);
+                        if(video != null)
+                        {
+                            return true;
+                        }                                                                                                
+                    }            
+                }                                                                 
             }                                   
             return false;
         }
@@ -1839,7 +1883,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(getLastSource() instanceof Video)
+            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
             {
                 changeSupport.fireChange();
             }
@@ -1970,6 +2014,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
         public FileObject createData(Content content, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
@@ -2022,7 +2078,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Content content = provider.getContent(Utils.getProperties(file)); 
                 getContentsById().put(content.getSourceID(), content);               
-                setLastSource(content);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, content);               
             }           
             catch(IOException e)
             {
@@ -2180,6 +2236,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
@@ -2232,7 +2300,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                setLastSource(reference);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);              
             }           
             catch(IOException e)
             {
@@ -2277,7 +2345,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceProvider extends AbstractAction implements SourceProvider<Raindrop>, FileChangeListener, ActionsProvider, Runnable 
+    private final class RaindropSourceProviderImpl extends AbstractAction implements RaindropSourceProvider, FileChangeListener, ActionsProvider, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
         
@@ -2288,7 +2356,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
         private final RaindropProvider provider;           
         
-        public RaindropSourceProvider(RaindropProvider provider) 
+        public RaindropSourceProviderImpl(RaindropProvider provider) 
         {
             super("Synchronize Raindrops");
             this.provider = provider;
@@ -2333,11 +2401,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             return RaindropProject.this;
         } 
         
+        @Override
         public Collection<Raindrop> getRaindrops()
         {
             return Collections.unmodifiableCollection(getRaindropsById().values());
         }
 
+        @Override
         public RaindropProvider getRaindropProvider()
         {
             return provider;
@@ -2411,7 +2481,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
         }         
         
-        private synchronized Map<String, Raindrop> getRaindropsById()
+        @Override
+        public synchronized Map<String, Raindrop> getRaindropsById()
         {
             if(raindrops == null)
             {
@@ -2472,6 +2543,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
         public void run() 
         {
             List<RaindropTag> list = RaindropUtils.getTags(getRaindropCollection().getAccount(), getRaindropCollection());
@@ -2519,14 +2602,20 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             }                            
                         }
                         
-                        if(isTime)
+                        Raindrop oldRaindrop = getRaindropsById().get(raindrop.getSourceID());   
+                        if(oldRaindrop.getType() == raindrop.getType())
                         {
-                            Raindrop oldRaindrop = getRaindropsById().get(raindrop.getSourceID()); 
-                            if(!oldRaindrop.getProperties().equals(raindrop.getProperties()))
+                            if(isTime || !oldRaindrop.getProperties().equals(raindrop.getProperties()))
                             {
                                 oldRaindrop.merge(raindrop);                                                               
-                            }                              
-                        }                                                                                                                             
+                            }                                    
+                        }
+                        else
+                        {
+                            raindrop.markModified();
+                            getRaindropsById().put(raindrop.getSourceID(), raindrop);
+                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldRaindrop, raindrop);                                  
+                        }                                                                                                                                                   
                     }
                     else
                     {                                
@@ -2535,7 +2624,19 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             OutputStream os = root.createAndOpen(raindrop.getSourceID() + "." + PropertiesProvider.EXTENSION);                            
                             raindrop.getProperties().store(os, "Created by Raindrop project: " + getTitle()); 
                             os.close();
-                            createData(raindrop, markdown); 
+                            FileObject file = createData(raindrop, markdown); 
+                            
+                            URL url = new URL(raindrop.getCover());
+                            Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
+                            Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
+                            Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
+                            JLabel baloonDetails = new JLabel(picture);
+                            baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                            baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                            JComponent details = createDetails(raindrop.getExcerpt(), FileUtils.action2open(file), picture); 
+                            String title = getTitle() + ": " + raindrop.getTitle();                                                                  
+                            NotificationDisplayer.getDefault().notify(title, icon, baloonDetails, details, AbstractRaindrop.getPriority(raindrop), AbstractRaindrop.getCategory(raindrop));                               
+                            
                             LOG.info("Raindrop saved: " + raindrop.getSourceID());                             
                         }
                         catch(IOException e)
@@ -2604,6 +2705,34 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
+        public FileObject createRaindrop(String link)
+        {
+            FileObject root = getRootFolder();
+            MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
+            if(root != null && markdown != null)
+            {
+                Raindrop raindrop = RaindropUtils.createRaindrop(getRaindropCollection().getAccount(), getRaindropCollection(), link);
+                if(raindrop != null)
+                {
+                    try
+                    {
+                        OutputStream os = root.createAndOpen(raindrop.getSourceID() + "." + PropertiesProvider.EXTENSION);                            
+                        raindrop.save(os, "Created by Raindrop project: " + getTitle()); 
+                        os.close();
+                        FileObject file = createData(raindrop, markdown);                         
+                        LOG.info("Raindrop saved: " + raindrop.getSourceID());                             
+                        return file;
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                  
+                }                
+            } 
+            return null;
+        }
+        
+        @Override
         public FileObject createData(Raindrop raindrop, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
@@ -2618,18 +2747,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 output.write(raindrop.getNote().getBytes());
                 output.close();
             }               
-            
-            URL url = new URL(raindrop.getCover());
-            Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
-            Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
-            Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
-            JLabel baloonDetails = new JLabel(picture);
-            baloonDetails.addMouseListener(FileUtils.clicked2open(primaryFile));
-            baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            JComponent details = createDetails(raindrop.getExcerpt(), FileUtils.action2open(primaryFile), picture); 
-            String title = getTitle() + ": " + raindrop.getTitle();                                                                  
-            NotificationDisplayer.getDefault().notify(title, icon, baloonDetails, details, AbstractRaindrop.getPriority(raindrop), AbstractRaindrop.getCategory(raindrop));             
-            
+                                  
             return primaryFile;             
         }          
         
@@ -2651,7 +2769,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Raindrop raindrop = AbstractRaindrop.getRaindrop(Utils.getProperties(file)); 
                 getRaindropsById().put(raindrop.getSourceID(), raindrop);               
-                setLastSource(raindrop);                               
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, raindrop);                             
             }           
             catch(IOException e)
             {
@@ -2823,6 +2941,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         
         @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
         public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
@@ -2859,8 +2989,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             try
             {
                 YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.STANDARD); 
-                getVideosById().put(video.getSourceID(), video);                                                              
-                setLastSource(video);                
+                getVideosById().put(video.getSourceID(), video); 
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, video);             
             }           
             catch(IOException e)
             {

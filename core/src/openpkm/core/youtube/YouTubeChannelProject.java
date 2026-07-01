@@ -2178,6 +2178,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
         
         @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
@@ -2382,6 +2394,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
         
         @Override
         public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    

@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.Icon;
 import javax.swing.UIManager;
-import openpkm.base.Source;
 import openpkm.base.SourceProvider;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
@@ -488,7 +488,7 @@ public class Utils
         return null;        
     }
     
-    public static Source getSource(FileObject file)
+    public static SourceProviderWrapper getSourceProvider(FileObject file)
     {        
         Project project = FileOwnerQuery.getOwner(file);
         if(project != null)
@@ -504,7 +504,7 @@ public class Utils
                     SourceProvider provider = providers.getSourceProvider(name);
                     if(provider != null)
                     {
-                        return provider.getSource(sourceID);
+                        return new SourceProviderWrapperImpl(sourceID, provider);
                     }                      
                 }            
             }

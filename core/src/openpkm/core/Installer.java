@@ -9,6 +9,7 @@ import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.core.api.multiview.MultiViewHandler;
@@ -56,41 +57,50 @@ public class Installer implements Runnable
                                 }                                 
                                 
                                 FileObject currentFile = data.getPrimaryFile();
-                                MultiViewDescription mvd = data.getLookup().lookup(MultiViewDescription.class);
-                                if(mvd != null)
+                                
+                                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                                if(sourceProvider != null)
                                 {
-                                    MultiViewHandler handler = MultiViews.findMultiViewHandler(topComponent);
-                                    if(handler != null)
+                                    Source source = sourceProvider.getSource();
+                                    if(source != null)
                                     {
-                                        MultiViewPerspective[] perspectives = handler.getPerspectives();
-                                        if(!hasPerspective(perspectives, mvd.preferredID()))
+                                        MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
+                                        if(mvd != null)
                                         {
-                                            MultiViewPerspective perspective = handler.getSelectedPerspective();
-                                            handler.addMultiViewDescription(mvd, 3);
-                                            if(perspective != null)
+                                            MultiViewHandler handler = MultiViews.findMultiViewHandler(topComponent);
+                                            if(handler != null)
                                             {
-                                                handler.requestActive(perspective);
-                                            }                                             
-                                        }                                      
-                                    }                                                                       
-                                    
-                                    //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
-                                    /*
-                                    if (currentFile != null & amp; & amp;
-                                    currentFile.getMIMEType().equals("text/x-java")
+                                                MultiViewPerspective[] perspectives = handler.getPerspectives();
+                                                if(!hasPerspective(perspectives, mvd.preferredID()))
+                                                {
+                                                    MultiViewPerspective perspective = handler.getSelectedPerspective();
+                                                    handler.addMultiViewDescription(mvd, 3);
+                                                    if(perspective != null)
+                                                    {
+                                                        handler.requestActive(perspective);
+                                                    }                                             
+                                                }                                      
+                                            }                                                                       
 
-                                        ) {
+                                            //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
+                                            /*
+                                            if (currentFile != null & amp; & amp;
+                                            currentFile.getMIMEType().equals("text/x-java")
 
-                                        currentFile.addFileChangeListener(new FileChangeAdapter() {
-                                            @Override
-                                            public void fileChanged(FileEvent fe) {
-                                                StatusDisplayer.getDefault().setStatusText("Hurray! "
-                                                        + "Saved " + fe.getFile().getNameExt(), 1);
+                                                ) {
+
+                                                currentFile.addFileChangeListener(new FileChangeAdapter() {
+                                                    @Override
+                                                    public void fileChanged(FileEvent fe) {
+                                                        StatusDisplayer.getDefault().setStatusText("Hurray! "
+                                                                + "Saved " + fe.getFile().getNameExt(), 1);
+                                                    }
+                                                });
                                             }
-                                        });
-                                    }
-                                    */                                    
-                                }
+                                            */                                    
+                                        }
+                                    }                                                                                                            
+                                }                                                                                                     
                             }
                         }
                     }
