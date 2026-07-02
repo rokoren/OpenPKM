@@ -59,6 +59,7 @@ public final class RaindropAction implements ActionListener
     public void actionPerformed(ActionEvent ev) {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new CreateRaindropWizardPanel1());
+        panels.add(new CreateRaindropWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) {
             Component c = panels.get(i).getComponent();
