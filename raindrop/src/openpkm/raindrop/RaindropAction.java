@@ -88,8 +88,9 @@ public final class RaindropAction implements ActionListener
             {
                 String note = (String) wiz.getProperty(Raindrop.PROPS_NOTE);
                 List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+                Boolean important = (Boolean) wiz.getProperty(Raindrop.PROPS_IMPORTANT);
                 
-                FileObject file = provider.createRaindrop(context.getLink(), tags, note);
+                FileObject file = provider.createRaindrop(context.getLink(), important.booleanValue(), tags, note);
                 if(file != null)
                 {
                     StatusDisplayer.getDefault().setStatusText("Raindrop saved");                         

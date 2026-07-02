@@ -19,5 +19,5 @@ public interface RaindropSourceProvider extends SourceProvider<Raindrop>
     RaindropProvider getRaindropProvider();
     Map<String, Raindrop> getRaindropsById();
     Collection<Raindrop> getRaindrops();
-    FileObject createRaindrop(String link, List<String> tags, String note);
+    FileObject createRaindrop(String link, boolean important, List<String> tags, String note);
 }

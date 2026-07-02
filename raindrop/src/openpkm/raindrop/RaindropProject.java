@@ -2705,13 +2705,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public FileObject createRaindrop(String link, List<String> tags, String note)
+        public FileObject createRaindrop(String link, boolean important, List<String> tags, String note)
         {
             FileObject root = getRootFolder();
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
             if(root != null && markdown != null)
             {
-                Raindrop raindrop = RaindropUtils.createRaindrop(getRaindropCollection().getAccount(), getRaindropCollection(), link, tags, note);
+                Raindrop raindrop = RaindropUtils.createRaindrop(getRaindropCollection().getAccount(), getRaindropCollection(), link, important, tags, note);
                 if(raindrop != null)
                 {
                     try

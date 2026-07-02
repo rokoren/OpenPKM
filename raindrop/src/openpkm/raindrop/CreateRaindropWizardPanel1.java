@@ -87,6 +87,7 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
         {
             wiz.putProperty("project", project); 
         }
+        wiz.putProperty(Raindrop.PROPS_IMPORTANT, Boolean.valueOf(getComponent().isRaindropImportant()));        
         wiz.putProperty(TagsProvider.PROP_TAGS, getComponent().getSelectedTags());        
     }
 }
