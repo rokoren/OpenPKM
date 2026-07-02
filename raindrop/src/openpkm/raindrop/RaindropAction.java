@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.LinkProvider;
+import openpkm.base.TagsProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -85,7 +86,10 @@ public final class RaindropAction implements ActionListener
             RaindropSourceProvider provider = project.getLookup().lookup(RaindropSourceProvider.class);
             if(provider != null)
             {
-                FileObject file = provider.createRaindrop(context.getLink());
+                String note = (String) wiz.getProperty(Raindrop.PROPS_NOTE);
+                List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+                
+                FileObject file = provider.createRaindrop(context.getLink(), tags, note);
                 if(file != null)
                 {
                     StatusDisplayer.getDefault().setStatusText("Raindrop saved");                         

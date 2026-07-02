@@ -10,7 +10,7 @@ import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 
-public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor> 
+public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>, WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
     /**
      * The visual component that displays this panel. If you need to access the
@@ -56,7 +56,13 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
         {
             throw new WizardValidationException(null, "Collection can not be empty", null);
         }          
-    }      
+    }  
+
+    @Override
+    public boolean isFinishPanel() 
+    {
+        return true;
+    }
 
     @Override
     public void addChangeListener(ChangeListener l) {

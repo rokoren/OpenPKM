@@ -514,7 +514,7 @@ public class RaindropUtils
         return raindrops;
     }  
 
-    public static Raindrop createRaindrop(RaindropAccount account, RaindropCollection collection, String link)
+    public static Raindrop createRaindrop(RaindropAccount account, RaindropCollection collection, String link, List<String> tags, String note)
     {
         // Construct the URL for the Raindrop.io API endpoint
         String apiUrl = "https://api.raindrop.io/rest/v1/raindrop";
@@ -539,6 +539,19 @@ public class RaindropUtils
             JSONObject json = new JSONObject();
             json.put("collection", new JSONObject().put("$id", collection.getCollectionID()));
             json.put("link", link);
+            if(!tags.isEmpty())
+            {
+                JSONArray tags1 = new JSONArray();
+                for(String tag : tags)
+                {
+                    tags1.put(tag);
+                }  
+                json.put("tags", tags1);
+            }
+            if(note != null)
+            {
+                json.put("note", note);                
+            }              
             json.put("pleaseParse", new JSONObject());
             
             try (OutputStream os = connection.getOutputStream()) {

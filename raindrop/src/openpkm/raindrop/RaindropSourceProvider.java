@@ -5,6 +5,7 @@
 package openpkm.raindrop;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
@@ -18,5 +19,5 @@ public interface RaindropSourceProvider extends SourceProvider<Raindrop>
     RaindropProvider getRaindropProvider();
     Map<String, Raindrop> getRaindropsById();
     Collection<Raindrop> getRaindrops();
-    FileObject createRaindrop(String link);
+    FileObject createRaindrop(String link, List<String> tags, String note);
 }
