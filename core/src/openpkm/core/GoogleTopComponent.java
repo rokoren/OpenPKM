@@ -6,10 +6,12 @@ package openpkm.core;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
+import openpkm.base.LinkProvider;
 import openpkm.jcef.CefClientProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 
 /**
@@ -24,7 +26,7 @@ import org.openide.windows.TopComponent;
         iconBase = "openpkm/core/resources/google.png",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
-public final class GoogleTopComponent extends TopComponent 
+public final class GoogleTopComponent extends TopComponent implements LinkProvider
 {
     public static final String GOOGLE_URL = "https://www.google.com";
     
@@ -52,6 +54,12 @@ public final class GoogleTopComponent extends TopComponent
             }
         }         
     }
+    
+    @Override
+    public Lookup getLookup()
+    {
+        return Lookups.singleton(this);
+    }    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -92,4 +100,10 @@ public final class GoogleTopComponent extends TopComponent
         String version = p.getProperty("version");
         // TODO read your settings according to their version
     }
+    
+    @Override
+    public String getLink() 
+    {
+        return browser.getURL();
+    }    
 }
