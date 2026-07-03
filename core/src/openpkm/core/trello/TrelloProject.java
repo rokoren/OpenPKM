@@ -120,6 +120,7 @@ import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileSystem;
 import openpkm.base.SourceGroupProvider;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloCommentProvider;
 import openpkm.utils.DateTimeUtils;
@@ -168,7 +169,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private Lookup lkp; 
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-    private Source lastSource;   
     
     private TrelloAccount trelloAccount;
     private Trello trello;    
@@ -268,18 +268,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }  
         return null;
     }
-
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }  
    
     public TrelloAccount getTrelloAccount()
     {
@@ -1001,14 +989,22 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             if(data != null)
             {
-                TrelloCard card = data.getLookup().lookup(TrelloCard.class);
-                if(card != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return card.getListID().equals(list.getListID());
-                }                 
-            }                                   
-            return false;
-        }
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        TrelloCard card = source.getLookup().lookup(TrelloCard.class);
+                        if(card != null)
+                        {
+                            return card.getListID().equals(list.getListID());
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }        
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
@@ -1357,7 +1353,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         if(card != null)
                         {
                             getCardsById().put(card.getCardID(), card);
-                            setLastSource(card);    
+                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, card);    
                         }                    
                     }                
                 }
@@ -1381,7 +1377,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     if(card != null)
                     {
                         getCardsById().put(card.getCardID(), card);
-                        setLastSource(card);     
+                        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, card);    
                     }             
                 }
                 catch(IOException e)
@@ -1406,7 +1402,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 if(card != null)
                 {
                     getCardsById().remove(card.getCardID());
-                    setLastSource(card);    
+                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, card, null);   
                 }             
             }
             catch(IOException e)
