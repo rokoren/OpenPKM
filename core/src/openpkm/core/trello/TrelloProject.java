@@ -1105,7 +1105,23 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Source getSource(String sourceID)
         {
             return getCardsById().get(sourceID);
-        }       
+        }    
+        
+        @Override
+        public void deleteSource(String sourceID) throws IOException
+        {
+            FileObject root = getRootFolder();
+            if(root != null)
+            {
+                FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
+                if(file != null)
+                {  
+                    // TODO Call Trello API to delete card
+                    
+                    file.delete();
+                }              
+            }  
+        }        
         
         @Override
         public FileObject createData(TrelloCard card, FileTypeProvider fileTypeProvider) throws IOException     
@@ -1378,7 +1394,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            FileObject file = evt.getFile();
         }
 
         @Override
@@ -1779,7 +1794,23 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             TrelloAction action = getActionsById().get(sourceID);
             return commentProvider.getComment(action, getTrello(), getTrelloAccount());   
-        }         
+        }  
+        
+        @Override
+        public void deleteSource(String sourceID) throws IOException
+        {
+            FileObject root = getRootFolder();
+            if(root != null)
+            {
+                FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
+                if(file != null)
+                {  
+                    // TODO Call Trello API to delete source
+                    
+                    file.delete();                    
+                }              
+            }  
+        }        
         
         @Override
         public FileObject createData(TrelloComment comment, FileTypeProvider fileTypeProvider) throws IOException     

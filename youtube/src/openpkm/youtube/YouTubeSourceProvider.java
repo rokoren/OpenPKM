@@ -4,11 +4,13 @@
  */
 package openpkm.youtube;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
 import openpkm.base.IconsProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
@@ -48,7 +50,21 @@ public abstract class YouTubeSourceProvider implements SourceProvider<YouTubeVid
     public Source getSource(String sourceID) 
     {
         return getVideosById().get(sourceID);
-    }                                  
+    }  
+    
+    @Override
+    public void deleteSource(String sourceID) throws IOException
+    {
+        FileObject root = getRootFolder();
+        if(root != null)
+        {
+            FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
+            if(file != null)
+            {  
+                file.delete();
+            }              
+        }  
+    }     
 
     @Override
     public String getName() 

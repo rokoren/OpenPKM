@@ -141,11 +141,7 @@ public class MarkdownDataObject extends MultiDataObject
         SourceProviderWrapper sourceProvider = getLookup().lookup(SourceProviderWrapper.class);
         if(sourceProvider != null)
         {
-            Source source = sourceProvider.getSource();
-            if(source != null)
-            {
-                source.notifyDeleted();
-            }            
+            sourceProvider.deleteSource();          
         }
 
         // pokličeš privzeto brisanje datoteke

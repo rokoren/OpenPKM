@@ -4,6 +4,7 @@
  */
 package openpkm.base;
 
+import java.io.IOException;
 import javax.swing.event.ChangeListener;
 
 /**
@@ -13,6 +14,7 @@ import javax.swing.event.ChangeListener;
 public interface SourceProviderWrapper 
 {
     Source getSource();
+    void deleteSource() throws IOException;
     SourceProvider getProvider();
     void addListener(ChangeListener listener);
     void removeListener(ChangeListener listener);

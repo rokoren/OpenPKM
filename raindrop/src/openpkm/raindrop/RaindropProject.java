@@ -2102,14 +2102,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileDeleted(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
             Content content = getContentsById().remove(file.getName());  
             if(content != null)
             {
-                setLastSource(content);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, content, null);  
             }
-            */
         }
 
         @Override
@@ -2324,14 +2322,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileDeleted(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                setLastSource(reference);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);              
             }
-            */
         }
 
         @Override
@@ -2417,7 +2413,24 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public Source getSource(String sourceID) 
         {
             return getRaindropsById().get(sourceID);
-        }                    
+        }  
+        
+        @Override
+        public void deleteSource(String sourceID) throws IOException
+        {
+            FileObject root = getRootFolder();
+            if(root != null)
+            {
+                FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
+                if(file != null)
+                {  
+                    if(RaindropUtils.removeRaindrop(getRaindropCollection().getAccount(), Integer.parseInt(sourceID)))
+                    {
+                        file.delete();
+                    }
+                }              
+            }  
+        }
 
         @Override
         public String getName() 
@@ -2793,14 +2806,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileDeleted(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
             Raindrop raindrop = getRaindropsById().remove(file.getName());  
             if(raindrop != null)
             {
-                setLastSource(raindrop);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, raindrop, null); 
             }
-            */
         }
 
         @Override
@@ -3014,14 +3025,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileDeleted(FileEvent evt) 
         {
-            /*
             FileObject file = evt.getFile();
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
-                setLastSource(video);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, video, null);  
             }
-            */
         }
 
         @Override

@@ -614,6 +614,73 @@ public class RaindropUtils
         return null;
     }  
     
+    public static boolean removeRaindrop(RaindropAccount account, int raindropID)
+    {
+        // Construct the URL for the Raindrop.io API endpoint
+        String apiUrl = "https://api.raindrop.io/rest/v1/raindrop/";
+
+        HttpURLConnection connection = null;
+        try
+        {
+            URL url = new URL(apiUrl + raindropID);
+
+            // Open a connection to the URL
+            connection = (HttpURLConnection) url.openConnection();
+
+            // Set the request method to DELETE
+            connection.setRequestMethod("DELETE");
+
+            // Set the API key in the request header
+            connection.setRequestProperty("Authorization", "Bearer " + account.getToken());                            
+
+            // Get the response code
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Read the response from the API
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                reader.close();
+                
+                // Create a JSON object from the response string
+                JSONObject jsonObject = new JSONObject(response.toString());
+
+                return jsonObject.getBoolean("result");
+            } 
+            else 
+            {
+                NotifyDescriptor d = new NotifyDescriptor(
+                        "Remove Raindrop Raindrop.io API Request failed. Response Code: " + responseCode, // message
+                        account.getTitle(), // title
+                        NotifyDescriptor.DEFAULT_OPTION, // option type
+                        NotifyDescriptor.WARNING_MESSAGE, // message type
+                        null, // custom buttons (as Object[])
+                        null); // default value
+                DialogDisplayer.getDefault().notify(d);
+            }                
+        }
+        catch(IOException e)
+        {
+            Exceptions.printStackTrace(e);
+        }
+        finally
+        {
+            if(connection != null)
+            {
+                // Close the connection
+                connection.disconnect();                  
+            }
+        }
+
+        return false;
+    }      
+    
     private static Raindrop getRaindrop(RaindropAccount account, RaindropCollection collection, String jsonResponse)
     {
         // Create a JSON object from the response string

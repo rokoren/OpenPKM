@@ -6,6 +6,7 @@ package openpkm.utils;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
@@ -33,6 +34,12 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper, Propert
     public Source getSource() 
     {
         return provider.getSource(sourceID);
+    }
+    
+    @Override
+    public void deleteSource() throws IOException
+    {
+        provider.deleteSource(sourceID);
     }
 
     @Override

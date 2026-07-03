@@ -4,9 +4,11 @@
  */
 package openpkm.utils;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.WebPage;
@@ -47,7 +49,21 @@ public abstract class WebSourceProvider implements SourceProvider<WebPage>
     public Source getSource(String sourceID) 
     {
         return getLinksById().get(sourceID);
-    }                                  
+    } 
+    
+    @Override
+    public void deleteSource(String sourceID) throws IOException
+    {
+        FileObject root = getRootFolder();
+        if(root != null)
+        {
+            FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
+            if(file != null)
+            {  
+                file.delete();
+            }              
+        }  
+    }      
 
     @Override
     public String getName() 
