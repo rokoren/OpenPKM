@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.EventQueue;
 import java.util.ArrayList;

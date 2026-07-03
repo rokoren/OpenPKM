@@ -4,6 +4,7 @@
  */
 package openpkm.core;
 
+import openpkm.core.domain.DomainVisualPanel2;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
 import openpkm.base.DescriptionProvider;

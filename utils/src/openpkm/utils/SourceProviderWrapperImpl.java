@@ -7,10 +7,13 @@ package openpkm.utils;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
+import openpkm.base.TagsProvider;
 import org.openide.util.ChangeSupport;
 
 /**
@@ -46,7 +49,22 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper, Propert
     public SourceProvider getProvider() 
     {
         return provider;
-    }        
+    } 
+    
+    @Override
+    public Set<String> getTags() 
+    {
+        Source source = provider.getSource(sourceID);
+        if(source != null)
+        {
+            TagsProvider tagsProvider = source.getLookup().lookup(TagsProvider.class);
+            if(tagsProvider != null)
+            {
+                return tagsProvider.getTags();
+            }
+        }
+        return Collections.EMPTY_SET;
+    }    
 
     @Override
     public void addListener(ChangeListener listener) 

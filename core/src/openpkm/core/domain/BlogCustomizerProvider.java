@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Dialog;
 import java.awt.event.ActionEvent;
@@ -17,13 +17,13 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public class FacebookCustomizerProvider implements CustomizerProvider
+public class BlogCustomizerProvider implements CustomizerProvider
 {
-    public final FacebookProject project;
+    public final BlogProject project;
 
-    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-facebook-project/Customizer";
+    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-blog-project/Customizer";
 
-    public FacebookCustomizerProvider(FacebookProject project)
+    public BlogCustomizerProvider(BlogProject project)
     {
         this.project = project;
     }

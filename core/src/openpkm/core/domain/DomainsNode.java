@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Image;
 import java.util.ArrayList;
@@ -24,6 +24,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.NodeSupport;
+import openpkm.core.ProjectNode;
 
 /**
  *

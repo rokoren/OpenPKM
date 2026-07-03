@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -29,6 +29,8 @@ import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.core.HomePageWizardPanel1;
+import openpkm.core.HomePageWizardPanel2;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.netbeans.api.project.Project;
@@ -48,7 +50,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Domain",
-        id = "openpkm.core.BlogAction"
+        id = "openpkm.core.domain.BlogAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/blogger.png",

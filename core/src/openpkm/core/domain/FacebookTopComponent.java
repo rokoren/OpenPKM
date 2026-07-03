@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/templateTopComponent637.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
@@ -19,7 +19,7 @@ import org.openide.util.NbBundle.Messages;
  * Top component which displays something.
  */
 @ConvertAsProperties(
-        dtd = "-//openpkm.core//Facebook//EN",
+        dtd = "-//openpkm.core.domain//Facebook//EN",
         autostore = false
 )
 @TopComponent.Description(
@@ -28,7 +28,7 @@ import org.openide.util.NbBundle.Messages;
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
 @TopComponent.Registration(mode = "editor", openAtStartup = false)
-@ActionID(category = "Window", id = "openpkm.core.FacebookTopComponent")
+@ActionID(category = "Window", id = "openpkm.core.domain.FacebookTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
         displayName = "#CTL_FacebookWindowAction",
