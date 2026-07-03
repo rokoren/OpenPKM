@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/templateTopComponent637.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
@@ -19,46 +19,45 @@ import org.openide.util.NbBundle.Messages;
  * Top component which displays something.
  */
 @ConvertAsProperties(
-        dtd = "-//openpkm.core//GitHub//EN",
+        dtd = "-//openpkm.core.domain//LinkedIn//EN",
         autostore = false
 )
 @TopComponent.Description(
-        preferredID = "GitHubTopComponent",
-        iconBase = "openpkm/core/resources/github.png",
+        preferredID = "LinkedInTopComponent",
+        iconBase = "openpkm/core/resources/linkedin.png",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
 @TopComponent.Registration(mode = "editor", openAtStartup = false)
-@ActionID(category = "Window", id = "openpkm.core.GitHubTopComponent")
+@ActionID(category = "Window", id = "openpkm.core.domain.LinkedInTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
-        displayName = "#CTL_GitHubWindowAction",
-        preferredID = "GitHubTopComponent"
+        displayName = "#CTL_LinkedInWindowAction",
+        preferredID = "LinkedInTopComponent"
 )
 @Messages({
-    "CTL_GitHubWindowAction=GitHub",
-    "CTL_GitHubTopComponent=GitHub Window",
-    "HINT_GitHubTopComponent=This is a GitHub window"
+    "CTL_LinkedInWindowAction=LinkedIn",
+    "CTL_LinkedInTopComponent=LinkedIn Window",
+    "HINT_LinkedInTopComponent=This is a LinkedIn window"
 })
-public final class GitHubTopComponent extends TopComponent 
+public final class LinkedInTopComponent extends TopComponent 
 {
-    public static final String GITHUB_URL = "https://github.com";   
+    public static final String LINKEDIN_URL = "https://www.linkedin.com";   
     
-    private static final Logger LOG = Logger.getLogger(GitHubTopComponent.class.getName());   
+    private static final Logger LOG = Logger.getLogger(LinkedInTopComponent.class.getName());   
     
     private CefBrowser browser; 
     
-    public GitHubTopComponent() 
-    {
+    public LinkedInTopComponent() {
         initComponents();
-        setName(Bundle.CTL_GitHubTopComponent());
-        setToolTipText(Bundle.HINT_GitHubTopComponent());
+        setName(Bundle.CTL_LinkedInTopComponent());
+        setToolTipText(Bundle.HINT_LinkedInTopComponent());
 
         CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
         if(provider != null)
         {
             try
             {
-                browser = provider.getCefClient().createBrowser(GITHUB_URL, false, false);  
+                browser = provider.getCefClient().createBrowser(LINKEDIN_URL, false, false);  
                 add(browser.getUIComponent(), BorderLayout.CENTER);
             }
             catch(Exception e)
@@ -92,7 +91,7 @@ public final class GitHubTopComponent extends TopComponent
         if(browser != null)
         {
             browser.close(false);
-        }         
+        }          
     }
 
     void writeProperties(java.util.Properties p) {

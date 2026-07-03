@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.EventQueue;
 import java.util.ArrayList;
@@ -23,29 +23,30 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public class LinkedInVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
-{
-    private final ExplorerManager explorerManager = new ExplorerManager(); 
+public class HomePageVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
+{  
+    private final ExplorerManager explorerManager = new ExplorerManager();    
     
     /**
-     * Creates new form LinkedInVisualPanel1
+     * Creates new form HomePageVisualPanel1
      */
-    public LinkedInVisualPanel1() {
+    public HomePageVisualPanel1() 
+    {
         initComponents();
-    }
-
+    } 
+    
     @Override
     public String getName() 
     {
-        return "Username";
+        return "URL";
     }  
     
-    public String getLinkedInUsername()
+    public String getHomePageUrl()
     {
         return jTextField1.getText().trim();
     }       
     
-    public List<Topic> getLinkedInTopics()
+    public List<Topic> getHomePageTopics()
     {
         Node[] nodes = explorerManager.getSelectedNodes();
         if(nodes.length > 0)
@@ -121,7 +122,7 @@ public class LinkedInVisualPanel1 extends javax.swing.JPanel implements Explorer
             return new Node[] {new TopicNode(provider, topic)};
         }           
     }     
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -134,13 +135,13 @@ public class LinkedInVisualPanel1 extends javax.swing.JPanel implements Explorer
 
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
-        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel2 = new javax.swing.JLabel();
         iconView1 = new org.openide.explorer.view.IconView();
+        filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
 
         setLayout(new java.awt.GridBagLayout());
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(LinkedInVisualPanel1.class, "LinkedInVisualPanel1.jLabel1.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(HomePageVisualPanel1.class, "HomePageVisualPanel1.jLabel1.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -155,14 +156,8 @@ public class LinkedInVisualPanel1 extends javax.swing.JPanel implements Explorer
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jTextField1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler1, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(LinkedInVisualPanel1.class, "LinkedInVisualPanel1.jLabel2.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(HomePageVisualPanel1.class, "HomePageVisualPanel1.jLabel2.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
@@ -176,11 +171,17 @@ public class LinkedInVisualPanel1 extends javax.swing.JPanel implements Explorer
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         add(iconView1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler3, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler3;
     private org.openide.explorer.view.IconView iconView1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

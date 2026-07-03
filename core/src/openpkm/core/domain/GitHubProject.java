@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.BorderLayout;
 import java.awt.Image;
@@ -43,7 +43,6 @@ import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
@@ -58,8 +57,8 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
-import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WebPage;
@@ -69,8 +68,6 @@ import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
-import openpkm.utils.LogicalViewProviderImpl;
-import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
 import openpkm.utils.WebSourceProvider;
 import org.cef.browser.CefBrowser;
@@ -106,17 +103,16 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
+import openpkm.github.GitHubUser;
+import openpkm.utils.LogicalViewProviderImpl;
+import openpkm.utils.TopComponentProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public class LinkedInProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
-{    
-    public static final String PROP_USER_NAME = "user.name"; 
-    
-    private static final String LINKEDIN_URL = "https://www.linkedin.com/in/";
-    
+public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, SourceProviders, BatchUpdateSupport
+{
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -128,29 +124,28 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_WATCH_LATER = 800;
 
-    private static final Logger LOG = Logger.getLogger(LinkedInProject.class.getName());        
+    private static final Logger LOG = Logger.getLogger(GitHubProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(LinkedInProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(GitHubProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
-    private final List<UpdateCookie> cookies = new ArrayList();         
+    private final List<UpdateCookie> cookies = new ArrayList();       
     
     private final FileObject projectDir;        
     private final ProjectState state;
-    private final Properties props;  
+    private final Properties props; 
     private final PropertyChangeSupport propertyChangeSupport;
     
     private Lookup lkp;  
     private FileObject dataDir;
-    private LocalFileSystem fileSystem;
-    private Source lastSource;   
+    private LocalFileSystem fileSystem; 
     
-    public LinkedInProject(FileObject projectDir, ProjectState state, Properties props) 
+    public GitHubProject(FileObject projectDir, ProjectState state, Properties props) 
     {
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-        propertyChangeSupport = new PropertyChangeSupport(this);
+        propertyChangeSupport = new PropertyChangeSupport(this);  
 
         WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
         if(webPageProvider != null)
@@ -166,12 +161,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             sources.put(references.getName(), references);            
         }
 
-    }  
-    
-    public String getUserName() 
-    {
-        return props.getProperty(PROP_USER_NAME);
-    }     
+    }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -221,19 +211,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             LOG.warning(e.getMessage());
         }  
         return null;
-    }
-
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }      
+    }     
     
 // TODO Project
     
@@ -252,7 +230,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
 
             list.add(this);
             list.add(new Info());
-            list.add(new SourcesImpl());
+            list.add(new SourcesImpl()); 
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -260,7 +238,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             list.add(new ParentProjectProviderImpl());              
 
             list.add(new LogicalViewProviderImpl(this));
-            list.add(new LinkedInCustomizerProvider(this));  
+            list.add(new GitHubCustomizerProvider(this));  
 
             list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
@@ -284,7 +262,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     @Override
     public String getDomainID() 
     {
-        return getUserName();
+        return getUserID();
     }    
     
     @Override
@@ -302,7 +280,146 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
+    }
+    
+// TODO GitHubUser    
+    
+    @Override
+    public String getUserID() 
+    {
+        return props.getProperty(PROP_USER_ID);
+    }  
+
+    @Override
+    public String getUserName() 
+    {
+        return props.getProperty(PROP_USER_NAME);
+    } 
+    
+    @Override
+    public LocalDateTime getCreatedAt() 
+    {
+        String string = props.getProperty(PROP_CREATED_AT);
+        if(string != null)
+        {
+            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+        }
+        return null;
     }    
+    
+    @Override
+    public String getAvatarUrl() 
+    {
+        return props.getProperty(PROP_AVATAR_URL);
+    } 
+    
+    @Override
+    public String getHtmlUrl() 
+    {
+        return props.getProperty(PROP_HTML_URL);
+    }   
+    
+    @Override
+    public Integer getFollowersCount()
+    {
+        String string = props.getProperty(PROP_FOLLOWERS_COUNT);
+        if(string != null)
+        {
+            return Integer.parseInt(string);
+        }
+        return null;
+    }
+    
+    @Override
+    public void setFollowersCount(Integer count)
+    {
+        if(count == null)
+        {
+            Object oldValue = props.remove(PROP_FOLLOWERS_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_FOLLOWERS_COUNT, count.toString()); 
+            if(oldValue != null)
+            {
+                oldValue = Integer.parseInt(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);            
+        }
+    }
+    
+    @Override
+    public Integer getPublicReposCount()
+    {
+        String string = props.getProperty(PROP_PUBLIC_REPOS_COUNT);
+        if(string != null)
+        {
+            return Integer.parseInt(string);
+        }
+        return null;
+    }
+    
+    @Override
+    public void setPublicReposCount(Integer count)
+    {
+        if(count == null)
+        {
+            Object oldValue = props.remove(PROP_PUBLIC_REPOS_COUNT);
+            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);
+        }
+        else
+        {
+            Object oldValue = props.setProperty(PROP_PUBLIC_REPOS_COUNT, count.toString()); 
+            if(oldValue != null)
+            {
+                oldValue = Integer.parseInt(oldValue.toString());
+            }
+            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);            
+        }
+    } 
+    
+    @Override
+    public String getLocation() 
+    {
+        return props.getProperty(PROP_LOCATION);
+    }
+
+    @Override
+    public void setLocation(String location) 
+    {
+        if(location == null)
+        {
+            Object oldValue = props.remove(PROP_LOCATION);
+            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_LOCATION, location);  
+            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
+        } 
+    } 
+
+    @Override
+    public String getCompany() 
+    {
+        return props.getProperty(PROP_COMPANY);
+    }
+
+    @Override
+    public void setCompany(String company) 
+    {
+        if(company == null)
+        {
+            Object oldValue = props.remove(PROP_COMPANY);
+            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
+        }
+        else        
+        {
+            Object oldValue = props.setProperty(PROP_COMPANY, company);  
+            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
+        } 
+    }      
     
 // TODO TitleProvider  
     
@@ -337,7 +454,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     public void removeTitleListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
-    }
+    }  
     
 // TODO DescriptionProvider  
     
@@ -372,7 +489,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     public void removeDescriptionListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-    }     
+    }      
 
 // TODO PropertiesProvider
     
@@ -380,13 +497,13 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
     public Properties getProperties()
     {
         return props;
-    }    
+    }  
     
     @Override
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }       
+    }    
     
 // TODO BatchUpdateSupport    
     
@@ -437,7 +554,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public String preferredID() 
         {
-            return "linkedin";
+            return "github";
         }         
         
         @Override
@@ -455,7 +572,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public String getDisplayName() 
         {
-            return "LinkedIn";
+            return "GitHub";
         }   
         
         @Override
@@ -497,7 +614,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             {
                 try
                 {
-                    browser = provider.getCefClient().createBrowser(LINKEDIN_URL + getUserName(), false, false);   
+                    browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false); 
                     JPanel panel = new JPanel(new BorderLayout());
                     panel.add(browser.getUIComponent(), BorderLayout.CENTER);
                     return panel;
@@ -529,7 +646,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup getLookup() 
         {
-            return LinkedInProject.this.getLookup();
+            return GitHubProject.this.getLookup();
         }        
 
         @Override
@@ -607,7 +724,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public Icon getIcon()
         {  
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getIcon(IconsProvider.ICON.LINKEDIN);
+            return provider.getIcon(IconsProvider.ICON.GITHUB);
         }
 
         @Override
@@ -637,10 +754,10 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Project getProject() 
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         }
-    }     
-  
+    }  
+    
 // TODO Sources    
     
     private final class SourcesImpl implements Sources
@@ -668,8 +785,8 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport.removeChangeListener(listener);
         }
-    }      
-    
+    }     
+  
 // TODO IconProvider    
     
     private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
@@ -692,7 +809,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
                 RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.LINKEDIN);
+            return provider.getImage(IconsProvider.ICON.YOUTUBE_CHANNEL);
         }
 
         @Override
@@ -710,19 +827,20 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public void run() 
         {
-            String profilePicture = null;
-            if(profilePicture != null)
+            String avatar = getAvatarUrl();
+            if(avatar != null)
             {
                 try
                 {
-                    BufferedImage image = ImageIO.read(new URL(profilePicture));  
+                    URL url = new URL(avatar);
+                    BufferedImage image = ImageIO.read(url);  
                     icon = Utils.resizeImage(image, 16, 16); 
                     changeSupport.fireChange();
                 }
                 catch(MalformedURLException e)
                 {
                     LOG.warning(e.getMessage());
-                }                 
+                }
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());
@@ -742,7 +860,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(LinkedInProject.this);
+            return Utils.getRootProject(GitHubProject.this);
         }         
     }
     
@@ -891,7 +1009,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getProvider()
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         }                        
 
         @Override
@@ -941,7 +1059,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         }  
         
         @Override
@@ -1009,22 +1127,30 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Book book = data.getLookup().lookup(Book.class);
-                if(book != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                } 
-            }                                  
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Book book = source.getLookup().lookup(Book.class);
+                        if(book != null)
+                        {
+                            return true;
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Book)
+        {            
+            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
             {
                 changeSupport.fireChange();
-            }
+            }            
         }
     }   
     
@@ -1036,12 +1162,12 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }               
+        }             
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         }  
         
         @Override
@@ -1109,23 +1235,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Article article = data.getLookup().lookup(Article.class);
-                if(article != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Article article = source.getLookup().lookup(Article.class);
+                        if(article != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Article)
+        {            
+            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        }  
     } 
     
     private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1136,14 +1270,14 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }               
+        }              
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
-        } 
-
+            return GitHubProject.this;
+        }  
+        
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
@@ -1160,7 +1294,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_DOCUMENT;
-        }  
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1209,22 +1343,30 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Document document = data.getLookup().lookup(Document.class);
-                if(document != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Document document = source.getLookup().lookup(Document.class);
+                        if(document != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Document)
+        {            
+            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
             {
                 changeSupport.fireChange();
-            }
+            }            
         }
     }  
 
@@ -1236,13 +1378,13 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }               
+        }                
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
-        }  
+            return GitHubProject.this;
+        } 
         
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
@@ -1309,23 +1451,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Link link = data.getLookup().lookup(Link.class);
-                if(link != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Link link = source.getLookup().lookup(Link.class);
+                        if(link != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Link)
+        {            
+            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        }  
     }  
 
     private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1341,8 +1491,8 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
-        }    
+            return GitHubProject.this;
+        } 
         
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
@@ -1409,23 +1559,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Picture picture = data.getLookup().lookup(Picture.class);
-                if(picture != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
-            }                                   
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Picture picture = source.getLookup().lookup(Picture.class);
+                        if(picture != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Picture)
+        {            
+            if(evt.getOldValue() instanceof Picture || evt.getNewValue() instanceof Picture)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     } 
     
     private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1441,7 +1599,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         }  
         
         @Override
@@ -1460,7 +1618,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_VIDEO;
-        }           
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1509,23 +1667,31 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Video video = data.getLookup().lookup(Video.class);
-                if(video != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
-            }                                   
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Video video = source.getLookup().lookup(Video.class);
+                        if(video != null)
+                        {
+                            return true;
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Video)
+        {            
+            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     }    
     
 // TODO SourceGroup
@@ -1543,7 +1709,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         } 
         
         @Override
@@ -1566,7 +1732,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    link.save(os, "Updated by LinkedIn project: " + getTitle());
+                                    link.save(os, "Updated by GitHub project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1685,7 +1851,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             }  
             
             return primaryFile;            
-        }            
+        }           
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1705,7 +1871,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
                 getLinksById().put(webPage.getSourceID(), webPage);               
-                setLastSource(webPage);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                 
             }           
             catch(IOException e)
             {
@@ -1716,12 +1882,13 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             WebPage webPage = getLinksById().get(file.getName());  
             if(webPage != null)
-            {
-                
+            {                
             }
+            */
         }
 
         @Override
@@ -1731,7 +1898,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             WebPage webPage = getLinksById().remove(file.getName());  
             if(webPage != null)
             {
-                setLastSource(webPage);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, webPage, null); 
             }
         }
 
@@ -1756,8 +1923,8 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return LinkedInProject.this;
-        }  
+            return GitHubProject.this;
+        } 
         
         @Override
         public void projectClosed()
@@ -1779,7 +1946,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Blog project: " + getTitle());
+                                    reference.save(os, "Updated by GitHub project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1903,7 +2070,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             }            
 
             return primaryFile;
-        }        
+        }          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1923,7 +2090,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                setLastSource(reference);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                 
             }           
             catch(IOException e)
             {
@@ -1934,12 +2101,13 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             Reference reference = getReferencesById().get(file.getName());  
             if(reference != null)
-            {
-                
+            {                
             }
+            */
         }
 
         @Override
@@ -1949,7 +2117,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                setLastSource(reference);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);
             }
         }
 
@@ -2118,7 +2286,7 @@ public class LinkedInProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getProvider() 
         {
-            return LinkedInProject.this;
+            return GitHubProject.this;
         }                 
     }     
 }

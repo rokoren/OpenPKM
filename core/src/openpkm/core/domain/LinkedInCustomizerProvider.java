@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Dialog;
 import java.awt.event.ActionEvent;
@@ -17,13 +17,13 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public class HomePageCustomizerProvider implements CustomizerProvider
+public class LinkedInCustomizerProvider implements CustomizerProvider
 {
-    public final HomePageProject project;
+    public final LinkedInProject project;
 
-    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-home-page-project/Customizer";
+    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-linkedin-project/Customizer";
 
-    public HomePageCustomizerProvider(HomePageProject project)
+    public LinkedInCustomizerProvider(LinkedInProject project)
     {
         this.project = project;
     }

@@ -2,13 +2,16 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,8 +28,8 @@ import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
-import openpkm.github.GitHubUser;
-import org.kohsuke.github.GHUser;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
@@ -44,20 +47,22 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Domain",
-        id = "openpkm.core.GitHubAction"
+        id = "openpkm.core.domain.HomePageAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/core/resources/github.png",
-        displayName = "#CTL_GitHubAction"
+        iconBase = "openpkm/core/resources/home_page.png",
+        displayName = "#CTL_HomePageAction"
 )
-@Messages("CTL_GitHubAction=Add GitHub")
-public class GitHubAction implements ActionListener
-{    
-    private static final Logger LOG = Logger.getLogger(GitHubAction.class.getName());     
+@Messages("CTL_HomePageAction=Add Home Page")
+public class HomePageAction implements ActionListener
+{
+    private static final String ICON_LINK_SELECTOR = "link[rel~=^(.*\\s|)icon(|\\s.*)$]";    
+    
+    private static final Logger LOG = Logger.getLogger(HomePageAction.class.getName());     
     
     private final DomainsProvider provider;
 
-    public GitHubAction(DomainsProvider provider)
+    public HomePageAction(DomainsProvider provider)
     {
         this.provider = provider;
     }
@@ -66,8 +71,8 @@ public class GitHubAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new GitHubWizardPanel1());
-        panels.add(new GitHubWizardPanel2());
+        panels.add(new HomePageWizardPanel1());
+        panels.add(new HomePageWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -86,33 +91,64 @@ public class GitHubAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add GitHub");  
+        wiz.setTitle("Add Home Page");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
-
-            GHUser user = (GHUser) wiz.getProperty("user"); 
-            String userID = user.getId() + "";                       
-            String userName = (String) wiz.getProperty(GitHubUser.PROP_USER_NAME);
-            String followersCount = (String) wiz.getProperty(GitHubUser.PROP_FOLLOWERS_COUNT);
-            String reposCount = (String) wiz.getProperty(GitHubUser.PROP_PUBLIC_REPOS_COUNT);
+            String domainID = null;
+            
+            String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
             String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
+            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
+            
+            Document document = (Document) wiz.getProperty("document"); 
+            String canonical = document.select("link[rel=canonical]").attr("href");
+            if(canonical != null && !canonical.isBlank())
+            {
+                domainID = canonical;
+            }
+            else
+            { 
+                String signature = getSignature(document, url);  
+                
+                try
+                {
+                    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                    byte[] hash = digest.digest(signature.getBytes(StandardCharsets.UTF_8));
+
+                    StringBuilder hex = new StringBuilder();
+                    for (byte b : hash) {
+                        hex.append(String.format("%02x", b));
+                    }
+
+                    domainID = hex.toString();                      
+                } 
+                catch(NoSuchAlgorithmException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }            
 
             Properties props = new Properties();
+            props.setProperty(HomePageProject.PROP_HOME_PAGE_ID, domainID);
             props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(GitHubUser.PROP_USER_ID, userID);
-            props.setProperty(GitHubUser.PROP_USER_NAME, userName);                        
             props.setProperty(TitleProvider.PROP_TITLE, title);       
             props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
+            props.setProperty(HomePageProject.PROP_URL, url);  
             
-            props.setProperty(GitHubUser.PROP_AVATAR_URL, user.getAvatarUrl());  
-            props.setProperty(GitHubUser.PROP_HTML_URL, user.getHtmlUrl().toString());  
-            props.setProperty(GitHubUser.PROP_FOLLOWERS_COUNT, followersCount);
-            props.setProperty(GitHubUser.PROP_PUBLIC_REPOS_COUNT, reposCount);            
+            String favicon = getFavicon(document);
+            if(favicon == null)
+            {
+                favicon = getFaviconGoogle(document);
+            }
+            
+            if(favicon != null)
+            {
+                props.setProperty(HomePageProject.PROP_FAVICON, favicon);
+            }
             
             if(topics != null)
             {
@@ -130,14 +166,14 @@ public class GitHubAction implements ActionListener
 
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), userID);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, GitHubProjectFactory.PROJECT_FOLDER);                   
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), domainID);           
+                FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
 
-                OutputStream os = projectFolder.createAndOpen(GitHubProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM GitHub Project"); 
+                OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
+                props.store(os, "OpenPKM Home Page Project"); 
                 os.close(); 
                                 
-                StatusDisplayer.getDefault().setStatusText("OpenPKM GitHub Project saved: " + title); 
+                StatusDisplayer.getDefault().setStatusText("OpenPKM Home Page Project saved: " + title); 
 
                 Project project = ProjectManager.getDefault().findProject(projectDirectory);
                 if(project != null)
@@ -156,7 +192,49 @@ public class GitHubAction implements ActionListener
             catch(IOException e) 
             {
                 LOG.warning(e.getMessage());
-            }  
+            }                                              
         }        
-    }      
+    }  
+    
+    private static String getSignature(Document document, String url)
+    {
+        String normalized = getNormalized(url);
+        String title = document.title();
+        String description = document.select("meta[name=description]").attr("content");
+        String ogUrl = document.select("meta[property=og:url]").attr("content");
+        String ogTitle = document.select("meta[property=og:title]").attr("content");   
+        String signature = normalized + "|" + title + "|" + description + "|" + ogUrl + "|" + ogTitle; 
+        return signature;
+    }
+    
+    private static String getFavicon(Document document)
+    {
+        //Element element = document.head().select("link[href~=.*\\.(ico|png)]").first();    
+        Element element = document.head().select(ICON_LINK_SELECTOR).first(); 
+        if(element != null)
+        {
+            return element.absUrl("href");             
+        }
+        return null;       
+    }
+    
+    private static String getFaviconGoogle(Document document)
+    {
+	Element element = document.head().select("meta[itemprop=image]").first();    
+        if(element != null)
+        {
+            return element.attr("content");                   
+        }
+        return null;
+    } 
+
+    private static String getNormalized(String url)
+    {
+        String normalized = url
+                .replaceAll("\\?.*", "")     // odstrani query parametre
+                .replaceAll("#.*", "")       // odstrani sidra
+                .replaceAll("/$", "")        // odstrani trailing slash
+                .trim();
+        return normalized;
+    }     
 }

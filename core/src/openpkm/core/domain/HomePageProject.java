@@ -2,9 +2,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
-import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.beans.BeanInfo;
@@ -26,9 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
+import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -43,6 +45,7 @@ import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
+import openpkm.base.DescriptionProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
 import openpkm.base.Domain;
@@ -57,7 +60,9 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
+import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WebPage;
@@ -67,6 +72,8 @@ import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
+import openpkm.utils.LogicalViewProviderImpl;
+import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
 import openpkm.utils.WebSourceProvider;
 import org.cef.browser.CefBrowser;
@@ -84,6 +91,7 @@ import org.netbeans.core.spi.multiview.MultiViewFactory;
 import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
+import org.netbeans.spi.project.SubprojectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
@@ -102,16 +110,17 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
-import openpkm.github.GitHubUser;
-import openpkm.utils.LogicalViewProviderImpl;
-import openpkm.utils.TopComponentProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, SourceProviders, BatchUpdateSupport
-{
+public class HomePageProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
+{  
+    public static final String PROP_HOME_PAGE_ID = "home.page.id";
+    public static final String PROP_URL          = "url"; 
+    public static final String PROP_FAVICON      = "favicon";     
+    
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -123,30 +132,29 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_WATCH_LATER = 800;
 
-    private static final Logger LOG = Logger.getLogger(GitHubProject.class.getName());        
+    private static final Logger LOG = Logger.getLogger(HomePageProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(GitHubProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(HomePageProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
-    private final List<UpdateCookie> cookies = new ArrayList();       
+    private final List<UpdateCookie> cookies = new ArrayList();         
     
     private final FileObject projectDir;        
     private final ProjectState state;
-    private final Properties props; 
+    private final Properties props;
     private final PropertyChangeSupport propertyChangeSupport;
     
     private Lookup lkp;  
     private FileObject dataDir;
-    private LocalFileSystem fileSystem;
-    private Source lastSource;   
+    private LocalFileSystem fileSystem; 
     
-    public GitHubProject(FileObject projectDir, ProjectState state, Properties props) 
+    public HomePageProject(FileObject projectDir, ProjectState state, Properties props) 
     {
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
-        propertyChangeSupport = new PropertyChangeSupport(this);  
-
+        propertyChangeSupport = new PropertyChangeSupport(this);
+       
         WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
         if(webPageProvider != null)
         {          
@@ -162,6 +170,21 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }
 
     }
+    
+    public String getHomePageID() 
+    {
+        return props.getProperty(PROP_HOME_PAGE_ID);
+    }  
+
+    public String getUrl() 
+    {
+        return props.getProperty(PROP_URL);
+    }     
+    
+    public String getFavicon() 
+    {
+        return props.getProperty(PROP_FAVICON);
+    }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -211,19 +234,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             LOG.warning(e.getMessage());
         }  
         return null;
-    }
-
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
-    }       
+    }   
     
 // TODO Project
     
@@ -242,7 +253,8 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
 
             list.add(this);
             list.add(new Info());
-            list.add(new SourcesImpl()); 
+            list.add(new SourcesImpl());  
+            list.add(new DisplayNameProviderImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -250,7 +262,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             list.add(new ParentProjectProviderImpl());              
 
             list.add(new LogicalViewProviderImpl(this));
-            list.add(new GitHubCustomizerProvider(this));  
+            list.add(new HomePageCustomizerProvider(this));  
 
             list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
@@ -274,7 +286,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     @Override
     public String getDomainID() 
     {
-        return getUserID();
+        return getHomePageID();
     }    
     
     @Override
@@ -292,146 +304,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }
-    
-// TODO GitHubUser    
-    
-    @Override
-    public String getUserID() 
-    {
-        return props.getProperty(PROP_USER_ID);
-    }  
-
-    @Override
-    public String getUserName() 
-    {
-        return props.getProperty(PROP_USER_NAME);
-    } 
-    
-    @Override
-    public LocalDateTime getCreatedAt() 
-    {
-        String string = props.getProperty(PROP_CREATED_AT);
-        if(string != null)
-        {
-            return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
-        }
-        return null;
-    }    
-    
-    @Override
-    public String getAvatarUrl() 
-    {
-        return props.getProperty(PROP_AVATAR_URL);
-    } 
-    
-    @Override
-    public String getHtmlUrl() 
-    {
-        return props.getProperty(PROP_HTML_URL);
-    }   
-    
-    @Override
-    public Integer getFollowersCount()
-    {
-        String string = props.getProperty(PROP_FOLLOWERS_COUNT);
-        if(string != null)
-        {
-            return Integer.parseInt(string);
-        }
-        return null;
-    }
-    
-    @Override
-    public void setFollowersCount(Integer count)
-    {
-        if(count == null)
-        {
-            Object oldValue = props.remove(PROP_FOLLOWERS_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_FOLLOWERS_COUNT, count.toString()); 
-            if(oldValue != null)
-            {
-                oldValue = Integer.parseInt(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_FOLLOWERS_COUNT, oldValue, count);            
-        }
-    }
-    
-    @Override
-    public Integer getPublicReposCount()
-    {
-        String string = props.getProperty(PROP_PUBLIC_REPOS_COUNT);
-        if(string != null)
-        {
-            return Integer.parseInt(string);
-        }
-        return null;
-    }
-    
-    @Override
-    public void setPublicReposCount(Integer count)
-    {
-        if(count == null)
-        {
-            Object oldValue = props.remove(PROP_PUBLIC_REPOS_COUNT);
-            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);
-        }
-        else
-        {
-            Object oldValue = props.setProperty(PROP_PUBLIC_REPOS_COUNT, count.toString()); 
-            if(oldValue != null)
-            {
-                oldValue = Integer.parseInt(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_PUBLIC_REPOS_COUNT, oldValue, count);            
-        }
-    } 
-    
-    @Override
-    public String getLocation() 
-    {
-        return props.getProperty(PROP_LOCATION);
-    }
-
-    @Override
-    public void setLocation(String location) 
-    {
-        if(location == null)
-        {
-            Object oldValue = props.remove(PROP_LOCATION);
-            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_LOCATION, location);  
-            propertyChangeSupport.firePropertyChange(PROP_LOCATION, oldValue, location);
-        } 
-    } 
-
-    @Override
-    public String getCompany() 
-    {
-        return props.getProperty(PROP_COMPANY);
-    }
-
-    @Override
-    public void setCompany(String company) 
-    {
-        if(company == null)
-        {
-            Object oldValue = props.remove(PROP_COMPANY);
-            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
-        }
-        else        
-        {
-            Object oldValue = props.setProperty(PROP_COMPANY, company);  
-            propertyChangeSupport.firePropertyChange(PROP_COMPANY, oldValue, company);
-        } 
-    }      
+    }            
     
 // TODO TitleProvider  
     
@@ -466,7 +339,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     public void removeTitleListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
-    }  
+    } 
     
 // TODO DescriptionProvider  
     
@@ -509,13 +382,13 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     public Properties getProperties()
     {
         return props;
-    }  
+    }    
     
     @Override
     public void merge(PropertiesProvider provider)
     {
         props.putAll(provider.getProperties());
-    }    
+    }       
     
 // TODO BatchUpdateSupport    
     
@@ -542,22 +415,39 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     
 // TODO TopComponentProvider
     
-    private final class TopComponentProviderImpl implements TopComponentProvider, MultiViewDescription, MultiViewElement
+    private final class TopComponentProviderImpl extends JPanel implements TopComponentProvider, MultiViewDescription, MultiViewElement
     {
         private TopComponent tc;           
+        private CefBrowser browser; 
         private JToolBar toolbar;
-        private CefBrowser browser;
         
-        private transient MultiViewElementCallback callback;                         
+        private transient MultiViewElementCallback callback;          
+        
+        public TopComponentProviderImpl() 
+        {
+            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+        }         
         
         @Override
         public TopComponent getTopComponent()
         {
             if(tc == null)
             {
-                MultiViewDescription[] mvds = new MultiViewDescription[1];
-                mvds[0] = this;
-                tc = MultiViewFactory.createMultiView(mvds, this);
+                List<MultiViewDescription> list = new ArrayList<>();
+                list.add(this);
+                SubprojectProvider provider = getLookup().lookup(SubprojectProvider.class);
+                if(provider != null)
+                {
+                    for(Project project : provider.getSubprojects())
+                    {
+                        MultiViewDescription mvd = project.getLookup().lookup(MultiViewDescription.class);
+                        if(mvd != null)
+                        {
+                            list.add(mvd);
+                        }
+                    }
+                }
+                tc = MultiViewFactory.createMultiView(list.toArray(new MultiViewDescription[list.size()]), this);
                 tc.setDisplayName(getTitle());
             }
             return tc;
@@ -566,7 +456,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public String preferredID() 
         {
-            return "github";
+            return "home_page";
         }         
         
         @Override
@@ -584,7 +474,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public String getDisplayName() 
         {
-            return "GitHub";
+            return "Home Page";
         }   
         
         @Override
@@ -621,22 +511,26 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public JComponent getVisualRepresentation() 
         {
-            CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-            if(provider != null)
+            if(browser == null)
             {
-                try
+                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+                if(provider != null)
                 {
-                    browser = provider.getCefClient().createBrowser(GitHubUser.GITHUB_URL + getUserName(), false, false); 
-                    JPanel panel = new JPanel(new BorderLayout());
-                    panel.add(browser.getUIComponent(), BorderLayout.CENTER);
-                    return panel;
-                }
-                catch(Exception e)
-                {
-                    LOG.warning(e.getMessage());
+                    try
+                    {
+                        browser = provider.getCefClient().createBrowser(getUrl(), false, false);      ;   
+                        if(browser != null)
+                        {
+                            add(browser.getUIComponent());
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
                 }
             }
-            return null;
+            return this;
         }
 
         @Override
@@ -658,21 +552,24 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup getLookup() 
         {
-            return GitHubProject.this.getLookup();
+            return HomePageProject.this.getLookup();
         }        
 
         @Override
         public void componentOpened() 
-        {            
+        {
+            
         }
 
         @Override
         public void componentClosed() 
         {
+            /*
             if(browser != null)
             {
                 browser.close(true);
             }
+            */
         }
 
         @Override
@@ -709,7 +606,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         protected void projectClosed() 
         {          
-            propertyChangeSupport.removePropertyChangeListener(this);  
+            propertyChangeSupport.removePropertyChangeListener(this);    
             
             for(SourceProvider provider : sources.values())
             {
@@ -736,7 +633,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public Icon getIcon()
         {  
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getIcon(IconsProvider.ICON.GITHUB);
+            return provider.getIcon(IconsProvider.ICON.HOME_PAGE);
         }
 
         @Override
@@ -766,10 +663,10 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Project getProject() 
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         }
-    }  
-    
+    }     
+  
 // TODO Sources    
     
     private final class SourcesImpl implements Sources
@@ -799,6 +696,47 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }
     }     
   
+// TODO DisplayNameProvider
+
+    private final class DisplayNameProviderImpl implements DisplayNameProvider, PropertyChangeListener, ChangeSupportProvider
+    {
+        private final ChangeSupport changeSupport;  
+
+        public DisplayNameProviderImpl() 
+        {
+            changeSupport = new ChangeSupport(this);  
+            addTitleListener(this);
+        }
+
+        @Override
+        public String getDisplayName(TextFormat format) 
+        {
+            if(format == TextFormat.PLAIN)
+            {
+                return getTitle();
+            }
+            return null;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }    
+    }
+    
 // TODO IconProvider    
     
     private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
@@ -821,7 +759,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                 RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.YOUTUBE_CHANNEL);
+            return provider.getImage(IconsProvider.ICON.HOME_PAGE);
         }
 
         @Override
@@ -839,12 +777,12 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public void run() 
         {
-            String avatar = getAvatarUrl();
-            if(avatar != null)
+            String favicon = getFavicon();
+            if(favicon != null)
             {
                 try
                 {
-                    URL url = new URL(avatar);
+                    URL url = new URL(favicon);
                     BufferedImage image = ImageIO.read(url);  
                     icon = Utils.resizeImage(image, 16, 16); 
                     changeSupport.fireChange();
@@ -872,7 +810,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(GitHubProject.this);
+            return Utils.getRootProject(HomePageProject.this);
         }         
     }
     
@@ -922,7 +860,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     
 // TODO DomainsProvider
 
-    private final class DomainsProviderImpl implements DomainsProvider
+    private final class DomainsProviderImpl implements DomainsProvider, SubprojectProvider
     {                        
         private static final String ROOT_FOLDER = "domain";          
         
@@ -1021,7 +959,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider()
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         }                        
 
         @Override
@@ -1054,6 +992,12 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.DOMAINS);
         }               
+
+        @Override
+        public Set<? extends Project> getSubprojects() 
+        {
+            return getDomains().stream().collect(Collectors.toUnmodifiableSet());
+        }
     }     
     
 // TODO DataGroup
@@ -1071,9 +1015,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
-        }  
-        
+            return HomePageProject.this;
+        } 
+
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
@@ -1090,7 +1034,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_BOOK;
-        }          
+        } 
         
         @Override
         public Integer getPosition() 
@@ -1139,22 +1083,30 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             if(data != null)
             {
-                Book book = data.getLookup().lookup(Book.class);
-                if(book != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                } 
-            }                                  
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Book book = source.getLookup().lookup(Book.class);
+                        if(book != null)
+                        {
+                            return true;
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Book)
+        {            
+            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
             {
                 changeSupport.fireChange();
-            }
+            }            
         }
     }   
     
@@ -1166,12 +1118,12 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }             
+        }               
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         }  
         
         @Override
@@ -1190,7 +1142,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_ARTICLE;
-        }         
+        }           
         
         @Override
         public Integer getPosition() 
@@ -1239,23 +1191,31 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             if(data != null)
             {
-                Article article = data.getLookup().lookup(Article.class);
-                if(article != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Article article = source.getLookup().lookup(Article.class);
+                        if(article != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Article)
+        {            
+            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     } 
     
     private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1266,14 +1226,14 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }              
+        }             
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
-        }  
-        
+            return HomePageProject.this;
+        } 
+
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
@@ -1290,7 +1250,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_DOCUMENT;
-        }         
+        }  
         
         @Override
         public Integer getPosition() 
@@ -1339,22 +1299,30 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             if(data != null)
             {
-                Document document = data.getLookup().lookup(Document.class);
-                if(document != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Document document = source.getLookup().lookup(Document.class);
+                        if(document != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Document)
+        {            
+            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
             {
                 changeSupport.fireChange();
-            }
+            }            
         }
     }  
 
@@ -1366,12 +1334,12 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }                
+        }               
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         } 
         
         @Override
@@ -1390,7 +1358,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_LINK;
-        }         
+        }          
         
         @Override
         public Integer getPosition() 
@@ -1439,23 +1407,31 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             if(data != null)
             {
-                Link link = data.getLookup().lookup(Link.class);
-                if(link != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Link link = source.getLookup().lookup(Link.class);
+                        if(link != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Link)
+        {            
+            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     }  
 
     private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1471,8 +1447,8 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
-        } 
+            return HomePageProject.this;
+        }  
         
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
@@ -1539,23 +1515,31 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             if(data != null)
             {
-                Picture picture = data.getLookup().lookup(Picture.class);
-                if(picture != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
-            }                                   
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Picture picture = source.getLookup().lookup(Picture.class);
+                        if(picture != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Picture)
+        {            
+            if(evt.getOldValue() instanceof Picture || evt.getNewValue() instanceof Picture)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     } 
     
     private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1571,7 +1555,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         }  
         
         @Override
@@ -1590,7 +1574,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_VIDEO;
-        }         
+        }          
         
         @Override
         public Integer getPosition() 
@@ -1639,23 +1623,31 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             if(data != null)
             {
-                Video video = data.getLookup().lookup(Video.class);
-                if(video != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
-            }                                   
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Video video = source.getLookup().lookup(Video.class);
+                        if(video != null)
+                        {
+                            return true;
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Video)
+        {            
+            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     }    
     
 // TODO SourceGroup
@@ -1673,7 +1665,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         } 
         
         @Override
@@ -1696,7 +1688,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    link.save(os, "Updated by GitHub project: " + getTitle());
+                                    link.save(os, "Updated by Home page project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1835,7 +1827,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
                 getLinksById().put(webPage.getSourceID(), webPage);               
-                setLastSource(webPage);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                
             }           
             catch(IOException e)
             {
@@ -1846,12 +1838,13 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             WebPage webPage = getLinksById().get(file.getName());  
             if(webPage != null)
-            {
-                
+            {                
             }
+            */
         }
 
         @Override
@@ -1861,7 +1854,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             WebPage webPage = getLinksById().remove(file.getName());  
             if(webPage != null)
             {
-                setLastSource(webPage);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, webPage, null); 
             }
         }
 
@@ -1886,8 +1879,8 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return GitHubProject.this;
-        } 
+            return HomePageProject.this;
+        }  
         
         @Override
         public void projectClosed()
@@ -1909,7 +1902,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by GitHub project: " + getTitle());
+                                    reference.save(os, "Updated by Home page project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -2053,7 +2046,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                setLastSource(reference);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                
             }           
             catch(IOException e)
             {
@@ -2064,12 +2057,13 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             Reference reference = getReferencesById().get(file.getName());  
             if(reference != null)
-            {
-                
+            {                
             }
+            */
         }
 
         @Override
@@ -2079,7 +2073,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                setLastSource(reference);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);
             }
         }
 
@@ -2248,7 +2242,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         @Override
         public Lookup.Provider getProvider() 
         {
-            return GitHubProject.this;
+            return HomePageProject.this;
         }                 
     }     
 }

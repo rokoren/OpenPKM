@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -25,6 +25,8 @@ import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.github.GitHubUser;
+import org.kohsuke.github.GHUser;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
@@ -42,20 +44,20 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Domain",
-        id = "openpkm.core.LinkedInAction"
+        id = "openpkm.core.domain.GitHubAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/core/resources/home_page.png",
-        displayName = "#CTL_LinkedInAction"
+        iconBase = "openpkm/core/resources/github.png",
+        displayName = "#CTL_GitHubAction"
 )
-@Messages("CTL_LinkedInAction=Add LinkedIn")
-public class LinkedInAction implements ActionListener
+@Messages("CTL_GitHubAction=Add GitHub")
+public class GitHubAction implements ActionListener
 {    
-    private static final Logger LOG = Logger.getLogger(LinkedInAction.class.getName());  
-             
+    private static final Logger LOG = Logger.getLogger(GitHubAction.class.getName());     
+    
     private final DomainsProvider provider;
 
-    public LinkedInAction(DomainsProvider provider)
+    public GitHubAction(DomainsProvider provider)
     {
         this.provider = provider;
     }
@@ -64,8 +66,8 @@ public class LinkedInAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new LinkedInWizardPanel1());
-        panels.add(new LinkedInWizardPanel2());
+        panels.add(new GitHubWizardPanel1());
+        panels.add(new GitHubWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -84,23 +86,33 @@ public class LinkedInAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add LinkedIn");  
+        wiz.setTitle("Add GitHub");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
-            
-            String username = (String) wiz.getProperty(LinkedInProject.PROP_USER_NAME);
+
+            GHUser user = (GHUser) wiz.getProperty("user"); 
+            String userID = user.getId() + "";                       
+            String userName = (String) wiz.getProperty(GitHubUser.PROP_USER_NAME);
+            String followersCount = (String) wiz.getProperty(GitHubUser.PROP_FOLLOWERS_COUNT);
+            String reposCount = (String) wiz.getProperty(GitHubUser.PROP_PUBLIC_REPOS_COUNT);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-            String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);              
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                  
-                       
+            String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
+            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
+
             Properties props = new Properties();
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));            
-            props.setProperty(LinkedInProject.PROP_USER_NAME, username);
+            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(GitHubUser.PROP_USER_ID, userID);
+            props.setProperty(GitHubUser.PROP_USER_NAME, userName);                        
             props.setProperty(TitleProvider.PROP_TITLE, title);       
-            props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);   
+            props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
+            
+            props.setProperty(GitHubUser.PROP_AVATAR_URL, user.getAvatarUrl());  
+            props.setProperty(GitHubUser.PROP_HTML_URL, user.getHtmlUrl().toString());  
+            props.setProperty(GitHubUser.PROP_FOLLOWERS_COUNT, followersCount);
+            props.setProperty(GitHubUser.PROP_PUBLIC_REPOS_COUNT, reposCount);            
             
             if(topics != null)
             {
@@ -118,14 +130,14 @@ public class LinkedInAction implements ActionListener
 
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), username);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, LinkedInProjectFactory.PROJECT_FOLDER);                   
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), userID);           
+                FileObject projectFolder = FileUtil.createFolder(projectDirectory, GitHubProjectFactory.PROJECT_FOLDER);                   
 
-                OutputStream os = projectFolder.createAndOpen(LinkedInProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM LinkedIn Project"); 
+                OutputStream os = projectFolder.createAndOpen(GitHubProjectFactory.PROJECT_FILE);
+                props.store(os, "OpenPKM GitHub Project"); 
                 os.close(); 
                                 
-                StatusDisplayer.getDefault().setStatusText("OpenPKM LinkedIn Project saved: " + title); 
+                StatusDisplayer.getDefault().setStatusText("OpenPKM GitHub Project saved: " + title); 
 
                 Project project = ProjectManager.getDefault().findProject(projectDirectory);
                 if(project != null)
@@ -144,7 +156,7 @@ public class LinkedInAction implements ActionListener
             catch(IOException e) 
             {
                 LOG.warning(e.getMessage());
-            }                                              
+            }  
         }        
     }      
 }

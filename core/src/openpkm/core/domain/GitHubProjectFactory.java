@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,12 +21,12 @@ import org.openide.util.lookup.ServiceProvider;
  * @author Rok Koren
  */
 @ServiceProvider(service=ProjectFactory.class)
-public class HomePageProjectFactory implements ProjectFactory
+public class GitHubProjectFactory implements ProjectFactory 
 {
-    public static final String PROJECT_FOLDER = "openpkm-home-page-project"; 
+    public static final String PROJECT_FOLDER = "openpkm-github-project"; 
     public static final String PROJECT_FILE   = "project.properties";      
     
-    private static final Logger LOG = Logger.getLogger(HomePageProjectFactory.class.getName());     
+    private static final Logger LOG = Logger.getLogger(GitHubProjectFactory.class.getName());     
     
     @Override
     public boolean isProject(FileObject projectDirectory) 
@@ -50,7 +50,7 @@ public class HomePageProjectFactory implements ProjectFactory
             Properties props = new Properties();
             FileObject folder = dir.getFileObject(PROJECT_FOLDER);  
             props.load(folder.getFileObject(PROJECT_FILE).getInputStream());  
-            return new HomePageProject(dir, state, props);   
+            return new GitHubProject(dir, state, props);   
         }       
         return null;          
     }    
@@ -62,7 +62,7 @@ public class HomePageProjectFactory implements ProjectFactory
         {            
             PropertiesProvider provider = (PropertiesProvider)project;
             OutputStream os = new FileOutputStream(project.getProjectDirectory().getFileObject(PROJECT_FOLDER).getFileObject(PROJECT_FILE).getPath());
-            provider.getProperties().store(os, "Home Page project updated");
+            provider.getProperties().store(os, "GitHub project updated");
             os.close();   
         }  
     }     

@@ -29,8 +29,6 @@ import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
-import openpkm.core.HomePageWizardPanel1;
-import openpkm.core.HomePageWizardPanel2;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.netbeans.api.project.Project;

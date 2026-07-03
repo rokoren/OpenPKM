@@ -27,7 +27,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Domain",
-        id = "openpkm.core.FacebookAction"
+        id = "openpkm.core.domain.FacebookAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/facebook.png",

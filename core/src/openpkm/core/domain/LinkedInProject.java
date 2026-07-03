@@ -2,8 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
+import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.beans.BeanInfo;
@@ -25,12 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
-import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -60,6 +58,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
@@ -90,7 +89,6 @@ import org.netbeans.core.spi.multiview.MultiViewFactory;
 import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
-import org.netbeans.spi.project.SubprojectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
@@ -114,11 +112,11 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
-{  
-    public static final String PROP_HOME_PAGE_ID = "home.page.id";
-    public static final String PROP_URL          = "url"; 
-    public static final String PROP_FAVICON      = "favicon";     
+public class LinkedInProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
+{    
+    public static final String PROP_USER_NAME = "user.name"; 
+    
+    private static final String LINKEDIN_URL = "https://www.linkedin.com/in/";
     
     private static final String DATA_FOLDER = "data";    
     
@@ -131,30 +129,29 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_WATCH_LATER = 800;
 
-    private static final Logger LOG = Logger.getLogger(HomePageProject.class.getName());        
+    private static final Logger LOG = Logger.getLogger(LinkedInProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(HomePageProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(LinkedInProject.class);   
     
     private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();         
     
     private final FileObject projectDir;        
     private final ProjectState state;
-    private final Properties props;
+    private final Properties props;  
     private final PropertyChangeSupport propertyChangeSupport;
     
     private Lookup lkp;  
     private FileObject dataDir;
-    private LocalFileSystem fileSystem;
-    private Source lastSource;   
+    private LocalFileSystem fileSystem;  
     
-    public HomePageProject(FileObject projectDir, ProjectState state, Properties props) 
+    public LinkedInProject(FileObject projectDir, ProjectState state, Properties props) 
     {
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
-       
+
         WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
         if(webPageProvider != null)
         {          
@@ -169,21 +166,11 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             sources.put(references.getName(), references);            
         }
 
-    }
-    
-    public String getHomePageID() 
-    {
-        return props.getProperty(PROP_HOME_PAGE_ID);
     }  
-
-    public String getUrl() 
-    {
-        return props.getProperty(PROP_URL);
-    }     
     
-    public String getFavicon() 
+    public String getUserName() 
     {
-        return props.getProperty(PROP_FAVICON);
+        return props.getProperty(PROP_USER_NAME);
     }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -234,18 +221,6 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             LOG.warning(e.getMessage());
         }  
         return null;
-    }
-
-    private Source getLastSource() 
-    {
-        return lastSource;
-    }
-
-    private void setLastSource(Source source) 
-    {
-        Source oldSource = lastSource;
-        lastSource = source;
-        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldSource, source);
     }    
     
 // TODO Project
@@ -265,8 +240,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
 
             list.add(this);
             list.add(new Info());
-            list.add(new SourcesImpl());  
-            list.add(new DisplayNameProviderImpl());
+            list.add(new SourcesImpl());
             list.add(new IconProviderImpl());
             list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
@@ -274,7 +248,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             list.add(new ParentProjectProviderImpl());              
 
             list.add(new LogicalViewProviderImpl(this));
-            list.add(new HomePageCustomizerProvider(this));  
+            list.add(new LinkedInCustomizerProvider(this));  
 
             list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
@@ -298,7 +272,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     @Override
     public String getDomainID() 
     {
-        return getHomePageID();
+        return getUserName();
     }    
     
     @Override
@@ -316,7 +290,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }            
+    }    
     
 // TODO TitleProvider  
     
@@ -351,7 +325,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     public void removeTitleListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
-    } 
+    }
     
 // TODO DescriptionProvider  
     
@@ -386,7 +360,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     public void removeDescriptionListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-    }      
+    }     
 
 // TODO PropertiesProvider
     
@@ -427,39 +401,22 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     
 // TODO TopComponentProvider
     
-    private final class TopComponentProviderImpl extends JPanel implements TopComponentProvider, MultiViewDescription, MultiViewElement
+    private final class TopComponentProviderImpl implements TopComponentProvider, MultiViewDescription, MultiViewElement
     {
         private TopComponent tc;           
-        private CefBrowser browser; 
         private JToolBar toolbar;
+        private CefBrowser browser;
         
-        private transient MultiViewElementCallback callback;          
-        
-        public TopComponentProviderImpl() 
-        {
-            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-        }         
+        private transient MultiViewElementCallback callback;                         
         
         @Override
         public TopComponent getTopComponent()
         {
             if(tc == null)
             {
-                List<MultiViewDescription> list = new ArrayList<>();
-                list.add(this);
-                SubprojectProvider provider = getLookup().lookup(SubprojectProvider.class);
-                if(provider != null)
-                {
-                    for(Project project : provider.getSubprojects())
-                    {
-                        MultiViewDescription mvd = project.getLookup().lookup(MultiViewDescription.class);
-                        if(mvd != null)
-                        {
-                            list.add(mvd);
-                        }
-                    }
-                }
-                tc = MultiViewFactory.createMultiView(list.toArray(new MultiViewDescription[list.size()]), this);
+                MultiViewDescription[] mvds = new MultiViewDescription[1];
+                mvds[0] = this;
+                tc = MultiViewFactory.createMultiView(mvds, this);
                 tc.setDisplayName(getTitle());
             }
             return tc;
@@ -468,7 +425,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public String preferredID() 
         {
-            return "home_page";
+            return "linkedin";
         }         
         
         @Override
@@ -486,7 +443,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public String getDisplayName() 
         {
-            return "Home Page";
+            return "LinkedIn";
         }   
         
         @Override
@@ -523,26 +480,22 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public JComponent getVisualRepresentation() 
         {
-            if(browser == null)
+            CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+            if(provider != null)
             {
-                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-                if(provider != null)
+                try
                 {
-                    try
-                    {
-                        browser = provider.getCefClient().createBrowser(getUrl(), false, false);      ;   
-                        if(browser != null)
-                        {
-                            add(browser.getUIComponent());
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
+                    browser = provider.getCefClient().createBrowser(LINKEDIN_URL + getUserName(), false, false);   
+                    JPanel panel = new JPanel(new BorderLayout());
+                    panel.add(browser.getUIComponent(), BorderLayout.CENTER);
+                    return panel;
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
                 }
             }
-            return this;
+            return null;
         }
 
         @Override
@@ -564,24 +517,21 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup getLookup() 
         {
-            return HomePageProject.this.getLookup();
+            return LinkedInProject.this.getLookup();
         }        
 
         @Override
         public void componentOpened() 
-        {
-            
+        {            
         }
 
         @Override
         public void componentClosed() 
         {
-            /*
             if(browser != null)
             {
                 browser.close(true);
             }
-            */
         }
 
         @Override
@@ -618,7 +568,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         protected void projectClosed() 
         {          
-            propertyChangeSupport.removePropertyChangeListener(this);    
+            propertyChangeSupport.removePropertyChangeListener(this);  
             
             for(SourceProvider provider : sources.values())
             {
@@ -645,7 +595,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         public Icon getIcon()
         {  
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getIcon(IconsProvider.ICON.HOME_PAGE);
+            return provider.getIcon(IconsProvider.ICON.LINKEDIN);
         }
 
         @Override
@@ -675,7 +625,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Project getProject() 
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         }
     }     
   
@@ -706,48 +656,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport.removeChangeListener(listener);
         }
-    }     
-  
-// TODO DisplayNameProvider
-
-    private final class DisplayNameProviderImpl implements DisplayNameProvider, PropertyChangeListener, ChangeSupportProvider
-    {
-        private final ChangeSupport changeSupport;  
-
-        public DisplayNameProviderImpl() 
-        {
-            changeSupport = new ChangeSupport(this);  
-            addTitleListener(this);
-        }
-
-        @Override
-        public String getDisplayName(TextFormat format) 
-        {
-            if(format == TextFormat.PLAIN)
-            {
-                return getTitle();
-            }
-            return null;
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {
-            changeSupport.fireChange();
-        }
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }    
-    }
+    }      
     
 // TODO IconProvider    
     
@@ -771,7 +680,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
                 RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.HOME_PAGE);
+            return provider.getImage(IconsProvider.ICON.LINKEDIN);
         }
 
         @Override
@@ -789,20 +698,19 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public void run() 
         {
-            String favicon = getFavicon();
-            if(favicon != null)
+            String profilePicture = null;
+            if(profilePicture != null)
             {
                 try
                 {
-                    URL url = new URL(favicon);
-                    BufferedImage image = ImageIO.read(url);  
+                    BufferedImage image = ImageIO.read(new URL(profilePicture));  
                     icon = Utils.resizeImage(image, 16, 16); 
                     changeSupport.fireChange();
                 }
                 catch(MalformedURLException e)
                 {
                     LOG.warning(e.getMessage());
-                }
+                }                 
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());
@@ -822,7 +730,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Project getRootProject() 
         {
-            return Utils.getRootProject(HomePageProject.this);
+            return Utils.getRootProject(LinkedInProject.this);
         }         
     }
     
@@ -872,7 +780,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
     
 // TODO DomainsProvider
 
-    private final class DomainsProviderImpl implements DomainsProvider, SubprojectProvider
+    private final class DomainsProviderImpl implements DomainsProvider
     {                        
         private static final String ROOT_FOLDER = "domain";          
         
@@ -971,7 +879,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getProvider()
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         }                        
 
         @Override
@@ -1004,12 +912,6 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.DOMAINS);
         }               
-
-        @Override
-        public Set<? extends Project> getSubprojects() 
-        {
-            return getDomains().stream().collect(Collectors.toUnmodifiableSet());
-        }
     }     
     
 // TODO DataGroup
@@ -1027,9 +929,9 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
-        } 
-
+            return LinkedInProject.this;
+        }  
+        
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
@@ -1046,7 +948,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_BOOK;
-        } 
+        }          
         
         @Override
         public Integer getPosition() 
@@ -1095,22 +997,30 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Book book = data.getLookup().lookup(Book.class);
-                if(book != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                } 
-            }                                  
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Book book = source.getLookup().lookup(Book.class);
+                        if(book != null)
+                        {
+                            return true;
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Book)
+        {            
+            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
             {
                 changeSupport.fireChange();
-            }
+            }            
         }
     }   
     
@@ -1127,7 +1037,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         }  
         
         @Override
@@ -1146,7 +1056,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_ARTICLE;
-        }           
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1195,23 +1105,31 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Article article = data.getLookup().lookup(Article.class);
-                if(article != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Article article = source.getLookup().lookup(Article.class);
+                        if(article != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Article)
+        {            
+            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     } 
     
     private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1222,12 +1140,12 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-        }             
+        }               
         
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         } 
 
         @Override
@@ -1295,22 +1213,30 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Document document = data.getLookup().lookup(Document.class);
-                if(document != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Document document = source.getLookup().lookup(Document.class);
+                        if(document != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Document)
+        {            
+            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
             {
                 changeSupport.fireChange();
-            }
+            }            
         }
     }  
 
@@ -1327,8 +1253,8 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
-        } 
+            return LinkedInProject.this;
+        }  
         
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
@@ -1346,7 +1272,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_LINK;
-        }          
+        }         
         
         @Override
         public Integer getPosition() 
@@ -1395,23 +1321,31 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Link link = data.getLookup().lookup(Link.class);
-                if(link != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Link link = source.getLookup().lookup(Link.class);
+                        if(link != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
             }                                    
-            return false;
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Link)
+        {            
+            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     }  
 
     private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1427,8 +1361,8 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
-        }  
+            return LinkedInProject.this;
+        }    
         
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
@@ -1495,23 +1429,31 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Picture picture = data.getLookup().lookup(Picture.class);
-                if(picture != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
-            }                                   
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Picture picture = source.getLookup().lookup(Picture.class);
+                        if(picture != null)
+                        {
+                            return true;
+                        }                                                 
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Picture)
+        {            
+            if(evt.getOldValue() instanceof Picture || evt.getNewValue() instanceof Picture)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     } 
     
     private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -1527,7 +1469,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         }  
         
         @Override
@@ -1546,7 +1488,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         public ActionsProvider getActionsProvider() 
         {
             return ACTIONS_PROVIDER_VIDEO;
-        }          
+        }           
         
         @Override
         public Integer getPosition() 
@@ -1595,23 +1537,31 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         {
             if(data != null)
             {
-                Video video = data.getLookup().lookup(Video.class);
-                if(video != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    return true;
-                }                 
-            }                                   
-            return false;
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Video video = source.getLookup().lookup(Video.class);
+                        if(video != null)
+                        {
+                            return true;
+                        }                                                
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
         }
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
-        {
-            if(getLastSource() instanceof Video)
+        {            
+            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
             {
                 changeSupport.fireChange();
-            }
-        }
+            }            
+        } 
     }    
     
 // TODO SourceGroup
@@ -1629,7 +1579,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         } 
         
         @Override
@@ -1652,7 +1602,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    link.save(os, "Updated by Home page project: " + getTitle());
+                                    link.save(os, "Updated by LinkedIn project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1771,7 +1721,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             }  
             
             return primaryFile;            
-        }           
+        }            
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1791,7 +1741,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             {
                 WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
                 getLinksById().put(webPage.getSourceID(), webPage);               
-                setLastSource(webPage);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                 
             }           
             catch(IOException e)
             {
@@ -1802,12 +1752,13 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             WebPage webPage = getLinksById().get(file.getName());  
             if(webPage != null)
-            {
-                
+            {                
             }
+            */
         }
 
         @Override
@@ -1817,7 +1768,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             WebPage webPage = getLinksById().remove(file.getName());  
             if(webPage != null)
             {
-                setLastSource(webPage);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, webPage, null); 
             }
         }
 
@@ -1842,7 +1793,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getLookupProvider()
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         }  
         
         @Override
@@ -1865,7 +1816,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Home page project: " + getTitle());
+                                    reference.save(os, "Updated by Blog project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1989,7 +1940,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             }            
 
             return primaryFile;
-        }          
+        }        
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2009,7 +1960,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             {
                 Reference reference = provider.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                setLastSource(reference);                
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                
             }           
             catch(IOException e)
             {
@@ -2020,12 +1971,13 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public void fileChanged(FileEvent evt) 
         {
+            /*
             FileObject file = evt.getFile();
             Reference reference = getReferencesById().get(file.getName());  
             if(reference != null)
-            {
-                
+            {                
             }
+            */
         }
 
         @Override
@@ -2035,7 +1987,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                setLastSource(reference);
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);
             }
         }
 
@@ -2204,7 +2156,7 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         @Override
         public Lookup.Provider getProvider() 
         {
-            return HomePageProject.this;
+            return LinkedInProject.this;
         }                 
     }     
 }
