@@ -251,11 +251,13 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
         }    
         else if(evt.getSource() == sourceProvider)
         {
+            String displayName = getDisplayName();
             displayNameProvider = null;
             iconProvider = null;
             bulletIconProvider = null;
             openIconProvider = null;
             shortDescriptionProvider = null;
+            fireDisplayNameChange(displayName, getDisplayName());
         }           
     }  
 }
