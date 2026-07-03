@@ -18,7 +18,7 @@
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-          <ResourceString bundle="openpkm/core/Bundle.properties" key="RssChannelVisualPanel1.jLabel1.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;) + &quot;:&quot;"/>
+          <ResourceString bundle="openpkm/core/domain/Bundle.properties" key="RssChannelVisualPanel1.jLabel1.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;) + &quot;:&quot;"/>
         </Property>
       </Properties>
       <Constraints>
@@ -61,7 +61,7 @@
     <Component class="javax.swing.JLabel" name="jLabel2">
       <Properties>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-          <ResourceString bundle="openpkm/core/Bundle.properties" key="RssChannelVisualPanel1.jLabel2.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;) + &quot;:&quot;"/>
+          <ResourceString bundle="openpkm/core/domain/Bundle.properties" key="RssChannelVisualPanel1.jLabel2.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;) + &quot;:&quot;"/>
         </Property>
       </Properties>
       <Constraints>
@@ -80,7 +80,7 @@
     <Component class="javax.swing.JCheckBox" name="jCheckBox1">
       <Properties>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-          <ResourceString bundle="openpkm/core/Bundle.properties" key="RssChannelVisualPanel1.jCheckBox1.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+          <ResourceString bundle="openpkm/core/domain/Bundle.properties" key="RssChannelVisualPanel1.jCheckBox1.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
         </Property>
         <Property name="focusable" type="boolean" value="false"/>
       </Properties>

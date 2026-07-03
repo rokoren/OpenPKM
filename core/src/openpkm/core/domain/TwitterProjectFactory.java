@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,12 +21,12 @@ import org.openide.util.lookup.ServiceProvider;
  * @author Rok Koren
  */
 @ServiceProvider(service=ProjectFactory.class)
-public class RssChannelProjectFactory implements ProjectFactory
+public class TwitterProjectFactory implements ProjectFactory 
 {
-    public static final String PROJECT_FOLDER = "openpkm-rss-channel-project"; 
+    public static final String PROJECT_FOLDER = "openpkm-twitter-project"; 
     public static final String PROJECT_FILE   = "project.properties";      
     
-    private static final Logger LOG = Logger.getLogger(RssChannelProjectFactory.class.getName());     
+    private static final Logger LOG = Logger.getLogger(TwitterProjectFactory.class.getName());     
     
     @Override
     public boolean isProject(FileObject projectDirectory) 
@@ -50,7 +50,7 @@ public class RssChannelProjectFactory implements ProjectFactory
             Properties props = new Properties();
             FileObject folder = dir.getFileObject(PROJECT_FOLDER);  
             props.load(folder.getFileObject(PROJECT_FILE).getInputStream());  
-            return new RssChannelProject(dir, state, props);   
+            return new TwitterProject(dir, state, props);   
         }       
         return null;          
     }    
@@ -62,8 +62,8 @@ public class RssChannelProjectFactory implements ProjectFactory
         {            
             PropertiesProvider provider = (PropertiesProvider)project;
             OutputStream os = new FileOutputStream(project.getProjectDirectory().getFileObject(PROJECT_FOLDER).getFileObject(PROJECT_FILE).getPath());
-            provider.getProperties().store(os, "RSS Channel project updated");
+            provider.getProperties().store(os, "Twitter project updated");
             os.close();   
         }  
-    }    
+    }      
 }

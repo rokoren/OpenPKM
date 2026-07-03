@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndFeed;
@@ -48,7 +48,7 @@ import org.openide.util.NbBundle.Messages;
  */
 @ActionID(
         category = "OpenPKM/Domain",
-        id = "openpkm.core.RssChannelAction"
+        id = "openpkm.core.domain.RssChannelAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/feed.png",

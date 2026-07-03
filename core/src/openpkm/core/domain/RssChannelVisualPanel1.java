@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.EventQueue;
 import java.util.ArrayList;
@@ -23,29 +23,35 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public class TwitterVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
+public class RssChannelVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
 {
-    private final ExplorerManager explorerManager = new ExplorerManager(); 
-
+    private final ExplorerManager explorerManager = new ExplorerManager();
+    
     /**
-     * Creates new form TwitterVisualPanel1
+     * Creates new form RssChannelVisualPanel1
      */
-    public TwitterVisualPanel1() {
+    public RssChannelVisualPanel1() 
+    {
         initComponents();
     }
-
+    
     @Override
     public String getName() 
     {
-        return "User";
-    }     
+        return "URL";
+    }  
     
-    public String getTwitterUsername()
+    public String getRssUrl()
     {
         return jTextField1.getText().trim();
+    }   
+
+    public boolean isRssFile()
+    {
+        return jCheckBox1.isSelected();
     }
     
-    public List<Topic> getTwitterTopics()
+    public List<Topic> getRssChannelTopics()
     {
         Node[] nodes = explorerManager.getSelectedNodes();
         if(nodes.length > 0)
@@ -62,7 +68,7 @@ public class TwitterVisualPanel1 extends javax.swing.JPanel implements ExplorerM
             return topics;
         }
         return null;
-    }     
+    } 
     
     @Override
     public ExplorerManager getExplorerManager() 
@@ -120,8 +126,8 @@ public class TwitterVisualPanel1 extends javax.swing.JPanel implements ExplorerM
         {
             return new Node[] {new TopicNode(provider, topic)};
         }           
-    }      
-    
+    }    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -137,10 +143,12 @@ public class TwitterVisualPanel1 extends javax.swing.JPanel implements ExplorerM
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel2 = new javax.swing.JLabel();
         iconView1 = new org.openide.explorer.view.IconView();
+        jCheckBox1 = new javax.swing.JCheckBox();
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
 
         setLayout(new java.awt.GridBagLayout());
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(TwitterVisualPanel1.class, "TwitterVisualPanel1.jLabel1.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(RssChannelVisualPanel1.class, "RssChannelVisualPanel1.jLabel1.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -162,26 +170,42 @@ public class TwitterVisualPanel1 extends javax.swing.JPanel implements ExplorerM
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         add(filler1, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(TwitterVisualPanel1.class, "TwitterVisualPanel1.jLabel2.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(RssChannelVisualPanel1.class, "RssChannelVisualPanel1.jLabel2.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel2, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         add(iconView1, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, org.openide.util.NbBundle.getMessage(RssChannelVisualPanel1.class, "RssChannelVisualPanel1.jCheckBox1.text")); // NOI18N
+        jCheckBox1.setFocusable(false);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jCheckBox1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler2, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler2;
     private org.openide.explorer.view.IconView iconView1;
+    private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JTextField jTextField1;

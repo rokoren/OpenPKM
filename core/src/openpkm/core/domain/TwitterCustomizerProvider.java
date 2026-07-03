@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.Dialog;
 import java.awt.event.ActionEvent;
@@ -17,13 +17,13 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Rok Koren
  */
-public class RssChannelCustomizerProvider implements CustomizerProvider
+public class TwitterCustomizerProvider implements CustomizerProvider
 {
-    public final RssChannelProject project;
+    public final TwitterProject project;
 
-    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-rss-channel-project/Customizer";
+    public static final String CUSTOMIZER_FOLDER_PATH = "Projects/openpkm-twitter-project/Customizer";
 
-    public RssChannelCustomizerProvider(RssChannelProject project)
+    public TwitterCustomizerProvider(TwitterProject project)
     {
         this.project = project;
     }
@@ -52,5 +52,5 @@ public class RssChannelCustomizerProvider implements CustomizerProvider
         {
             StatusDisplayer.getDefault().setStatusText("OK button clicked for " + project.getProjectDirectory().getName() + " customizer!");
         }
-    }      
+    }     
 }
