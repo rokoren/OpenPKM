@@ -1222,7 +1222,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    card.save(os, "Updated by Blog project: " + getBoardName());
+                                    card.save(os, "Updated by Trello project: " + getBoardName());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)

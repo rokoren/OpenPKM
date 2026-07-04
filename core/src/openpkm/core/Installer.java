@@ -49,21 +49,21 @@ public class Installer implements Runnable
                             DataObject data = topComponent.getLookup().lookup(DataObject.class);
                             if (data != null) 
                             {
-                                Project project = data.getLookup().lookup(Project.class);
-                                if(project != null)
-                                {
-                                    Project[] projects = {project};
-                                    OpenProjects.getDefault().open(projects, false);                                         
-                                }                                 
-                                
-                                FileObject currentFile = data.getPrimaryFile();
-                                
                                 SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
                                 if(sourceProvider != null)
                                 {
                                     Source source = sourceProvider.getSource();
                                     if(source != null)
                                     {
+                                        Project project = source.getLookup().lookup(Project.class);
+                                        if(project != null)
+                                        {
+                                            Project[] projects = {project};
+                                            OpenProjects.getDefault().open(projects, false);                                         
+                                        }                                 
+
+                                        FileObject currentFile = data.getPrimaryFile();  
+
                                         MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
                                         if(mvd != null)
                                         {
@@ -98,9 +98,9 @@ public class Installer implements Runnable
                                                 });
                                             }
                                             */                                    
-                                        }
-                                    }                                                                                                            
-                                }                                                                                                     
+                                        }                                        
+                                    }                                                                                                          
+                                }                                                                                                                                   
                             }
                         }
                     }
