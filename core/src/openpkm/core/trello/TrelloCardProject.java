@@ -127,6 +127,8 @@ import openpkm.trello.TrelloComment;
 import org.openide.loaders.DataObject;
 import openpkm.base.NodeActionsProvider;
 import openpkm.base.RunnableFX;
+import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.jcef.CefAppProvider;
 import openpkm.trello.TrelloLabel;
 import openpkm.trello.AbstractTrelloLabelsProvider;
@@ -141,6 +143,8 @@ import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
+import org.openide.cookies.CloseCookie;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -833,8 +837,29 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
 
         @Override
         protected void projectClosed() 
-        {          
-            propertyChangeSupport.removePropertyChangeListener(this);            
+        { 
+            propertyChangeSupport.removePropertyChangeListener(this);   
+            for(TopComponent topComponent : WindowManager.getDefault().getRegistry().getOpened())
+            {
+                DataObject data = topComponent.getLookup().lookup(DataObject.class);
+                if (data != null) 
+                {
+                    SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                    if(sourceProvider != null)
+                    {
+                        Source source = sourceProvider.getSource();
+                        if(source != null)
+                        {
+                            Project project = source.getLookup().lookup(Project.class);
+                            if(project == TrelloCardProject.this)
+                            {
+                                CloseCookie close = data.getLookup().lookup(CloseCookie.class);
+                                close.close();
+                            }                                                                       
+                        }                                                                                                          
+                    }                                                                                                                                   
+                }                  
+            }            
         }                  
 
         @Override

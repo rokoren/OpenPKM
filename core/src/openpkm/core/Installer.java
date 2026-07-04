@@ -38,6 +38,7 @@ public class Installer implements Runnable
             @Override
             public void propertyChange(PropertyChangeEvent evt) 
             {
+                System.out.println("Event: " + evt.getPropertyName());
                 if (evt.getPropertyName().equals("opened")) 
                 {
                     HashSet<TopComponent> newHashSet = (HashSet<TopComponent>) evt.getNewValue();
@@ -104,6 +105,31 @@ public class Installer implements Runnable
                             }
                         }
                     }
+                }
+                else if(evt.getPropertyName().equals("tcClosed"))
+                {
+                    TopComponent topComponent = (TopComponent) evt.getNewValue();
+                    DataObject data = topComponent.getLookup().lookup(DataObject.class);
+                    if (data != null) 
+                    {
+                        SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                        if(sourceProvider != null)
+                        {
+                            Source source = sourceProvider.getSource();
+                            if(source != null)
+                            {
+                                Project project = source.getLookup().lookup(Project.class);
+                                if(project != null)
+                                {
+                                    if(OpenProjects.getDefault().isProjectOpen(project))
+                                    {
+                                        Project[] projects = {project};
+                                        OpenProjects.getDefault().close(projects);                                          
+                                    }                                                                           
+                                }                                                                       
+                            }                                                                                                          
+                        }                                                                                                                                   
+                    }                  
                 }
             }
         });
