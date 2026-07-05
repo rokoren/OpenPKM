@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
 import org.openide.DialogDisplayer;
@@ -80,14 +82,25 @@ public class WatchLaterAction implements ActionListener
                     data = DataFolder.findFolder(file);
                 }  
                 
-                WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
-                if(watchLater != null)
+                if(data != null)
                 {
-                    if(watchLater.isWatchLater())
+                    SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                    if(sourceProvider != null)
                     {
-                        panels.add(new WatchLaterWizardPanel(watchLater));                  
-                    }                       
-                }
+                        Source source = sourceProvider.getSource();
+                        if(source != null)
+                        {
+                            WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
+                            if(watchLater != null)
+                            {
+                                if(watchLater.isWatchLater())
+                                {
+                                    panels.add(new WatchLaterWizardPanel(watchLater));                  
+                                }   
+                            }                                                 
+                        }            
+                    }                                                                                  
+                }                  
             }              
         } 
         catch(IOException e)

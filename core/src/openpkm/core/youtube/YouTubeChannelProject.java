@@ -1375,14 +1375,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         data = DataFolder.findFolder(file);
                     }  
 
-                    WatchLater watchLater = data.getLookup().lookup(WatchLater.class);
-                    if(watchLater != null)
-                    {
-                        if(watchLater.isWatchLater())
-                        {
-                            return true;                  
-                        }                       
-                    }
+                    return contains(data);
                 }              
             } 
             catch(IOException e)
