@@ -6,10 +6,19 @@ package openpkm.core;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
+import javax.swing.event.ChangeListener;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
 import openpkm.base.LinkProvider;
-import openpkm.jcef.CefClientProvider;
+import openpkm.jcef.CefAppProvider;
+import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
+import org.cef.browser.CefFrame;
+import org.cef.handler.CefLoadHandler;
+import org.cef.network.CefRequest;
 import org.netbeans.api.settings.ConvertAsProperties;
+import org.openide.awt.UndoRedo;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
@@ -26,13 +35,17 @@ import org.openide.windows.TopComponent;
         iconBase = "openpkm/core/resources/google.png",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
-public final class GoogleTopComponent extends TopComponent implements LinkProvider
+public final class GoogleTopComponent extends TopComponent implements LinkProvider, CefLoadHandler
 {
     public static final String GOOGLE_URL = "https://www.google.com";
     
     private static final Logger LOG = Logger.getLogger(GoogleTopComponent.class.getName());     
     
+    private CefClient client;
     private CefBrowser browser; 
+    private BrowserUndoRedo undoRedo;
+    
+    private final ChangeSupport changeSupport = new ChangeSupport(this);
     
     public GoogleTopComponent() 
     {
@@ -40,13 +53,15 @@ public final class GoogleTopComponent extends TopComponent implements LinkProvid
         setName("Google Window");
         setToolTipText("This is a Google window");
 
-        CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+        CefAppProvider provider = Lookup.getDefault().lookup(CefAppProvider.class);
         if(provider != null)
         {
             try
             {
-                browser = provider.getCefClient().createBrowser(GOOGLE_URL, false, false);  
-                add(browser.getUIComponent(), BorderLayout.CENTER);
+                client = provider.getApp().createClient();
+                browser = client.createBrowser(GOOGLE_URL, false, false);  
+                undoRedo = new BrowserUndoRedo();                
+                add(browser.getUIComponent(), BorderLayout.CENTER);                                
             }
             catch(Exception e)
             {
@@ -59,7 +74,13 @@ public final class GoogleTopComponent extends TopComponent implements LinkProvid
     public Lookup getLookup()
     {
         return Lookups.singleton(this);
-    }    
+    }  
+    
+    @Override
+    public UndoRedo getUndoRedo()
+    {
+        return undoRedo;
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -75,18 +96,20 @@ public final class GoogleTopComponent extends TopComponent implements LinkProvid
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
     @Override
-    public void componentOpened() {
-        // TODO add custom code on component opening
+    public void componentOpened() 
+    {
+        client.addLoadHandler(this);
     }
 
     @Override
     public void componentClosed() 
     {
-        // TODO add custom code on component closing
+        client.removeLoadHandler();
         if(browser != null)
         {
             browser.close(false);
-        }          
+        } 
+        client.dispose();
     }
 
     void writeProperties(java.util.Properties p) {
@@ -105,5 +128,74 @@ public final class GoogleTopComponent extends TopComponent implements LinkProvid
     public String getLink() 
     {
         return browser.getURL();
+    }  
+
+    @Override
+    public void onLoadingStateChange(CefBrowser cb, boolean bln, boolean bln1, boolean bln2) 
+    {
+        changeSupport.fireChange();        
+    }
+
+    @Override
+    public void onLoadStart(CefBrowser cb, CefFrame cf, CefRequest.TransitionType tt) 
+    {
+        
+    }
+
+    @Override
+    public void onLoadEnd(CefBrowser cb, CefFrame cf, int i) 
+    {
+        changeSupport.fireChange(); 
+    }
+
+    @Override
+    public void onLoadError(CefBrowser cb, CefFrame cf, ErrorCode ec, String string, String string1) 
+    {
+    }
+
+    private class BrowserUndoRedo implements UndoRedo 
+    {       
+        @Override
+        public boolean canUndo() {
+            return browser.canGoBack();
+        }
+
+        @Override
+        public void undo() throws CannotUndoException {
+            browser.goBack();
+        }
+
+        @Override
+        public boolean canRedo() {
+            return browser.canGoForward();
+        }
+
+        @Override
+        public void redo() throws CannotRedoException {
+            browser.goForward();
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener cl) 
+        {
+            changeSupport.addChangeListener(cl);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener cl) {
+            changeSupport.removeChangeListener(cl);
+        }
+
+        @Override
+        public String getUndoPresentationName() 
+        {
+            return "Back";
+        }
+
+        @Override
+        public String getRedoPresentationName() 
+        {
+            return "Forward";
+        }
     }    
 }
