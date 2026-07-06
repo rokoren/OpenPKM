@@ -34,6 +34,8 @@ import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.NodeSupport;
 import openpkm.base.OpenIconProvider;
+import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.TagsProvider;
 import openpkm.base.TopicsProvider;
 import org.openide.util.Lookup;
@@ -249,11 +251,19 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                         
                         if(topicProvider != null)
                         {
-                            TopicsProvider topicsProvider = data.getLookup().lookup(TopicsProvider.class);
-                            if(topicsProvider != null)
+                            SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                            if(sourceProvider != null)
                             {
-                                isTopic = topicProvider.isTopic(topicsProvider);
-                            }                             
+                                Source source = sourceProvider.getSource();
+                                if(source != null)
+                                {
+                                    TopicsProvider topicsProvider = source.getLookup().lookup(TopicsProvider.class);
+                                    if(topicsProvider != null)
+                                    {
+                                        isTopic = topicProvider.isTopic(topicsProvider);
+                                    }                                                 
+                                }            
+                            }                                                                                    
                         }
                         
                         if(isTag && isTopic)                    
