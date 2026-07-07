@@ -8,9 +8,13 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebHistory;
 import javafx.scene.web.WebView;
 import javax.swing.Action;
 import javax.swing.JComponent;
+import javax.swing.event.ChangeListener;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
 import openpkm.base.HtmlFilesProvider;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
@@ -20,18 +24,21 @@ import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractVisualElement extends JFXPanel implements MultiViewElement
+public abstract class AbstractVisualElement extends JFXPanel implements MultiViewElement, UndoRedo
 {
     private final Lookup lkp;     
     
     protected WebView browser;
     protected transient MultiViewElementCallback callback;
+    
+    private final ChangeSupport changeSupport = new ChangeSupport(this);
 
     public AbstractVisualElement(Lookup lkp) 
     {
@@ -78,7 +85,11 @@ public abstract class AbstractVisualElement extends JFXPanel implements MultiVie
                         //browser.getEngine().loadContent(readLoadingPage());
                     }              
                     */
-                    setScene(scene);                    
+                    setScene(scene);     
+                    
+                    browser.getEngine().getHistory().currentIndexProperty().addListener((obs, oldValue, newValue) -> {
+                        changeSupport.fireChange();
+                    });
                 }
             });            
         }
@@ -133,8 +144,77 @@ public abstract class AbstractVisualElement extends JFXPanel implements MultiVie
     @Override
     public UndoRedo getUndoRedo() 
     {
-        return UndoRedo.NONE;
+        return this;
     }
+    
+    @Override
+    public boolean canUndo() 
+    {
+        if(browser == null)
+        {
+            return false;
+        }
+        return browser.getEngine().getHistory().getCurrentIndex() > 0;
+    }
+
+    @Override
+    public void undo() throws CannotUndoException
+    {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() 
+            {
+                browser.getEngine().getHistory().go(-1);
+            }
+        });                 
+    }
+
+    @Override
+    public boolean canRedo() 
+    {
+        if(browser == null)
+        {
+            return false;
+        }        
+        WebHistory history = browser.getEngine().getHistory();
+        return history.getCurrentIndex() < history.getEntries().size() - 1;
+    }
+
+    @Override
+    public void redo() throws CannotRedoException 
+    {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() 
+            {
+                browser.getEngine().getHistory().go(1);
+            }
+        });                 
+    }
+
+    @Override
+    public void addChangeListener(ChangeListener cl) 
+    {
+        changeSupport.addChangeListener(cl);
+    }
+
+    @Override
+    public void removeChangeListener(ChangeListener cl) 
+    {
+        changeSupport.removeChangeListener(cl);
+    }
+
+    @Override
+    public String getUndoPresentationName() 
+    {
+        return "Back";
+    }
+
+    @Override
+    public String getRedoPresentationName() 
+    {
+        return "Forward";
+    }    
 
     @Override
     public void setMultiViewCallback(MultiViewElementCallback callback) 
