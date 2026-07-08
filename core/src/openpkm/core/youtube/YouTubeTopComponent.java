@@ -6,12 +6,22 @@ package openpkm.core.youtube;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
+import javax.swing.event.ChangeListener;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
 import openpkm.base.LinkProvider;
-import openpkm.youtube.YouTubeCefClientProvider;
+import openpkm.jcef.CefAppProvider;
+import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
+import org.cef.browser.CefFrame;
+import org.cef.handler.CefLoadHandler;
+import org.cef.handler.CefLoadHandler.ErrorCode;
+import org.cef.network.CefRequest;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
+import org.openide.awt.UndoRedo;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.windows.TopComponent;
 import org.openide.util.NbBundle.Messages;
@@ -41,13 +51,16 @@ import org.openide.util.lookup.Lookups;
     "CTL_YouTubeTopComponent=YouTube Window",
     "HINT_YouTubeTopComponent=This is a YouTube window"
 })
-public final class YouTubeTopComponent extends TopComponent implements LinkProvider
+public final class YouTubeTopComponent extends TopComponent implements LinkProvider, UndoRedo, CefLoadHandler
 {
     public static final String YOUTUBE_URL = "https://www.youtube.com";
     
     private static final Logger LOG = Logger.getLogger(YouTubeTopComponent.class.getName());     
     
+    private CefClient client;    
     private CefBrowser browser; 
+    
+    private final ChangeSupport changeSupport = new ChangeSupport(this);    
     
     public YouTubeTopComponent() 
     {
@@ -55,12 +68,14 @@ public final class YouTubeTopComponent extends TopComponent implements LinkProvi
         setName(Bundle.CTL_YouTubeTopComponent());
         setToolTipText(Bundle.HINT_YouTubeTopComponent());
 
-        YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+        CefAppProvider provider = Lookup.getDefault().lookup(CefAppProvider.class);
         if(provider != null)
         {
             try
-            {
-                browser = provider.getCefClient().createBrowser(YOUTUBE_URL, false, false);  
+            {                
+                client = provider.getApp().createClient();
+                browser = client.createBrowser(YOUTUBE_URL, false, false);                 
+                
                 add(browser.getUIComponent(), BorderLayout.CENTER);
             }
             catch(Exception e)
@@ -75,6 +90,12 @@ public final class YouTubeTopComponent extends TopComponent implements LinkProvi
     {
         return Lookups.singleton(this);
     }
+    
+    @Override
+    public UndoRedo getUndoRedo()
+    {
+        return this;
+    }    
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -91,16 +112,18 @@ public final class YouTubeTopComponent extends TopComponent implements LinkProvi
     // End of variables declaration//GEN-END:variables
     @Override
     public void componentOpened() {
-        // TODO add custom code on component opening
+        client.addLoadHandler(this);
     }
 
     @Override
     public void componentClosed() {
         // TODO add custom code on component closing
+        client.removeLoadHandler();
         if(browser != null)
         {
             browser.close(false);
-        }         
+        }        
+        //client.dispose();       
     }
 
     void writeProperties(java.util.Properties p) {
@@ -119,5 +142,71 @@ public final class YouTubeTopComponent extends TopComponent implements LinkProvi
     public String getLink() 
     {
         return browser.getURL();
+    }
+    
+    @Override
+    public void onLoadingStateChange(CefBrowser cb, boolean bln, boolean bln1, boolean bln2) 
+    {
+        changeSupport.fireChange();        
+    }
+
+    @Override
+    public void onLoadStart(CefBrowser cb, CefFrame cf, CefRequest.TransitionType tt) 
+    {
+        
+    }
+
+    @Override
+    public void onLoadEnd(CefBrowser cb, CefFrame cf, int i) 
+    {
+        changeSupport.fireChange(); 
+    }
+
+    @Override
+    public void onLoadError(CefBrowser cb, CefFrame cf, ErrorCode ec, String string, String string1) 
+    {
+    }
+
+    @Override
+    public boolean canUndo() {
+        return browser.canGoBack();
+    }
+
+    @Override
+    public void undo() throws CannotUndoException {
+        browser.goBack();
+    }
+
+    @Override
+    public boolean canRedo() {
+        return browser.canGoForward();
+    }
+
+    @Override
+    public void redo() throws CannotRedoException {
+        browser.goForward();
+    }
+
+    @Override
+    public void addChangeListener(ChangeListener cl) 
+    {
+        changeSupport.addChangeListener(cl);
+    }
+
+    @Override
+    public void removeChangeListener(ChangeListener cl) {
+        changeSupport.removeChangeListener(cl);
+    }
+
+    @Override
+    public String getUndoPresentationName() 
+    {
+        return "Back";
+    }
+
+    @Override
+    public String getRedoPresentationName() 
+    {
+        return "Forward";
     }
 }
