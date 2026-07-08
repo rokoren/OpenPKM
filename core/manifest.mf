@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 AutoUpdate-Show-In-Client: true
 OpenIDE-Module: openpkm.core
+OpenIDE-Module-Layer: openpkm/core/layer.xml
 OpenIDE-Module-Localizing-Bundle: openpkm/core/Bundle.properties
 OpenIDE-Module-Requires: org.openide.windows.WindowManager
 OpenIDE-Module-Specification-Version: 1.0
