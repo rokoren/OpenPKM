@@ -1187,9 +1187,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1295,9 +1295,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1403,9 +1403,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1511,9 +1511,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1619,9 +1619,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1727,9 +1727,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1835,9 +1835,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override

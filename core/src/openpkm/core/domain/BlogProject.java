@@ -980,9 +980,9 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1088,9 +1088,9 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1196,9 +1196,9 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1304,9 +1304,9 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1412,9 +1412,9 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1520,9 +1520,9 @@ public class BlogProject implements Domain, Blog, PropertiesProvider, SourceProv
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override

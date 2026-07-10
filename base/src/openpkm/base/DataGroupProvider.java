@@ -6,6 +6,7 @@ package openpkm.base;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.List;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 
@@ -15,7 +16,7 @@ import org.openide.loaders.DataObject;
  */
 public interface DataGroupProvider extends GroupProvider
 {
-    FileObject getRootFolder() throws IOException;    
+    List<FileObject> getFiles() throws IOException;    
     boolean contains(DataObject data);   
     Comparator<DataObject> getComparator();
     boolean isReversed();

@@ -63,7 +63,7 @@ public class WatchLaterAction implements ActionListener
         
         try
         {
-            for(FileObject file : provider.getRootFolder().getChildren())
+            for(FileObject file : provider.getFiles())
             {
                 DataObject data = null;
                 if(file.isData())

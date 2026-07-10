@@ -1175,9 +1175,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1203,7 +1203,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         {
             try
             {
-                for(FileObject file : getRootFolder().getChildren())
+                for(FileObject file : getFiles())
                 {
                     DataObject data = DataObject.find(file);
                     if(contains(data))
@@ -1305,9 +1305,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1413,9 +1413,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1521,9 +1521,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1629,9 +1629,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1737,9 +1737,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1845,9 +1845,9 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override

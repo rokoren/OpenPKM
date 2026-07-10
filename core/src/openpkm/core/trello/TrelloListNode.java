@@ -105,7 +105,7 @@ public class TrelloListNode implements NodePositionProvider
             SortedSet<DataObject> sorted = new TreeSet<DataObject>(provider.getComparator());
             try
             {
-                for(FileObject file : provider.getRootFolder().getChildren())
+                for(FileObject file : provider.getFiles())
                 {
                     DataObject data = null;
                     if(file.isData())

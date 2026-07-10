@@ -1171,14 +1171,14 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             provider.removeChangeListener(listener);
         }   
-
+        
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
             ParentProjectProvider parent = getLookup().lookup(ParentProjectProvider.class);
-            SourceProviders provider = parent.getPartentProject().getLookup().lookup(SourceProviders.class);
-            return provider.getDataDirectory();
-        }
+            SourceProviders provider = parent.getPartentProject().getLookup().lookup(SourceProviders.class);            
+            return List.of(provider.getDataDirectory().getChildren());
+        }        
         
         @Override
         public Comparator<DataObject> getComparator() 

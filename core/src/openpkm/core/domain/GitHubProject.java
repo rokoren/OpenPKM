@@ -1099,9 +1099,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1207,9 +1207,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1315,9 +1315,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1423,9 +1423,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1531,9 +1531,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1639,9 +1639,9 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override

@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
@@ -1334,9 +1335,20 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            List<FileObject> files = List.of(getDataDirectory().getChildren());
+            RootProjectProvider provider = getLookup().lookup(RootProjectProvider.class);
+            Project project = provider.getRootProject();
+            if(project != null)
+            {
+                SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+                if(providers != null)
+                {
+                    return Stream.concat(files.stream(), List.of(providers.getDataDirectory().getChildren()).stream()).toList();
+                }
+            }
+            return files;
         }
         
         @Override
@@ -1356,7 +1368,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             try
             {
-                for(FileObject file : getRootFolder().getChildren())
+                for(FileObject file : getFiles())
                 {
                     DataObject data = null;
                     if(file.isData())
@@ -1397,7 +1409,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             try
             {
-                for(FileObject file : getRootFolder().getChildren())
+                for(FileObject file : getFiles())
                 {
                     DataObject data = DataObject.find(file);
                     if(contains(data))
@@ -1425,9 +1437,14 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     Source source = sourceProvider.getSource();
                     if(source != null)
                     {
+                        YouTubeVideo youTube = source.getLookup().lookup(YouTubeVideo.class);
+                        if(youTube != null && !youTube.getChannelID().equals(getChannelID()))
+                        {
+                            return false;
+                        }                                                 
                         WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
                         if(watchLater != null)
-                        {
+                        {                                                       
                             return watchLater.isWatchLater();
                         }                                                 
                     }            
@@ -1505,9 +1522,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1613,9 +1630,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1721,9 +1738,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1829,9 +1846,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1937,9 +1954,9 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -2045,9 +2062,20 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
 
         @Override
-        public FileObject getRootFolder() throws IOException 
+        public List<FileObject> getFiles() throws IOException
         {
-            return getDataDirectory();
+            List<FileObject> files = List.of(getDataDirectory().getChildren());
+            RootProjectProvider provider = getLookup().lookup(RootProjectProvider.class);
+            Project project = provider.getRootProject();
+            if(project != null)
+            {
+                SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
+                if(providers != null)
+                {
+                    return Stream.concat(files.stream(), List.of(providers.getDataDirectory().getChildren()).stream()).toList();
+                }
+            }
+            return files;
         }
         
         @Override
@@ -2082,6 +2110,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         Video video = source.getLookup().lookup(Video.class);
                         if(video != null)
                         {
+                            if(video instanceof YouTubeVideo youTube)
+                            {
+                                return youTube.getChannelID().equals(getChannelID());
+                            }
                             return true;
                         }                                                
                     }            
