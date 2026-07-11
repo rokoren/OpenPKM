@@ -4,8 +4,15 @@
  */
 package openpkm.core.youtube;
 
+import java.awt.FlowLayout;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
+import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
@@ -21,25 +28,52 @@ import org.openide.util.Lookup;
 public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterWizardPanel.class.getName());     
-    
-    private final WatchLater watchLater;
-    
-    private CefBrowser browser;
-    
+        
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
      */
     private WatchLaterVisualPanel component;
+    
+    private final YouTubeVideo video;    
+    private CefBrowser browser;    
+    private final JComboBox<VisibilityProvider.Modifier> comboBox;   
+    
+    private final DefaultComboBoxModel<VisibilityProvider.Modifier> modifiers = new DefaultComboBoxModel<>();  
 
-    public WatchLaterWizardPanel(WatchLater watchLater) 
+    public WatchLaterWizardPanel(YouTubeVideo video) 
     {
-        this.watchLater = watchLater;
+        this.video = video;
+        setModifiers();
+        comboBox = new JComboBox<>(modifiers);        
     }  
+    
+    private void setModifiers()
+    {
+        modifiers.removeAllElements();
+        modifiers.addAll(Arrays.asList(VisibilityProvider.Modifier.values()));  
+        modifiers.setSelectedItem(VisibilityProvider.Modifier.PRIVATE);
+    }     
     
     public void finish(boolean isFinish)
     {
-        if(isFinish) watchLater.setWatchLater(false);
+        if(isFinish) 
+        {
+            if(video instanceof WatchLater watchLater)
+            {
+                watchLater.setWatchLater(false);                
+            }
+            if(video instanceof VisibilityProvider provider)
+            {
+                VisibilityProvider.Modifier visibility = (VisibilityProvider.Modifier)modifiers.getSelectedItem();
+                if(visibility != VisibilityProvider.Modifier.PRIVATE)
+                {
+                    provider.setModifier(visibility);  
+                    video.markModified();
+                }
+            }
+        }            
+
         if(browser != null)
         {
             browser.close(true);
@@ -55,25 +89,22 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     {
         if(browser == null)
         {
-            if(watchLater instanceof YouTubeVideo video)
+            YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+            if(provider != null)
             {
-                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
-                if(provider != null)
+                try
                 {
-                    try
-                    {
-                        browser = provider.getBrowser(video);                     
-                    }
-                    catch(Exception e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }                   
-                }                
-            }
+                    browser = provider.getBrowser(video);                     
+                }
+                catch(Exception e)
+                {
+                    LOG.warning(e.getMessage());
+                }                   
+            }  
         }        
         if (component == null) 
         {
-            component = new WatchLaterVisualPanel(watchLater, browser);                                   
+            component = new WatchLaterVisualPanel(video, browser);                                   
         }
         return component;
     }
@@ -105,7 +136,14 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     }   
 
     @Override
-    public void readSettings(WizardDescriptor wiz) {  
+    public void readSettings(WizardDescriptor wiz) 
+    {
+        JLabel label = new JLabel("Visibility:");
+        JPanel panel = new JPanel(new FlowLayout());
+        panel.add(label);
+        panel.add(comboBox);
+        Object[] options = {panel};
+        wiz.setAdditionalOptions(options);        
     }
 
     @Override

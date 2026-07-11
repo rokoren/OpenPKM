@@ -17,6 +17,7 @@ import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
+import openpkm.youtube.YouTubeVideo;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
@@ -90,12 +91,12 @@ public class WatchLaterAction implements ActionListener
                         Source source = sourceProvider.getSource();
                         if(source != null)
                         {
-                            WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
-                            if(watchLater != null)
+                            YouTubeVideo video = source.getLookup().lookup(YouTubeVideo.class);
+                            if(video instanceof WatchLater watchLater)
                             {
                                 if(watchLater.isWatchLater())
                                 {
-                                    panels.add(new WatchLaterWizardPanel(watchLater));                  
+                                    panels.add(new WatchLaterWizardPanel(video));                  
                                 }   
                             }                                                 
                         }            
@@ -129,15 +130,15 @@ public class WatchLaterAction implements ActionListener
         wiz.setTitle("Watch YouTube Videos");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         boolean isFinish = DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION;
+        for(WizardDescriptor.Panel panel : panels)
+        {
+            if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
+            {
+                watchLaterPanel.finish(isFinish);
+            }           
+        }        
         if(isFinish)
         {
-            for(WizardDescriptor.Panel panel : panels)
-            {
-                if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
-                {
-                    watchLaterPanel.finish(isFinish);
-                }           
-            }
             provider.fireChange();
         }                                                           
     }      

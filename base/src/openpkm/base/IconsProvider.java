@@ -58,7 +58,8 @@ public interface IconsProvider
         FILE_PNG,
         FILE_JPG,
         FILE_GIF,
-        FILE_MP4,        
+        FILE_MP4, 
+        BIN,
         VIDEOS;    
     }     
 }

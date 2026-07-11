@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
@@ -51,6 +50,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
@@ -80,6 +80,7 @@ import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
+import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
 import openpkm.reference.Reference;
@@ -149,6 +150,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_WATCH_LATER = 800;
+    private static final int POSITION_ARCHIVE     = 900;
 
     private static final Logger LOG = Logger.getLogger(YouTubeChannelProject.class.getName());        
     
@@ -270,13 +272,16 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
 
             list.addAll(sources.values());
 
+            WatchLaterProvider watchLaterProvider = new WatchLaterProviderImpl();
+            
             list.add(new BookDataGroupProviderImpl()); 
             list.add(new ArticleDataGroupProviderImpl()); 
             list.add(new DocumentDataGroupProviderImpl()); 
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
-            list.add(new VideoDataGroupProviderImpl());             
-            list.add(new WatchLaterProviderImpl()); 
+            list.add(new VideoDataGroupProviderImpl(watchLaterProvider));    
+            list.add(new ArchiveProviderImpl(watchLaterProvider));             
+            list.add(watchLaterProvider); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -1337,18 +1342,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public List<FileObject> getFiles() throws IOException
         {
-            List<FileObject> files = List.of(getDataDirectory().getChildren());
-            RootProjectProvider provider = getLookup().lookup(RootProjectProvider.class);
-            Project project = provider.getRootProject();
-            if(project != null)
-            {
-                SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
-                if(providers != null)
-                {
-                    return Stream.concat(files.stream(), List.of(providers.getDataDirectory().getChildren()).stream()).toList();
-                }
-            }
-            return files;
+            return List.of(getDataDirectory().getChildren());
         }
         
         @Override
@@ -1436,12 +1430,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 {
                     Source source = sourceProvider.getSource();
                     if(source != null)
-                    {
-                        YouTubeVideo youTube = source.getLookup().lookup(YouTubeVideo.class);
-                        if(youTube != null && !youTube.getChannelID().equals(getChannelID()))
-                        {
-                            return false;
-                        }                                                 
+                    {                                               
                         WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
                         if(watchLater != null)
                         {                                                       
@@ -1468,6 +1457,130 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             changeSupport.fireChange();
         }
     } 
+    
+    private final class ArchiveProviderImpl implements DataGroupProvider, PropertyChangeListener, ChangeListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public ArchiveProviderImpl(WatchLaterProvider provider)
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            provider.addChangeListener(this);
+        }              
+        
+        @Override
+        public Lookup.Provider getLookupProvider()
+        {
+            return YouTubeChannelProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_ARCHIVE;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_ARCHIVE;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_ARCHIVE;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_ARCHIVE;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        }                
+                
+        @Override
+        public String getName() 
+        {
+            return "archive";
+        }               
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {   
+                        VisibilityProvider visibilityProvider = source.getLookup().lookup(VisibilityProvider.class);
+                        if(visibilityProvider != null)
+                        {
+                            if(visibilityProvider.getModifier() == VisibilityProvider.Modifier.PRIVATE)
+                            {
+                                WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
+                                if(watchLater != null)
+                                {                                                       
+                                    return !watchLater.isWatchLater();
+                                }  
+                                return true;                                
+                            }
+                        }                                               
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {            
+            if(evt.getOldValue() instanceof VisibilityProvider || evt.getNewValue() instanceof VisibilityProvider)
+            {
+                changeSupport.fireChange();
+            }            
+        }                       
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            changeSupport.fireChange();
+        }
+
+    }     
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
@@ -2009,14 +2122,15 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
     } 
     
-    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener, ChangeListener
     {        
         private final ChangeSupport changeSupport; 
                 
-        public VideoDataGroupProviderImpl()
+        public VideoDataGroupProviderImpl(WatchLaterProvider provider)
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            provider.addChangeListener(this);
         } 
         
         @Override
@@ -2063,7 +2177,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
 
         @Override
         public List<FileObject> getFiles() throws IOException
-        {
+        {            
             List<FileObject> files = List.of(getDataDirectory().getChildren());
             RootProjectProvider provider = getLookup().lookup(RootProjectProvider.class);
             Project project = provider.getRootProject();
@@ -2072,7 +2186,32 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 SourceProviders providers = project.getLookup().lookup(SourceProviders.class);
                 if(providers != null)
                 {
-                    return Stream.concat(files.stream(), List.of(providers.getDataDirectory().getChildren()).stream()).toList();
+                    List<FileObject> all = new ArrayList<>(files);
+                    for(FileObject file : providers.getDataDirectory().getChildren())
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                            if(sourceProvider != null)
+                            {
+                                Source source = sourceProvider.getSource();
+                                if(source != null)
+                                {
+                                    YouTubeVideo video = source.getLookup().lookup(YouTubeVideo.class);
+                                    if(video != null && video.getChannelID().equals(getChannelID()))
+                                    {
+                                        all.add(file);
+                                    }
+                                }
+                            }
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.info(e.getMessage());
+                        }
+                    }
+                    return Collections.unmodifiableList(all);
                 }
             }
             return files;
@@ -2110,10 +2249,13 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                         Video video = source.getLookup().lookup(Video.class);
                         if(video != null)
                         {
-                            if(video instanceof YouTubeVideo youTube)
+                            if(video instanceof VisibilityProvider visibilityPovider)
                             {
-                                return youTube.getChannelID().equals(getChannelID());
-                            }
+                                if(visibilityPovider.getModifier() == VisibilityProvider.Modifier.PRIVATE)
+                                {
+                                    return false;
+                                }
+                            }                            
                             return true;
                         }                                                
                     }            
@@ -2130,6 +2272,12 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 changeSupport.fireChange();
             }            
         } 
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            changeSupport.fireChange();
+        }
     }    
     
 // TODO SourceGroup
@@ -2573,6 +2721,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
 
             Properties props = new Properties();
             props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString());
+            props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PRIVATE.toString());
             props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID);
             props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, videoTitle);
             props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, channelID); 

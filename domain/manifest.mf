@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+AutoUpdate-Show-In-Client: true
+OpenIDE-Module: openpkm.domain
+OpenIDE-Module-Localizing-Bundle: openpkm/domain/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
+

@@ -60,6 +60,11 @@ public interface GroupProvider
     IconProvider ICON_PROVIDER_WATCH_LATER = new IconProviderImpl(IconsProvider.ICON.WATCH_LATER);    
     ActionsProvider ACTIONS_PROVIDER_WATCH_LATER = new ActionsProviderImpl("Actions/OpenPKM/WatchLater"); 
     
+    // ARCHIVE
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_ARCHIVE = new DisplayNameProviderImpl("Archive");
+    IconProvider ICON_PROVIDER_ARCHIVE = new IconProviderImpl(IconsProvider.ICON.BIN);    
+    ActionsProvider ACTIONS_PROVIDER_ARCHIVE = new ActionsProviderImpl("Actions/OpenPKM/Archive");     
+    
     // NOTES
     DisplayNameProvider DISPLAY_NAME_PROVIDER_NOTE = new DisplayNameProviderImpl("Notes");
     IconProvider ICON_PROVIDER_NOTE = new IconProviderImpl(IconsProvider.ICON.NOTES);    
