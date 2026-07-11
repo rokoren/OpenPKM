@@ -71,11 +71,14 @@ public class DataSearchProvider implements SearchProvider
                                         }                            
                                     }
 
-                                    TopicsProvider topicsProvider = source.getLookup().lookup(TopicsProvider.class);
-                                    if(topicsProvider != null)
+                                    if(topicProvider != null)
                                     {
-                                        isTopic = topicProvider.isTopic(topicsProvider);
-                                    }   
+                                        TopicsProvider topicsProvider = source.getLookup().lookup(TopicsProvider.class);
+                                        if(topicsProvider != null)
+                                        {
+                                            isTopic = topicProvider.isTopic(topicsProvider);
+                                        } 
+                                    }                                      
 
                                     if(isTag && isTopic)                    
                                     {  
@@ -100,7 +103,7 @@ public class DataSearchProvider implements SearchProvider
                 }
                 catch(IOException e)
                 {
-                    
+                    LOG.warning(e.getMessage());
                 }
             }
         }
