@@ -15,6 +15,7 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
+import openpkm.base.HomeProvider;
 import openpkm.base.HtmlFilesProvider;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
@@ -26,12 +27,14 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class AbstractVisualElement extends JFXPanel implements MultiViewElement, UndoRedo
+public abstract class AbstractVisualElement extends JFXPanel implements HomeProvider, MultiViewElement, UndoRedo
 {
     private final Lookup lkp;     
     
@@ -63,7 +66,7 @@ public abstract class AbstractVisualElement extends JFXPanel implements MultiVie
     @Override
     public Lookup getLookup() 
     {
-        return lkp;
+        return new ProxyLookup(lkp, Lookups.singleton(this));
     }
 
     @Override
@@ -140,6 +143,30 @@ public abstract class AbstractVisualElement extends JFXPanel implements MultiVie
     public void componentDeactivated()
     {
     }
+    
+    @Override
+    public void reloadHome() 
+    {
+        DataObject data = lkp.lookup(DataObject.class);        
+        Project project = FileOwnerQuery.getOwner(data.getPrimaryFile());        
+        HtmlFilesProvider provider = project.getLookup().lookup(HtmlFilesProvider.class);             
+        if(provider != null)
+        {
+            FileObject file = provider.getDataFile(data.getPrimaryFile().getName());
+            if(file != null)
+            {
+                final String urlFile = file.toURI().toString();
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() 
+                    {
+                        WebEngine webEngine = browser.getEngine();
+                        webEngine.load(urlFile);  
+                    }
+                });
+            }             
+        } 
+    }     
 
     @Override
     public UndoRedo getUndoRedo() 

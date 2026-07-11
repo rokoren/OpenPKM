@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
+import openpkm.base.HomeProvider;
 import openpkm.base.LinkProvider;
 import openpkm.jcef.CefAppProvider;
 import org.cef.CefClient;
@@ -35,7 +36,7 @@ import org.openide.windows.TopComponent;
         iconBase = "openpkm/core/resources/google.png",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
-public final class GoogleTopComponent extends TopComponent implements LinkProvider, CefLoadHandler
+public final class GoogleTopComponent extends TopComponent implements HomeProvider, LinkProvider, CefLoadHandler
 {
     public static final String GOOGLE_URL = "https://www.google.com";
     
@@ -123,6 +124,12 @@ public final class GoogleTopComponent extends TopComponent implements LinkProvid
         String version = p.getProperty("version");
         // TODO read your settings according to their version
     }
+    
+    @Override
+    public void reloadHome() 
+    {
+        browser.loadURL(GOOGLE_URL);
+    }     
     
     @Override
     public String getLink() 

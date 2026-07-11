@@ -61,7 +61,7 @@ public interface GroupProvider
     ActionsProvider ACTIONS_PROVIDER_WATCH_LATER = new ActionsProviderImpl("Actions/OpenPKM/WatchLater"); 
     
     // ARCHIVE
-    DisplayNameProvider DISPLAY_NAME_PROVIDER_ARCHIVE = new DisplayNameProviderImpl("Archive");
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_ARCHIVE = new DisplayNameProviderImpl("Recycle Bin");
     IconProvider ICON_PROVIDER_ARCHIVE = new IconProviderImpl(IconsProvider.ICON.BIN);    
     ActionsProvider ACTIONS_PROVIDER_ARCHIVE = new ActionsProviderImpl("Actions/OpenPKM/Archive");     
     

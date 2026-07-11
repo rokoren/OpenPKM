@@ -8,7 +8,6 @@ package openpkm.asciidoc;
 import java.io.IOException;
 import java.util.logging.Logger;
 import openpkm.base.RemoteDataProvider;
-import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.utils.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;

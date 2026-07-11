@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
+import openpkm.base.HomeProvider;
 import openpkm.base.LinkProvider;
 import openpkm.jcef.CefAppProvider;
 import org.cef.CefClient;
@@ -51,7 +52,7 @@ import org.openide.util.lookup.Lookups;
     "CTL_YouTubeTopComponent=YouTube Window",
     "HINT_YouTubeTopComponent=This is a YouTube window"
 })
-public final class YouTubeTopComponent extends TopComponent implements LinkProvider, UndoRedo, CefLoadHandler
+public final class YouTubeTopComponent extends TopComponent implements HomeProvider, LinkProvider, UndoRedo, CefLoadHandler
 {
     public static final String YOUTUBE_URL = "https://www.youtube.com";
     
@@ -138,6 +139,12 @@ public final class YouTubeTopComponent extends TopComponent implements LinkProvi
         // TODO read your settings according to their version
     }
 
+    @Override
+    public void reloadHome() 
+    {
+        browser.loadURL(YOUTUBE_URL);
+    }     
+    
     @Override
     public String getLink() 
     {
