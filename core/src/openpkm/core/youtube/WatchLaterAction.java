@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -17,6 +18,7 @@ import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
+import openpkm.base.WatchLaterSupport;
 import openpkm.youtube.YouTubeVideo;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
@@ -42,7 +44,7 @@ import org.openide.util.NbBundle.Messages;
         displayName = "#CTL_WatchLaterAction",
         enabledOn = @ActionState(
         type = WatchLaterProvider.class,
-        property = "enabled"
+        property = "notEmpty"
     )
 )
 @Messages("CTL_WatchLaterAction=Watch YouTube Videos")
@@ -50,11 +52,11 @@ public class WatchLaterAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterAction.class.getName());     
     
-    private final WatchLaterProvider provider;
+    private final WatchLaterProvider watchLaterProvider;
 
-    public WatchLaterAction(WatchLaterProvider provider)
+    public WatchLaterAction(WatchLaterProvider watchLaterProvider)
     {
-        this.provider = provider;
+        this.watchLaterProvider = watchLaterProvider;
     }
     
     @Override
@@ -64,7 +66,7 @@ public class WatchLaterAction implements ActionListener
         
         try
         {
-            for(FileObject file : provider.getFiles())
+            for(FileObject file : watchLaterProvider.getFiles())
             {
                 DataObject data = null;
                 if(file.isData())
@@ -139,7 +141,11 @@ public class WatchLaterAction implements ActionListener
         }        
         if(isFinish)
         {
-            provider.fireChange();
+            Collection<? extends WatchLaterSupport> providers = watchLaterProvider.getLookupProvider().getLookup().lookupAll(WatchLaterSupport.class);
+            for(WatchLaterSupport provider : providers)
+            {
+                provider.fireChange();                
+            }
         }                                                           
     }      
 }

@@ -50,9 +50,9 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
+import openpkm.base.ArchiveProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.AsciiDocSupport;
@@ -83,6 +83,7 @@ import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
+import openpkm.base.WatchLaterSupport;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.reference.ReferenceSourceProvider;
@@ -271,17 +272,15 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
-
-            WatchLaterProvider watchLaterProvider = new WatchLaterProviderImpl();
             
             list.add(new BookDataGroupProviderImpl()); 
             list.add(new ArticleDataGroupProviderImpl()); 
             list.add(new DocumentDataGroupProviderImpl()); 
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
-            list.add(new VideoDataGroupProviderImpl(watchLaterProvider));    
-            list.add(new ArchiveProviderImpl(watchLaterProvider));             
-            list.add(watchLaterProvider); 
+            list.add(new VideoDataGroupProviderImpl());    
+            list.add(new ArchiveProviderImpl());             
+            list.add(new WatchLaterProviderImpl()); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -1287,7 +1286,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     
 // TODO DataGroup     
 
-    private final class WatchLaterProviderImpl implements WatchLaterProvider, BulletIconProvider, PropertyChangeListener
+    private final class WatchLaterProviderImpl implements WatchLaterProvider, WatchLaterSupport, BulletIconProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
@@ -1358,7 +1357,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
         
         @Override
-        public boolean isEnabled()
+        public boolean isNotEmpty()
         {
             try
             {
@@ -1458,15 +1457,14 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
     } 
     
-    private final class ArchiveProviderImpl implements DataGroupProvider, PropertyChangeListener, ChangeListener
+    private final class ArchiveProviderImpl implements ArchiveProvider, WatchLaterSupport, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public ArchiveProviderImpl(WatchLaterProvider provider)
+        public ArchiveProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-            provider.addChangeListener(this);
         }              
         
         @Override
@@ -1516,6 +1514,41 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         {
             return List.of(getDataDirectory().getChildren());
         }
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    }  
+
+                    return contains(data);
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }          
         
         @Override
         public Comparator<DataObject> getComparator() 
@@ -1575,11 +1608,10 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }                       
 
         @Override
-        public void stateChanged(ChangeEvent e) 
+        public void fireChange() 
         {
             changeSupport.fireChange();
         }
-
     }     
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
@@ -2122,15 +2154,14 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
     } 
     
-    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener, ChangeListener
+    private final class VideoDataGroupProviderImpl implements DataGroupProvider, WatchLaterSupport, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
                 
-        public VideoDataGroupProviderImpl(WatchLaterProvider provider)
+        public VideoDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
-            provider.addChangeListener(this);
         } 
         
         @Override
@@ -2274,7 +2305,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
 
         @Override
-        public void stateChanged(ChangeEvent e) 
+        public void fireChange() 
         {
             changeSupport.fireChange();
         }

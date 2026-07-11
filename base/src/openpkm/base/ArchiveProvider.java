@@ -8,7 +8,7 @@ package openpkm.base;
  *
  * @author rok
  */
-public interface WatchLaterProvider extends DataGroupProvider
+public interface ArchiveProvider extends DataGroupProvider
 {
-    boolean isNotEmpty();
+    boolean isNotEmpty();  
 }
