@@ -2748,7 +2748,11 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             String thumbnailDefault = activity.getSnippet().getThumbnails().getDefault().getUrl();
             String thumbnailMedium = activity.getSnippet().getThumbnails().getMedium().getUrl();
             String thumbnailHigh = activity.getSnippet().getThumbnails().getHigh().getUrl();
-            String thumbnailStandard = activity.getSnippet().getThumbnails().getStandard().getUrl(); 
+            String thumbnailStandard = null;
+            if(activity.getSnippet().getThumbnails().getStandard() != null)
+            {
+                thumbnailStandard = activity.getSnippet().getThumbnails().getStandard().getUrl();                 
+            }
 
             Properties props = new Properties();
             props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString());
