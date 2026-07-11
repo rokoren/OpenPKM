@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.logging.Logger;
 import openpkm.base.ArchiveProvider;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.ActionState;
@@ -48,27 +50,32 @@ public class EmptyRecycleBinAction implements ActionListener
     @Override
     public void actionPerformed(ActionEvent evt)
     {
-        try
+        NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to delete all items in Recycle Bin", NotifyDescriptor.YES_NO_OPTION);
+        Object retVal = DialogDisplayer.getDefault().notify(d);
+        if (retVal == NotifyDescriptor.YES_OPTION) 
         {
-            for(FileObject file : provider.getFiles())
+            try
             {
-                try
+                for(FileObject file : provider.getFiles())
                 {
-                    DataObject data = DataObject.find(file);
-                    if(provider.contains(data))
+                    try
                     {
-                        data.delete();
+                        DataObject data = DataObject.find(file);
+                        if(provider.contains(data))
+                        {
+                            data.delete();
+                        }
                     }
-                }
-                catch(DataObjectNotFoundException e)
-                {
-                    LOG.info(e.getMessage());
-                }
-            }        
-        }
-        catch(IOException e)
-        {
-            LOG.warning(e.getMessage());
-        }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.info(e.getMessage());
+                    }
+                }        
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+        }                 
     }     
 }
