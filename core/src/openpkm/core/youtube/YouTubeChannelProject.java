@@ -9,6 +9,7 @@ import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Activity;
 import com.google.api.services.youtube.model.ActivityListResponse;
 import com.google.api.services.youtube.model.ChannelListResponse;
+import com.google.api.services.youtube.model.VideoListResponse;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
@@ -33,9 +34,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -78,6 +81,7 @@ import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
+import openpkm.base.TagsProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
@@ -239,7 +243,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             LOG.warning(e.getMessage());
         }  
         return null;
-    }        
+    }       
     
 // TODO Project
     
@@ -2533,7 +2537,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }          
     }  
     
-    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener, PropertyChangeListener, Runnable
+    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements TagsProvider, FileChangeListener, PropertyChangeListener, Runnable
     {
         public YouTubeSourceProviderImpl(YouTubeVideoProvider provider) 
         {
@@ -2675,7 +2679,23 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             }
             
             return primaryFile;             
-        }                 
+        }  
+        
+        @Override
+        public Set<String> getTags()
+        {
+            Collection<YouTubeVideo> videos = getVideos();
+            if(!videos.isEmpty())
+            {
+                Set<String> tags = new HashSet<>();  
+                for(YouTubeVideo video : videos)
+                {
+                    tags.addAll(video.getYouTubeTags());
+                }  
+                return Collections.unmodifiableSet(tags);
+            }                        
+            return Collections.EMPTY_SET;
+        }          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2737,54 +2757,76 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
         
-        private static Properties getProperties(Activity activity)
+        private static Properties getProperties(VideoListResponse response)
         {
-            String videoID = activity.getContentDetails().getUpload().getVideoId();
-            String videoTitle = activity.getSnippet().getTitle();
-            String channelID = activity.getSnippet().getChannelId(); 
-            String channelTitle = activity.getSnippet().getChannelTitle(); 
-            String description = activity.getSnippet().getDescription();
-            DateTime publishedAt = activity.getSnippet().getPublishedAt(); 
-            String thumbnailDefault = activity.getSnippet().getThumbnails().getDefault().getUrl();
-            String thumbnailMedium = activity.getSnippet().getThumbnails().getMedium().getUrl();
-            String thumbnailHigh = activity.getSnippet().getThumbnails().getHigh().getUrl();
-            String thumbnailStandard = null;
-            if(activity.getSnippet().getThumbnails().getStandard() != null)
-            {
-                thumbnailStandard = activity.getSnippet().getThumbnails().getStandard().getUrl();                 
-            }
-
             Properties props = new Properties();
+            
             props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString());
-            props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PRIVATE.toString());
-            props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID);
-            props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, videoTitle);
-            props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, channelID); 
-            props.setProperty(YouTubeVideo.PROP_CHANNEL_TITLE, channelTitle);
-            if (publishedAt != null)
+            props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PRIVATE.toString());            
+            
+            String videoID = response.getItems().get(0).getId();
+            props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID); 
+            String videoTitle = response.getItems().get(0).getSnippet().getTitle();
+            props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, videoTitle); 
+            String channelID = response.getItems().get(0).getSnippet().getChannelId();
+            props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, channelID);  
+            String channelTitle = response.getItems().get(0).getSnippet().getChannelTitle();
+            props.setProperty(YouTubeVideo.PROP_CHANNEL_TITLE, channelTitle);            
+            DateTime publishedAt = response.getItems().get(0).getSnippet().getPublishedAt();
+            props.setProperty(YouTubeVideo.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339()); 
+            String duration = response.getItems().get(0).getContentDetails().getDuration();  
+            props.setProperty(YouTubeVideo.PROP_DURATION, duration); 
+            String caption = response.getItems().get(0).getContentDetails().getCaption();  
+            props.setProperty(YouTubeVideo.PROP_CAPTION, caption);             
+            BigInteger views = response.getItems().get(0).getStatistics().getViewCount();  
+            if(views != null)
             {
-                props.setProperty(YouTubeVideo.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());  
+                props.setProperty(YouTubeVideo.PROP_VIEW_COUNT, views.toString());                 
             }
-            if (description != null)
+            List<String> youTubeTags = response.getItems().get(0).getSnippet().getTags();
+            if(youTubeTags != null)
             {
-                props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description);            
-            }
-            if(thumbnailDefault != null)
+                StringJoiner joiner = new StringJoiner(",");
+                for(String tag : youTubeTags)
+                {
+                    joiner.add(tag);
+                }
+                props.setProperty(YouTubeVideo.PROP_YOUTUBE_TAGS, joiner.toString());
+            }   
+            if(response.getItems().get(0).getTopicDetails() != null)
             {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT, thumbnailDefault);
-            }
-            if(thumbnailHigh != null)
+                List<String> topicCategories = response.getItems().get(0).getTopicDetails().getTopicCategories();                
+                if(topicCategories != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(String topic : topicCategories)
+                    {
+                        joiner.add(topic);
+                    }
+                    props.setProperty(YouTubeVideo.PROP_TOPIC_CATEGORIES, joiner.toString());
+                }                                                
+            }             
+            String defaultLanguage = response.getItems().get(0).getSnippet().getDefaultLanguage();
+            props.setProperty(YouTubeVideo.PROP_DEFAULT_LANGUAGE, defaultLanguage);
+            String defaultAudioLanguage = response.getItems().get(0).getSnippet().getDefaultAudioLanguage();               
+            props.setProperty(YouTubeVideo.PROP_DEFAULT_AUDIO_LANGUAGE, defaultAudioLanguage);
+            String description = response.getItems().get(0).getSnippet().getDescription();
+            props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description); 
+            String liveBroadcastContent = response.getItems().get(0).getSnippet().getLiveBroadcastContent();
+            props.setProperty(YouTubeVideo.PROP_LIVEBROADCAST_CONTENT, liveBroadcastContent); 
+            
+            String thumbnailDefault = response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();
+            props.setProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT, thumbnailDefault); 
+            String thumbnailMedium = response.getItems().get(0).getSnippet().getThumbnails().getMedium().getUrl();
+            props.setProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM, thumbnailMedium); 
+            String thumbnailHigh = response.getItems().get(0).getSnippet().getThumbnails().getHigh().getUrl();
+            props.setProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH, thumbnailHigh); 
+            if(response.getItems().get(0).getSnippet().getThumbnails().getStandard() != null)
             {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH, thumbnailHigh);
-            } 
-            if(thumbnailMedium != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM, thumbnailMedium);
-            }
-            if(thumbnailStandard != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);
-            } 
+                String thumbnailStandard = response.getItems().get(0).getSnippet().getThumbnails().getStandard().getUrl();  
+                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);                
+            }             
+            
             return props;
         }        
 
@@ -2797,15 +2839,14 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             {
                 DateTime lastUploadTime = getLastUploadTime();
                 try
-                {
-                    YouTube youtubeService = YouTubeService.getDeafult().getService();
-                    YouTube.Activities.List request = youtubeService.activities().list("contentDetails,snippet");
-                    request.setKey(googlePasswordProvider.getKey());
-                    ActivityListResponse response = request.setChannelId(getChannelID()).execute(); 
-                    if(response.getItems() != null && !response.isEmpty())
+                {                   
+                    YouTube.Activities.List request1 = YouTubeService.getDeafult().getService().activities().list("contentDetails,snippet");
+                    request1.setKey(googlePasswordProvider.getKey());
+                    ActivityListResponse response1 = request1.setChannelId(getChannelID()).execute(); 
+                    if(response1.getItems() != null && !response1.isEmpty())
                     {                                           
                         DateTime publishedAtMax = null;
-                        for (Activity activity : response.getItems())
+                        for (Activity activity : response1.getItems())
                         {
                             DateTime publishedAt = activity.getSnippet().getPublishedAt();
                             String type = activity.getSnippet().getType();                    
@@ -2815,33 +2856,39 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 String title = activity.getSnippet().getTitle();
                                 String description = activity.getSnippet().getDescription();
                                 String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
-                                  
-                                YouTubeVideo video = provider.getVideo(getProperties(activity), YouTubeVideoProvider.Type.WATCH_LATER);                                
-                                FileObject file = createData(video, fileTypeProvider);
-                                
-                                FileObject root = getRootFolder();
-                                if(root != null)
-                                {  
-                                    OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                                    video.save(os, "New YouTube Video Created");
-                                    os.close();  
-                                }                                 
-                                
-                                String text = getTitle() + ": " + title;
-                                IconProvider iconProvider = getLookup().lookup(IconProvider.class);
-                                Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16));                           
+                                                                 
+                                YouTube.Videos.List request2 = YouTubeService.getDeafult().getService().videos().list("snippet,contentDetails,statistics,topicDetails");
+                                request2.setKey(googlePasswordProvider.getKey());
+                                VideoListResponse response2 = request2.setId(videoID).execute();  
+                                if(response2.getItems() != null && !response2.getItems().isEmpty())
+                                {   
+                                    YouTubeVideo video = provider.getVideo(getProperties(response2), YouTubeVideoProvider.Type.WATCH_LATER);                                
+                                    FileObject file = createData(video, fileTypeProvider);
 
-                                URL url = new URL(thumbnail);
-                                BufferedImage image = ImageIO.read(url);                          
+                                    FileObject root = getRootFolder();
+                                    if(root != null)
+                                    {  
+                                        OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                                        video.save(os, "New YouTube Video Created");
+                                        os.close();  
+                                    }                                 
 
-                                JLabel baloonDetails = new JLabel();
-                                baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
-                                baloonDetails.addMouseListener(FileUtils.clicked2open(file));
-                                baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                                JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+                                    String text = getTitle() + ": " + title;
+                                    IconProvider iconProvider = getLookup().lookup(IconProvider.class);
+                                    Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16));                           
 
-                                //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
-                                NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");    
+                                    URL url = new URL(thumbnail);
+                                    BufferedImage image = ImageIO.read(url);                          
+
+                                    JLabel baloonDetails = new JLabel();
+                                    baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
+                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                    JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+
+                                    //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
+                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                 
+                                }                                                                    
 
                                 if (publishedAtMax == null || publishedAt.getValue() > publishedAtMax.getValue())
                                 {
@@ -2862,7 +2909,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                 catch (GeneralSecurityException e)
                 {
                     LOG.warning(e.getMessage());
-                }                 
+                }                  
             }                                    
         }
         

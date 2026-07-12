@@ -16,6 +16,7 @@ import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -446,6 +447,11 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
         @Override
         public Set<String> getTags() 
         {
+            if(getModifier() != VisibilityProvider.Modifier.PUBLIC)
+            {
+                Set<String> tags = new HashSet<>(getYouTubeTags());
+                return tags;
+            }
             String tags = props.getProperty(PROP_TAGS);
             if(tags != null)
             {

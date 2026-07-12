@@ -59,7 +59,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
                 "Projects/openpkm-project/Nodes"),
                 new ProxyLookup(
                         new Lookup[]{
-                            Lookups.singleton(project),
+                            Lookups.proxy(project),
                             node.getLookup()
                         }));  
         ProjectInformation info = ProjectUtils.getInformation(project);
