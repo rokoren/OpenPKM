@@ -33,7 +33,6 @@ import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItem.State;
 import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListProvider;
-import openpkm.trello.TrelloCheckListsProvider;
 import openpkm.trello.TrelloService;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -44,6 +43,7 @@ import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import openpkm.trello.TrelloCheckListFactory;
 
 /**
  *
@@ -53,10 +53,10 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
 {    
     private static final Logger LOG = Logger.getLogger(TrelloCheckListItemProvider.class.getName()); 
     
-    private final TrelloCheckListsProvider provider; 
+    private final TrelloCheckListProvider provider; 
     private final TrelloCheckList checkList;
 
-    public TrelloCheckListItemProviderImpl(TrelloCheckListsProvider provider, TrelloCheckList checkList) 
+    public TrelloCheckListItemProviderImpl(TrelloCheckListProvider provider, TrelloCheckList checkList) 
     {
         this.provider = provider;
         this.checkList = checkList;
@@ -69,7 +69,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
     }
 
     @Override
-    public TrelloCheckListsProvider getProvider() 
+    public TrelloCheckListProvider getProvider() 
     {
         return provider;
     }    
@@ -414,7 +414,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                 int status = service.deleteCheckListItem(provider.getCheckList(), item, provider.getProvider().getAccount());
                 if(status == TrelloService.STATUS_OK)
                 {
-                    String string = provider.getCheckList().getProperties().getProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS);
+                    String string = provider.getCheckList().getProperties().getProperty(TrelloCheckListFactory.PROP_CHECKLIST_ITEMS);
                     if(string != null)
                     {
                         JSONArray jsons = new JSONArray(string);  
@@ -423,7 +423,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                         {
                             jsons.remove(index);
                         }
-                        provider.getCheckList().getProperties().setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, jsons.toString());
+                        provider.getCheckList().getProperties().setProperty(TrelloCheckListFactory.PROP_CHECKLIST_ITEMS, jsons.toString());
                     }                  
 
                     FileObject file = provider.getProvider().getRootFolder().getFileObject(provider.getCheckList().getCheckListID(), PropertiesProvider.EXTENSION);
@@ -432,7 +432,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                         try
                         {
                             OutputStream os = file.getOutputStream();
-                            TitleProvider titleProvider = provider.getProvider().getLookupProvider().getLookup().lookup(TitleProvider.class);
+                            TitleProvider titleProvider = provider.getProvider().getProvider().getLookup().lookup(TitleProvider.class);
                             provider.getCheckList().getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
                             os.close();
                             provider.getCheckList().getChangeSupport().fireChange();
@@ -492,7 +492,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                 item.setCheckListItemState(TrelloCheckListItem.State.INCOMPLETE);
             }             
             
-            String string = provider.getCheckList().getProperties().getProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS);
+            String string = provider.getCheckList().getProperties().getProperty(TrelloCheckListFactory.PROP_CHECKLIST_ITEMS);
             if(string != null)
             {
                 JSONArray jsons = new JSONArray(string);  
@@ -504,7 +504,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                         json.put("state", item.getCheckListItemState().toString());
                     }
                 } 
-                provider.getCheckList().getProperties().setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, jsons.toString());
+                provider.getCheckList().getProperties().setProperty(TrelloCheckListFactory.PROP_CHECKLIST_ITEMS, jsons.toString());
             }               
             
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
@@ -517,7 +517,7 @@ public class TrelloCheckListItemProviderImpl implements TrelloCheckListItemProvi
                     try
                     {
                         OutputStream os = file.getOutputStream();
-                        TitleProvider titleProvider = provider.getProvider().getLookupProvider().getLookup().lookup(TitleProvider.class);
+                        TitleProvider titleProvider = provider.getProvider().getProvider().getLookup().lookup(TitleProvider.class);
                         provider.getCheckList().getProperties().store(os, "Updated by Trello project: " + titleProvider.getTitle()); 
                         os.close();
                         LOG.info("Trello checklist saved: " + provider.getCheckList().getCheckListID()); 

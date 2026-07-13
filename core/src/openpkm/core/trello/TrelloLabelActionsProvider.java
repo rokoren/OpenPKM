@@ -13,7 +13,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
 import openpkm.trello.AbstractLabelActionsProvider;
-import openpkm.trello.AbstractTrelloLabelsProvider;
+import openpkm.trello.AbstractTrelloLabelProvider;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 
@@ -23,9 +23,9 @@ import org.openide.WizardDescriptor;
  */
 public class TrelloLabelActionsProvider extends AbstractLabelActionsProvider
 {
-    private final AbstractTrelloLabelsProvider provider; 
+    private final AbstractTrelloLabelProvider provider; 
 
-    public TrelloLabelActionsProvider(AbstractTrelloLabelsProvider provider) 
+    public TrelloLabelActionsProvider(AbstractTrelloLabelProvider provider) 
     {
         this.provider = provider;
     }        
@@ -38,9 +38,9 @@ public class TrelloLabelActionsProvider extends AbstractLabelActionsProvider
     
     private static final class AddLabel extends AbstractAction
     {                          
-        private final AbstractTrelloLabelsProvider provider;            
+        private final AbstractTrelloLabelProvider provider;            
 
-        public AddLabel(AbstractTrelloLabelsProvider provider) 
+        public AddLabel(AbstractTrelloLabelProvider provider) 
         {
             super("Add Label");
             this.provider = provider;

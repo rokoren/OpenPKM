@@ -4,13 +4,20 @@
  */
 package openpkm.raindrop;
 
-import java.util.Properties;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import openpkm.base.SourceProvider;
+import org.openide.filesystems.FileObject;
 
 /**
  *
- * @author Rok Koren
+ * @author rok
  */
-public interface RaindropProvider 
+public interface RaindropProvider extends SourceProvider<Raindrop>
 {
-    public Raindrop getRaindrop(Properties props);     
+    RaindropFactory getFactory();
+    Map<String, Raindrop> getRaindropsById();
+    Collection<Raindrop> getRaindrops();
+    FileObject createRaindrop(String link, boolean important, List<String> tags, String note);
 }

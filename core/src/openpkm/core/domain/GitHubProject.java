@@ -62,14 +62,12 @@ import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WebPage;
-import openpkm.base.WebPageProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
-import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.Utils;
-import openpkm.utils.WebSourceProvider;
+import openpkm.utils.WebPageProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
@@ -106,6 +104,8 @@ import org.openide.windows.TopComponent;
 import openpkm.github.GitHubUser;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.TopComponentProvider;
+import openpkm.base.WebPageFactory;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
@@ -147,17 +147,17 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);  
 
-        WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
-        if(webPageProvider != null)
+        WebPageFactory webPageFactory = Lookup.getDefault().lookup(WebPageFactory.class);
+        if(webPageFactory != null)
         {          
-            SourceProvider links = new WebSourceProviderImpl(webPageProvider);
+            SourceProvider links = new WebPageProviderImpl(webPageFactory);
             sources.put(links.getName(), links);            
         }        
         
-        ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
-        if(referenceProvider != null)
+        ReferenceFactory referenceFactory = Lookup.getDefault().lookup(ReferenceFactory.class);
+        if(referenceFactory != null)
         {          
-            SourceProvider references = new ReferenceSourceProviderImpl(referenceProvider);
+            SourceProvider references = new ReferenceProviderImpl(referenceFactory);
             sources.put(references.getName(), references);            
         }
 
@@ -1057,7 +1057,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         }  
@@ -1165,7 +1165,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }             
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         }  
@@ -1273,7 +1273,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         }  
@@ -1381,7 +1381,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }                
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         } 
@@ -1489,7 +1489,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         } 
@@ -1597,7 +1597,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         }  
@@ -1696,18 +1696,18 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     
 // TODO SourceGroup
    
-    private final class WebSourceProviderImpl extends WebSourceProvider implements FileChangeListener
+    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/www_page.png";         
         
-        public WebSourceProviderImpl(WebPageProvider provider) 
+        public WebPageProviderImpl(WebPageFactory factory) 
         {
-            super(provider);
+            super(factory);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         } 
@@ -1769,7 +1769,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                     {
                         try
                         {
-                            WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                            WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
                             links.put(webPage.getSourceID(), webPage);
                         }
                         catch(IOException e)
@@ -1869,7 +1869,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             FileObject file = evt.getFile();
             try
             {
-                WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
                 getLinksById().put(webPage.getSourceID(), webPage);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                 
             }           
@@ -1913,15 +1913,15 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         }          
     }     
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
     {               
-        public ReferenceSourceProviderImpl(ReferenceProvider provider) 
+        public ReferenceProviderImpl(ReferenceFactory factory) 
         {
-            super(provider);
+            super(factory);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return GitHubProject.this;
         } 
@@ -1977,7 +1977,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                     {
                         try
                         {
-                            Reference reference = provider.getReference(Utils.getProperties(file)); 
+                            Reference reference = factory.getReference(Utils.getProperties(file)); 
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2088,7 +2088,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             FileObject file = evt.getFile();
             try
             {
-                Reference reference = provider.getReference(Utils.getProperties(file)); 
+                Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                 
             }           

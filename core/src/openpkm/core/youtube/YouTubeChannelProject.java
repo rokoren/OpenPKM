@@ -90,7 +90,6 @@ import openpkm.base.WatchLaterProvider;
 import openpkm.base.WatchLaterSupport;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
-import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.TopComponentProvider;
@@ -99,9 +98,8 @@ import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeService;
-import openpkm.youtube.YouTubeSourceProvider;
-import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
+import openpkm.youtube.YouTubeVideo;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -136,6 +134,8 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
+import openpkm.youtube.YouTubeVideoFactory;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
@@ -180,18 +180,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
        
-        ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
-        if(referenceProvider != null)
+        ReferenceFactory referenceFactory = Lookup.getDefault().lookup(ReferenceFactory.class);
+        if(referenceFactory != null)
         {          
-            SourceProvider references = new ReferenceSourceProviderImpl(referenceProvider);
-            sources.put(references.getName(), references);            
+            SourceProvider provider = new ReferenceProviderImpl(referenceFactory);
+            sources.put(provider.getName(), provider);            
         }
 
-        YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
-        if(youtubeProvider != null)
+        YouTubeVideoFactory youTubeFactory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
+        if(youTubeFactory != null)
         {
-            SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
-            sources.put(videos.getName(), videos);                       
+            SourceProvider provider = new YouTubeVideoProviderImpl(youTubeFactory);
+            sources.put(provider.getName(), provider);                       
         } 
     }
     
@@ -277,12 +277,12 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
 
             list.addAll(sources.values());
             
-            list.add(new BookDataGroupProviderImpl()); 
-            list.add(new ArticleDataGroupProviderImpl()); 
-            list.add(new DocumentDataGroupProviderImpl()); 
-            list.add(new LinkDataGroupProviderImpl());                
-            list.add(new PictureDataGroupProviderImpl()); 
-            list.add(new VideoDataGroupProviderImpl());    
+            list.add(new BookProviderImpl()); 
+            list.add(new ArticleProviderImpl()); 
+            list.add(new DocumentProviderImpl()); 
+            list.add(new LinkProviderImpl());                
+            list.add(new PictureProviderImpl()); 
+            list.add(new VideoProviderImpl());    
             list.add(new ArchiveProviderImpl());             
             list.add(new WatchLaterProviderImpl()); 
             
@@ -960,18 +960,14 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         protected void projectOpened() 
         {             
             task = RP.create(this);    
-            propertyChangeSupport.addPropertyChangeListener(this);
-            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
-            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
+            propertyChangeSupport.addPropertyChangeListener(this);            
             task.schedule(1000);            
         }
 
         @Override
         protected void projectClosed() 
         {              
-            task.cancel();
-            YouTubeSourceProviderImpl youtube = getLookup().lookup(YouTubeSourceProviderImpl.class);
-            propertyChangeSupport.removePropertyChangeListener(PROP_VIDEO_COUNT, youtube);            
+            task.cancel();           
             propertyChangeSupport.removePropertyChangeListener(this);    
             
             for(SourceProvider provider : sources.values())
@@ -1301,7 +1297,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         }  
@@ -1472,7 +1468,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         }  
@@ -1618,18 +1614,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
     }     
     
-    private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class BookProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public BookDataGroupProviderImpl()
+        public BookProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         }   
@@ -1726,18 +1722,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }
     }   
     
-    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ArticleProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public ArticleDataGroupProviderImpl()
+        public ArticleProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         } 
@@ -1834,18 +1830,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
     } 
     
-    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DocumentProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public DocumentDataGroupProviderImpl()
+        public DocumentProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }             
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         } 
@@ -1942,18 +1938,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }   
     }  
 
-    private final class LinkDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class LinkProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public LinkDataGroupProviderImpl()
+        public LinkProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }            
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         } 
@@ -2050,18 +2046,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
     }  
 
-    private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class PictureProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
                 
-        public PictureDataGroupProviderImpl()
+        public PictureProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         }  
@@ -2158,18 +2154,18 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         } 
     } 
     
-    private final class VideoDataGroupProviderImpl implements DataGroupProvider, WatchLaterSupport, PropertyChangeListener
+    private final class VideoProviderImpl implements DataGroupProvider, WatchLaterSupport, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
                 
-        public VideoDataGroupProviderImpl()
+        public VideoProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         }  
@@ -2317,15 +2313,15 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     
 // TODO SourceGroup
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
     {               
-        public ReferenceSourceProviderImpl(ReferenceProvider provider) 
+        public ReferenceProviderImpl(ReferenceFactory factory) 
         {
-            super(provider);
+            super(factory);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         }  
@@ -2381,7 +2377,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     {
                         try
                         {
-                            Reference reference = provider.getReference(Utils.getProperties(file)); 
+                            Reference reference = factory.getReference(Utils.getProperties(file)); 
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2492,7 +2488,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             FileObject file = evt.getFile();
             try
             {
-                Reference reference = provider.getReference(Utils.getProperties(file)); 
+                Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                
             }           
@@ -2537,15 +2533,16 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         }          
     }  
     
-    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements TagsProvider, FileChangeListener, PropertyChangeListener, Runnable
+    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements TagsProvider, PropertyChangeListener, FileChangeListener, Runnable
     {
-        public YouTubeSourceProviderImpl(YouTubeVideoProvider provider) 
+        public YouTubeVideoProviderImpl(YouTubeVideoFactory factory) 
         {
-            super(provider);
+            super(factory);
+            propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT, this);            
         }          
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
         } 
@@ -2553,6 +2550,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         @Override
         public void projectClosed()
         {
+            propertyChangeSupport.removePropertyChangeListener(PROP_VIDEO_COUNT, this);
             if(rootDir != null)
             {
                 rootDir.removeFileChangeListener(this);
@@ -2601,7 +2599,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                     {
                         try
                         {
-                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.WATCH_LATER); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.WATCH_LATER); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2713,7 +2711,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.WATCH_LATER); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.WATCH_LATER); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, video);             
             }           
@@ -2862,7 +2860,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 VideoListResponse response2 = request2.setId(videoID).execute();  
                                 if(response2.getItems() != null && !response2.getItems().isEmpty())
                                 {   
-                                    YouTubeVideo video = provider.getVideo(getProperties(response2), YouTubeVideoProvider.Type.WATCH_LATER);                                
+                                    YouTubeVideo video = factory.getVideo(getProperties(response2), YouTubeVideoFactory.Type.WATCH_LATER);                                
                                     FileObject file = createData(video, fileTypeProvider);
 
                                     FileObject root = getRootFolder();

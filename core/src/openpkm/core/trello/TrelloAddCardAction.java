@@ -19,8 +19,6 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.MarkdownSupport;
 import openpkm.trello.TrelloCard;
-import openpkm.trello.TrelloCardProvider;
-import openpkm.trello.TrelloCardsProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
@@ -34,6 +32,8 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
+import openpkm.trello.TrelloCardFactory;
+import openpkm.trello.TrelloCardProvider;
 
 /**
  *
@@ -52,9 +52,9 @@ public class TrelloAddCardAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(TrelloAddCardAction.class.getName());     
     
-    private final TrelloCardsProvider provider;
+    private final TrelloCardProvider provider;
 
-    public TrelloAddCardAction(TrelloCardsProvider provider)
+    public TrelloAddCardAction(TrelloCardProvider provider)
     {
         this.provider = provider;
     }    
@@ -85,27 +85,27 @@ public class TrelloAddCardAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Card");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getLookupProvider());
+        wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
                      
-            String cardID = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_ID);
-            String boardID = (String) wiz.getProperty(TrelloCardProvider.PROP_BOARD_ID);
-            String listID = (String) wiz.getProperty(TrelloCardProvider.PROP_LIST_ID);
-            String name = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_NAME);
-            String description = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION); 
-            String position = (String) wiz.getProperty(TrelloCardProvider.PROP_CARD_POSITION); 
+            String cardID = (String) wiz.getProperty(TrelloCardFactory.PROP_CARD_ID);
+            String boardID = (String) wiz.getProperty(TrelloCardFactory.PROP_BOARD_ID);
+            String listID = (String) wiz.getProperty(TrelloCardFactory.PROP_LIST_ID);
+            String name = (String) wiz.getProperty(TrelloCardFactory.PROP_CARD_NAME);
+            String description = (String) wiz.getProperty(TrelloCardFactory.PROP_CARD_DESCRIPTION); 
+            String position = (String) wiz.getProperty(TrelloCardFactory.PROP_CARD_POSITION); 
             //List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
                         
             Properties props = new Properties();
-            props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
-            props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(TrelloCardProvider.PROP_BOARD_ID, boardID);
-            props.setProperty(TrelloCardProvider.PROP_LIST_ID, listID);
-            props.setProperty(TrelloCardProvider.PROP_CARD_ID, cardID);
-            props.setProperty(TrelloCardProvider.PROP_CARD_NAME, name);
-            props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, position);          
+            props.setProperty(TrelloCardFactory.PROP_APP_ID, Utils.getAppID());
+            props.setProperty(TrelloCardFactory.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(TrelloCardFactory.PROP_BOARD_ID, boardID);
+            props.setProperty(TrelloCardFactory.PROP_LIST_ID, listID);
+            props.setProperty(TrelloCardFactory.PROP_CARD_ID, cardID);
+            props.setProperty(TrelloCardFactory.PROP_CARD_NAME, name);
+            props.setProperty(TrelloCardFactory.PROP_CARD_POSITION, position);          
             /*
             if(topics != null)
             {
@@ -128,7 +128,7 @@ public class TrelloAddCardAction implements ActionListener
                 MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
                 if(markdown != null)
                 {
-                    TrelloCard card = provider.getCardProvider().getCard(props);
+                    TrelloCard card = provider.getFactory().getCard(props);
                     try
                     {
                         FileObject file = provider.createData(card, markdown);

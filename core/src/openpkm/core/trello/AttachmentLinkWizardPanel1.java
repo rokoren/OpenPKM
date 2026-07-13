@@ -5,10 +5,10 @@
 package openpkm.core.trello;
 
 import javax.swing.event.ChangeListener;
-import openpkm.trello.TrelloAttachmentProvider;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
+import openpkm.trello.TrelloAttachmentFactory;
 
 /**
  *
@@ -82,7 +82,7 @@ public class AttachmentLinkWizardPanel1 implements WizardDescriptor.ValidatingPa
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {
-        descriptor.putProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL, getComponent().getAttachmentUrl());    
-        descriptor.putProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME, getComponent().getAttachmentName());    
+        descriptor.putProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_URL, getComponent().getAttachmentUrl());    
+        descriptor.putProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_NAME, getComponent().getAttachmentName());    
     }    
 }

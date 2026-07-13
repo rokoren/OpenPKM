@@ -18,7 +18,7 @@ import openpkm.base.MarkdownSupport;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.AbstractCommentActionsProvider;
 import openpkm.trello.TrelloAccount;
-import openpkm.trello.TrelloActionsProvider;
+import openpkm.trello.TrelloActionProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloComment;
 import openpkm.trello.TrelloService;
@@ -38,10 +38,10 @@ public class TrelloCommentActionsProvider extends AbstractCommentActionsProvider
     
     private final Trello trello;    
     private final TrelloAccount account;       
-    private final TrelloActionsProvider provider; 
+    private final TrelloActionProvider provider; 
     private final TrelloCard card;     
 
-    public TrelloCommentActionsProvider(Trello trello, TrelloAccount account, TrelloActionsProvider provider, TrelloCard card) 
+    public TrelloCommentActionsProvider(Trello trello, TrelloAccount account, TrelloActionProvider provider, TrelloCard card) 
     {
         this.trello = trello;
         this.account = account;
@@ -62,11 +62,11 @@ public class TrelloCommentActionsProvider extends AbstractCommentActionsProvider
         
         private final Trello trello;    
         private final TrelloAccount account;   
-        private final TrelloActionsProvider provider; 
+        private final TrelloActionProvider provider; 
         private final TrelloCard card;         
         private final JTextArea area;
 
-        public AddComment(TrelloCard card, TrelloActionsProvider provider, TrelloAccount account, Trello trello) 
+        public AddComment(TrelloCard card, TrelloActionProvider provider, TrelloAccount account, Trello trello) 
         {
             super(ACTION_COMMAND_ADD_COMMENT);
             this.card = card;
@@ -100,7 +100,7 @@ public class TrelloCommentActionsProvider extends AbstractCommentActionsProvider
 
                 if(root != null && service != null && markdown != null)
                 {                                                                                                     
-                    TrelloComment comment = service.createComment(card.getCardID(), area.getText().trim(), provider.getActionProvider(), provider.getCommentProvider(), account, trello);
+                    TrelloComment comment = service.createComment(card.getCardID(), area.getText().trim(), provider.getActionFactory(), provider.getCommentFactory(), account, trello);
                     if(comment != null)
                     {
                         try

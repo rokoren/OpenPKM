@@ -19,7 +19,6 @@ import openpkm.base.DisplayNameProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloLabel;
-import openpkm.trello.TrelloLabelProvider;
 import openpkm.utils.RoundRectIcon;
 import org.openide.nodes.Children;
 import org.openide.util.ChangeSupport;
@@ -28,19 +27,20 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.trello.TrelloLabelFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloLabelProvider.class)
-public class TrelloLabelProviderImpl implements TrelloLabelProvider
+@ServiceProvider(service=TrelloLabelFactory.class)
+public class TrelloLabelProviderImpl implements TrelloLabelFactory
 {
     private static final String PROP_LABEL_ID    = "label.id";
     private static final String PROP_LABEL_NAME  = "label.name";
     private static final String PROP_LABEL_COLOR = "label.color";       
     
-    private static final Logger LOG = Logger.getLogger(TrelloLabelProvider.class.getName());     
+    private static final Logger LOG = Logger.getLogger(TrelloLabelFactory.class.getName());     
     
     @Override
     public TrelloLabel getLabel(Properties props) 
@@ -261,7 +261,7 @@ public class TrelloLabelProviderImpl implements TrelloLabelProvider
             String name = label.getLabelColor();
             if(name != null)
             {
-                Color color = TrelloLabelProvider.getColor(name);
+                Color color = TrelloLabelFactory.getColor(name);
                 if(color != null)
                 {
                     Icon icon = new RoundRectIcon(14, 14, color);

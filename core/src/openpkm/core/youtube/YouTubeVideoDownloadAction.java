@@ -35,7 +35,6 @@ import openpkm.core.TopicWizardPanel;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
-import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.Utils;
 import openpkm.youtube.YouTubeDownloadWizardPanel;
 import openpkm.youtube.YouTubeDownloadWizardPanel.DownloadType;
@@ -54,6 +53,7 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.RequestProcessor;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
@@ -74,9 +74,9 @@ public class YouTubeVideoDownloadAction implements ActionListener
     
     private static final RequestProcessor RP = new RequestProcessor("YouTubeDownload", 10);  
     
-    private final ReferenceSourceProvider provider;   
+    private final ReferenceProvider provider;   
     
-    public YouTubeVideoDownloadAction(ReferenceSourceProvider provider) 
+    public YouTubeVideoDownloadAction(ReferenceProvider provider) 
     {
         this.provider = provider;
     }    
@@ -108,7 +108,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Download YouTube Video");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getLookupProvider());        
+        wiz.putProperty("provider", provider.getProvider());        
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -199,7 +199,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -222,7 +222,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
             } 
             
             Video.Resolution resolution = (Video.Resolution) wiz.getProperty(YouTubeDownloadWizardPanel.PROP_DOWNLOAD_RESOLUTION);
-            props.setProperty(ReferenceProvider.PROP_TYPE, ReferenceProvider.Type.VIDEO.getName());                    
+            props.setProperty(ReferenceFactory.PROP_TYPE, ReferenceFactory.Type.VIDEO.getName());                    
             props.setProperty(TitleProvider.PROP_TITLE, title);                     
             props.setProperty(Reference.PROP_FILE_NAME, videoID); 
             props.setProperty(Reference.PROP_FILE_EXT, "mp4");
@@ -236,13 +236,13 @@ public class YouTubeVideoDownloadAction implements ActionListener
     private static class YouTubeDownload extends Thread
     {        
         private final Properties props;
-        private final ReferenceSourceProvider provider;
+        private final ReferenceProvider provider;
         private final Video.Resolution resolution;
         private final String videoID;
         private final String title;
         private final FileTypeProvider fileType;
 
-        public YouTubeDownload(Properties props, ReferenceSourceProvider provider, Video.Resolution resolution, String videoID, String title, FileTypeProvider fileType) 
+        public YouTubeDownload(Properties props, ReferenceProvider provider, Video.Resolution resolution, String videoID, String title, FileTypeProvider fileType) 
         {
             this.props = props;
             this.provider = provider;
@@ -277,7 +277,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
                 FileObject root = provider.getRootFolder();
                 if(root != null)
                 {
-                    Reference reference = provider.getReferenceProvider().getReference(props);
+                    Reference reference = provider.getFactory().getReference(props);
                     try
                     {
                         FileObject file = provider.createData(reference, fileType); 

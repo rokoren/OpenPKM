@@ -30,26 +30,26 @@ import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAction;
-import openpkm.trello.TrelloActionProvider;
 import openpkm.trello.TrelloAttachment;
-import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
-import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
-import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloComment;
-import openpkm.trello.TrelloCommentProvider;
 import openpkm.trello.TrelloLabel;
-import openpkm.trello.TrelloLabelProvider;
 import openpkm.trello.TrelloList;
-import openpkm.trello.TrelloListProvider;
 import openpkm.trello.TrelloMember;
-import openpkm.trello.TrelloMemberProvider;
 import openpkm.trello.TrelloService;
 import openpkm.utils.Utils;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.trello.TrelloActionFactory;
+import openpkm.trello.TrelloCommentFactory;
+import openpkm.trello.TrelloCardFactory;
+import openpkm.trello.TrelloLabelFactory;
+import openpkm.trello.TrelloAttachmentFactory;
+import openpkm.trello.TrelloCheckListFactory;
+import openpkm.trello.TrelloMemberFactory;
+import openpkm.trello.TrelloListFactory;
 
 /**
  *
@@ -73,7 +73,7 @@ public class TrelloServiceImpl implements TrelloService
     }
     
     @Override
-    public List<TrelloList> getLists(TrelloBoard board, TrelloListProvider provider, Trello trello)
+    public List<TrelloList> getLists(TrelloBoard board, TrelloListFactory provider, Trello trello)
     {
         List<TrelloList> all = new ArrayList();   
         List<TList> lists = trello.getBoardLists(board.getBoardID());
@@ -85,7 +85,7 @@ public class TrelloServiceImpl implements TrelloService
     } 
     
     @Override
-    public TrelloList createList(String boardID, String name, TrelloListProvider provider, TrelloAccount account)
+    public TrelloList createList(String boardID, String name, TrelloListFactory provider, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/lists/")
           .header("Accept", "application/json")
@@ -100,15 +100,15 @@ public class TrelloServiceImpl implements TrelloService
         JSONObject json = json1.getJSONObject(0);
 
         Properties props = new Properties();
-        props.setProperty(TrelloListProvider.PROP_LIST_ID, json.getString("id"));
-        props.setProperty(TrelloListProvider.PROP_BOARD_ID, json.getString("idBoard"));           
-        props.setProperty(TrelloListProvider.PROP_LIST_NAME, json.getString("name"));
-        props.setProperty(TrelloListProvider.PROP_LIST_POSITION, json.getInt("pos") + "");
+        props.setProperty(TrelloListFactory.PROP_LIST_ID, json.getString("id"));
+        props.setProperty(TrelloListFactory.PROP_BOARD_ID, json.getString("idBoard"));           
+        props.setProperty(TrelloListFactory.PROP_LIST_NAME, json.getString("name"));
+        props.setProperty(TrelloListFactory.PROP_LIST_POSITION, json.getInt("pos") + "");
         return provider.getList(props);
     }    
 
     @Override
-    public TrelloComment createComment(String cardID, String text, TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider, TrelloAccount account, Trello trello)
+    public TrelloComment createComment(String cardID, String text, TrelloActionFactory actionFactory, TrelloCommentFactory commentFactory, TrelloAccount account, Trello trello)
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/" + cardID + "/actions/comments")
           .header("Accept", "application/json")
@@ -138,10 +138,10 @@ public class TrelloServiceImpl implements TrelloService
         props.setProperty(AbstractTrelloAction.PROP_CARD_NAME, card.getString("name"));
         props.setProperty(AbstractTrelloAction.PROP_LIST_ID, list.getString("id"));
         
-        TrelloAction action = actionProvider.getAction(props);
+        TrelloAction action = actionFactory.getAction(props);
         if(action != null)
         {
-            return commentProvider.getComment(action, trello, account);
+            return commentFactory.getComment(action, trello, account);
         }
         
         return null;   
@@ -206,7 +206,7 @@ public class TrelloServiceImpl implements TrelloService
     }    
     
     @Override
-    public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberProvider provider, Trello trello)
+    public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberFactory provider, Trello trello)
     {
         List<TrelloMember> list = new ArrayList();   
         List<Member> members = trello.getBoardMembers(board.getBoardID());
@@ -218,19 +218,19 @@ public class TrelloServiceImpl implements TrelloService
     }     
     
     @Override
-    public List<TrelloLabel> getLabels(TrelloBoard board, TrelloLabelProvider provider, Trello trello)
+    public List<TrelloLabel> getLabels(TrelloBoard board, TrelloLabelFactory factory, Trello trello)
     {
         List<TrelloLabel> list = new ArrayList();   
         List<Label> labels = trello.getBoardLabels(board.getBoardID());
         for(Label label : labels)                
         {
-            list.add(provider.createLabel(label));
+            list.add(factory.createLabel(label));
         }                     
         return list;        
     } 
     
     @Override
-    public List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionProvider provider, Trello trello) throws Exception
+    public List<TrelloAction> getActions(TrelloBoard board, LocalDateTime after, TrelloActionFactory factory, Trello trello) throws Exception
     {
         List<TrelloAction> list = new ArrayList();        
         if(after == null)
@@ -239,7 +239,7 @@ public class TrelloServiceImpl implements TrelloService
             for(Action action : actions)
             {
                 LOG.fine("Action: " + action.getType() + ", Member: " + action.getIdMemberCreator());
-                TrelloAction trelloAction = provider.createAction(action);
+                TrelloAction trelloAction = factory.createAction(action);
                 if(trelloAction != null)
                 {
                     list.add(trelloAction);                                    
@@ -261,7 +261,7 @@ public class TrelloServiceImpl implements TrelloService
             for(Action action : actions)
             {
                 LOG.fine("Action: " + action.getType() + ", Member: " + action.getIdMemberCreator());
-                TrelloAction trelloAction = provider.createAction(action);
+                TrelloAction trelloAction = factory.createAction(action);
                 if(trelloAction != null)
                 {
                     list.add(trelloAction);                                    
@@ -327,19 +327,19 @@ public class TrelloServiceImpl implements TrelloService
     }
     
     @Override
-    public List<TrelloCard> getCards(TrelloList trelloList, TrelloCardProvider provider, Trello trello)
+    public List<TrelloCard> getCards(TrelloList trelloList, TrelloCardFactory factory, Trello trello)
     {
         List<TrelloCard> list = new ArrayList();   
         List<Card> cards = trello.getListCards(trelloList.getListID());
         for(Card card : cards)                
         {
-            list.add(provider.createCard(card));
+            list.add(factory.createCard(card));
         }                     
         return list;        
     }       
     
     @Override
-    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentProvider provider, TrelloAccount account)
+    public List<TrelloAttachment> getAttachments(TrelloCard card, TrelloAttachmentFactory factory, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + card.getCardID() + "/attachments")
           .header("Accept", "application/json")
@@ -355,22 +355,22 @@ public class TrelloServiceImpl implements TrelloService
             {
                 JSONObject json = jsons.getJSONObject(i);
                 Properties props = new Properties();
-                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_ID, json.getString("id"));
-                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME, json.getString("name")); 
+                props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_ID, json.getString("id"));
+                props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_NAME, json.getString("name")); 
                 if(!json.isNull("mimeType"))
                 {
-                    props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_MIME_TYPE, json.getString("mimeType"));                    
+                    props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_MIME_TYPE, json.getString("mimeType"));                    
                 }
-                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL, json.getString("url"));
-                props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_POSITION, json.getInt("pos") + "");          
-                list.add(provider.getAttachment(props));
+                props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_URL, json.getString("url"));
+                props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_POSITION, json.getInt("pos") + "");          
+                list.add(factory.getAttachment(props));
             }            
         }
         return list;                
     } 
 
     @Override
-    public List<TrelloCheckList> getCheckLists(TrelloCard card, TrelloCheckListProvider provider, TrelloAccount account)
+    public List<TrelloCheckList> getCheckLists(TrelloCard card, TrelloCheckListFactory factory, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + card.getCardID() + "/checklists")
           .header("Accept", "application/json")
@@ -386,20 +386,20 @@ public class TrelloServiceImpl implements TrelloService
             {
                 JSONObject json = jsons.getJSONObject(i);
                 Properties props = new Properties();
-                props.setProperty(TrelloCheckListProvider.PROP_BOARD_ID, json.getString("idBoard"));
-                props.setProperty(TrelloCheckListProvider.PROP_CARD_ID, json.getString("idCard"));            
-                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
-                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
-                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
-                props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ITEMS, json.getJSONArray("checkItems").toString());            
-                list.add(provider.getCheckList(props));
+                props.setProperty(TrelloCheckListFactory.PROP_BOARD_ID, json.getString("idBoard"));
+                props.setProperty(TrelloCheckListFactory.PROP_CARD_ID, json.getString("idCard"));            
+                props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_ID, json.getString("id"));
+                props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_NAME, json.getString("name"));
+                props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
+                props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_ITEMS, json.getJSONArray("checkItems").toString());            
+                list.add(factory.getCheckList(props));
             }            
         }
         return list;        
     } 
     
     @Override
-    public TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListProvider provider, TrelloAccount account)
+    public TrelloCheckList createCheckList(String cardID, String name, TrelloCheckListFactory factory, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/" + cardID + "/checklists")
           .header("Accept", "application/json")
@@ -413,12 +413,12 @@ public class TrelloServiceImpl implements TrelloService
         JSONObject json = json1.getJSONObject(0);
 
         Properties props = new Properties();
-        props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_ID, json.getString("id"));
-        props.setProperty(TrelloCheckListProvider.PROP_BOARD_ID, json.getString("idBoard"));
-        props.setProperty(TrelloCheckListProvider.PROP_CARD_ID, json.getString("idCard"));            
-        props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_NAME, json.getString("name"));
-        props.setProperty(TrelloCheckListProvider.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
-        return provider.getCheckList(props);
+        props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_ID, json.getString("id"));
+        props.setProperty(TrelloCheckListFactory.PROP_BOARD_ID, json.getString("idBoard"));
+        props.setProperty(TrelloCheckListFactory.PROP_CARD_ID, json.getString("idCard"));            
+        props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_NAME, json.getString("name"));
+        props.setProperty(TrelloCheckListFactory.PROP_CHECKLIST_POSITION, json.getInt("pos") + "");
+        return factory.getCheckList(props);
     }
     
     @Override
@@ -436,7 +436,7 @@ public class TrelloServiceImpl implements TrelloService
     }    
     
     @Override
-    public TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentProvider provider, TrelloAccount account)
+    public TrelloAttachment createAttachmentLink(String cardID, String name, String url, TrelloAttachmentFactory factory, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/" + cardID + "/attachments")
           .header("Accept", "application/json")
@@ -450,15 +450,15 @@ public class TrelloServiceImpl implements TrelloService
         JSONObject json = json1.getJSONObject(0);
         
         Properties props = new Properties();
-        props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_ID, json.getString("id"));
-        props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL, url);        
-        props.setProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME, name);     
+        props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_ID, json.getString("id"));
+        props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_URL, url);        
+        props.setProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_NAME, name);     
 
-        return provider.getAttachment(props);        
+        return factory.getAttachment(props);        
     }      
     
     @Override
-    public TrelloCard getCard(String cardID,  TrelloCardProvider provider, TrelloAccount account) throws UnirestException
+    public TrelloCard getCard(String cardID,  TrelloCardFactory factory, TrelloAccount account) throws UnirestException
     {
         HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/cards/" + cardID)
           .header("Accept", "application/json")
@@ -479,24 +479,24 @@ public class TrelloServiceImpl implements TrelloService
         LocalDateTime now = LocalDateTime.now();
         
         Properties props = new Properties();
-        props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
-        props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
-        props.setProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME, account.getUsername());
-        props.setProperty(TrelloCardProvider.PROP_CARD_ID, json.getString("id"));
-        props.setProperty(TrelloCardProvider.PROP_BOARD_ID, json.getString("idBoard"));
-        props.setProperty(TrelloCardProvider.PROP_LIST_ID, json.getString("idList"));            
-        props.setProperty(TrelloCardProvider.PROP_CARD_NAME, json.getString("name"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION, json.getString("desc"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, json.getInt("pos") + "");        
-        props.setProperty(TrelloCardProvider.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());
+        props.setProperty(TrelloCardFactory.PROP_APP_ID, Utils.getAppID());
+        props.setProperty(TrelloCardFactory.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
+        props.setProperty(TrelloCardFactory.PROP_ACCOUNT_USERNAME, account.getUsername());
+        props.setProperty(TrelloCardFactory.PROP_CARD_ID, json.getString("id"));
+        props.setProperty(TrelloCardFactory.PROP_BOARD_ID, json.getString("idBoard"));
+        props.setProperty(TrelloCardFactory.PROP_LIST_ID, json.getString("idList"));            
+        props.setProperty(TrelloCardFactory.PROP_CARD_NAME, json.getString("name"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DESCRIPTION, json.getString("desc"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_POSITION, json.getInt("pos") + "");        
+        props.setProperty(TrelloCardFactory.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_LABELS_ID, joiner.toString());
         if(!json.isNull("cardRole"))
         {
-            props.setProperty(TrelloCardProvider.PROP_CARD_ROLE, json.getString("cardRole"));            
+            props.setProperty(TrelloCardFactory.PROP_CARD_ROLE, json.getString("cardRole"));            
         }
         
         /*
@@ -511,11 +511,11 @@ public class TrelloServiceImpl implements TrelloService
             card.setDue(DateUtils.asDate(odt.toLocalDate()));
         }
         */        
-        return provider.getCard(props);
+        return factory.getCard(props);
     }   
     
     @Override
-    public TrelloCard createCard(String listID, String name, TrelloCardProvider provider, TrelloAccount account)
+    public TrelloCard createCard(String listID, String name, TrelloCardFactory factory, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards/")
           .header("Accept", "application/json")
@@ -539,31 +539,31 @@ public class TrelloServiceImpl implements TrelloService
         LocalDateTime now = LocalDateTime.now();
         
         Properties props = new Properties();
-        props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
-        props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
-        props.setProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME, account.getUsername());
-        props.setProperty(TrelloCardProvider.PROP_CARD_ID, json.getString("id"));
-        props.setProperty(TrelloCardProvider.PROP_BOARD_ID, json.getString("idBoard"));
-        props.setProperty(TrelloCardProvider.PROP_LIST_ID, json.getString("idList"));            
-        props.setProperty(TrelloCardProvider.PROP_CARD_NAME, json.getString("name"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION, json.getString("desc"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, json.getInt("pos") + "");        
-        props.setProperty(TrelloCardProvider.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());
+        props.setProperty(TrelloCardFactory.PROP_APP_ID, Utils.getAppID());
+        props.setProperty(TrelloCardFactory.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
+        props.setProperty(TrelloCardFactory.PROP_ACCOUNT_USERNAME, account.getUsername());
+        props.setProperty(TrelloCardFactory.PROP_CARD_ID, json.getString("id"));
+        props.setProperty(TrelloCardFactory.PROP_BOARD_ID, json.getString("idBoard"));
+        props.setProperty(TrelloCardFactory.PROP_LIST_ID, json.getString("idList"));            
+        props.setProperty(TrelloCardFactory.PROP_CARD_NAME, json.getString("name"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DESCRIPTION, json.getString("desc"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_POSITION, json.getInt("pos") + "");        
+        props.setProperty(TrelloCardFactory.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_LABELS_ID, joiner.toString());
         if(!json.isNull("cardRole"))
         {
-            props.setProperty(TrelloCardProvider.PROP_CARD_ROLE, json.getString("cardRole"));            
+            props.setProperty(TrelloCardFactory.PROP_CARD_ROLE, json.getString("cardRole"));            
         }
         
-        return provider.getCard(props);
+        return factory.getCard(props);
     } 
     
     @Override
-    public TrelloCard createLink(String listID, String url, TrelloCardProvider provider, TrelloAccount account) throws UnirestException
+    public TrelloCard createLink(String listID, String url, TrelloCardFactory factory, TrelloAccount account) throws UnirestException
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards")
           .header("Accept", "application/json")
@@ -588,27 +588,27 @@ public class TrelloServiceImpl implements TrelloService
         LocalDateTime now = LocalDateTime.now();
         
         Properties props = new Properties();
-        props.setProperty(TrelloCardProvider.PROP_APP_ID, Utils.getAppID());
-        props.setProperty(TrelloCardProvider.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
-        props.setProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME, account.getUsername());
-        props.setProperty(TrelloCardProvider.PROP_CARD_ID, json.getString("id"));
-        props.setProperty(TrelloCardProvider.PROP_BOARD_ID, json.getString("idBoard"));
-        props.setProperty(TrelloCardProvider.PROP_LIST_ID, json.getString("idList"));            
-        props.setProperty(TrelloCardProvider.PROP_CARD_NAME, json.getString("name"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DESCRIPTION, json.getString("desc"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_POSITION, json.getInt("pos") + "");        
-        props.setProperty(TrelloCardProvider.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
-        props.setProperty(TrelloCardProvider.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
-        props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());
+        props.setProperty(TrelloCardFactory.PROP_APP_ID, Utils.getAppID());
+        props.setProperty(TrelloCardFactory.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));        
+        props.setProperty(TrelloCardFactory.PROP_ACCOUNT_USERNAME, account.getUsername());
+        props.setProperty(TrelloCardFactory.PROP_CARD_ID, json.getString("id"));
+        props.setProperty(TrelloCardFactory.PROP_BOARD_ID, json.getString("idBoard"));
+        props.setProperty(TrelloCardFactory.PROP_LIST_ID, json.getString("idList"));            
+        props.setProperty(TrelloCardFactory.PROP_CARD_NAME, json.getString("name"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DESCRIPTION, json.getString("desc"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_POSITION, json.getInt("pos") + "");        
+        props.setProperty(TrelloCardFactory.PROP_CARD_CLOSED, Boolean.toString(json.getBoolean("closed")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_SUBSCRIBED, Boolean.toString(json.getBoolean("subscribed")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_TEMPLATE, Boolean.toString(json.getBoolean("isTemplate")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DUE_COMPLETE, Boolean.toString(json.getBoolean("dueComplete")));
+        props.setProperty(TrelloCardFactory.PROP_CARD_DATE_LAST_ACTIVITY, json.getString("dateLastActivity"));
+        props.setProperty(TrelloCardFactory.PROP_CARD_LABELS_ID, joiner.toString());
         if(!json.isNull("cardRole"))
         {
-            props.setProperty(TrelloCardProvider.PROP_CARD_ROLE, json.getString("cardRole"));            
+            props.setProperty(TrelloCardFactory.PROP_CARD_ROLE, json.getString("cardRole"));            
         }
         
-        return provider.getCard(props);
+        return factory.getCard(props);
     }      
 
     private static final class TrelloBoardImpl implements TrelloBoard

@@ -42,7 +42,6 @@ import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeService;
 import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeVideoProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
@@ -54,15 +53,16 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
+import openpkm.youtube.YouTubeVideoFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=YouTubeVideoProvider.class)
-public class YouTubeVideoProviderImpl implements YouTubeVideoProvider
+@ServiceProvider(service=YouTubeVideoFactory.class)
+public class YouTubeVideoProviderImpl implements YouTubeVideoFactory
 {
-    private static final Logger LOG = Logger.getLogger(YouTubeVideoProvider.class.getName());     
+    private static final Logger LOG = Logger.getLogger(YouTubeVideoFactory.class.getName());     
     
     @Override
     public YouTubeVideo getVideo(Properties props, Type type) 

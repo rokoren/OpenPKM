@@ -86,17 +86,15 @@ import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WatchLater;
 import openpkm.base.WebPage;
-import openpkm.base.WebPageProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
-import openpkm.reference.ReferenceSourceProvider;
 import openpkm.rss.Rss;
 import openpkm.rss.RssChannel;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.FileUtils;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.Utils;
-import openpkm.utils.WebSourceProvider;
+import openpkm.utils.WebPageProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -122,6 +120,8 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.WebPageFactory;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
@@ -167,17 +167,17 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
 
-        WebPageProvider webPageProvider = Lookup.getDefault().lookup(WebPageProvider.class);
-        if(webPageProvider != null)
+        WebPageFactory webPageFactory = Lookup.getDefault().lookup(WebPageFactory.class);
+        if(webPageFactory != null)
         {          
-            SourceProvider links = new WebSourceProviderImpl(webPageProvider);
+            SourceProvider links = new WebPageProviderImpl(webPageFactory);
             sources.put(links.getName(), links);            
         }        
         
-        ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
-        if(referenceProvider != null)
+        ReferenceFactory referenceFactory = Lookup.getDefault().lookup(ReferenceFactory.class);
+        if(referenceFactory != null)
         {          
-            SourceProvider references = new ReferenceSourceProviderImpl(referenceProvider);
+            SourceProvider references = new ReferenceProviderImpl(referenceFactory);
             sources.put(references.getName(), references);            
         }
 
@@ -687,18 +687,14 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         protected void projectOpened() 
         { 
             task = RP.create(this);    
-            propertyChangeSupport.addPropertyChangeListener(this);
-            WebSourceProviderImpl provider = getLookup().lookup(WebSourceProviderImpl.class);
-            propertyChangeSupport.addPropertyChangeListener(PROP_PUBLISHED_DATE, provider);            
+            propertyChangeSupport.addPropertyChangeListener(this);            
             task.schedule(1000);             
         }
 
         @Override
         protected void projectClosed() 
         { 
-            task.cancel();
-            WebSourceProviderImpl provider = getLookup().lookup(WebSourceProviderImpl.class);
-            propertyChangeSupport.removePropertyChangeListener(PROP_PUBLISHED_DATE, provider);            
+            task.cancel();          
             propertyChangeSupport.removePropertyChangeListener(this);  
             
             for(SourceProvider sourceProvider : sources.values())
@@ -1133,7 +1129,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         }  
@@ -1263,7 +1259,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }      
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         }   
@@ -1371,7 +1367,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }             
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         }    
@@ -1479,7 +1475,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }                
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         } 
@@ -1587,7 +1583,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         } 
@@ -1695,7 +1691,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         }   
@@ -1803,7 +1799,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         }  
@@ -1902,18 +1898,19 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
     
 // TODO SourceGroup
    
-    private final class WebSourceProviderImpl extends WebSourceProvider implements FileChangeListener, PropertyChangeListener, Runnable
+    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener, PropertyChangeListener, Runnable
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/www_page.png";         
         
-        public WebSourceProviderImpl(WebPageProvider provider) 
+        public WebPageProviderImpl(WebPageFactory factory) 
         {
-            super(provider);
+            super(factory);
+            propertyChangeSupport.addPropertyChangeListener(PROP_PUBLISHED_DATE, this);            
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         } 
@@ -1921,6 +1918,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         @Override
         public void projectClosed()
         {
+            propertyChangeSupport.removePropertyChangeListener(PROP_PUBLISHED_DATE, this);            
             if(rootDir != null)
             {
                 rootDir.removeFileChangeListener(this);
@@ -1975,7 +1973,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                     {
                         try
                         {
-                            WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                            WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
                             links.put(webPage.getSourceID(), webPage);
                         }
                         catch(IOException e)
@@ -2092,7 +2090,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                         {
                             LocalDateTime now = LocalDateTime.now();
                             Properties props = new Properties();
-                            props.setProperty(WebPageProvider.PROP_TYPE, WebPageProvider.Type.RSS.getName());                            
+                            props.setProperty(WebPageFactory.PROP_TYPE, WebPageFactory.Type.RSS.getName());                            
                             props.setProperty(WebPage.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
                             props.setProperty(Rss.PROP_URI, syndEntry.getUri());                            
                             props.setProperty(Rss.PROP_LINK, syndEntry.getLink());                                     
@@ -2111,7 +2109,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                             props.setProperty(Rss.PROP_WATCH_LATER, Boolean.TRUE.toString()); 
                             
                             
-                            WebPage webPage = provider.getWebPage(props);
+                            WebPage webPage = factory.getWebPage(props);
                             FileObject file = createData(webPage, fileTypeProvider);
                             
                             FileObject folder = getRootFolder();
@@ -2227,7 +2225,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             FileObject file = evt.getFile();
             try
             {
-                WebPage webPage = provider.getWebPage(Utils.getProperties(file)); 
+                WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
                 getLinksById().put(webPage.getSourceID(), webPage);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                
             }           
@@ -2285,15 +2283,15 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
         }
     }     
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
     {               
-        public ReferenceSourceProviderImpl(ReferenceProvider provider) 
+        public ReferenceProviderImpl(ReferenceFactory factory) 
         {
-            super(provider);
+            super(factory);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RssChannelProject.this;
         }  
@@ -2349,7 +2347,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                     {
                         try
                         {
-                            Reference reference = provider.getReference(Utils.getProperties(file)); 
+                            Reference reference = factory.getReference(Utils.getProperties(file)); 
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2460,7 +2458,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
             FileObject file = evt.getFile();
             try
             {
-                Reference reference = provider.getReference(Utils.getProperties(file)); 
+                Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);               
             }           

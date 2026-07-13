@@ -31,9 +31,8 @@ import openpkm.base.VisibilityProvider;
 import openpkm.core.TopicWizardPanel;
 import openpkm.reference.Reference;
 import openpkm.utils.Utils;
-import openpkm.youtube.YouTubeSourceProvider;
-import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoProvider;
+import openpkm.youtube.YouTubeVideo;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
@@ -45,6 +44,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
+import openpkm.youtube.YouTubeVideoFactory;
 
 @ActionID(
         category = "OpenPKM/Video",
@@ -59,9 +59,9 @@ public final class YouTubeVideoAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(YouTubeVideoAction.class.getName());      
     
-    private final YouTubeSourceProvider provider;
+    private final YouTubeVideoProvider provider;
 
-    public YouTubeVideoAction(YouTubeSourceProvider provider) 
+    public YouTubeVideoAction(YouTubeVideoProvider provider) 
     {
         this.provider = provider;
     }
@@ -96,7 +96,7 @@ public final class YouTubeVideoAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add YouTube Video");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getLookupProvider());
+        wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -186,7 +186,7 @@ public final class YouTubeVideoAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -211,7 +211,7 @@ public final class YouTubeVideoAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                YouTubeVideo video = provider.getVideoProvider().getVideo(props, YouTubeVideoProvider.Type.STANDARD);
+                YouTubeVideo video = provider.getFactory().getVideo(props, YouTubeVideoFactory.Type.STANDARD);
                 try
                 {
                     FileObject file = provider.createData(video, fileType); 

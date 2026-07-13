@@ -50,7 +50,6 @@ import openpkm.base.Video;
 import openpkm.javafx.TextProvider;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
-import openpkm.reference.ReferenceProvider;
 import openpkm.reference.StyledTextFragment;
 import openpkm.reference.StyledTextStripper;
 import org.apache.pdfbox.Loader;
@@ -66,15 +65,16 @@ import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=ReferenceProvider.class)
-public class ReferenceProviderImpl implements ReferenceProvider
+@ServiceProvider(service=ReferenceFactory.class)
+public class ReferenceProviderImpl implements ReferenceFactory
 {
-    private static final Logger LOG = Logger.getLogger(ReferenceProvider.class.getName());     
+    private static final Logger LOG = Logger.getLogger(ReferenceFactory.class.getName());     
 
     @Override
     public Reference getReference(Properties props) 

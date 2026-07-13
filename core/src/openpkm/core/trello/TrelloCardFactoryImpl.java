@@ -24,29 +24,23 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
-import openpkm.trello.TrelloCardProvider;
-import openpkm.trello.TrelloCardsProvider;
 import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
+import openpkm.youtube.YouTubeVideoFactory;
+import openpkm.trello.TrelloCardFactory;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public class TrelloCardProviderImpl implements TrelloCardProvider
+@ServiceProvider(service=TrelloCardFactory.class)
+public class TrelloCardFactoryImpl implements TrelloCardFactory
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloCardProvider.class.getName());  
-    
-    private final TrelloCardsProvider provider;
-
-    public TrelloCardProviderImpl(TrelloCardsProvider provider) 
-    {
-        this.provider = provider;
-    } 
+    private static final Logger LOG = Logger.getLogger(TrelloCardFactory.class.getName());  
         
     @Override
     public TrelloCard getCard(Properties props)
@@ -115,7 +109,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
     }
     */    
     
-    private final class TrelloCardImpl implements TrelloCard, ActionsProvider
+    private static final class TrelloCardImpl implements TrelloCard, ActionsProvider
     {         
         private final Properties props;
         private final PropertyChangeSupport propertyChangeSupport;
@@ -142,10 +136,10 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                 
                 if(isCardLink())
                 {
-                    YouTubeVideoProvider provider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                    YouTubeVideoFactory provider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
                     if(provider != null)
                     {
-                        YouTubeVideo video = provider.getVideo(props, YouTubeVideoProvider.Type.BASIC);
+                        YouTubeVideo video = provider.getVideo(props, YouTubeVideoFactory.Type.BASIC);
                         if(video != null)
                         {
                             lkp = new ProxyLookup(lookup, Lookups.proxy(video));
@@ -217,7 +211,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         @Override
         public String getAccountUsername()
         {
-            return props.getProperty(TrelloCardProvider.PROP_ACCOUNT_USERNAME);
+            return props.getProperty(TrelloCardFactory.PROP_ACCOUNT_USERNAME);
         }          
         
         @Override
@@ -402,7 +396,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         {
             if(ids == null)
             {
-                Object oldValue = props.remove(TrelloCardProvider.PROP_CARD_LABELS_ID);
+                Object oldValue = props.remove(TrelloCardFactory.PROP_CARD_LABELS_ID);
             }
             else
             {
@@ -411,7 +405,7 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
                 {
                     joiner.add(id);
                 }
-                props.setProperty(TrelloCardProvider.PROP_CARD_LABELS_ID, joiner.toString());        
+                props.setProperty(TrelloCardFactory.PROP_CARD_LABELS_ID, joiner.toString());        
             }
         }         
         
@@ -454,7 +448,10 @@ public class TrelloCardProviderImpl implements TrelloCardProvider
         public List<Action> getActions()
         {
             List<Action> actions = new ArrayList<>();
-            actions.add(new TrelloCardProject.CardComplete(this, provider.getAccount()));
+            
+// TODO Refactor            
+            
+            //actions.add(new TrelloCardProject.CardComplete(this, provider.getAccount()));
             return actions;
         }        
     }     

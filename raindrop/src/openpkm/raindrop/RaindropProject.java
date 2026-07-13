@@ -57,7 +57,7 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Content;
-import openpkm.base.ContentProvider;
+import openpkm.base.ContentFactory;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
 import openpkm.base.Goal;
@@ -83,7 +83,6 @@ import openpkm.utils.Utils;
 import openpkm.neo4j.Neo4jInstance;
 import openpkm.neo4j.Neo4jProvider;
 import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeVideoProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -118,9 +117,8 @@ import openpkm.base.Picture;
 import openpkm.base.SourceProviders;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
-import openpkm.reference.ReferenceSourceProvider;
-import openpkm.utils.ContentSourceProvider;
-import openpkm.youtube.YouTubeSourceProvider;
+import openpkm.utils.ContentProvider;
+import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
@@ -132,6 +130,8 @@ import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.LogicalViewProviderImpl;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
+import openpkm.youtube.YouTubeVideoFactory;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
@@ -188,32 +188,32 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
         
-        RaindropProvider raindropProvider = Lookup.getDefault().lookup(RaindropProvider.class);
-        if(raindropProvider != null)
+        RaindropFactory raindropFactory = Lookup.getDefault().lookup(RaindropFactory.class);
+        if(raindropFactory != null)
         {
-            SourceProvider raindrops = new RaindropSourceProviderImpl(raindropProvider);  
-            sources.put(raindrops.getName(), raindrops);             
+            SourceProvider provider = new RaindropProviderImpl(raindropFactory);  
+            sources.put(provider.getName(), provider);             
         }
 
-        ContentProvider contentProvider = Lookup.getDefault().lookup(ContentProvider.class);
-        if(contentProvider != null)
+        ContentFactory contentFactory = Lookup.getDefault().lookup(ContentFactory.class);
+        if(contentFactory != null)
         {          
-            SourceProvider contents = new ContentSourceProviderImpl(contentProvider);
-            sources.put(contents.getName(), contents);            
+            SourceProvider provider = new ContentProviderImpl(contentFactory);
+            sources.put(provider.getName(), provider);            
         }
         
-        ReferenceProvider referenceProvider = Lookup.getDefault().lookup(ReferenceProvider.class);
-        if(referenceProvider != null)
+        ReferenceFactory referenceFactory = Lookup.getDefault().lookup(ReferenceFactory.class);
+        if(referenceFactory != null)
         {          
-            SourceProvider references = new ReferenceSourceProviderImpl(referenceProvider);
-            sources.put(references.getName(), references);            
+            SourceProvider provider = new ReferenceProviderImpl(referenceFactory);
+            sources.put(provider.getName(), provider);            
         }
 
-        YouTubeVideoProvider youtubeProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
-        if(youtubeProvider != null)
+        YouTubeVideoFactory youTubeVideoFactory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
+        if(youTubeVideoFactory != null)
         {
-            SourceProvider videos = new YouTubeSourceProviderImpl(youtubeProvider);
-            sources.put(videos.getName(), videos);                       
+            SourceProvider provider = new YouTubeVideoProviderImpl(youTubeVideoFactory);
+            sources.put(provider.getName(), provider);                       
         }        
          
     }     
@@ -319,13 +319,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                 
                 list.addAll(sources.values());
                 
-                list.add(new NoteDataGroupProviderImpl()); 
-                list.add(new BookDataGroupProviderImpl()); 
-                list.add(new ArticleDataGroupProviderImpl()); 
-                list.add(new DocumentDataGroupProviderImpl()); 
-                list.add(new LinkDataGroupProviderImpl());                
-                list.add(new PictureDataGroupProviderImpl()); 
-                list.add(new VideoDataGroupProviderImpl()); 
+                list.add(new NoteProviderImpl()); 
+                list.add(new BookProviderImpl()); 
+                list.add(new ArticleProviderImpl()); 
+                list.add(new DocumentProviderImpl()); 
+                list.add(new LinkProviderImpl());                
+                list.add(new PictureProviderImpl()); 
+                list.add(new VideoProviderImpl()); 
             }                                   
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
@@ -1134,18 +1134,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO DataGroup    
 
-    private final class NoteDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class NoteProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public NoteDataGroupProviderImpl()
+        public NoteProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }        
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         }   
@@ -1242,18 +1242,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
     
-    private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class BookProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public BookDataGroupProviderImpl()
+        public BookProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -1350,18 +1350,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }   
     
-    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ArticleProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public ArticleDataGroupProviderImpl()
+        public ArticleProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }              
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         }  
@@ -1458,18 +1458,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     } 
     
-    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DocumentProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public DocumentDataGroupProviderImpl()
+        public DocumentProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }        
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -1566,18 +1566,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
 
-    private final class LinkDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class LinkProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public LinkDataGroupProviderImpl()
+        public LinkProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -1674,18 +1674,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
 
-    private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class PictureProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
                 
-        public PictureDataGroupProviderImpl()
+        public PictureProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -1782,18 +1782,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     } 
     
-    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class VideoProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
                 
-        public VideoDataGroupProviderImpl()
+        public VideoProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -1892,18 +1892,18 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO SourceGroup    
 
-    private final class ContentSourceProviderImpl extends ContentSourceProvider implements FileChangeListener
+    private final class ContentProviderImpl extends ContentProvider implements FileChangeListener
     {  
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/book_edit.png";         
         
-        public ContentSourceProviderImpl(ContentProvider provider) 
+        public ContentProviderImpl(ContentFactory factory) 
         {
-            super(provider);
+            super(factory);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -1965,7 +1965,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     {
                         try
                         {
-                            Content content = provider.getContent(Utils.getProperties(file)); 
+                            Content content = factory.getContent(Utils.getProperties(file)); 
                             contents.put(content.getSourceID(), content);
                         }
                         catch(IOException e)
@@ -2076,7 +2076,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             FileObject file = evt.getFile();
             try
             {
-                Content content = provider.getContent(Utils.getProperties(file)); 
+                Content content = factory.getContent(Utils.getProperties(file)); 
                 getContentsById().put(content.getSourceID(), content);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, content);               
             }           
@@ -2121,15 +2121,15 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class ReferenceSourceProviderImpl extends ReferenceSourceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
     {               
-        public ReferenceSourceProviderImpl(ReferenceProvider provider) 
+        public ReferenceProviderImpl(ReferenceFactory factory) 
         {
-            super(provider);
+            super(factory);
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         }  
@@ -2185,7 +2185,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     {
                         try
                         {
-                            Reference reference = provider.getReference(Utils.getProperties(file)); 
+                            Reference reference = factory.getReference(Utils.getProperties(file)); 
                             references.put(reference.getSourceID(), reference);
                         }
                         catch(IOException e)
@@ -2296,7 +2296,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             FileObject file = evt.getFile();
             try
             {
-                Reference reference = provider.getReference(Utils.getProperties(file)); 
+                Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);              
             }           
@@ -2341,7 +2341,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropSourceProviderImpl extends AbstractAction implements RaindropSourceProvider, FileChangeListener, ActionsProvider, Runnable 
+    private final class RaindropProviderImpl extends AbstractAction implements RaindropProvider, FileChangeListener, ActionsProvider, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
         
@@ -2350,12 +2350,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         private Map<String, Raindrop> raindrops; 
         private FileObject rootDir; 
 
-        private final RaindropProvider provider;           
+        private final RaindropFactory factory;           
         
-        public RaindropSourceProviderImpl(RaindropProvider provider) 
+        public RaindropProviderImpl(RaindropFactory factory) 
         {
             super("Synchronize Raindrops");
-            this.provider = provider;
+            this.factory = factory;
             RP.post(this);             
         }   
         
@@ -2392,7 +2392,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -2404,9 +2404,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public RaindropProvider getRaindropProvider()
+        public RaindropFactory getFactory()
         {
-            return provider;
+            return factory;
         }
 
         @Override
@@ -2839,15 +2839,15 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
     
-    private final class YouTubeSourceProviderImpl extends YouTubeSourceProvider implements FileChangeListener
+    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements FileChangeListener
     {
-        public YouTubeSourceProviderImpl(YouTubeVideoProvider provider) 
+        public YouTubeVideoProviderImpl(YouTubeVideoFactory factory) 
         {
-            super(provider);
+            super(factory);
         }          
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
         } 
@@ -2903,7 +2903,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     {
                         try
                         {
-                            YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.STANDARD); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.STANDARD); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2999,7 +2999,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = provider.getVideo(Utils.getProperties(file), YouTubeVideoProvider.Type.STANDARD); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.STANDARD); 
                 getVideosById().put(video.getSourceID(), video); 
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, video);             
             }           

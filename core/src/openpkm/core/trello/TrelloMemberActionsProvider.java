@@ -13,7 +13,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
 import openpkm.trello.AbstractMemberActionsProvider;
-import openpkm.trello.TrelloMembersProvider;
+import openpkm.trello.TrelloMemberProvider;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 
@@ -23,9 +23,9 @@ import org.openide.WizardDescriptor;
  */
 public class TrelloMemberActionsProvider extends AbstractMemberActionsProvider
 {
-    private final TrelloMembersProvider provider;  
+    private final TrelloMemberProvider provider;  
 
-    public TrelloMemberActionsProvider(TrelloMembersProvider provider) 
+    public TrelloMemberActionsProvider(TrelloMemberProvider provider) 
     {
         this.provider = provider;
     }        
@@ -38,9 +38,9 @@ public class TrelloMemberActionsProvider extends AbstractMemberActionsProvider
     
     private static final class AddMember extends AbstractAction
     {                          
-        private final TrelloMembersProvider provider;            
+        private final TrelloMemberProvider provider;            
 
-        public AddMember(TrelloMembersProvider provider) 
+        public AddMember(TrelloMemberProvider provider) 
         {
             super("Add Member");
             this.provider = provider;

@@ -56,7 +56,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
     
     public DataGroupNode(DataGroupProvider provider) 
     {
-        super(new ChildrenImpl(provider), Lookups.proxy(provider.getLookupProvider()));
+        super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
         setName(provider.getName());
         this.provider = provider;
     }      
@@ -198,7 +198,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                 filterTags.addChangeListener(this);
             }
             
-            topicProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+            topicProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
             if(topicProvider instanceof ChangeSupportProvider csp)
             {
                 csp.addChangeListener(this);

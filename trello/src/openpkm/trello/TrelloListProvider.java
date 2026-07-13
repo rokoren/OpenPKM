@@ -1,23 +1,75 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package openpkm.trello;
 
-import com.julienvey.trello.domain.TList;
-import java.util.Properties;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import javax.swing.event.ChangeListener;
+import org.netbeans.api.project.SourceGroup;
+import org.openide.filesystems.FileObject;
+import org.openide.util.ChangeSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloListProvider 
-{
-    String PROP_BOARD_ID      = "board.id";
-    String PROP_LIST_ID       = "list.id";
-    String PROP_LIST_NAME     = "list.name";    
-    String PROP_LIST_POSITION = "list.position";     
+public abstract class TrelloListProvider implements SourceGroup
+{    
+    protected static final String ROOT_FOLDER = "lists";       
+
+    protected Map<String, TrelloList> lists; 
+    protected FileObject rootDir; 
+
+    protected final TrelloListFactory factory;
+    protected final ChangeSupport changeSupport; 
+
+    public TrelloListProvider(TrelloListFactory factory) 
+    {
+        this.factory = factory;
+        changeSupport = new ChangeSupport(this); 
+    } 
     
-    TrelloList getList(Properties props);
-    TrelloList createList(TList list); 
+    protected abstract Map<String, TrelloList> getListsById();
+    public abstract void createList(String name);
+    
+    public void addChangeListener(ChangeListener listener) 
+    {
+        changeSupport.addChangeListener(listener);
+    }
+
+    public void removeChangeListener(ChangeListener listener) 
+    {
+        changeSupport.removeChangeListener(listener);
+    }     
+
+    public Collection<TrelloList> getLists()
+    {
+        return Collections.unmodifiableCollection(getListsById().values());
+    }
+    
+    public TrelloList getList(String listID) 
+    {
+        return getListsById().get(listID);
+    }                                  
+
+    @Override
+    public String getName() 
+    {
+        return ROOT_FOLDER;
+    }
+
+    @Override
+    public String getDisplayName() 
+    {
+        return "Lists";
+    }
+
+    @Override
+    public boolean contains(FileObject file) 
+    {
+        return getListsById().containsKey(file.getName());
+    }     
 }

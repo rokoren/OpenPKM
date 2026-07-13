@@ -16,9 +16,9 @@ import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.NodeProvider;
 import openpkm.trello.AbstractCardLabelsActionsProvider;
 import openpkm.trello.TrelloLabel;
-import openpkm.trello.TrelloLabelsProvider;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
+import openpkm.trello.TrelloLabelProvider;
 
 /**
  *
@@ -26,9 +26,9 @@ import org.openide.DialogDisplayer;
  */
 public class TrelloCardLabelsActionsProvider extends AbstractCardLabelsActionsProvider
 {
-    private final TrelloLabelsProvider provider;     
+    private final TrelloLabelProvider provider;     
 
-    public TrelloCardLabelsActionsProvider(TrelloLabelsProvider provider) 
+    public TrelloCardLabelsActionsProvider(TrelloLabelProvider provider) 
     {
         this.provider = provider;
     }        
@@ -47,9 +47,9 @@ public class TrelloCardLabelsActionsProvider extends AbstractCardLabelsActionsPr
         private final DefaultComboBoxModel<TrelloLabel> labels = new DefaultComboBoxModel<>(); 
         private final JComboBox comboBox;
 
-        private final TrelloLabelsProvider provider;  
+        private final TrelloLabelProvider provider;  
 
-        public AddLabel(TrelloLabelsProvider provider) 
+        public AddLabel(TrelloLabelProvider provider) 
         {
             super(ACTION_COMMAND_ADD_LABEL);
             this.provider = provider;

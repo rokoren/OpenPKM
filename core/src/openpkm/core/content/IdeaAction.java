@@ -21,7 +21,6 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Content;
-import openpkm.base.ContentProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
@@ -32,7 +31,7 @@ import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.core.TopicWizardPanel;
-import openpkm.utils.ContentSourceProvider;
+import openpkm.utils.ContentProvider;
 import openpkm.utils.Utils;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
@@ -46,6 +45,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
+import openpkm.base.ContentFactory;
 
 /**
  *
@@ -67,9 +67,9 @@ public class IdeaAction implements ActionListener
     
     private static final Logger LOG = Logger.getLogger(IdeaAction.class.getName());     
     
-    private final ContentSourceProvider provider;
+    private final ContentProvider provider;
 
-    public IdeaAction(ContentSourceProvider provider)
+    public IdeaAction(ContentProvider provider)
     {
         this.provider = provider;
     }
@@ -100,7 +100,7 @@ public class IdeaAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Idea");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getLookupProvider());
+        wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         {  
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
@@ -113,7 +113,7 @@ public class IdeaAction implements ActionListener
 
             Properties props = new Properties(); 
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentProvider.PROP_TYPE, ContentProvider.Type.IDEA.getName());
+            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.IDEA.getName());
             props.setProperty(Content.PROP_APP_ID, Utils.getAppID());           
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)
@@ -134,7 +134,7 @@ public class IdeaAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -154,7 +154,7 @@ public class IdeaAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                Content content = provider.getContentProvider().getContent(props);
+                Content content = provider.getFactory().getContent(props);
                 try
                 {
                     FileObject file = provider.createData(content, fileType); 

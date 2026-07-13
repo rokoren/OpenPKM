@@ -1,25 +1,72 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package openpkm.trello;
 
-import com.julienvey.trello.domain.CheckList;
-import java.util.Properties;
+import java.util.Map;
+import javax.swing.event.ChangeListener;
+import org.netbeans.api.project.SourceGroup;
+import org.openide.filesystems.FileObject;
+import org.openide.util.ChangeSupport;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCheckListProvider 
+public abstract class TrelloCheckListProvider implements SourceGroup
 {
-    String PROP_BOARD_ID           = "board.id";
-    String PROP_CARD_ID            = "card.id";    
-    String PROP_CHECKLIST_ID       = "checklist.id";
-    String PROP_CHECKLIST_NAME     = "checklist.name";        
-    String PROP_CHECKLIST_POSITION = "checklist.position";   
-    String PROP_CHECKLIST_ITEMS    = "checklist.items";  
+    protected static final String ROOT_FOLDER = "check_lists";       
+
+    protected Map<String, TrelloCheckList> checkLists; 
+    protected FileObject rootDir; 
+
+    protected final TrelloCheckListFactory factory;
+    protected final ChangeSupport changeSupport; 
+
+    public TrelloCheckListProvider(TrelloCheckListFactory factory) 
+    {
+        this.factory = factory;
+        changeSupport = new ChangeSupport(this); 
+    } 
     
-    TrelloCheckList getCheckList(Properties props);
-    TrelloCheckList createCheckList(CheckList checkList);      
+    protected abstract Map<String, TrelloCheckList> getCheckLists();
+    
+    public abstract void createCheckList(String name);
+    public abstract TrelloAccount getAccount(); 
+    public abstract Lookup.Provider getProvider();
+    
+    public void addChangeListener(ChangeListener listener) 
+    {
+        changeSupport.addChangeListener(listener);
+    }
+
+    public void removeChangeListener(ChangeListener listener) 
+    {
+        changeSupport.removeChangeListener(listener);
+    }     
+
+    public TrelloCheckList getCheckList(String checkListID) 
+    {
+        return getCheckLists().get(checkListID);
+    }     
+
+    @Override
+    public String getName() 
+    {
+        return ROOT_FOLDER;
+    }
+
+    @Override
+    public String getDisplayName() 
+    {
+        return "Checklists";
+    }
+
+    @Override
+    public boolean contains(FileObject file) 
+    {
+        return getCheckLists().containsKey(file.getName());
+    }      
 }

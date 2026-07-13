@@ -31,7 +31,6 @@ import openpkm.core.TopicWizardPanel;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
-import openpkm.reference.ReferenceSourceProvider;
 import openpkm.utils.FileWizardPanel1;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
@@ -45,6 +44,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
+import openpkm.reference.ReferenceFactory;
 
 /**
  *
@@ -63,9 +63,9 @@ public class VideoAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(VideoAction.class.getName());     
     
-    private final ReferenceSourceProvider provider;
+    private final ReferenceProvider provider;
 
-    public VideoAction(ReferenceSourceProvider provider)
+    public VideoAction(ReferenceProvider provider)
     {
         this.provider = provider;
     }
@@ -96,7 +96,7 @@ public class VideoAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Video Reference");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getLookupProvider());
+        wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -110,7 +110,7 @@ public class VideoAction implements ActionListener
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ReferenceProvider.PROP_TYPE, ReferenceProvider.Type.VIDEO.getName());
+            props.setProperty(ReferenceFactory.PROP_TYPE, ReferenceFactory.Type.VIDEO.getName());
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             props.setProperty(Reference.PROP_APP_ID, Utils.getAppID());            
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
@@ -132,7 +132,7 @@ public class VideoAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -147,7 +147,7 @@ public class VideoAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                Reference reference = provider.getReferenceProvider().getReference(props);
+                Reference reference = provider.getFactory().getReference(props);
                 try
                 {
                     FileObject file = provider.createData(reference, fileType); 

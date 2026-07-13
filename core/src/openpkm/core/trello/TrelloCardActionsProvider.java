@@ -8,10 +8,10 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import openpkm.trello.AbstractCardActionsProvider;
-import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloList;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
+import openpkm.trello.TrelloCardProvider;
 
 /**
  *
@@ -20,9 +20,9 @@ import org.openide.NotifyDescriptor;
 public class TrelloCardActionsProvider extends AbstractCardActionsProvider
 {
     private final TrelloList list;       
-    private final TrelloCardsProvider provider;   
+    private final TrelloCardProvider provider;   
 
-    public TrelloCardActionsProvider(TrelloList list, TrelloCardsProvider provider) {
+    public TrelloCardActionsProvider(TrelloList list, TrelloCardProvider provider) {
         this.list = list;
         this.provider = provider;
     }        
@@ -42,9 +42,9 @@ public class TrelloCardActionsProvider extends AbstractCardActionsProvider
     private static final class AddLink extends AbstractAction
     {          
         private final TrelloList list;       
-        private final TrelloCardsProvider provider;  
+        private final TrelloCardProvider provider;  
 
-        public AddLink(TrelloList list, TrelloCardsProvider provider) 
+        public AddLink(TrelloList list, TrelloCardProvider provider) 
         {
             super("Add Link");
             this.list = list;
@@ -67,9 +67,9 @@ public class TrelloCardActionsProvider extends AbstractCardActionsProvider
     private static final class AddCard extends AbstractAction
     {          
         private final TrelloList list;       
-        private final TrelloCardsProvider provider;  
+        private final TrelloCardProvider provider;  
 
-        public AddCard(TrelloList list, TrelloCardsProvider provider) 
+        public AddCard(TrelloList list, TrelloCardProvider provider) 
         {
             super("Add Card");
             this.list = list;

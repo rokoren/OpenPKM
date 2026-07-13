@@ -14,11 +14,11 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import openpkm.trello.AbstractAttachmentActionsProvider;
 import openpkm.trello.TrelloAttachmentProvider;
-import openpkm.trello.TrelloAttachmentsProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
 import org.openide.util.ImageUtilities;
+import openpkm.trello.TrelloAttachmentFactory;
 
 /**
  *
@@ -26,9 +26,9 @@ import org.openide.util.ImageUtilities;
  */
 public class TrelloAttachmentActionsProvider extends AbstractAttachmentActionsProvider
 {
-    private final TrelloAttachmentsProvider provider;
+    private final TrelloAttachmentProvider provider;
 
-    public TrelloAttachmentActionsProvider(TrelloAttachmentsProvider provider) 
+    public TrelloAttachmentActionsProvider(TrelloAttachmentProvider provider) 
     {
         this.provider = provider;
     }        
@@ -44,9 +44,9 @@ public class TrelloAttachmentActionsProvider extends AbstractAttachmentActionsPr
         @StaticResource()
         public static final String BANNER = "openpkm/core/resources/banner.png";          
         
-        private final TrelloAttachmentsProvider provider;            
+        private final TrelloAttachmentProvider provider;            
 
-        public AddAttachmentLink(TrelloAttachmentsProvider provider) 
+        public AddAttachmentLink(TrelloAttachmentProvider provider) 
         {
             super("Add Link Attachment");
             this.provider = provider;
@@ -79,8 +79,8 @@ public class TrelloAttachmentActionsProvider extends AbstractAttachmentActionsPr
             wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             { 
-                String url = (String)wiz.getProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_URL);
-                String name = (String)wiz.getProperty(TrelloAttachmentProvider.PROP_ATTACHMENT_NAME);
+                String url = (String)wiz.getProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_URL);
+                String name = (String)wiz.getProperty(TrelloAttachmentFactory.PROP_ATTACHMENT_NAME);
                 provider.createAttachmentLink(url, name);
             }
         }

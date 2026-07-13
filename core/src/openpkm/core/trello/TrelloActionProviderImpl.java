@@ -12,17 +12,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.trello.TrelloAction;
-import openpkm.trello.TrelloActionProvider;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.trello.TrelloActionFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloActionProvider.class)
-public class TrelloActionProviderImpl implements TrelloActionProvider
+@ServiceProvider(service=TrelloActionFactory.class)
+public class TrelloActionProviderImpl implements TrelloActionFactory
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloActionProvider.class.getName());    
+    private static final Logger LOG = Logger.getLogger(TrelloActionFactory.class.getName());    
 
     @Override
     public TrelloAction getAction(Properties props) 

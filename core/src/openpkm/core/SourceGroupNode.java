@@ -45,7 +45,7 @@ public class SourceGroupNode extends AbstractNode implements NodeSupport, Change
     
     public SourceGroupNode(SourceGroupProvider provider) 
     {
-        super(new ChildrenImpl(provider), Lookups.proxy(provider.getLookupProvider()));
+        super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
         setName(provider.getName());
         this.provider = provider;
     }      

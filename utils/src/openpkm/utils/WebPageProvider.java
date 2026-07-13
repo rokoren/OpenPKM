@@ -2,55 +2,54 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.reference;
+package openpkm.utils;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
+import openpkm.base.WebPage;
+import openpkm.base.WebPageFactory;
 import org.openide.filesystems.FileObject;
-import org.openide.util.ImageUtilities;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class ReferenceSourceProvider implements SourceProvider<Reference>
+public abstract class WebPageProvider implements SourceProvider<WebPage>
 {
-    protected static final String ROOT_FOLDER = "reference";       
+    protected static final String ROOT_FOLDER = "web";       
 
-    protected Map<String, Reference> references; 
+    protected Map<String, WebPage> links; 
     protected FileObject rootDir; 
 
-    protected final ReferenceProvider provider;
+    protected final WebPageFactory factory;
 
-    public ReferenceSourceProvider(ReferenceProvider provider) 
+    public WebPageProvider(WebPageFactory factory) 
     {
-        this.provider = provider;
+        this.factory = factory;
     } 
     
-    public ReferenceProvider getReferenceProvider()
+    public WebPageFactory getFactory()
     {
-        return provider;
+        return factory;
     }
     
-    public abstract Map<String, Reference> getReferencesById();
+    public abstract Map<String, WebPage> getLinksById();
     
-    public Collection<Reference> getReferences()
+    public Collection<WebPage> getLinks()
     {
-        return Collections.unmodifiableCollection(getReferencesById().values());
+        return Collections.unmodifiableCollection(getLinksById().values());
     }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getReferencesById().get(sourceID);
-    }    
+        return getLinksById().get(sourceID);
+    } 
     
     @Override
     public void deleteSource(String sourceID) throws IOException
@@ -75,18 +74,12 @@ public abstract class ReferenceSourceProvider implements SourceProvider<Referenc
     @Override
     public String getDisplayName() 
     {
-        return "References";
-    }
-
-    @Override
-    public Icon getIcon(boolean bln) 
-    {
-        return new ImageIcon(ImageUtilities.loadImage(Reference.ICON));
+        return "Web";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getReferencesById().containsKey(file.getName());
-    }      
+        return getLinksById().containsKey(file.getName());
+    }     
 }

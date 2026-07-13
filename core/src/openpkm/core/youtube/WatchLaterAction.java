@@ -141,7 +141,7 @@ public class WatchLaterAction implements ActionListener
         }        
         if(isFinish)
         {
-            Collection<? extends WatchLaterSupport> providers = watchLaterProvider.getLookupProvider().getLookup().lookupAll(WatchLaterSupport.class);
+            Collection<? extends WatchLaterSupport> providers = watchLaterProvider.getProvider().getLookup().lookupAll(WatchLaterSupport.class);
             for(WatchLaterSupport provider : providers)
             {
                 provider.fireChange();                

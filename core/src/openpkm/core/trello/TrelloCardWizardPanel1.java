@@ -6,11 +6,11 @@ package openpkm.core.trello;
 
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
-import openpkm.trello.TrelloCardProvider;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+import openpkm.trello.TrelloCardFactory;
 
 /**
  *
@@ -78,7 +78,7 @@ public class TrelloCardWizardPanel1 implements WizardDescriptor.ValidatingPanel<
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {  
-        descriptor.putProperty(TrelloCardProvider.PROP_CARD_NAME, getComponent().getCardName());         
+        descriptor.putProperty(TrelloCardFactory.PROP_CARD_NAME, getComponent().getCardName());         
     }
 
     @Override

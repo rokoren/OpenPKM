@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 import openpkm.base.Article;
 import openpkm.base.Book;
 import openpkm.base.Content;
-import openpkm.base.ContentProvider;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.Document;
 import openpkm.base.IconProvider;
@@ -38,15 +37,16 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.base.ContentFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=ContentProvider.class)
-public class ContentProviderImpl implements ContentProvider
+@ServiceProvider(service=ContentFactory.class)
+public class ContentProviderImpl implements ContentFactory
 {
-    private static final Logger LOG = Logger.getLogger(ContentProvider.class.getName());     
+    private static final Logger LOG = Logger.getLogger(ContentFactory.class.getName());     
     
     @Override
     public Content getContent(Properties props) 

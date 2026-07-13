@@ -19,18 +19,18 @@ import openpkm.base.RemoteDataProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloComment;
-import openpkm.trello.TrelloCommentProvider;
 import openpkm.trello.TrelloService;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.trello.TrelloCommentFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloCommentProvider.class)
-public class TrelloCommentProviderImpl implements TrelloCommentProvider
+@ServiceProvider(service=TrelloCommentFactory.class)
+public class TrelloCommentProviderImpl implements TrelloCommentFactory
 {
     @Override
     public TrelloComment getComment(TrelloAction action, Trello trello, TrelloAccount account) 

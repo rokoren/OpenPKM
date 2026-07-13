@@ -60,20 +60,14 @@ import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloAction;
 import openpkm.trello.TrelloActionProvider;
-import openpkm.trello.TrelloActionsProvider;
 import openpkm.trello.TrelloBoard;
 import openpkm.trello.TrelloCard;
-import openpkm.trello.TrelloCardProvider;
-import openpkm.trello.TrelloCardsProvider;
 import openpkm.trello.TrelloLabel;
-import openpkm.trello.TrelloLabelProvider;
-import openpkm.trello.AbstractTrelloLabelsProvider;
+import openpkm.trello.AbstractTrelloLabelProvider;
 import openpkm.trello.TrelloList;
 import openpkm.trello.TrelloListProvider;
-import openpkm.trello.TrelloListsProvider;
 import openpkm.trello.TrelloMember;
 import openpkm.trello.TrelloMemberProvider;
-import openpkm.trello.TrelloMembersProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.RoundRectIcon;
 import openpkm.utils.Utils;
@@ -114,7 +108,6 @@ import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
 import openpkm.youtube.YouTubeUtils;
 import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeVideoProvider;
 import org.netbeans.api.progress.*;
 import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
@@ -122,9 +115,16 @@ import org.openide.filesystems.FileSystem;
 import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.trello.TrelloComment;
-import openpkm.trello.TrelloCommentProvider;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.TopComponentProvider;
+import openpkm.youtube.YouTubeVideoFactory;
+import openpkm.trello.TrelloActionFactory;
+import openpkm.trello.TrelloCommentFactory;
+import openpkm.trello.TrelloCardFactory;
+import openpkm.trello.TrelloCardProvider;
+import openpkm.trello.TrelloLabelFactory;
+import openpkm.trello.TrelloMemberFactory;
+import openpkm.trello.TrelloListFactory;
 
 /**
  *
@@ -164,7 +164,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private final ProjectState state;
     private final Properties props;   
     private final PropertyChangeSupport propertyChangeSupport;
-    private final TrelloCardsProvider cardsProvider;
     
     private Lookup lkp; 
     private FileObject dataDir;
@@ -179,38 +178,42 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         this.projectDir = projectDir; 
         this.state = state;
         this.props = props; 
-        propertyChangeSupport = new PropertyChangeSupport(this);
-        cardsProvider = new TrelloCardsProviderImpl();   
+        propertyChangeSupport = new PropertyChangeSupport(this); 
         
-        sources.put(cardsProvider.getName(), cardsProvider);        
-        
-        TrelloActionProvider actionProvider = Lookup.getDefault().lookup(TrelloActionProvider.class);
-        TrelloCommentProvider commentProvider = Lookup.getDefault().lookup(TrelloCommentProvider.class);              
-        if(actionProvider != null && commentProvider != null)
+        TrelloCardFactory cardFactory = Lookup.getDefault().lookup(TrelloCardFactory.class);
+        if(cardFactory != null)
         {
-            SourceGroup actions = new TrelloActionsProviderImpl(actionProvider, commentProvider);
-            sources.put(actions.getName(), actions);              
+            SourceGroup provider = new TrelloCardProviderImpl(cardFactory);              
+            sources.put(provider.getName(), provider);             
+        }       
+        
+        TrelloActionFactory actionFactory = Lookup.getDefault().lookup(TrelloActionFactory.class);
+        TrelloCommentFactory commentFactory = Lookup.getDefault().lookup(TrelloCommentFactory.class);              
+        if(actionFactory != null && commentFactory != null)
+        {
+            SourceGroup provider = new TrelloActionProviderImpl(actionFactory, commentFactory);
+            sources.put(provider.getName(), provider);              
         }        
         
-        TrelloLabelProvider labelProvider = Lookup.getDefault().lookup(TrelloLabelProvider.class);
-        if(labelProvider != null)
+        TrelloLabelFactory labelFactory = Lookup.getDefault().lookup(TrelloLabelFactory.class);
+        if(labelFactory != null)
         {          
-            SourceGroup labels = new TrelloLabelsProviderImpl(labelProvider);
-            sources.put(labels.getName(), labels);            
+            SourceGroup provider = new TrelloLabelProviderImpl(labelFactory);
+            sources.put(provider.getName(), provider);            
         }  
         
-        TrelloMemberProvider memberProvider = Lookup.getDefault().lookup(TrelloMemberProvider.class);
-        if(memberProvider != null)
+        TrelloMemberFactory memberFactory = Lookup.getDefault().lookup(TrelloMemberFactory.class);
+        if(memberFactory != null)
         {          
-            SourceGroup members = new TrelloMembersProviderImpl(memberProvider);
-            sources.put(members.getName(), members);            
+            SourceGroup provider = new TrelloMemberProviderImpl(memberFactory);
+            sources.put(provider.getName(), provider);            
         } 
 
-        TrelloListProvider listProvider = Lookup.getDefault().lookup(TrelloListProvider.class);
-        if(listProvider != null)
+        TrelloListFactory listFactory = Lookup.getDefault().lookup(TrelloListFactory.class);
+        if(listFactory != null)
         {          
-            SourceGroup lists = new TrelloListsProviderImpl(listProvider);
-            sources.put(lists.getName(), lists);                       
+            SourceGroup provider = new TrelloListProviderImpl(listFactory);
+            sources.put(provider.getName(), provider);                       
         }  
     } 
     
@@ -905,21 +908,21 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }          
     } 
 
-    private final class ListDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ListProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final TrelloList list;
         private final ChangeSupport changeSupport; 
                 
-        public ListDataGroupProviderImpl(TrelloList list)
+        public ListProviderImpl(TrelloList list)
         {
             this.list = list;
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(TrelloCardsProviderImpl.PROP_TRELLO_SYNC_CARD, this);
+            propertyChangeSupport.addPropertyChangeListener(TrelloCardProviderImpl.PROP_TRELLO_SYNC_CARD, this);
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return TrelloProject.this;
         }   
@@ -939,7 +942,12 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return new TrelloCardActionsProvider(list, cardsProvider);
+            TrelloCardProvider provider = getProvider().getLookup().lookup(TrelloCardProvider.class);
+            if(provider != null)
+            {
+                return new TrelloCardActionsProvider(list, provider);                
+            }
+            return null;
         }           
         
         @Override
@@ -1009,7 +1017,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(evt.getPropertyName().equals(TrelloCardsProviderImpl.PROP_TRELLO_SYNC_CARD))
+            if(evt.getPropertyName().equals(TrelloCardProviderImpl.PROP_TRELLO_SYNC_CARD))
             {
                 changeSupport.fireChange();  
             }
@@ -1029,7 +1037,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO TrelloCardsProvider
     
-    private final class TrelloCardsProviderImpl implements TrelloCardsProvider, FileChangeListener, Runnable
+    private final class TrelloCardProviderImpl implements TrelloCardProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/panel.png";         
@@ -1041,18 +1049,18 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         private Map<String, TrelloCard> cards; 
         private FileObject rootDir;            
         
-        private final TrelloCardProvider provider;    
+        private final TrelloCardFactory factory;    
 
-        public TrelloCardsProviderImpl()
+        public TrelloCardProviderImpl(TrelloCardFactory factory)
         {
-            provider = new TrelloCardProviderImpl(this);
+            this.factory = factory;
             RP.post(this);                              
         } 
         
         @Override
-        public TrelloCardProvider getCardProvider()
+        public TrelloCardFactory getFactory()
         {
-            return provider;
+            return factory;
         }         
         
         @Override
@@ -1185,7 +1193,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         {
                             try
                             {
-                                TrelloCard card = provider.getCard(Utils.getProperties(fo));
+                                TrelloCard card = factory.getCard(Utils.getProperties(fo));
                                 if(card != null)
                                 {
                                     cards.put(card.getCardID(), card);
@@ -1254,14 +1262,14 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
             if(root != null && service != null && markdown != null)
             {
-                TrelloCard card = service.createLink(list.getListID(), url, provider, getTrelloAccount());
+                TrelloCard card = service.createLink(list.getListID(), url, factory, getTrelloAccount());
                 String videoID = YouTubeUtils.getVideoID(url);
                 if(videoID != null)
                 {  
-                    YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                    YouTubeVideoFactory youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
                     if(youTubeVideoProvider != null)
                     {
-                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoProvider.Type.BASIC);
+                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoFactory.Type.BASIC);
                         if(video != null)
                         {
                             card.merge(video);
@@ -1295,7 +1303,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
             if(root != null && service != null && markdown != null)
             {
-                TrelloCard card = service.createCard(list.getListID(), name, provider, getTrelloAccount());                                               
+                TrelloCard card = service.createCard(list.getListID(), name, factory, getTrelloAccount());                                               
                 try
                 {
                     createData(card, markdown); 
@@ -1317,7 +1325,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }        
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return TrelloProject.this;
         } 
@@ -1373,7 +1381,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 try                         
                 {
                     Properties props = Utils.getProperties(file); 
-                    TrelloCard card = provider.getCard(props);
+                    TrelloCard card = factory.getCard(props);
                     if(card != null)
                     {
                         getCardsById().put(card.getCardID(), card);
@@ -1398,7 +1406,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             try
             {
                 Properties props = Utils.getProperties(evt.getFile()); 
-                TrelloCard card = provider.getCard(props);
+                TrelloCard card = factory.getCard(props);
                 if(card != null)
                 {
                     getCardsById().remove(card.getCardID());
@@ -1489,7 +1497,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         if(isTime)
                         {
                             TrelloCard oldCard = getCardsById().get(card.getId()); 
-                            TrelloCard newCard = service.getCard(card.getId(), provider, getTrelloAccount());
+                            TrelloCard newCard = service.getCard(card.getId(), factory, getTrelloAccount());
                             if(!oldCard.getProperties().equals(newCard.getProperties()))
                             {
                                 oldCard.merge(newCard);
@@ -1535,16 +1543,16 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloCard trelloCard = service.getCard(card.getId(), provider, getTrelloAccount());
+                            TrelloCard trelloCard = service.getCard(card.getId(), factory, getTrelloAccount());
                             if(trelloCard.isCardLink())
                             {
                                 String videoID = YouTubeUtils.getVideoID(trelloCard.getCardName());
                                 if(videoID != null)
                                 {  
-                                    YouTubeVideoProvider youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoProvider.class);
+                                    YouTubeVideoFactory youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
                                     if(youTubeVideoProvider != null)
                                     {
-                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoProvider.Type.BASIC);
+                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoFactory.Type.BASIC);
                                         if(video != null)
                                         {
                                             trelloCard.merge(video);
@@ -1618,16 +1626,16 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionsProviderImpl extends TrelloActionsProvider implements SourceGroupProvider, IconProvider, FileChangeListener, Runnable
+    private final class TrelloActionProviderImpl extends TrelloActionProvider implements SourceGroupProvider, IconProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
         
         private static final String PROP_TRELLO_SYNC_ACTION = "trello.sync.action";         
         
-        public TrelloActionsProviderImpl(TrelloActionProvider actionProvider, TrelloCommentProvider commentProvider) 
+        public TrelloActionProviderImpl(TrelloActionFactory actionFactory, TrelloCommentFactory commentFactory) 
         {
-            super(actionProvider, commentProvider); 
+            super(actionFactory, commentFactory); 
             RP.post(this);                    
         }              
         
@@ -1644,7 +1652,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }          
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return TrelloProject.this;
         }  
@@ -1686,7 +1694,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloAction action = actionProvider.getAction(Utils.getProperties(file)); 
+                            TrelloAction action = actionFactory.getAction(Utils.getProperties(file)); 
                             activity.put(action.getActionID(), action);
                         }
                         catch(IOException e)
@@ -1789,7 +1797,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public Source getSource(String sourceID)
         {
             TrelloAction action = getActionsById().get(sourceID);
-            return commentProvider.getComment(action, getTrello(), getTrelloAccount());   
+            return commentFactory.getComment(action, getTrello(), getTrelloAccount());   
         }  
         
         @Override
@@ -1850,7 +1858,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             FileObject file = evt.getFile();
             try
             {
-                TrelloAction action = actionProvider.getAction(Utils.getProperties(file)); 
+                TrelloAction action = actionFactory.getAction(Utils.getProperties(file)); 
                 getActionsById().put(action.getActionID(), action);               
                 changeSupport.fireChange();
             }           
@@ -1943,12 +1951,12 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                    
                 try
                 {
-                    List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), actionProvider, getTrello());
+                    List<TrelloAction> actions = service.getActions(TrelloProject.this, getLastSync(), actionFactory, getTrello());
                     for(TrelloAction action : actions)
                     {
                         if(!getActionsById().containsKey(action.getActionID()))
                         {
-                            TrelloComment comment = commentProvider.getComment(action, getTrello(), getTrelloAccount());                       
+                            TrelloComment comment = commentFactory.getComment(action, getTrello(), getTrelloAccount());                       
                             try
                             {
                                 if(comment == null)
@@ -1990,21 +1998,21 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }           
     }      
     
-    private final class TrelloLabelsProviderImpl extends AbstractTrelloLabelsProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
+    private final class TrelloLabelProviderImpl extends AbstractTrelloLabelProvider implements SourceGroupProvider, NodeActionsProvider<TrelloLabel>, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/palette.png";         
         
         private static final String PROP_TRELLO_SYNC_LABEL = "trello.sync.label"; 
                 
-        public TrelloLabelsProviderImpl(TrelloLabelProvider provider) 
+        public TrelloLabelProviderImpl(TrelloLabelFactory factory) 
         {
-            super(provider);  
+            super(factory);  
             RP.post(this);             
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return TrelloProject.this;
         }   
@@ -2068,7 +2076,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloLabel label = provider.getLabel(Utils.getProperties(file)); 
+                            TrelloLabel label = factory.getLabel(Utils.getProperties(file)); 
                             labels.put(label.getLabelID(), label);
                         }
                         catch(IOException e)
@@ -2128,7 +2136,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             FileObject file = evt.getFile();
             try
             {
-                TrelloLabel label = provider.getLabel(Utils.getProperties(file)); 
+                TrelloLabel label = factory.getLabel(Utils.getProperties(file)); 
                 getLabelsById().put(label.getLabelID(), label);               
                 changeSupport.fireChange();
             }           
@@ -2213,7 +2221,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             if(service != null)
             {
-                List<TrelloLabel> labels = service.getLabels(TrelloProject.this, provider, getTrello());
+                List<TrelloLabel> labels = service.getLabels(TrelloProject.this, factory, getTrello());
                 for(TrelloLabel label : labels)
                 {
                     if(!getLabelsById().containsKey(label.getLabelID()))
@@ -2236,16 +2244,16 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
     }  
     
-    private final class TrelloMembersProviderImpl extends TrelloMembersProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloMemberProviderImpl extends TrelloMemberProvider implements SourceGroupProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/group.png"; 
         
         private static final String PROP_TRELLO_SYNC_MEMBER = "trello.sync.member";         
                 
-        public TrelloMembersProviderImpl(TrelloMemberProvider provider) 
+        public TrelloMemberProviderImpl(TrelloMemberFactory factory) 
         {
-            super(provider);   
+            super(factory);   
             if(getLastSync() == null)
             {
                 RP.post(this);                
@@ -2253,7 +2261,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }         
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return TrelloProject.this;
         } 
@@ -2315,7 +2323,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloMember member = provider.getMember(Utils.getProperties(file)); 
+                            TrelloMember member = factory.getMember(Utils.getProperties(file)); 
                             members.put(member.getMemberID(), member);
                         }
                         catch(IOException e)
@@ -2375,7 +2383,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             FileObject file = evt.getFile();
             try
             {
-                TrelloMember member = provider.getMember(Utils.getProperties(file)); 
+                TrelloMember member = factory.getMember(Utils.getProperties(file)); 
                 getMembers().put(member.getMemberID(), member);               
                 changeSupport.fireChange();
             }           
@@ -2460,7 +2468,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             if(service != null)
             {
-                List<TrelloMember> members = service.getMembers(TrelloProject.this, provider, getTrello());
+                List<TrelloMember> members = service.getMembers(TrelloProject.this, factory, getTrello());
                 for(TrelloMember member : members)
                 {
                     if(!getMembers().containsKey(member.getMemberID()))
@@ -2483,21 +2491,21 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         }        
     }      
 
-    private final class TrelloListsProviderImpl extends TrelloListsProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    private final class TrelloListProviderImpl extends TrelloListProvider implements SourceGroupProvider, FileChangeListener, Runnable
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/application_view_columns.png"; 
         
         private static final String PROP_TRELLO_SYNC_LIST = "trello.sync.list";        
         
-        public TrelloListsProviderImpl(TrelloListProvider provider) 
+        public TrelloListProviderImpl(TrelloListFactory factory) 
         {
-            super(provider);  
+            super(factory);  
             RP.post(this); 
         }               
         
         @Override
-        public Lookup.Provider getLookupProvider()
+        public Lookup.Provider getProvider()
         {
             return TrelloProject.this;
         }
@@ -2538,8 +2546,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             SortedSet<NodePositionProvider> sorted = new TreeSet<NodePositionProvider>(NodePositionProvider.positionComparator());
             for(TrelloList list : getListsById().values())
             {
-                DataGroupProvider dataProvider = new ListDataGroupProviderImpl(list);
-                TrelloListNode node = new TrelloListNode(dataProvider);
+                DataGroupProvider provider = new ListProviderImpl(list);
+                TrelloListNode node = new TrelloListNode(provider);
                 sorted.add(node);
             }            
             return sorted;
@@ -2558,7 +2566,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     {
                         try
                         {
-                            TrelloList list = provider.getList(Utils.getProperties(file)); 
+                            TrelloList list = factory.getList(Utils.getProperties(file)); 
                             lists.put(list.getListID(), list);
                         }
                         catch(IOException e)
@@ -2575,7 +2583,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void createList(String name)
         {
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            TrelloList list = service.createList(getBoardID(), name, provider, getTrelloAccount());   
+            TrelloList list = service.createList(getBoardID(), name, factory, getTrelloAccount());   
             try
             {
                 OutputStream os = getRootFolder().createAndOpen(list.getListID() + "." + PropertiesProvider.EXTENSION);
@@ -2640,7 +2648,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             FileObject file = evt.getFile();
             try
             {
-                TrelloList list = provider.getList(Utils.getProperties(file)); 
+                TrelloList list = factory.getList(Utils.getProperties(file)); 
                 getListsById().put(list.getListID(), list);               
                 changeSupport.fireChange();
             }           
@@ -2728,7 +2736,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             if(service != null)
             {
-                List<TrelloList> lists = service.getLists(TrelloProject.this, provider, getTrello());
+                List<TrelloList> lists = service.getLists(TrelloProject.this, factory, getTrello());
                 Set<String> keys = new HashSet<>(getListsById().keySet());
                 for(TrelloList list : lists)
                 {
@@ -2799,10 +2807,10 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     private static final class DeleteLabel extends AbstractAction
     {  
         private final Trello trello;
-        private final AbstractTrelloLabelsProvider provider; 
+        private final AbstractTrelloLabelProvider provider; 
         private final TrelloLabel label;
 
-        public DeleteLabel(Trello trello, AbstractTrelloLabelsProvider provider, TrelloLabel label) 
+        public DeleteLabel(Trello trello, AbstractTrelloLabelProvider provider, TrelloLabel label) 
         {
             super("Delete");
             this.trello = trello;

@@ -33,7 +33,6 @@ import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.base.WebPage;
-import openpkm.base.WebPageProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.rss.Rss;
 import openpkm.utils.DisplayNameProviderImpl;
@@ -52,15 +51,16 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
+import openpkm.base.WebPageFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=WebPageProvider.class)
-public class WebPageProviderImpl implements WebPageProvider 
+@ServiceProvider(service=WebPageFactory.class)
+public class WebPageProviderImpl implements WebPageFactory 
 {
-    private static final Logger LOG = Logger.getLogger(WebPageProvider.class.getName());     
+    private static final Logger LOG = Logger.getLogger(WebPageFactory.class.getName());     
     
     @Override
     public WebPage getWebPage(Properties props) 

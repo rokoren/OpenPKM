@@ -12,30 +12,30 @@ import openpkm.base.Content;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
-import openpkm.base.ContentProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.ContentFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public abstract class ContentSourceProvider implements SourceProvider<Content>
+public abstract class ContentProvider implements SourceProvider<Content>
 {
     protected static final String ROOT_FOLDER = "content";       
 
     protected Map<String, Content> contents; 
     protected FileObject rootDir; 
 
-    protected final ContentProvider provider;
+    protected final ContentFactory factory;
 
-    public ContentSourceProvider(ContentProvider provider) 
+    public ContentProvider(ContentFactory factory) 
     {
-        this.provider = provider;
+        this.factory = factory;
     }
     
-    public ContentProvider getContentProvider()
+    public ContentFactory getFactory()
     {
-        return provider;
+        return factory;
     }
     
     public abstract Map<String, Content> getContentsById();

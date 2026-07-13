@@ -19,7 +19,7 @@ public interface SourceProvider<T extends Source> extends SourceGroup
     Source getSource(String sourceID);
     void deleteSource(String sourceID) throws IOException;
     FileObject createData(T source, FileTypeProvider fileTypeProvider) throws IOException;
-    Lookup.Provider getLookupProvider();
+    Lookup.Provider getProvider();
     void projectClosed();
     void addSourceListener(PropertyChangeListener listener);
     void removeSourceListener(PropertyChangeListener listener);

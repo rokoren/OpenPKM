@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Article;
 import openpkm.base.Content;
-import openpkm.base.ContentProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
@@ -32,7 +31,7 @@ import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.core.TopicWizardPanel;
 import openpkm.reference.ArticleWizardPanel2;
-import openpkm.utils.ContentSourceProvider;
+import openpkm.utils.ContentProvider;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -45,6 +44,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
+import openpkm.base.ContentFactory;
 
 /**
  *
@@ -63,9 +63,9 @@ public class ArticleAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(ArticleAction.class.getName());     
     
-    private final ContentSourceProvider provider;
+    private final ContentProvider provider;
 
-    public ArticleAction(ContentSourceProvider provider) 
+    public ArticleAction(ContentProvider provider) 
     {
         this.provider = provider;
     }
@@ -97,7 +97,7 @@ public class ArticleAction implements ActionListener
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Article");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-        wiz.putProperty("provider", provider.getLookupProvider());
+        wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
@@ -109,7 +109,7 @@ public class ArticleAction implements ActionListener
 
             Properties props = new Properties();
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentProvider.PROP_TYPE, ContentProviderImpl.Type.ARTICLE.getName());
+            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.ARTICLE.getName());
             props.setProperty(Content.PROP_APP_ID, Utils.getAppID());          
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)
@@ -136,7 +136,7 @@ public class ArticleAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookupProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
@@ -151,7 +151,7 @@ public class ArticleAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                Content content = provider.getContentProvider().getContent(props);
+                Content content = provider.getFactory().getContent(props);
                 try
                 {
                     FileObject file = provider.createData(content, fileType); 

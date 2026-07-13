@@ -83,7 +83,7 @@ public final class RaindropAction implements ActionListener
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         {
             RaindropProject project = (RaindropProject)wiz.getProperty("project");
-            RaindropSourceProvider provider = project.getLookup().lookup(RaindropSourceProvider.class);
+            RaindropProvider provider = project.getLookup().lookup(RaindropProvider.class);
             if(provider != null)
             {
                 String note = (String) wiz.getProperty(Raindrop.PROPS_NOTE);

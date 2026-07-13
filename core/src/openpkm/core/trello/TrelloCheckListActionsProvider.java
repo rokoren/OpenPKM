@@ -8,7 +8,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import openpkm.trello.AbstractCheckListActionsProvider;
-import openpkm.trello.TrelloCheckListsProvider;
+import openpkm.trello.TrelloCheckListProvider;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 
@@ -18,9 +18,9 @@ import org.openide.NotifyDescriptor;
  */
 public class TrelloCheckListActionsProvider extends AbstractCheckListActionsProvider
 {
-    private final TrelloCheckListsProvider provider;     
+    private final TrelloCheckListProvider provider;     
 
-    public TrelloCheckListActionsProvider(TrelloCheckListsProvider provider) 
+    public TrelloCheckListActionsProvider(TrelloCheckListProvider provider) 
     {
         this.provider = provider;
     }        
@@ -33,9 +33,9 @@ public class TrelloCheckListActionsProvider extends AbstractCheckListActionsProv
     
     private static final class AddCheckList extends AbstractAction
     {                  
-        private final TrelloCheckListsProvider provider;             
+        private final TrelloCheckListProvider provider;             
 
-        public AddCheckList(TrelloCheckListsProvider provider) 
+        public AddCheckList(TrelloCheckListProvider provider) 
         {
             super("Add Checklist");
             this.provider = provider;

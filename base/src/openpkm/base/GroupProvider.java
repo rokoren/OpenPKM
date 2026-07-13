@@ -71,7 +71,7 @@ public interface GroupProvider
     ActionsProvider ACTIONS_PROVIDER_NOTE = new ActionsProviderImpl("Actions/OpenPKM/Note,Actions/OpenPKM/Idea,Actions/OpenPKM/Comment");          
     
     String getName();  
-    Lookup.Provider getLookupProvider();     
+    Lookup.Provider getProvider();     
     DisplayNameProvider getDisplayNameProvider();
     IconProvider getIconProvider();
     ActionsProvider getActionsProvider();

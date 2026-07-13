@@ -13,22 +13,22 @@ import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloAttachment;
-import openpkm.trello.TrelloAttachmentProvider;
 import openpkm.youtube.YouTubeUtils;
 import org.openide.nodes.Children;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.trello.TrelloAttachmentFactory;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloAttachmentProvider.class)
-public class TrelloAttachmentProviderImpl implements TrelloAttachmentProvider
+@ServiceProvider(service=TrelloAttachmentFactory.class)
+public class TrelloAttachmentProviderImpl implements TrelloAttachmentFactory
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloAttachmentProvider.class.getName());    
+    private static final Logger LOG = Logger.getLogger(TrelloAttachmentFactory.class.getName());    
 
     @Override
     public TrelloAttachment getAttachment(Properties props) 
