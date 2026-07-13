@@ -8,6 +8,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
+import javax.swing.SwingUtilities;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import org.netbeans.api.project.Project;
@@ -124,7 +125,12 @@ public class Installer implements Runnable
                                     if(OpenProjects.getDefault().isProjectOpen(project))
                                     {
                                         Project[] projects = {project};
-                                        OpenProjects.getDefault().close(projects);                                          
+                                        
+                                        SwingUtilities.invokeLater(() -> 
+                                        {
+                                            OpenProjects.getDefault().close(projects);   
+                                        });                                        
+                                                                               
                                     }                                                                           
                                 }                                                                       
                             }                                                                                                          
