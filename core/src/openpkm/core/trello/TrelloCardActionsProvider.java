@@ -5,13 +5,18 @@
 package openpkm.core.trello;
 
 import java.awt.event.ActionEvent;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import openpkm.trello.AbstractCardActionsProvider;
+import openpkm.trello.TrelloAccount;
+import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloList;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import openpkm.trello.TrelloCardProvider;
+import openpkm.trello.TrelloService;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -19,6 +24,8 @@ import openpkm.trello.TrelloCardProvider;
  */
 public class TrelloCardActionsProvider extends AbstractCardActionsProvider
 {
+    private static final Logger LOG = Logger.getLogger(TrelloCardActionsProvider.class.getName());     
+    
     private final TrelloList list;       
     private final TrelloCardProvider provider;   
 
@@ -86,6 +93,56 @@ public class TrelloCardActionsProvider extends AbstractCardActionsProvider
                 String name = ((NotifyDescriptor.InputLine) d).getInputText();
                 provider.createCard(list, name);
             }            
+        }
+    }   
+    
+    public static final class CardComplete extends AbstractAction
+    {             
+        private final TrelloCard card;
+        private final TrelloAccount account;
+
+        public CardComplete(TrelloCard card, TrelloAccount account) 
+        {
+            super(getActionName(card));       
+            this.card = card;
+            this.account = account;
+        }
+        
+        private static String getActionName(TrelloCard card)
+        {
+            if(Boolean.TRUE.equals(card.isCardDueComplete()))
+            {
+                return "Uncomplete";
+            }
+            return "Complete";
+        }
+        
+        private static boolean getComplete(Boolean dueComplete)
+        {
+            if(dueComplete != null)
+            {
+                return !dueComplete;
+            }
+            return false;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service == null)
+            {
+                LOG.warning("No Trello service found");
+                NotifyDescriptor descriptor = new NotifyDescriptor.Message("No Trello service found", NotifyDescriptor.WARNING_MESSAGE);
+                DialogDisplayer.getDefault().notify(descriptor);                
+            }
+            else
+            {
+                boolean complete = getComplete(card.isCardDueComplete());
+                int status = service.setCardDueComplete(card.getCardID(), complete, account);
+                card.setCardDueComplete(complete);         
+                card.markModified();                  
+            }
         }
     }     
 }

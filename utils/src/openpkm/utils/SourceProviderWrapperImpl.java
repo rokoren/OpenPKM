@@ -7,9 +7,14 @@ package openpkm.utils;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+import javax.swing.Action;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
@@ -89,5 +94,25 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper, Propert
                 changeSupport.fireChange();
             }
         }
+    }
+
+    @Override
+    public List<Action> getActions() 
+    {
+        Source source = getSource();
+        if(source != null)
+        {
+            Collection<? extends ActionProvider> providers = source.getLookup().lookupAll(ActionProvider.class);
+            if(!providers.isEmpty())
+            {
+                List<Action> actions = new ArrayList();
+                for(ActionProvider actionProvider : providers)
+                {
+                    actions.add(actionProvider.getAction(provider));
+                }
+                return actions;                  
+            }          
+        }
+        return Collections.EMPTY_LIST;
     }
 }

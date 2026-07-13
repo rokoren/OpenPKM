@@ -32,7 +32,6 @@ import openpkm.base.NodePositionProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
-import openpkm.trello.TrelloCheckListItemProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
@@ -43,21 +42,27 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import openpkm.trello.TrelloCheckListFactory;
-import org.openide.util.lookup.ServiceProvider;
+import openpkm.trello.TrelloCheckListItemProvider;
+import openpkm.trello.TrelloCheckListProvider;
 
 /**
  *
  * @author Rok Koren
  */
-@ServiceProvider(service=TrelloCheckListFactory.class)
 public class TrelloCheckListFactorympl implements TrelloCheckListFactory
 {    
-    private static final Logger LOG = Logger.getLogger(TrelloCheckListFactory.class.getName());       
+    private static final Logger LOG = Logger.getLogger(TrelloCheckListFactory.class.getName());  
+    
+    private final TrelloCheckListProvider provider;
+
+    public TrelloCheckListFactorympl(TrelloCheckListProvider provider) {
+        this.provider = provider;
+    }
     
     @Override
     public TrelloCheckList getCheckList(Properties props) 
     {
-        return new TrelloCheckListImpl(props);
+        return new TrelloCheckListImpl(props, provider);
     }
     
     @Override
@@ -77,18 +82,18 @@ public class TrelloCheckListFactorympl implements TrelloCheckListFactory
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/check_box_list.png";  
         
-        //private final TrelloCheckListItemProvider checkListItemProvider;        
+        private final TrelloCheckListItemProvider itemProvider;        
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;           
         
         private Lookup lkp; 
         private ChangeSupport changeSupport;
         
-        public TrelloCheckListImpl(Properties props)
+        public TrelloCheckListImpl(Properties props, TrelloCheckListProvider provider)
         {
             this.props = props; 
             propertyChangeSupport = new PropertyChangeSupport(this);
-            //checkListItemProvider = new TrelloCheckListItemProviderImpl(checkListsProvider, this);
+            itemProvider = new TrelloCheckListItemProviderImpl(provider, this);
         }         
         
         private synchronized Map<String, TrelloCheckListItem> getItemsById()
@@ -101,10 +106,8 @@ public class TrelloCheckListFactorympl implements TrelloCheckListFactory
                 for(int i=0; i<jsons.length(); i++)
                 {
                     JSONObject json = jsons.getJSONObject(i);
-                    /*
-                    TrelloCheckListItem item = checkListItemProvider.getCheckListItem(json);
+                    TrelloCheckListItem item = itemProvider.getCheckListItem(json);
                     items.put(item.getCheckListItemID(), item);
-                    */
                 }                    
             } 
             return items;

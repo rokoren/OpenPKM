@@ -72,7 +72,7 @@ import openpkm.reference.ReferenceFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=ReferenceFactory.class)
-public class ReferenceProviderImpl implements ReferenceFactory
+public class ReferenceFactoryImpl implements ReferenceFactory
 {
     private static final Logger LOG = Logger.getLogger(ReferenceFactory.class.getName());     
 

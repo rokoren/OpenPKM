@@ -62,6 +62,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
+import openpkm.base.ActionProvider;
 import openpkm.base.ActionsProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.ChangeSupportProvider;
@@ -150,7 +151,7 @@ import openpkm.trello.TrelloCheckListFactory;
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, PropertiesProvider, ActionsProvider, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, PropertiesProvider, BatchUpdateSupport
 { 
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -197,12 +198,8 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             sources.put(provider.getName(), provider);            
         }  
         
-        TrelloCheckListFactory checkListFactory = Lookup.getDefault().lookup(TrelloCheckListFactory.class);
-        if(checkListFactory != null)
-        {          
-            SourceGroup provider = new TrelloCheckListProviderImpl(checkListFactory);
-            sources.put(provider.getName(), provider);            
-        }                              
+        SourceGroup provider = new TrelloCheckListProviderImpl();
+        sources.put(provider.getName(), provider);                              
     }        
     
     public TrelloAccount getTrelloAccount()
@@ -299,6 +296,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             list.add(new Info());
             list.add(new SourcesImpl());
             list.add(new DisplayNameProviderImpl());
+            list.add(new CardComplete());
             
             AbstractTrelloLabelProvider labelsProvider = parentProjectProvider.getPartentProject().getLookup().lookup(AbstractTrelloLabelProvider.class);
             if(labelsProvider != null)
@@ -612,17 +610,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
             return cardRole.equalsIgnoreCase(TrelloCardFactory.CARD_ROLE_LINK);
         }
         return false;
-    } 
-    
-// ActionsProvider
-
-    @Override
-    public List<Action> getActions()
-    {
-        List<Action> actions = new ArrayList<>();
-        actions.add(new CardComplete(this, getTrelloAccount()));
-        return actions;
-    }        
+    }       
 
 // TODO PropertiesProvider
     
@@ -709,7 +697,16 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             changeSupport.removeChangeListener(listener);
         }        
-    }      
+    }  
+
+    private final class CardComplete implements ActionProvider<TrelloCardProvider>
+    {
+        @Override
+        public Action getAction(TrelloCardProvider provider) 
+        {
+            return new TrelloCardActionsProvider.CardComplete(TrelloCardProject.this, provider.getAccount());
+        }        
+    } 
     
 // TODO TopComponentProvider
     
@@ -1716,9 +1713,9 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
 
         private static final String PROP_TRELLO_SYNC_CHECKLIST = "trello.sync.checklist";         
         
-        public TrelloCheckListProviderImpl(TrelloCheckListFactory factory) 
+        public TrelloCheckListProviderImpl() 
         {
-            super(factory);
+            factory = new TrelloCheckListFactorympl(this);
             RP.post(this);    
         }                        
         
@@ -2330,57 +2327,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
                 provider.removeLabel(label);                
             }                                    
         }
-    }  
-    
-    public static final class CardComplete extends AbstractAction
-    {             
-        private final TrelloCard card;
-        private final TrelloAccount account;
-
-        public CardComplete(TrelloCard card, TrelloAccount account) 
-        {
-            super(getActionName(card));       
-            this.card = card;
-            this.account = account;
-        }
-        
-        private static String getActionName(TrelloCard card)
-        {
-            if(Boolean.TRUE.equals(card.isCardDueComplete()))
-            {
-                return "Uncomplete";
-            }
-            return "Complete";
-        }
-        
-        private static boolean getComplete(Boolean dueComplete)
-        {
-            if(dueComplete != null)
-            {
-                return !dueComplete;
-            }
-            return false;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent evt) 
-        {
-            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            if(service == null)
-            {
-                LOG.warning("No Trello service found");
-                NotifyDescriptor descriptor = new NotifyDescriptor.Message("No Trello service found", NotifyDescriptor.WARNING_MESSAGE);
-                DialogDisplayer.getDefault().notify(descriptor);                
-            }
-            else
-            {
-                boolean complete = getComplete(card.isCardDueComplete());
-                int status = service.setCardDueComplete(card.getCardID(), complete, account);
-                card.setCardDueComplete(complete);         
-                card.markModified();                  
-            }
-        }
-    }     
+    }      
     
     private static final class AttachmentsMultiViewElementImpl extends JPanel implements MultiViewElement, ActionListener, CefLoadHandler
     {

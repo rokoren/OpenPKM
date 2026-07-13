@@ -31,7 +31,6 @@ import openpkm.base.TitleProvider;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
 import openpkm.trello.TrelloCheckListItem.State;
-import openpkm.trello.TrelloCheckListItemProvider;
 import openpkm.trello.TrelloCheckListProvider;
 import openpkm.trello.TrelloService;
 import org.openide.DialogDisplayer;
@@ -44,6 +43,7 @@ import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import openpkm.trello.TrelloCheckListFactory;
+import openpkm.trello.TrelloCheckListItemProvider;
 
 /**
  *

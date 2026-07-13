@@ -21,13 +21,12 @@ public abstract class TrelloCheckListProvider implements SourceGroup
 
     protected Map<String, TrelloCheckList> checkLists; 
     protected FileObject rootDir; 
-
-    protected final TrelloCheckListFactory factory;
+    protected TrelloCheckListFactory factory;
+    
     protected final ChangeSupport changeSupport; 
 
-    public TrelloCheckListProvider(TrelloCheckListFactory factory) 
+    public TrelloCheckListProvider() 
     {
-        this.factory = factory;
         changeSupport = new ChangeSupport(this); 
     } 
     
