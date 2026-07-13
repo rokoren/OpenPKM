@@ -34,7 +34,7 @@ import openpkm.trello.TrelloLabelFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=TrelloLabelFactory.class)
-public class TrelloLabelProviderImpl implements TrelloLabelFactory
+public class TrelloLabelFactoryImpl implements TrelloLabelFactory
 {
     private static final String PROP_LABEL_ID    = "label.id";
     private static final String PROP_LABEL_NAME  = "label.name";

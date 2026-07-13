@@ -30,7 +30,7 @@ import openpkm.trello.TrelloCommentFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=TrelloCommentFactory.class)
-public class TrelloCommentProviderImpl implements TrelloCommentFactory
+public class TrelloCommentFactoryImpl implements TrelloCommentFactory
 {
     @Override
     public TrelloComment getComment(TrelloAction action, Trello trello, TrelloAccount account) 
