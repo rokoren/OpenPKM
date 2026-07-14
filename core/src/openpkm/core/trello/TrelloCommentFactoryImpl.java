@@ -162,15 +162,7 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         {
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             service.setCommentText(getCardID(), getActionID(), data, trello);
-        }  
-        
-        @Override
-        public void delete() 
-        {
-            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            int status = service.deleteComment(getCardID(), getActionID(), account);            
-            LOG.info("Delete Comment status: " + status);
-        }        
+        }                
 
         @Override
         public String getDisplayName(TextFormat format)

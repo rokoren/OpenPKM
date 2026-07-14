@@ -73,19 +73,19 @@ public class TrelloServiceImpl implements TrelloService
     }
     
     @Override
-    public List<TrelloList> getLists(TrelloBoard board, TrelloListFactory provider, Trello trello)
+    public List<TrelloList> getLists(TrelloBoard board, TrelloListFactory factory, Trello trello)
     {
         List<TrelloList> all = new ArrayList();   
         List<TList> lists = trello.getBoardLists(board.getBoardID());
         for(TList list : lists)                
         {
-            all.add(provider.createList(list));
+            all.add(factory.createList(list));
         }                     
         return all;        
     } 
     
     @Override
-    public TrelloList createList(String boardID, String name, TrelloListFactory provider, TrelloAccount account)
+    public TrelloList createList(String boardID, String name, TrelloListFactory factory, TrelloAccount account)
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/lists/")
           .header("Accept", "application/json")
@@ -104,7 +104,7 @@ public class TrelloServiceImpl implements TrelloService
         props.setProperty(TrelloListFactory.PROP_BOARD_ID, json.getString("idBoard"));           
         props.setProperty(TrelloListFactory.PROP_LIST_NAME, json.getString("name"));
         props.setProperty(TrelloListFactory.PROP_LIST_POSITION, json.getInt("pos") + "");
-        return provider.getList(props);
+        return factory.getList(props);
     }    
 
     @Override
@@ -206,13 +206,13 @@ public class TrelloServiceImpl implements TrelloService
     }    
     
     @Override
-    public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberFactory provider, Trello trello)
+    public List<TrelloMember> getMembers(TrelloBoard board, TrelloMemberFactory factory, Trello trello)
     {
         List<TrelloMember> list = new ArrayList();   
         List<Member> members = trello.getBoardMembers(board.getBoardID());
         for(Member member : members)                
         {
-            list.add(provider.createMember(member));
+            list.add(factory.createMember(member));
         }                     
         return list;        
     }     

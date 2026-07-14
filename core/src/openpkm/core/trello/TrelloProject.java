@@ -1808,10 +1808,16 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             {
                 FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
                 if(file != null)
-                {  
-                    // TODO Call Trello API to delete source
-                    
-                    file.delete();                    
+                {                      
+                    TrelloAction action = getActionsById().get(sourceID);
+                    if(action instanceof TrelloComment comment)
+                    {
+                        TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+                        int status = service.deleteComment(comment.getCardID(), comment.getActionID(), getTrelloAccount());            
+                        LOG.info("Delete Comment status: " + status);                    
+
+                        file.delete();                           
+                    }                 
                 }              
             }  
         }        

@@ -60,6 +60,7 @@ public interface IconsProvider
         FILE_GIF,
         FILE_MP4, 
         BIN,
+        COMMENTS,
         VIDEOS;    
     }     
 }

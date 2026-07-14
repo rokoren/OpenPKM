@@ -960,12 +960,6 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
             service.setCardDescription(getCardID(), data, getTrelloAccount());
-        }  
-        
-        @Override
-        public void delete() 
-        {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }         
     }     
     
@@ -1140,13 +1134,13 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
-            return new GroupProvider.DisplayNameProviderImpl(provider);
+            return new GroupProvider.DisplayNameProviderImpl("Comments");
         }  
         
         @Override
         public IconProvider getIconProvider()
         {
-            return new GroupProvider.IconProviderSourceGroupImpl(provider);
+            return new GroupProvider.IconProviderImpl(IconsProvider.ICON.COMMENTS);
         }        
         
         @Override
@@ -1204,14 +1198,22 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         {
             if(data != null)
             {
-                TrelloComment comment = data.getLookup().lookup(TrelloComment.class);
-                if(comment != null)
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
                 {
-                    if(comment.getCardID() != null)
-                    {
-                        return comment.getCardID().equals(getCardID());                        
-                    }
-                }                 
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {                                               
+                        TrelloComment comment = source.getLookup().lookup(TrelloComment.class);
+                        if(comment != null)
+                        {
+                            if(comment.getCardID() != null)
+                            {
+                                return comment.getCardID().equals(getCardID());                        
+                            }
+                        }                                               
+                    }            
+                }                                                                 
             }                                   
             return false;
         }

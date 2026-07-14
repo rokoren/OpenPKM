@@ -7,7 +7,6 @@ package openpkm.asciidoc;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-import openpkm.base.RemoteDataProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.utils.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;
@@ -131,13 +130,7 @@ public class AsciiDocDataObject extends MultiDataObject
     
     @Override
     protected void handleDelete() throws IOException 
-    {
-        RemoteDataProvider remoteProvider = getLookup().lookup(RemoteDataProvider.class);
-        if(remoteProvider != null)
-        {
-            remoteProvider.delete();
-        }
-        
+    {        
         SourceProviderWrapper sourceProvider = getLookup().lookup(SourceProviderWrapper.class);
         if(sourceProvider != null)
         {
