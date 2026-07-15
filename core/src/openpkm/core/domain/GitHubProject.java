@@ -1732,7 +1732,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    link.save(os, "Updated by GitHub project: " + getTitle());
+                                    factory.save(link, os, "Updated by GitHub project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1946,7 +1946,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by GitHub project: " + getTitle());
+                                    factory.save(reference, os, "Updated by GitHub project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)

@@ -1607,7 +1607,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    link.save(os, "Updated by Blog project: " + getTitle());
+                                    factory.save(link, os, "Updated by Blog project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1821,7 +1821,7 @@ public class FacebookProject implements Domain, FacebookPage, PropertiesProvider
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Blog project: " + getTitle());
+                                    factory.save(reference, os, "Updated by Blog project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)

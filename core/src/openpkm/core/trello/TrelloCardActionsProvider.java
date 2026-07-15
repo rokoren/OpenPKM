@@ -14,9 +14,9 @@ import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloList;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
-import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloService;
 import org.openide.util.Lookup;
+import openpkm.trello.TrelloCardProvider;
 
 /**
  *

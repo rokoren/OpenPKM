@@ -132,6 +132,9 @@ import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 import openpkm.youtube.YouTubeVideoFactory;
 import openpkm.reference.ReferenceFactory;
+import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeChannelFactory;
+import openpkm.youtube.YouTubeChannelProvider;
 
 /**
  *
@@ -215,7 +218,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             SourceProvider provider = new YouTubeVideoProviderImpl(youTubeVideoFactory);
             sources.put(provider.getName(), provider);                       
         }        
-         
+
+        YouTubeChannelFactory youTubeChannelFactory = Lookup.getDefault().lookup(YouTubeChannelFactory.class);
+        if(youTubeChannelFactory != null)
+        {
+            SourceProvider provider = new YouTubeChannelProviderImpl(youTubeChannelFactory);
+            sources.put(provider.getName(), provider);                       
+        }                 
     }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -1928,7 +1937,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    content.save(os, "Updated by Raindrop project: " + getTitle());
+                                    factory.save(content, os, "Updated by Raindrop project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -2154,7 +2163,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Raindrop project: " + getTitle());
+                                    factory.save(reference, os, "Updated by Raindrop project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -2476,7 +2485,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    raindrop.save(os, "Updated by Raindrop project: " + getTitle());
+                                    factory.save(raindrop, os, "Updated by Raindrop project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -2730,7 +2739,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     try
                     {
                         OutputStream os = root.createAndOpen(raindrop.getSourceID() + "." + PropertiesProvider.EXTENSION);                            
-                        raindrop.save(os, "Created by Raindrop project: " + getTitle()); 
+                        factory.save(raindrop, os, "Created by Raindrop project: " + getTitle()); 
                         os.close();
                         FileObject file = createData(raindrop, markdown);                         
                         LOG.info("Raindrop saved: " + raindrop.getSourceID());                             
@@ -2872,7 +2881,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    video.save(os, "Updated by Raindrop project: " + getTitle());
+                                    factory.save(video, os, "Updated by Raindrop project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -3042,7 +3051,245 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }         
-    }          
+    }  
+    
+    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener
+    {
+        public YouTubeChannelProviderImpl(YouTubeChannelFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        } 
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(YouTubeChannel channel : getChannels())
+                {
+                    SourceState state = channel.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(channel.getChannelID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(channel, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
+        
+        @Override
+        public synchronized Map<String, YouTubeChannel> getChannelsById()
+        {
+            if(channels == null)
+            {
+                channels = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject fo : folder.getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            try
+                            {
+                                Project project = ProjectManager.getDefault().findProject(fo);  
+                                if(project != null)
+                                {
+                                    YouTubeChannel channel = project.getLookup().lookup(YouTubeChannel.class);
+                                    if(channel != null)
+                                    {
+                                        channels.put(channel.getChannelID(), channel);
+                                    }                                      
+                                }                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                YouTubeChannel channel = factory.getChannel(Utils.getProperties(fo)); 
+                                channels.put(channel.getSourceID(), channel);
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                                                                                                                                                            
+                    }                     
+                }                
+            }
+            return channels;
+        }        
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("YouTube root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
+        public FileObject createData(YouTubeChannel channel, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, channel.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(channel.getTitle(), channel.getDescription()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            FileObject folder = evt.getFile();
+            if(!getChannelsById().containsKey(folder.getName()))
+            {
+                try
+                {
+                    Project project = ProjectManager.getDefault().findProject(folder);
+                    if(project != null)
+                    {
+                        YouTubeChannel channel = project.getLookup().lookup(YouTubeChannel.class);  
+                        if(channel != null)
+                        {
+                            getChannelsById().put(channel.getChannelID(), channel);
+                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);    
+                        }                    
+                    }                
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }  
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                YouTubeChannel channel = factory.getChannel(Utils.getProperties(file)); 
+                if(channel != null)
+                {
+                    getChannelsById().put(channel.getChannelID(), channel); 
+                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);                       
+                }          
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            YouTubeChannel channel = getChannelsById().remove(file.getName());  
+            if(channel != null)
+            {
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, channel, null);  
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    }     
 
 // TODO KnowledgeGraphProvider     
     

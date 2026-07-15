@@ -16,6 +16,7 @@ import java.beans.BeanInfo;
 import java.beans.PropertyChangeListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -109,6 +110,13 @@ public class ReferenceFactoryImpl implements ReferenceFactory
         }
         return null;
     }
+    
+    @Override
+    public void save(Reference reference, OutputStream os, String comments) throws IOException
+    {
+        reference.getProperties().store(os, comments);
+        LOG.info("Reference saved");      
+    }      
     
     private static final class BookImpl extends AbstractReference implements Book, PageProvider, TextProvider, MultiViewDescription
     { 

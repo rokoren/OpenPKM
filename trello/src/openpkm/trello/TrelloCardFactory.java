@@ -6,12 +6,13 @@ package openpkm.trello;
 
 import com.julienvey.trello.domain.Card;
 import java.util.Properties;
+import openpkm.base.SourceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCardFactory 
+public interface TrelloCardFactory extends SourceFactory<TrelloCard>
 {
     String CARD_ROLE_LINK = "link";
     

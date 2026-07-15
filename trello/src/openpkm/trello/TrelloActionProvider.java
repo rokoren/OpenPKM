@@ -41,6 +41,12 @@ public abstract class TrelloActionProvider implements SourceProvider<TrelloComme
         return Collections.unmodifiableCollection(getActionsById().values());
     }
     
+    @Override
+    public TrelloCommentFactory getFactory()
+    {
+        return getCommentFactory();
+    }      
+    
     public TrelloActionFactory getActionFactory()
     {
         return actionFactory;

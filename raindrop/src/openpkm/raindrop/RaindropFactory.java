@@ -5,12 +5,13 @@
 package openpkm.raindrop;
 
 import java.util.Properties;
+import openpkm.base.SourceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public interface RaindropFactory 
+public interface RaindropFactory extends SourceFactory<Raindrop>
 {
     public Raindrop getRaindrop(Properties props);     
 }

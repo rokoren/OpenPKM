@@ -12,11 +12,11 @@ import java.util.Properties;
  *
  * @author Rok Koren
  */
-public interface ContentFactory 
+public interface ContentFactory extends SourceFactory<Content>
 {
     String PROP_TYPE = "content.type";    
     
-    Content getContent(Properties props);  
+    Content getContent(Properties props);    
     
     public enum Type 
     {

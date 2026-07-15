@@ -151,7 +151,7 @@ public class CommentAction implements ActionListener
                 {
                     FileObject file = provider.createData(content, fileType); 
                     OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    content.save(os, "New comment content created");
+                    provider.getFactory().save(content, os, "New Comment Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Comment content saved with title: " + title);  

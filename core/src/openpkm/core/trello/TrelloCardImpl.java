@@ -7,8 +7,6 @@ package openpkm.core.trello;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -24,13 +22,13 @@ import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardFactory;
-import openpkm.trello.TrelloCardProvider;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoFactory;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
+import openpkm.trello.TrelloCardProvider;
 
 /**
  *
@@ -129,13 +127,6 @@ public class TrelloCardImpl implements TrelloCard
         SourceState oldValue = getState();
         state = SourceState.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-    }  
-
-    @Override
-    public void save(OutputStream os, String comments) throws IOException
-    {
-        props.store(os, comments); 
-        LOG.info("Trello Card Properties saved");      
     }  
 
     @Override

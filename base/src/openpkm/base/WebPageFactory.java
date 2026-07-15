@@ -12,7 +12,7 @@ import java.util.Properties;
  *
  * @author Rok Koren
  */
-public interface WebPageFactory
+public interface WebPageFactory extends SourceFactory<WebPage>
 {
     String PROP_TYPE = "web.page.type";    
     

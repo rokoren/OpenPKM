@@ -173,7 +173,7 @@ public class BookAction implements ActionListener
                 {
                     FileObject file = provider.createData(reference, fileType); 
                     OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    reference.save(os, "New Book Created by Wizard");
+                    provider.getFactory().save(reference, os, "New Book Reference created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Book reference saved with title: " + title);    

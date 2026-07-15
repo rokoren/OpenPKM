@@ -2,56 +2,56 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.reference;
+package openpkm.youtube;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
+import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.util.ImageUtilities;
+import org.openide.util.Lookup;
 
 /**
  *
- * @author Rok Koren
+ * @author rok
  */
-public abstract class ReferenceProvider implements SourceProvider<Reference>
+public abstract class YouTubeChannelProvider implements SourceProvider<YouTubeChannel>
 {
-    protected static final String ROOT_FOLDER = "reference";       
+    protected static final String ROOT_FOLDER = "youtube-channel";       
 
-    protected Map<String, Reference> references; 
+    protected Map<String, YouTubeChannel> channels; 
     protected FileObject rootDir; 
 
-    protected final ReferenceFactory factory;
+    protected final YouTubeChannelFactory factory;
 
-    public ReferenceProvider(ReferenceFactory factory) 
+    public YouTubeChannelProvider(YouTubeChannelFactory factory) 
     {
         this.factory = factory;
     } 
     
     @Override
-    public ReferenceFactory getFactory()
+    public YouTubeChannelFactory getFactory()
     {
         return factory;
     }
     
-    public abstract Map<String, Reference> getReferencesById();
+    protected abstract Map<String, YouTubeChannel> getChannelsById();
     
-    public Collection<Reference> getReferences()
+    public Collection<YouTubeChannel> getChannels()
     {
-        return Collections.unmodifiableCollection(getReferencesById().values());
+        return Collections.unmodifiableCollection(getChannelsById().values());
     }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getReferencesById().get(sourceID);
-    }    
+        return getChannelsById().get(sourceID);
+    }  
     
     @Override
     public void deleteSource(String sourceID) throws IOException
@@ -65,7 +65,7 @@ public abstract class ReferenceProvider implements SourceProvider<Reference>
                 file.delete();
             }              
         }  
-    }      
+    }     
 
     @Override
     public String getName() 
@@ -76,18 +76,23 @@ public abstract class ReferenceProvider implements SourceProvider<Reference>
     @Override
     public String getDisplayName() 
     {
-        return "References";
+        return "YouTube Channel";
     }
 
     @Override
     public Icon getIcon(boolean bln) 
     {
-        return new ImageIcon(ImageUtilities.loadImage(Reference.ICON));
+        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+        return provider.getIcon(IconsProvider.ICON.YOUTUBE_CHANNEL);
     }
 
     @Override
     public boolean contains(FileObject file) 
-    {
-        return getReferencesById().containsKey(file.getName());
+{
+        if(file.isData())
+        {
+            return getChannelsById().containsKey(file.getName());                
+        }
+        return false;        
     }      
 }

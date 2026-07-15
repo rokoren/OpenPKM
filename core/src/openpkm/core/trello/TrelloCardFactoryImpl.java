@@ -5,7 +5,10 @@
 package openpkm.core.trello;
 
 import com.julienvey.trello.domain.Card;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Properties;
+import java.util.logging.Logger;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardFactory;
 import org.openide.util.lookup.ServiceProvider;
@@ -16,7 +19,9 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service=TrelloCardFactory.class)
 public class TrelloCardFactoryImpl implements TrelloCardFactory
-{            
+{ 
+    private static final Logger LOG = Logger.getLogger(TrelloCardFactory.class.getName());     
+    
     @Override
     public TrelloCard getCard(Properties props)
     {
@@ -36,5 +41,12 @@ public class TrelloCardFactoryImpl implements TrelloCardFactory
         props.setProperty(PROP_CARD_CLOSED, Boolean.toString(card.isClosed()));
         props.setProperty(PROP_CARD_SUBSCRIBED, Boolean.toString(card.isSubscribed()));
         return getCard(props);
+    }   
+    
+    @Override
+    public void save(TrelloCard card, OutputStream os, String comments) throws IOException
+    {
+        card.getProperties().store(os, comments); 
+        LOG.info("Trello Card saved");
     }     
 }

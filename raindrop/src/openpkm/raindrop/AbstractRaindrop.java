@@ -9,7 +9,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -449,13 +448,6 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     {    
         return ImageUtilities.loadImage(ICON); 
     }
-    
-    @Override
-    public void save(OutputStream os, String comments) throws IOException
-    {
-        props.store(os, comments); 
-        LOG.info("Raindrop saved");
-    }  
     
     @Override
     public String preferredID() 

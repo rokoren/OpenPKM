@@ -166,7 +166,7 @@ public class DocumentAction implements ActionListener
                 {
                     FileObject file = provider.createData(content, fileType); 
                     OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    content.save(os, "New document content created");
+                    provider.getFactory().save(content, os, "New Document Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Document content saved with title: " + title);   

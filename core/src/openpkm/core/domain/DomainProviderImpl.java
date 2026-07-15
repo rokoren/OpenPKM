@@ -5,8 +5,6 @@
 package openpkm.core.domain;
 
 import java.beans.PropertyChangeSupport;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -57,11 +55,6 @@ public class DomainProviderImpl implements DomainProvider
 
         @Override
         public LocalDateTime getTimeCreated() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-
-        @Override
-        public void save(OutputStream os, String comments) throws IOException {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
 

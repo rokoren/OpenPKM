@@ -4,8 +4,6 @@
  */
 package openpkm.base;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDateTime;
 import org.openide.util.Lookup;
 
@@ -22,7 +20,6 @@ public interface Source extends Lookup.Provider
     String getSourceID();
     String getAppID();
     LocalDateTime getTimeCreated(); 
-    void save(OutputStream os, String comments) throws IOException; 
     void markModified();      
     void notifyDeleted();
     SourceState getState();

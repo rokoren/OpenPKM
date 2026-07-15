@@ -67,7 +67,6 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
-import openpkm.base.Domain;
 import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
@@ -88,6 +87,7 @@ import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
 import openpkm.base.WatchLaterSupport;
+import openpkm.domain.Domain;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.utils.FileUtils;
@@ -141,7 +141,7 @@ import openpkm.reference.ReferenceFactory;
  *
  * @author Rok Koren
  */
-public class YouTubeChannelProject implements Domain, YouTubeChannel, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, PropertiesProvider, SourceProviders, BatchUpdateSupport
 {    
     public static final String PROP_LAST_UPLOAD_TIME = "last.upload.time";    
     
@@ -169,7 +169,8 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
     private final Properties props;
     private final PropertyChangeSupport propertyChangeSupport;
     
-    private Lookup lkp;  
+    private Lookup lkp; 
+    private SourceState sourceState;      
     private FileObject dataDir;
     private LocalFileSystem fileSystem;   
     
@@ -291,12 +292,32 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
         return lkp;
     }      
 
-// TODO Domain  
-    
     @Override
-    public String getDomainID() 
+    public String getSourceID()
     {
         return getChannelID();
+    } 
+
+    @Override
+    public SourceState getState()
+    {
+        return sourceState;
+    }
+
+    @Override
+    public void markModified()
+    {
+        SourceState oldValue = getState();
+        sourceState = SourceState.MODIFIED;
+        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+    }   
+
+    @Override
+    public void notifyDeleted()
+    {
+        SourceState oldValue = getState();
+        sourceState = SourceState.DELETED;
+        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }    
     
     @Override
@@ -2349,7 +2370,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Raindrop project: " + getTitle());
+                                    factory.save(reference, os, "Updated by Raindrop project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -2571,7 +2592,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    video.save(os, "Updated by YouTube Channel project: " + getTitle());
+                                    factory.save(video, os, "Updated by YouTube Channel project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -2870,7 +2891,7 @@ public class YouTubeChannelProject implements Domain, YouTubeChannel, Properties
                                     if(root != null)
                                     {  
                                         OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                                        video.save(os, "New YouTube Video Created");
+                                        factory.save(video, os, "New YouTube Video Created");
                                         os.close();  
                                     }                                 
 

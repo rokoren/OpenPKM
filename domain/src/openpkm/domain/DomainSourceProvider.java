@@ -9,12 +9,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.util.*;
 
 /**
  *

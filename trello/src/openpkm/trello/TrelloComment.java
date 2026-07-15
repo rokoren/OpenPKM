@@ -5,13 +5,14 @@
 package openpkm.trello;
 
 import java.time.LocalDateTime;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloComment extends Source
+public interface TrelloComment extends Source, PropertiesProvider
 {
     String getActionID();
     String getCardID();

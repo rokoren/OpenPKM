@@ -37,7 +37,7 @@ import openpkm.trello.TrelloCardProvider;
 
 /**
  *
- * @author Trafalgar
+ * @author Rok Koren
  */
 @ActionID(
         category = "OpenPKM/Trello/Card",

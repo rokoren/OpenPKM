@@ -159,7 +159,7 @@ public class IdeaAction implements ActionListener
                 {
                     FileObject file = provider.createData(content, fileType); 
                     OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    content.save(os, "New idea content created");
+                    provider.getFactory().save(content, os, "New Idea Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Idea content saved with title: " + title); 

@@ -33,6 +33,7 @@ public abstract class ContentProvider implements SourceProvider<Content>
         this.factory = factory;
     }
     
+    @Override
     public ContentFactory getFactory()
     {
         return factory;

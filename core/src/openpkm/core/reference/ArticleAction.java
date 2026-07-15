@@ -161,7 +161,7 @@ public class ArticleAction implements ActionListener
                 {
                     FileObject file = provider.createData(reference, fileType); 
                     OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    reference.save(os, "New Article Created by Wizard");
+                    provider.getFactory().save(reference, os, "New Article Reference created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Article reference saved with title: " + title); 

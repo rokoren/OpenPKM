@@ -216,7 +216,7 @@ public final class YouTubeVideoAction implements ActionListener
                 {
                     FileObject file = provider.createData(video, fileType); 
                     OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
-                    video.save(os, "New YouTube Video Created by Wizard");
+                    provider.getFactory().save(video, os, "New YouTube Video Created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("YouTube video saved with title: " + title);                         

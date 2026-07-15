@@ -33,6 +33,7 @@ public abstract class WebPageProvider implements SourceProvider<WebPage>
         this.factory = factory;
     } 
     
+    @Override
     public WebPageFactory getFactory()
     {
         return factory;

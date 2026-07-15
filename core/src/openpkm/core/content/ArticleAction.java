@@ -156,7 +156,7 @@ public class ArticleAction implements ActionListener
                 {
                     FileObject file = provider.createData(content, fileType); 
                     OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    content.save(os, "New article content created");
+                    provider.getFactory().save(content, os, "New Article Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Article content saved with title: " + title);   

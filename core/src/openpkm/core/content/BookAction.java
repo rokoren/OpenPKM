@@ -168,7 +168,7 @@ public class BookAction implements ActionListener
                 {
                     FileObject file = provider.createData(content, fileType); 
                     OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    content.save(os, "New book content created");
+                    provider.getFactory().save(content, os, "New Book Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Book content saved with title: " + title);  

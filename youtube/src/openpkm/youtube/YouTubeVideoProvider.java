@@ -22,7 +22,7 @@ import org.openide.util.Lookup;
  */
 public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVideo>
 {
-    protected static final String ROOT_FOLDER = "youtube";       
+    protected static final String ROOT_FOLDER = "youtube-video";       
 
     protected Map<String, YouTubeVideo> videos; 
     protected FileObject rootDir; 
@@ -34,6 +34,7 @@ public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVide
         this.factory = factory;
     } 
     
+    @Override
     public YouTubeVideoFactory getFactory()
     {
         return factory;
@@ -75,7 +76,7 @@ public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVide
     @Override
     public String getDisplayName() 
     {
-        return "YouTube";
+        return "YouTube Video";
     }
 
     @Override

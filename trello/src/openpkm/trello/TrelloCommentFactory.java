@@ -5,12 +5,13 @@
 package openpkm.trello;
 
 import com.julienvey.trello.Trello;
+import openpkm.base.SourceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCommentFactory 
+public interface TrelloCommentFactory extends SourceFactory<TrelloComment>
 {
     TrelloComment getComment(TrelloAction action, Trello trello, TrelloAccount account);
 }

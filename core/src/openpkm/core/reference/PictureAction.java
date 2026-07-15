@@ -151,8 +151,8 @@ public class PictureAction implements ActionListener
                 try
                 {
                     FileObject file = provider.createData(reference, fileType); 
-                    OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    reference.save(os, "New picture Created by Wizard");
+                    OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION); 
+                    provider.getFactory().save(reference, os, "New Picture Reference created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Picture reference saved with title: " + title);   

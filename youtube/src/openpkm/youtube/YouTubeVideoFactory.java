@@ -5,15 +5,16 @@
 package openpkm.youtube;
 
 import java.util.Properties;
+import openpkm.base.SourceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public interface YouTubeVideoFactory 
+public interface YouTubeVideoFactory extends SourceFactory<YouTubeVideo> 
 {
     YouTubeVideo getVideo(Properties props, Type type);       
-    YouTubeVideo getVideo(String videoID, Type type);  
+    YouTubeVideo getVideo(String videoID, Type type);     
     
     public enum Type 
     {

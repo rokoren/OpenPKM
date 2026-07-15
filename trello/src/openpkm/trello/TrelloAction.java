@@ -11,7 +11,7 @@ import openpkm.base.PropertiesProvider;
  *
  * @author Rok Koren
  */
-public interface TrelloAction  extends PropertiesProvider
+public interface TrelloAction extends PropertiesProvider
 {
     String getActionID();
     String getActionType();

@@ -1620,7 +1620,7 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    link.save(os, "Updated by Twitter project: " + getTitle());
+                                    factory.save(link, os, "Updated by Twitter project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1834,7 +1834,7 @@ public class TwitterProject implements Domain, TwitterUser, PropertiesProvider, 
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Twitter project: " + getTitle());
+                                    factory.save(reference, os, "Updated by Twitter project: " + getTitle());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)

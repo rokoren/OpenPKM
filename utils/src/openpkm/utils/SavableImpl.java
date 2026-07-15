@@ -65,7 +65,7 @@ public class SavableImpl extends AbstractSavable
             throw new FileNotFoundException("File Not Found");
         }
         OutputStream os = file.getOutputStream();
-        source.save(os, evt.getPropertyName());
+        provider.getFactory().save(source, os, evt.getPropertyName());
         os.close(); 
     }
 

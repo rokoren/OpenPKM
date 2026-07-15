@@ -282,7 +282,7 @@ public class YouTubeVideoDownloadAction implements ActionListener
                     {
                         FileObject file = provider.createData(reference, fileType); 
                         OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                        reference.save(os, "New video Created by Wizard");
+                        provider.getFactory().save(reference, os, "New Video Reference created by Wizard");
                         os.close();  
 
                         StatusDisplayer.getDefault().setStatusText("Video reference saved with title: " + title);  

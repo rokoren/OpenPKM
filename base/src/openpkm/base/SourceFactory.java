@@ -4,14 +4,14 @@
  */
 package openpkm.base;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  *
- * @author Rok Koren
+ * @author rok
  */
-public interface Content extends Source, PropertiesProvider
+public interface SourceFactory<T extends Source> 
 {
-    String PROP_CONTENT_CREATOR = "content.creator";
-    
-    String getCreator();
-    void setCreator(String creator);
+    void save(T source, OutputStream os, String comments) throws IOException;      
 }

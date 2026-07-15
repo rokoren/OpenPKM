@@ -110,7 +110,7 @@ public class TrelloCommentActionsProvider extends AbstractCommentActionsProvider
                             FileSystem fs = root.getFileSystem();
                             fs.runAtomicAction(() -> {
                                 OutputStream os = root.createAndOpen(comment.getActionID() + "." + PropertiesProvider.EXTENSION);
-                                comment.save(os, "Saved by Add Comment Action");
+                                provider.getFactory().save(comment, os, "Saved by Add Comment Action");
                                 os.close();  
                             });                                                                                                              
                         }

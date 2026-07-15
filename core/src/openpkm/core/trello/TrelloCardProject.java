@@ -141,11 +141,11 @@ import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.cookies.CloseCookie;
 import org.openide.windows.WindowManager;
 import openpkm.trello.TrelloCardFactory;
-import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloLabelProvider;
 import openpkm.trello.TrelloAttachmentFactory;
 import openpkm.trello.TrelloCheckListFactory;
+import openpkm.trello.TrelloCardProvider;
 
 /**
  *
@@ -375,14 +375,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         SourceState oldValue = getState();
         sourceState = SourceState.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-    }      
-    
-    @Override
-    public void save(OutputStream os, String comments) throws IOException
-    {
-        props.store(os, comments); 
-        LOG.info("Trello Card Properties saved");      
-    }      
+    }          
     
     @Override
     public String getAccountUsername()

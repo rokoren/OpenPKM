@@ -20,7 +20,7 @@ import openpkm.trello.TrelloActionFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=TrelloActionFactory.class)
-public class TrelloActionProviderImpl implements TrelloActionFactory
+public class TrelloActionFactoryImpl implements TrelloActionFactory
 {    
     private static final Logger LOG = Logger.getLogger(TrelloActionFactory.class.getName());    
 
@@ -159,5 +159,5 @@ public class TrelloActionProviderImpl implements TrelloActionFactory
         }        
         
         return getAction(props);
-    }      
+    }    
 }

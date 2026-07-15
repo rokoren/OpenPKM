@@ -58,7 +58,7 @@ import openpkm.base.WebPageFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=WebPageFactory.class)
-public class WebPageProviderImpl implements WebPageFactory 
+public class WebPageFactoryImpl implements WebPageFactory 
 {
     private static final Logger LOG = Logger.getLogger(WebPageFactory.class.getName());     
     
@@ -86,9 +86,16 @@ public class WebPageProviderImpl implements WebPageFactory
             }
         }
         return null;
-    }  
+    } 
     
-    private static abstract class AbstractWebPage implements WebPage, TitleProvider, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    @Override
+    public void save(WebPage page, OutputStream os, String comments) throws IOException
+    {
+        page.getProperties().store(os, comments); 
+        LOG.info("Web Page saved");
+    }      
+    
+    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {         
         protected static final Logger LOG = Logger.getLogger(AbstractWebPage.class.getName());     
 
@@ -246,13 +253,6 @@ public class WebPageProviderImpl implements WebPageFactory
             {
                 props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
             }
-        }     
-
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            props.store(os, comments); 
-            LOG.info("Web Page Properties saved");      
         }     
     }  
     

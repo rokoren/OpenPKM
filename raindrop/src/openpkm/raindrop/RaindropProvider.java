@@ -16,7 +16,6 @@ import org.openide.filesystems.FileObject;
  */
 public interface RaindropProvider extends SourceProvider<Raindrop>
 {
-    RaindropFactory getFactory();
     Map<String, Raindrop> getRaindropsById();
     Collection<Raindrop> getRaindrops();
     FileObject createRaindrop(String link, boolean important, List<String> tags, String note);

@@ -8,7 +8,6 @@ import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -36,7 +35,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rokor
  */
-public abstract class AbstractReference implements Reference, TitleProvider, PropertiesProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
+public abstract class AbstractReference implements Reference, TitleProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
 {
     public static final String EXT_GIF = "gif";
     public static final String EXT_JPG = "jpg";
@@ -201,13 +200,6 @@ public abstract class AbstractReference implements Reference, TitleProvider, Pro
             props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
         }
     }     
-
-    @Override
-    public void save(OutputStream os, String comments) throws IOException
-    {
-        props.store(os, comments);
-        LOG.info("Reference Properties saved");      
-    }  
 
     protected FileObject getFile(AbstractFilesProvider provider) throws IOException
     {

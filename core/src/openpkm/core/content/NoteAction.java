@@ -151,7 +151,7 @@ public class NoteAction implements ActionListener
                 {
                     FileObject file = provider.createData(content, fileType); 
                     OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    content.save(os, "New note content created");
+                    provider.getFactory().save(content, os, "New Note Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Note content saved with title: " + title); 

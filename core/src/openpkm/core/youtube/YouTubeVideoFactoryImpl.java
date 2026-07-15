@@ -60,7 +60,7 @@ import openpkm.youtube.YouTubeVideoFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=YouTubeVideoFactory.class)
-public class YouTubeVideoProviderImpl implements YouTubeVideoFactory
+public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
 {
     private static final Logger LOG = Logger.getLogger(YouTubeVideoFactory.class.getName());     
     
@@ -202,7 +202,7 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoFactory
             }                 
         }
         catch (IOException e)
-        {
+        {   
             LOG.warning(e.getMessage());   
         }
         catch (GeneralSecurityException e)
@@ -210,7 +210,14 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoFactory
             LOG.warning(e.getMessage());  
         }                                        
         return null;
-    }    
+    }  
+    
+    @Override
+    public void save(YouTubeVideo video, OutputStream os, String comments) throws IOException
+    {
+        video.getProperties().store(os, comments); 
+        LOG.info("YouTube Video saved");
+    }     
  
     private static class WatchLaterImpl extends StandardImpl implements WatchLater
     {    
@@ -592,13 +599,6 @@ public class YouTubeVideoProviderImpl implements YouTubeVideoFactory
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.YOUTUBE_VIDEO);
         }     
-
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            props.store(os, comments); 
-            LOG.info("YouTube video saved");
-        } 
         
         @Override
         public String preferredID() 

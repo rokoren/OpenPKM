@@ -12,9 +12,11 @@ import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.IconProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.RemoteDataProvider;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAction;
@@ -32,6 +34,8 @@ import openpkm.trello.TrelloCommentFactory;
 @ServiceProvider(service=TrelloCommentFactory.class)
 public class TrelloCommentFactoryImpl implements TrelloCommentFactory
 {
+    private static final Logger LOG = Logger.getLogger(TrelloCommentFactory.class.getName());    
+    
     @Override
     public TrelloComment getComment(TrelloAction action, Trello trello, TrelloAccount account) 
     {
@@ -41,6 +45,13 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         }
         return null;
     }  
+    
+    @Override
+    public void save(TrelloComment comment, OutputStream os, String comments) throws IOException
+    {
+        comment.getProperties().store(os, comments); 
+        LOG.info("Trello comment saved");
+    }    
     
     private static final class TrelloCommentImpl implements TrelloComment, RemoteDataProvider, DisplayNameProvider, IconProvider
     {
@@ -61,6 +72,12 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
             this.account = account;
             propertyChangeSupport = new PropertyChangeSupport(this);                       
         } 
+        
+        @Override
+        public Properties getProperties() 
+        {
+            return comment.getProperties();
+        }        
         
         @Override
         public Lookup getLookup() 
@@ -140,13 +157,6 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         {
             return comment.getActionDate();
         }        
-        
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            comment.getProperties().store(os, comments); 
-            LOG.info("Trello comment saved");
-        } 
       
 // RemoteDataProvider        
         
@@ -178,6 +188,11 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         public Image getIcon(int type) 
         {
             return comment.getIcon(type);
+        }
+
+        @Override
+        public void merge(PropertiesProvider provider) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
     }      
 }

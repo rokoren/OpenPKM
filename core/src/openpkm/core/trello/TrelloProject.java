@@ -23,8 +23,6 @@ import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -917,7 +915,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {
             this.list = list;
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(TrelloCardProviderImpl.PROP_TRELLO_SYNC_CARD, this);
+            propertyChangeSupport.addPropertyChangeListener(TrelloCardProvider.PROP_TRELLO_SYNC_CARD, this);
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
         }
         
@@ -1017,7 +1015,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {
-            if(evt.getPropertyName().equals(TrelloCardProviderImpl.PROP_TRELLO_SYNC_CARD))
+            if(evt.getPropertyName().equals(TrelloCardProvider.PROP_TRELLO_SYNC_CARD))
             {
                 changeSupport.fireChange();  
             }
@@ -1037,30 +1035,15 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO TrelloCardsProvider
     
-    private final class TrelloCardProviderImpl implements TrelloCardProvider, FileChangeListener, Runnable
+    private final class TrelloCardProviderImpl extends TrelloCardProvider implements FileChangeListener, Runnable
     { 
         @StaticResource()
-        private static final String ICON = "openpkm/core/resources/panel.png";         
-        
-        private static final String PROP_TRELLO_SYNC_CARD = "trello.sync.card"; 
-        
-        private static final String ROOT_FOLDER = "cards";          
-        
-        private Map<String, TrelloCard> cards; 
-        private FileObject rootDir;            
-        
-        private final TrelloCardFactory factory;    
+        private static final String ICON = "openpkm/core/resources/panel.png";           
 
         public TrelloCardProviderImpl(TrelloCardFactory factory)
         {
-            this.factory = factory;
+            super(factory);
             RP.post(this);                              
-        } 
-        
-        @Override
-        public TrelloCardFactory getFactory()
-        {
-            return factory;
         }         
         
         @Override
@@ -1091,41 +1074,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         public void removeSourceListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
-        
-        @Override
-        public String getName()
-        {
-            return ROOT_FOLDER;
-        }       
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "Cards";
-        }                
-        
-        @Override
-        public Source getSource(String sourceID)
-        {
-            return getCardsById().get(sourceID);
-        }    
-        
-        @Override
-        public void deleteSource(String sourceID) throws IOException
-        {
-            FileObject root = getRootFolder();
-            if(root != null)
-            {
-                FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
-                if(file != null)
-                {  
-                    // TODO Call Trello API to delete card
-                    
-                    file.delete();
-                }              
-            }  
-        }        
+        }                         
         
         @Override
         public FileObject createData(TrelloCard card, FileTypeProvider fileTypeProvider) throws IOException     
@@ -1160,7 +1109,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             return rootDir;
         }               
         
-        private synchronized Map<String, TrelloCard> getCardsById()
+        @Override
+        public synchronized Map<String, TrelloCard> getCardsById()
         {
             if(cards == null)
             {
@@ -1230,7 +1180,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 if(state == SourceState.MODIFIED)
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    card.save(os, "Updated by Trello project: " + getBoardName());
+                                    factory.save(card, os, "Updated by Trello project: " + getBoardName());
                                     os.close();
                                 }
                                 else if(state == SourceState.DELETED)
@@ -1247,12 +1197,6 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 }                
             }
         }        
-
-        @Override
-        public Collection<TrelloCard> getCards()
-        {
-            return Collections.unmodifiableCollection(getCardsById().values());
-        }  
         
         @Override
         public void createLink(TrelloList list, String url)
@@ -1284,7 +1228,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                     fs.runAtomicAction(() -> {
                         FileObject file = root.createData(card.getCardID(), PropertiesProvider.EXTENSION);
                         OutputStream os = file.getOutputStream();
-                        card.save(os, "Saved by Trello project: " + getBoardName());
+                        factory.save(card, os, "Saved by Trello project: " + getBoardName());
                         os.close();  
                     });                                                             
                 }
@@ -1312,7 +1256,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         FileObject projectDirectory = FileUtil.createFolder(root, card.getCardID());           
                         FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
                         OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                        card.save(os, "OpenPKM Trello Card Project");
+                        factory.save(card, os, "OpenPKM Trello Card Project");
                         //props.store(os, "OpenPKM Trello Card Project"); 
                         os.close();  
                     });                                                             
@@ -1562,7 +1506,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 
                                 FileObject file = root.createData(card.getId(), PropertiesProvider.EXTENSION);
                                 OutputStream os = file.getOutputStream();
-                                trelloCard.save(os, "Saved by Trello project: " + getBoardName());
+                                factory.save(trelloCard, os, "Saved by Trello project: " + getBoardName());
                                 os.close();                                  
                             }
                             else
@@ -1571,7 +1515,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
 
                                 OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                                trelloCard.save(os, "OpenPKM Trello Card Project");
+                                factory.save(trelloCard, os, "OpenPKM Trello Card Project");
                                 //props.store(os, "OpenPKM Trello Card Project"); 
                                 os.close();  
 
@@ -1977,7 +1921,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                     createData(comment, markdown);  
                                     FileObject file = root.createData(comment.getActionID(), PropertiesProvider.EXTENSION);
                                     OutputStream os = file.getOutputStream();
-                                    comment.save(os, "Saved by Trello project: " + getBoardName());
+                                    getFactory().save(comment, os, "Saved by Trello project: " + getBoardName());
                                     os.close();                                 
                                 } 
                                 getActionsById().put(action.getActionID(), action);  

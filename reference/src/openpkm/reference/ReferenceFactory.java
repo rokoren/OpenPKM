@@ -7,16 +7,17 @@ package openpkm.reference;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
+import openpkm.base.SourceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public interface ReferenceFactory 
+public interface ReferenceFactory extends SourceFactory<Reference>
 {    
     String PROP_TYPE  = "reference.type";    
     
-    Reference getReference(Properties props);  
+    Reference getReference(Properties props);         
     
     public enum Type 
     {

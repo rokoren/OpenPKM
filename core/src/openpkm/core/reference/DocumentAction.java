@@ -171,7 +171,7 @@ public class DocumentAction implements ActionListener
                 {
                     FileObject file = provider.createData(reference, fileType); 
                     OutputStream os = root.createAndOpen(reference.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    reference.save(os, "New Document Created by Wizard");
+                    provider.getFactory().save(reference, os, "New Document Reference created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Document reference saved with title: " + title);  

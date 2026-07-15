@@ -44,7 +44,7 @@ import openpkm.base.ContentFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=ContentFactory.class)
-public class ContentProviderImpl implements ContentFactory
+public class ContentFactoryImpl implements ContentFactory
 {
     private static final Logger LOG = Logger.getLogger(ContentFactory.class.getName());     
     
@@ -84,9 +84,16 @@ public class ContentProviderImpl implements ContentFactory
             }
         }
         return null;
-    }  
+    } 
     
-    private static abstract class AbstractContent implements Content, TitleProvider, PropertiesProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    @Override
+    public void save(Content content, OutputStream os, String comments) throws IOException
+    {
+        content.getProperties().store(os, comments); 
+        LOG.info("Content saved");
+    }      
+    
+    private static abstract class AbstractContent implements Content, TitleProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
     {          
         protected static final Logger LOG = Logger.getLogger(AbstractContent.class.getName());     
 
@@ -263,14 +270,7 @@ public class ContentProviderImpl implements ContentFactory
             {
                 props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
             }
-        }     
-
-        @Override
-        public void save(OutputStream os, String comments) throws IOException
-        {
-            props.store(os, comments); 
-            LOG.info("Content Properties saved");      
-        }     
+        }      
     }  
     
     private static final class BookImpl extends AbstractContent implements Book, DescriptionProvider
