@@ -22,8 +22,6 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.DescriptionProvider;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;

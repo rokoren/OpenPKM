@@ -45,8 +45,6 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
@@ -98,20 +96,21 @@ import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
-import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.github.GitHubUser;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.TopComponentProvider;
 import openpkm.base.WebPageFactory;
+import openpkm.domain.Domain;
+import openpkm.github.GitHubProvider;
 import openpkm.reference.ReferenceFactory;
 
 /**
  *
  * @author Rok Koren
  */
-public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class GitHubProject implements Project, Domain, GitHubUser, PropertiesProvider, SourceProviders, BatchUpdateSupport
 {
     private static final String DATA_FOLDER = "data";    
     
@@ -136,7 +135,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
     private final Properties props; 
     private final PropertyChangeSupport propertyChangeSupport;
     
-    private Lookup lkp;  
+    private Lookup lkp;      
     private FileObject dataDir;
     private LocalFileSystem fileSystem; 
     
@@ -240,7 +239,6 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
             list.add(new LogicalViewProviderImpl(this));
             list.add(new GitHubCustomizerProvider(this));  
 
-            list.add(new DomainsProviderImpl()); 
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
@@ -257,13 +255,29 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         return lkp;
     }      
 
-// TODO Domain  
-    
     @Override
-    public String getDomainID() 
+    public String getSourceID()
     {
         return getUserID();
-    }    
+    } 
+
+    @Override
+    public SourceState getState()
+    {
+        return null;
+    }
+
+    @Override
+    public void markModified()
+    {
+        state.markModified();
+    }   
+
+    @Override
+    public void notifyDeleted()
+    {
+        state.notifyDeleted();
+    }  
     
     @Override
     public String getAppID() 
@@ -878,7 +892,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
                     try
                     {
                         Project project = ProjectManager.getDefault().findProject(parent);
-                        DomainsProvider provider = project.getLookup().lookup(DomainsProvider.class);
+                        GitHubProvider provider = project.getLookup().lookup(GitHubProvider.class);
                         if(provider != null)
                         {
                             return project;                        
@@ -906,143 +920,7 @@ public class GitHubProject implements Domain, GitHubUser, PropertiesProvider, So
         {
             return getProject(getProjectDirectory());
         }          
-    }  
-    
-// TODO DomainsProvider
-
-    private final class DomainsProviderImpl implements DomainsProvider
-    {                        
-        private static final String ROOT_FOLDER = "domain";          
-        
-        private Map<String, Domain> domains; 
-        private FileObject rootDir;            
-        
-        private final ChangeSupport changeSupport;              
-
-        public DomainsProviderImpl()
-        {
-            changeSupport = new ChangeSupport(this); 
-        } 
-        
-        @Override
-        public synchronized FileObject getRootDirectory() throws IOException
-        {
-            if(rootDir == null)
-            {
-                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
-                if(rootDir == null)
-                {
-                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                    LOG.info("Domain dir created: " + rootDir.getPath());                        
-                }                 
-            }                           
-            return rootDir;       
-        }         
-        
-        private synchronized Map<String, Domain> getDomainsById()
-        {
-            if(domains == null)
-            {
-                domains = new HashMap<>();
-                try
-                {
-                    for (FileObject fo : getRootDirectory().getChildren()) 
-                    {
-                        if(fo.isFolder())
-                        {
-                            Project project = ProjectManager.getDefault().findProject(fo);
-                            if(project instanceof Domain domain)
-                            {
-                                domains.put(domain.getDomainID(), domain);
-                            }                                                                                    
-                        }
-                        else
-                        {
-                            DataObject data = DataObject.find(fo);
-                            Domain domain = data.getLookup().lookup(Domain.class);
-                            if(domain != null)
-                            {
-                                domains.put(domain.getDomainID(), domain);
-                            }                            
-                        }                                                                                                                                            
-                    }                      
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                              
-            }
-            return domains;
-        }  
-
-        @Override
-        public Collection<Domain> getDomains()
-        {
-            return Collections.unmodifiableCollection(getDomainsById().values());
-        }
-        
-        @Override
-        public void addDomain(Domain domain)
-        {
-            getDomainsById().put(domain.getDomainID(), domain);
-            changeSupport.fireChange();            
-        }
-        
-        @Override
-        public void removeDomain(String domainID)
-        {
-            Domain domain = getDomainsById().remove(domainID);
-            if(domain != null)
-            {
-                changeSupport.fireChange();                            
-            }
-        }        
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Domain"));         
-            return actions;
-        }        
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return GitHubProject.this;
-        }                        
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }   
-
-        @Override
-        public String getName() 
-        {
-            return "domain";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "Domains";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.DOMAINS);
-        }               
-    }     
+    }    
     
 // TODO DataGroup
     

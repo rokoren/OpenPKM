@@ -8,10 +8,13 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import javax.tools.FileObject;
+import javax.swing.Icon;
+import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
+import org.openide.filesystems.FileObject;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -80,7 +83,7 @@ public abstract class FacebookProvider implements SourceProvider<FacebookPage>
     public Icon getIcon(boolean bln) 
     {
         IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-        return provider.getIcon(IconsProvider.ICON.BLOG);
+        return provider.getIcon(IconsProvider.ICON.FACEBOOK);
     }
 
     @Override
@@ -88,7 +91,7 @@ public abstract class FacebookProvider implements SourceProvider<FacebookPage>
 {
         if(file.isData())
         {
-            return getBlogsById().containsKey(file.getName());                
+            return getPagesById().containsKey(file.getName());                
         }
         return false;        
     }     

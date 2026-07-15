@@ -19,17 +19,18 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.DescriptionProvider;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.github.GitHubProvider;
 import openpkm.github.GitHubUser;
 import org.kohsuke.github.GHUser;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -55,9 +56,9 @@ public class GitHubAction implements ActionListener
 {    
     private static final Logger LOG = Logger.getLogger(GitHubAction.class.getName());     
     
-    private final DomainsProvider provider;
+    private final GitHubProvider provider;
 
-    public GitHubAction(DomainsProvider provider)
+    public GitHubAction(GitHubProvider provider)
     {
         this.provider = provider;
     }
@@ -103,7 +104,7 @@ public class GitHubAction implements ActionListener
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                                  
 
             Properties props = new Properties();
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(GitHubUser.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(GitHubUser.PROP_USER_ID, userID);
             props.setProperty(GitHubUser.PROP_USER_NAME, userName);                        
             props.setProperty(TitleProvider.PROP_TITLE, title);       
@@ -130,7 +131,7 @@ public class GitHubAction implements ActionListener
 
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), userID);           
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), userID);           
                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, GitHubProjectFactory.PROJECT_FOLDER);                   
 
                 OutputStream os = projectFolder.createAndOpen(GitHubProjectFactory.PROJECT_FILE);
@@ -139,17 +140,21 @@ public class GitHubAction implements ActionListener
                                 
                 StatusDisplayer.getDefault().setStatusText("OpenPKM GitHub Project saved: " + title); 
 
-                Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                if(project != null)
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open GitHub in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
-                    Domain domain = project.getLookup().lookup(Domain.class);
-                    if(domain != null)
+                    try
                     {
-                        provider.addDomain(domain);
-                        /*
-                        Project[] projects = {domain};
-                        OpenProjects.getDefault().open(projects, false);   
-                        */
+                        Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                        if(project != null)
+                        {
+                            Project[] projects = {project};
+                            OpenProjects.getDefault().open(projects, false);   
+                        }                          
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
                     }
                 }                  
             }

@@ -2,53 +2,56 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.domain;
+package openpkm.github;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import javax.swing.Icon;
+import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author rok
  */
-public abstract class DomainSourceProvider implements SourceProvider<Domain>
+public abstract class GitHubProvider implements SourceProvider<GitHubUser>
 {
-    protected static final String ROOT_FOLDER = "domain";       
+    protected static final String ROOT_FOLDER = "github";       
 
-    protected Map<String, Domain> domains; 
+    protected Map<String, GitHubUser> users; 
     protected FileObject rootDir; 
 
-    protected final DomainProvider provider;
+    protected final GitHubFactory factory;
 
-    public DomainSourceProvider(DomainProvider provider) 
+    public GitHubProvider(GitHubFactory factory) 
     {
-        this.provider = provider;
+        this.factory = factory;
     } 
     
-    public DomainProvider getDomainProvider()
+    @Override
+    public GitHubFactory getFactory()
     {
-        return provider;
+        return factory;
     }
     
-    public abstract Map<String, Domain> getDomainsById();
+    protected abstract Map<String, GitHubUser> getUsersById();
     
-    public Collection<Domain> getDomains()
+    public Collection<GitHubUser> getUsers()
     {
-        return Collections.unmodifiableCollection(getDomainsById().values());
+        return Collections.unmodifiableCollection(getUsersById().values());
     }
 
     @Override
     public Source getSource(String sourceID) 
     {
-        return getDomainsById().get(sourceID);
-    }    
+        return getUsersById().get(sourceID);
+    }  
     
     @Override
     public void deleteSource(String sourceID) throws IOException
@@ -62,7 +65,7 @@ public abstract class DomainSourceProvider implements SourceProvider<Domain>
                 file.delete();
             }              
         }  
-    }      
+    }     
 
     @Override
     public String getName() 
@@ -73,19 +76,23 @@ public abstract class DomainSourceProvider implements SourceProvider<Domain>
     @Override
     public String getDisplayName() 
     {
-        return "References";
+        return "GitHub";
     }
 
     @Override
     public Icon getIcon(boolean bln) 
     {
-        //return new ImageIcon(ImageUtilities.loadImage(Reference.ICON));
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+        return provider.getIcon(IconsProvider.ICON.GITHUB);
     }
 
     @Override
     public boolean contains(FileObject file) 
-    {
-        return getDomainsById().containsKey(file.getName());
+{
+        if(file.isData())
+        {
+            return getUsersById().containsKey(file.getName());                
+        }
+        return false;        
     }       
 }

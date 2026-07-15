@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/templateTopComponent637.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
@@ -28,7 +28,7 @@ import org.openide.util.NbBundle.Messages;
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
 @TopComponent.Registration(mode = "rightSlidingSide", openAtStartup = false)
-@ActionID(category = "Window", id = "openpkm.core.InstagramTopComponent")
+@ActionID(category = "Window", id = "openpkm.core.domain.InstagramTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
         displayName = "#CTL_InstagramAction",
