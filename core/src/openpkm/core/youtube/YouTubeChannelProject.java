@@ -67,7 +67,6 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
-import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
@@ -154,8 +153,9 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
     private static final int POSITION_LINKS       = 500;
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
-    private static final int POSITION_WATCH_LATER = 800;
-    private static final int POSITION_ARCHIVE     = 900;
+    private static final int POSITION_DOMAINS     = 800;    
+    private static final int POSITION_WATCH_LATER = 900;
+    private static final int POSITION_ARCHIVE     = 1000;    
 
     private static final Logger LOG = Logger.getLogger(YouTubeChannelProject.class.getName());        
     
@@ -284,6 +284,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
             list.add(new LinkProviderImpl());                
             list.add(new PictureProviderImpl()); 
             list.add(new VideoProviderImpl());    
+            list.add(new DomainProviderImpl()); 
             list.add(new ArchiveProviderImpl());             
             list.add(new WatchLaterProviderImpl()); 
             
@@ -1636,7 +1637,115 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
         {
             changeSupport.fireChange();
         }
-    }     
+    }   
+    
+    private final class DomainProviderImpl implements DataGroupProvider, PropertyChangeListener
+    {                        
+        private final ChangeSupport changeSupport; 
+
+        public DomainProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return YouTubeChannelProject.this;
+        }   
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_DOMAIN;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_DOMAIN;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_DOMAIN;
+        }          
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_DOMAINS;
+        }                
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }        
+
+        @Override
+        public String getName() 
+        {
+            return "domain";
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Domain domain = source.getLookup().lookup(Domain.class);
+                        if(domain != null)
+                        {
+                            return true;
+                        }  
+                    }            
+                }                                                               
+            }                                    
+            return false;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            if(evt.getOldValue() instanceof Domain || evt.getNewValue() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }             
+    }       
     
     private final class BookProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
