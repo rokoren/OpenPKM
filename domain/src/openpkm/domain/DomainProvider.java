@@ -14,7 +14,8 @@ import java.util.Properties;
  */
 public interface DomainProvider 
 {
-    String PROP_TYPE  = "domain.type";    
+    String PROP_TYPE  = "domain.type"; 
+    
     
     Domain getDomain(Properties props);  
     

@@ -86,7 +86,11 @@ import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
 import openpkm.base.WatchLaterSupport;
+import openpkm.domain.Blog;
+import openpkm.domain.BlogFactory;
+import openpkm.domain.BlogProvider;
 import openpkm.domain.Domain;
+import openpkm.domain.DomainProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.utils.FileUtils;
@@ -194,6 +198,13 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
             SourceProvider provider = new YouTubeVideoProviderImpl(youTubeFactory);
             sources.put(provider.getName(), provider);                       
         } 
+        
+        BlogFactory blogFactory = Lookup.getDefault().lookup(BlogFactory.class);
+        if(blogFactory != null)
+        {
+            SourceProvider provider = new BlogProviderImpl(blogFactory);
+            sources.put(provider.getName(), provider);                       
+        }         
     }
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -1276,7 +1287,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
                     try
                     {
                         Project project = ProjectManager.getDefault().findProject(parent);
-                        DomainsProvider provider = project.getLookup().lookup(DomainsProvider.class);
+                        DomainProvider provider = project.getLookup().lookup(DomainProvider.class);
                         if(provider != null)
                         {
                             return project;                        
@@ -3091,7 +3102,202 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
                 RP.post(this);                
             }                                      
         }
-    }           
+    }   
+    
+   private final class BlogProviderImpl extends BlogProvider implements FileChangeListener
+    {
+        public BlogProviderImpl(BlogFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return YouTubeChannelProject.this;
+        } 
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(Blog blog : getBlogs())
+                {
+                    SourceState state = blog.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
+        
+        @Override
+        public synchronized Map<String, Blog> getBlogsById()
+        {
+            if(blogs == null)
+            {
+                blogs = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            Blog blog = factory.getBlog(Utils.getProperties(file)); 
+                            blogs.put(blog.getSourceID(), blog);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return blogs;
+        }                 
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Blog root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
+        public FileObject createData(Blog blog, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, blog.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(blog.getTitle(), blog.getDescription()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                Blog blog = factory.getBlog(Utils.getProperties(file)); 
+                if(blog != null)
+                {
+                    getBlogsById().put(blog.getSourceID(), blog); 
+                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);                       
+                }          
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            Blog blog = getBlogsById().remove(file.getName());  
+            if(blog != null)
+            {
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, blog, null);  
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    }      
 
 // TODO HtmlFilesProvider        
     

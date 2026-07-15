@@ -20,17 +20,18 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.domain.Domain;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
 import openpkm.youtube.YouTubeProjectWizardPanel2;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -151,7 +152,7 @@ public class YouTubeChannelAction implements ActionListener
 
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), channelID);           
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channelID);           
                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, YouTubeChannelProjectFactory.PROJECT_FOLDER);                   
 
                 OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
@@ -160,19 +161,23 @@ public class YouTubeChannelAction implements ActionListener
                                 
                 StatusDisplayer.getDefault().setStatusText("OpenPKM YouTube Channel Project saved: " + title); 
 
-                Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                if(project != null)
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube Channel in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
-                    Domain domain = project.getLookup().lookup(Domain.class);
-                    if(domain != null)
+                    try
                     {
-                        provider.addDomain(domain);
-                        /*
-                        Project[] projects = {domain};
-                        OpenProjects.getDefault().open(projects, false);   
-                        */
+                        Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                        if(project != null)
+                        {
+                            Project[] projects = {project};
+                            OpenProjects.getDefault().open(projects, false);   
+                        }                          
                     }
-                }                  
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }                                                
             }
             catch(IOException e) 
             {

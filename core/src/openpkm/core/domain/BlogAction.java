@@ -21,25 +21,27 @@ import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.Blog;
 import openpkm.base.DescriptionProvider;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
+import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.domain.Blog;
+import openpkm.domain.BlogProvider;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -61,9 +63,9 @@ public class BlogAction implements ActionListener
     
     private static final Logger LOG = Logger.getLogger(BlogAction.class.getName());     
     
-    private final DomainsProvider provider;
+    private final BlogProvider provider;
 
-    public BlogAction(DomainsProvider provider)
+    public BlogAction(BlogProvider provider)
     {
         this.provider = provider;
     }
@@ -98,8 +100,9 @@ public class BlogAction implements ActionListener
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
-            String domainID = null;
+            String blogID = null;
             
+            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
             String url = (String) wiz.getProperty(Blog.PROP_URL);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
             String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
@@ -121,7 +124,7 @@ public class BlogAction implements ActionListener
                         hex.append(String.format("%02x", b));
                     }
 
-                    domainID = hex.toString();                      
+                    blogID = hex.toString();                      
                 } 
                 catch(NoSuchAlgorithmException e)
                 {
@@ -142,7 +145,7 @@ public class BlogAction implements ActionListener
                         hex.append(String.format("%02x", b));
                     }
 
-                    domainID = hex.toString();                      
+                    blogID = hex.toString();                      
                 } 
                 catch(NoSuchAlgorithmException e)
                 {
@@ -151,8 +154,8 @@ public class BlogAction implements ActionListener
             }            
 
             Properties props = new Properties();
-            props.setProperty(Blog.PROP_BLOG_ID, domainID);
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(Blog.PROP_BLOG_ID, blogID);
+            props.setProperty(Blog.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(Blog.PROP_TITLE, title);       
             props.setProperty(Blog.PROP_DESCRIPTION, description);            
             props.setProperty(Blog.PROP_URL, url);  
@@ -180,37 +183,41 @@ public class BlogAction implements ActionListener
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
-            }  
-
-            try
-            {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), domainID);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, BlogProjectFactory.PROJECT_FOLDER);                   
-
-                OutputStream os = projectFolder.createAndOpen(BlogProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM Blog Project"); 
-                os.close(); 
-                                
-                StatusDisplayer.getDefault().setStatusText("OpenPKM Blog Project saved: " + title); 
-
-                Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                if(project != null)
-                {
-                    Domain domain = project.getLookup().lookup(Domain.class);
-                    if(domain != null)
-                    {
-                        provider.addDomain(domain);
-                        /*
-                        Project[] projects = {domain};
-                        OpenProjects.getDefault().open(projects, false);   
-                        */
-                    }
-                }                  
             }
-            catch(IOException e) 
+            
+            FileObject root = provider.getRootFolder();
+            if(root != null)
             {
-                LOG.warning(e.getMessage());
-            }                                              
+                Blog blog = provider.getFactory().getBlog(props);
+                try
+                {
+                    FileObject file = provider.createData(blog, fileType); 
+                    OutputStream os = root.createAndOpen(blog.getBlogID() + "." + PropertiesProvider.EXTENSION);  
+                    provider.getFactory().save(blog, os, "New Blog Created by Wizard");
+                    os.close();  
+
+                    StatusDisplayer.getDefault().setStatusText("Blog saved with title: " + title);                         
+
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Blog in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                             
+                }                    
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }                                                           
         }        
     }  
     

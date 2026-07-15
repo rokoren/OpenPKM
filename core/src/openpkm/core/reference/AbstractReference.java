@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Logger;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
@@ -41,9 +40,7 @@ public abstract class AbstractReference implements Reference, TitleProvider, Ico
     public static final String EXT_JPG = "jpg";
     public static final String EXT_PNG = "png";    
     public static final String EXT_PDF = "pdf";
-    public static final String EXT_MP4 = "mp4";    
-
-    protected static final Logger LOG = Logger.getLogger(AbstractReference.class.getName());     
+    public static final String EXT_MP4 = "mp4";        
 
     protected final Properties props; 
     protected final PropertyChangeSupport propertyChangeSupport;
@@ -267,7 +264,6 @@ public abstract class AbstractReference implements Reference, TitleProvider, Ico
         }
         catch(IOException e)
         {
-            LOG.warning(e.getMessage());
         }
         return null;
     }     
