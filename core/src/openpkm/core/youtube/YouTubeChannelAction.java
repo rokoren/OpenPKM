@@ -25,6 +25,7 @@ import openpkm.base.DomainsProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
 import openpkm.youtube.YouTubeProjectWizardPanel2;
 import org.netbeans.api.project.Project;
@@ -51,9 +52,9 @@ public class YouTubeChannelAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(YouTubeChannelAction.class.getName());    
     
-    private final DomainsProvider provider;
+    private final YouTubeChannelProvider provider;
 
-    public YouTubeChannelAction(DomainsProvider provider) 
+    public YouTubeChannelAction(YouTubeChannelProvider provider) 
     {
         this.provider = provider;
     }

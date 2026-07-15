@@ -68,7 +68,12 @@ public interface GroupProvider
     // NOTES
     DisplayNameProvider DISPLAY_NAME_PROVIDER_NOTE = new DisplayNameProviderImpl("Notes");
     IconProvider ICON_PROVIDER_NOTE = new IconProviderImpl(IconsProvider.ICON.NOTES);    
-    ActionsProvider ACTIONS_PROVIDER_NOTE = new ActionsProviderImpl("Actions/OpenPKM/Note,Actions/OpenPKM/Idea,Actions/OpenPKM/Comment");          
+    ActionsProvider ACTIONS_PROVIDER_NOTE = new ActionsProviderImpl("Actions/OpenPKM/Note,Actions/OpenPKM/Idea,Actions/OpenPKM/Comment");   
+    
+    // DOMAINS
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_DOMAIN = new DisplayNameProviderImpl("Domains");
+    IconProvider ICON_PROVIDER_DOMAIN = new IconProviderImpl(IconsProvider.ICON.DOMAINS);    
+    ActionsProvider ACTIONS_PROVIDER_DOMAIN = new ActionsProviderImpl("Actions/OpenPKM/Domain");     
     
     String getName();  
     Lookup.Provider getProvider();     

@@ -162,6 +162,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private static final int POSITION_LINKS     = 500;
     private static final int POSITION_PICTURES  = 600;    
     private static final int POSITION_VIDEOS    = 700;
+    private static final int POSITION_DOMAINS   = 800;    
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
@@ -320,7 +321,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 list.add(new GtdProjectsProviderImpl());  
                 */
                 
-                list.add(new DomainsProviderImpl()); 
+                list.add(new DomainProviderImpl()); 
                 list.add(new NotebooksProviderImpl()); 
                 list.add(new HtmlFilesProviderImpl());                                 
                 list.add(new KnowledgeGraphProviderImpl());
@@ -868,142 +869,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             changeSupport.removeChangeListener(listener);
         }
     }     
-  
-// TODO DomainsProvider
-
-    private final class DomainsProviderImpl implements DomainsProvider
-    {                        
-        private static final String ROOT_FOLDER = "domain";          
-        
-        private Map<String, Domain> domains; 
-        private FileObject rootDir;            
-        
-        private final ChangeSupport changeSupport;              
-
-        public DomainsProviderImpl()
-        {
-            changeSupport = new ChangeSupport(this); 
-        } 
-        
-        @Override
-        public synchronized FileObject getRootDirectory() throws IOException
-        {
-            if(rootDir == null)
-            {
-                rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
-                if(rootDir == null)
-                {
-                    rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
-                    LOG.info("Domain dir created: " + rootDir.getPath());                        
-                }                 
-            }                           
-            return rootDir;       
-        }         
-        
-        private synchronized Map<String, Domain> getDomainsById()
-        {
-            if(domains == null)
-            {
-                domains = new HashMap<>();
-                try
-                {
-                    for (FileObject fo : getRootDirectory().getChildren()) 
-                    {
-                        if(fo.isFolder())
-                        {
-                            Project project = ProjectManager.getDefault().findProject(fo);
-                            if(project instanceof Domain domain)
-                            {
-                                domains.put(domain.getDomainID(), domain);
-                            }                                                                                    
-                        }
-                        else
-                        {
-                            DataObject data = DataObject.find(fo);
-                            Domain domain = data.getLookup().lookup(Domain.class);
-                            if(domain != null)
-                            {
-                                domains.put(domain.getDomainID(), domain);
-                            }                            
-                        }                                                                                                                                            
-                    }                      
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                              
-            }
-            return domains;
-        }  
-
-        @Override
-        public Collection<Domain> getDomains()
-        {
-            return Collections.unmodifiableCollection(getDomainsById().values());
-        }
-        
-        @Override
-        public void addDomain(Domain domain)
-        {
-            getDomainsById().put(domain.getDomainID(), domain);
-            changeSupport.fireChange();            
-        }
-        
-        @Override
-        public void removeDomain(String domainID)
-        {
-            Domain domain = getDomainsById().remove(domainID);
-            if(domain != null)
-            {
-                changeSupport.fireChange();                            
-            }
-        }        
-        
-        @Override
-        public List<Action> getActions() 
-        {
-            List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Domain"));         
-            return actions;
-        }        
-        
-        @Override
-        public Lookup.Provider getProvider()
-        {
-            return RaindropProject.this;
-        }                        
-
-        @Override
-        public void addChangeListener(ChangeListener listener) 
-        {
-            changeSupport.addChangeListener(listener);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) 
-        {
-            changeSupport.removeChangeListener(listener);
-        }   
-
-        @Override
-        public String getName() 
-        {
-            return "domain";
-        }
-
-        @Override
-        public String getDisplayName() 
-        {
-            return "Domains";
-        }
-
-        @Override
-        public Image getIcon(boolean hasChildren) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.DOMAINS);
-        }               
-    } 
 
 // TODO BoardsProvider
 
@@ -1143,6 +1008,114 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO DataGroup    
 
+    private final class DomainProviderImpl implements DataGroupProvider, PropertyChangeListener
+    {                        
+        private final ChangeSupport changeSupport; 
+
+        public DomainProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }   
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_DOMAIN;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_DOMAIN;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_DOMAIN;
+        }          
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_DOMAINS;
+        }                
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }        
+
+        @Override
+        public String getName() 
+        {
+            return "domain";
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Domain domain = source.getLookup().lookup(Domain.class);
+                        if(domain != null)
+                        {
+                            return true;
+                        }  
+                    }            
+                }                                                               
+            }                                    
+            return false;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {
+            if(evt.getOldValue() instanceof Domain || evt.getNewValue() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }             
+    }     
+    
     private final class NoteProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
