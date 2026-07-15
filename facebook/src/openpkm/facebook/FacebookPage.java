@@ -5,13 +5,15 @@
 package openpkm.facebook;
 
 import openpkm.base.DescriptionProvider;
+import openpkm.base.PropertiesProvider;
+import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public interface FacebookPage extends TitleProvider, DescriptionProvider
+public interface FacebookPage extends Source, PropertiesProvider, TitleProvider, DescriptionProvider
 {
     String FACEBOOK_URL = "https://facebook.com/";
     
