@@ -45,11 +45,8 @@ import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
@@ -62,7 +59,6 @@ import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
-import openpkm.base.TitleProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WebPage;
@@ -109,18 +105,24 @@ import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
 import openpkm.base.WebPageFactory;
+import openpkm.domain.Blog;
+import openpkm.domain.BlogFactory;
+import openpkm.domain.BlogProvider;
+import openpkm.domain.Domain;
+import openpkm.github.GitHubFactory;
+import openpkm.github.GitHubProvider;
+import openpkm.github.GitHubUser;
 import openpkm.reference.ReferenceFactory;
+import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeChannelFactory;
+import openpkm.youtube.YouTubeChannelProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Domain, TitleProvider, DescriptionProvider, PropertiesProvider, SourceProviders, BatchUpdateSupport
-{  
-    public static final String PROP_HOME_PAGE_ID = "home.page.id";
-    public static final String PROP_URL          = "url"; 
-    public static final String PROP_FAVICON      = "favicon";     
-    
+public class HomePageProject implements Project, Domain, Blog, PropertiesProvider, SourceProviders, BatchUpdateSupport
+{      
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -169,6 +171,26 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
             sources.put(references.getName(), references);            
         }
 
+        YouTubeChannelFactory youTubeChannelFactory = Lookup.getDefault().lookup(YouTubeChannelFactory.class);
+        if(youTubeChannelFactory != null)
+        {
+            SourceProvider provider = new YouTubeChannelProviderImpl(youTubeChannelFactory);
+            sources.put(provider.getName(), provider);                       
+        }  
+        
+        GitHubFactory gitHubFactory = Lookup.getDefault().lookup(GitHubFactory.class);
+        if(gitHubFactory != null)
+        {
+            SourceProvider provider = new GitHubProviderImpl(gitHubFactory);
+            sources.put(provider.getName(), provider);                       
+        }          
+        
+        BlogFactory blogFactory = Lookup.getDefault().lookup(BlogFactory.class);
+        if(blogFactory != null)
+        {
+            SourceProvider provider = new BlogProviderImpl(blogFactory);
+            sources.put(provider.getName(), provider);                       
+        }         
     }
     
     public String getHomePageID() 
@@ -2086,7 +2108,678 @@ public class HomePageProject implements Domain, TitleProvider, DescriptionProvid
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
-    }           
+    }  
+    
+    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener
+    {
+        public YouTubeChannelProviderImpl(YouTubeChannelFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        } 
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(YouTubeChannel channel : getChannels())
+                {
+                    SourceState state = channel.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(channel.getChannelID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(channel, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
+        
+        @Override
+        public synchronized Map<String, YouTubeChannel> getChannelsById()
+        {
+            if(channels == null)
+            {
+                channels = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject fo : folder.getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            try
+                            {
+                                Project project = ProjectManager.getDefault().findProject(fo);  
+                                if(project != null)
+                                {
+                                    YouTubeChannel channel = project.getLookup().lookup(YouTubeChannel.class);
+                                    if(channel != null)
+                                    {
+                                        channels.put(channel.getChannelID(), channel);
+                                    }                                      
+                                }                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                YouTubeChannel channel = factory.getChannel(Utils.getProperties(fo)); 
+                                channels.put(channel.getSourceID(), channel);
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                                                                                                                                                            
+                    }                     
+                }                
+            }
+            return channels;
+        }        
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("YouTube root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
+        public FileObject createData(YouTubeChannel channel, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, channel.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(channel.getTitle(), channel.getDescription()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            FileObject folder = evt.getFile();
+            if(!getChannelsById().containsKey(folder.getName()))
+            {
+                try
+                {
+                    Project project = ProjectManager.getDefault().findProject(folder);
+                    if(project != null)
+                    {
+                        YouTubeChannel channel = project.getLookup().lookup(YouTubeChannel.class);  
+                        if(channel != null)
+                        {
+                            getChannelsById().put(channel.getChannelID(), channel);
+                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);    
+                        }                    
+                    }                
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }  
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                YouTubeChannel channel = factory.getChannel(Utils.getProperties(file)); 
+                if(channel != null)
+                {
+                    getChannelsById().put(channel.getChannelID(), channel); 
+                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);                       
+                }          
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            YouTubeChannel channel = getChannelsById().remove(file.getName());  
+            if(channel != null)
+            {
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, channel, null);  
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    } 
+    
+    private final class GitHubProviderImpl extends GitHubProvider implements FileChangeListener
+    {
+        public GitHubProviderImpl(GitHubFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        } 
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(GitHubUser user : getUsers())
+                {
+                    SourceState state = user.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(user.getUserID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(user, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
+        
+        @Override
+        public synchronized Map<String, GitHubUser> getUsersById()
+        {
+            if(users == null)
+            {
+                users = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject fo : folder.getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            try
+                            {
+                                Project project = ProjectManager.getDefault().findProject(fo);  
+                                if(project != null)
+                                {
+                                    GitHubUser user = project.getLookup().lookup(GitHubUser.class);
+                                    if(user != null)
+                                    {
+                                        users.put(user.getUserID(), user);
+                                    }                                      
+                                }                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                GitHubUser user = factory.getGitHubUser(Utils.getProperties(fo)); 
+                                users.put(user.getUserID(), user);
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                                                                                                                                                            
+                    }                     
+                }                
+            }
+            return users;
+        }        
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("GitHub root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
+        public FileObject createData(GitHubUser user, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, user.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(user.getTitle(), user.getDescription()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            FileObject folder = evt.getFile();
+            if(!getUsersById().containsKey(folder.getName()))
+            {
+                try
+                {
+                    Project project = ProjectManager.getDefault().findProject(folder);
+                    if(project != null)
+                    {
+                        GitHubUser user = project.getLookup().lookup(GitHubUser.class);  
+                        if(user != null)
+                        {
+                            getUsersById().put(user.getUserID(), user);
+                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);    
+                        }                    
+                    }                
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }  
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                GitHubUser user = factory.getGitHubUser(Utils.getProperties(file)); 
+                if(user != null)
+                {
+                    getUsersById().put(user.getUserID(), user); 
+                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);                       
+                }          
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            GitHubUser user = getUsersById().remove(file.getName());  
+            if(user != null)
+            {
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, user, null);  
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    }     
+
+    private final class BlogProviderImpl extends BlogProvider implements FileChangeListener
+    {
+        public BlogProviderImpl(BlogFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        } 
+        
+        @Override
+        public void projectClosed()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(Blog blog : getBlogs())
+                {
+                    SourceState state = blog.getState();
+                    if(state != null)
+                    {
+                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
+                        {
+                            try
+                            {
+                                if(state == SourceState.MODIFIED)
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state == SourceState.DELETED)
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                
+                    }
+                }                
+            }
+        }         
+        
+        @Override
+        public synchronized Map<String, Blog> getBlogsById()
+        {
+            if(blogs == null)
+            {
+                blogs = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            Blog blog = factory.getBlog(Utils.getProperties(file)); 
+                            blogs.put(blog.getSourceID(), blog);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return blogs;
+        }                 
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Blog root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+        
+        @Override
+        public void addSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }
+
+        @Override
+        public void removeSourceListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
+        }          
+        
+        @Override
+        public FileObject createData(Blog blog, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, blog.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(blog.getTitle(), blog.getDescription()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                Blog blog = factory.getBlog(Utils.getProperties(file)); 
+                if(blog != null)
+                {
+                    getBlogsById().put(blog.getSourceID(), blog); 
+                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);                       
+                }          
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            Blog blog = getBlogsById().remove(file.getName());  
+            if(blog != null)
+            {
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, blog, null);  
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    }     
 
 // TODO HtmlFilesProvider        
     
