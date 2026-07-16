@@ -26,11 +26,15 @@ import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.domain.Blog;
+import openpkm.domain.BlogProvider;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -58,9 +62,9 @@ public class HomePageAction implements ActionListener
     
     private static final Logger LOG = Logger.getLogger(HomePageAction.class.getName());     
     
-    private final DomainsProvider provider;
+    private final BlogProvider provider;
 
-    public HomePageAction(DomainsProvider provider)
+    public HomePageAction(BlogProvider provider)
     {
         this.provider = provider;
     }
@@ -95,7 +99,7 @@ public class HomePageAction implements ActionListener
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
-            String domainID = null;
+            String blogID = null;
             
             String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
@@ -106,7 +110,7 @@ public class HomePageAction implements ActionListener
             String canonical = document.select("link[rel=canonical]").attr("href");
             if(canonical != null && !canonical.isBlank())
             {
-                domainID = canonical;
+                blogID = canonical;
             }
             else
             { 
@@ -122,7 +126,7 @@ public class HomePageAction implements ActionListener
                         hex.append(String.format("%02x", b));
                     }
 
-                    domainID = hex.toString();                      
+                    blogID = hex.toString();                      
                 } 
                 catch(NoSuchAlgorithmException e)
                 {
@@ -131,11 +135,11 @@ public class HomePageAction implements ActionListener
             }            
 
             Properties props = new Properties();
-            props.setProperty(HomePageProject.PROP_HOME_PAGE_ID, domainID);
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(TitleProvider.PROP_TITLE, title);       
-            props.setProperty(DescriptionProvider.PROP_DESCRIPTION, description);            
-            props.setProperty(HomePageProject.PROP_URL, url);  
+            props.setProperty(Blog.PROP_BLOG_ID, blogID);
+            props.setProperty(Blog.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(Blog.PROP_TITLE, title);       
+            props.setProperty(Blog.PROP_DESCRIPTION, description);            
+            props.setProperty(Blog.PROP_URL, url);  
             
             String favicon = getFavicon(document);
             if(favicon == null)
@@ -145,7 +149,7 @@ public class HomePageAction implements ActionListener
             
             if(favicon != null)
             {
-                props.setProperty(HomePageProject.PROP_FAVICON, favicon);
+                props.setProperty(Blog.PROP_FAVICON, favicon);
             }
             
             if(topics != null)
@@ -164,7 +168,7 @@ public class HomePageAction implements ActionListener
 
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), domainID);           
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), blogID);           
                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
 
                 OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
@@ -173,17 +177,21 @@ public class HomePageAction implements ActionListener
                                 
                 StatusDisplayer.getDefault().setStatusText("OpenPKM Home Page Project saved: " + title); 
 
-                Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                if(project != null)
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Home Page in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
-                    Domain domain = project.getLookup().lookup(Domain.class);
-                    if(domain != null)
+                    try
                     {
-                        provider.addDomain(domain);
-                        /*
-                        Project[] projects = {domain};
-                        OpenProjects.getDefault().open(projects, false);   
-                        */
+                        Project project = ProjectManager.getDefault().findProject(projectDirectory);
+                        if(project != null)
+                        {
+                            Project[] projects = {project};
+                            OpenProjects.getDefault().open(projects, false);   
+                        }                          
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
                     }
                 }                  
             }
