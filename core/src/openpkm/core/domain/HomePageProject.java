@@ -4,6 +4,10 @@
  */
 package openpkm.core.domain;
 
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.XmlReader;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.beans.BeanInfo;
@@ -25,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
@@ -46,14 +52,17 @@ import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.GroupProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.Link;
+import openpkm.base.NodeProvider;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.Source.SourceState;
+import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
@@ -110,6 +119,9 @@ import openpkm.github.GitHubFactory;
 import openpkm.github.GitHubProvider;
 import openpkm.github.GitHubUser;
 import openpkm.reference.ReferenceFactory;
+import openpkm.rss.RssChannel;
+import openpkm.rss.RssFactory;
+import openpkm.rss.RssProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
@@ -129,7 +141,8 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     private static final int POSITION_LINKS       = 500;
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
-    private static final int POSITION_WATCH_LATER = 800;
+    private static final int POSITION_RSS         = 800;    
+    private static final int POSITION_WATCH_LATER = 900;
 
     private static final Logger LOG = Logger.getLogger(HomePageProject.class.getName());        
     
@@ -636,24 +649,102 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     
 // TODO ProjectOpenedHook    
     
-    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener
+    private final class ProjectOpenedHookImpl extends ProjectOpenedHook implements PropertyChangeListener, Runnable
     {                
+        private RequestProcessor.Task task;          
+        
         @Override
         protected void projectOpened() 
-        {  
+        {
+            task = RP.create(this);   
+            task.schedule(1000);                                      
             propertyChangeSupport.addPropertyChangeListener(this);           
         }
 
         @Override
         protected void projectClosed() 
-        {          
+        {  
+            task.cancel();  
             propertyChangeSupport.removePropertyChangeListener(this);    
             
             for(SourceProvider provider : sources.values())
             {
                 provider.projectClosed();
             }              
-        }                  
+        }  
+        
+        @Override
+        public void run()
+        {  
+            RssProvider provider = getLookup().lookup(RssProvider.class);
+            if(provider != null)
+            {
+                for(RssChannel channel : provider.getChannels())
+                {
+                    try
+                    {
+                        URL url = new URL(channel.getRssUrl());
+                        SyndFeedInput input = new SyndFeedInput();
+                        SyndFeed feed = input.build(new XmlReader(url));
+                        setLink(feed.getLink());
+                        setUri(feed.getUri());
+                        setAuthor(feed.getAuthor());
+                        setCopyright(feed.getCopyright());
+                        setGenerator(feed.getGenerator());
+                        setLanguage(feed.getLanguage());
+                        setManagingEditor(feed.getManagingEditor()); 
+                        setImage(feed.getImage().getUrl());
+                        if(feed.getIcon() != null)
+                        {
+                            setIcon(feed.getIcon().getUrl());                    
+                        }
+
+                        if(feed.getCategories() != null)
+                        {
+                            StringJoiner joiner = new StringJoiner(",");
+                            for(SyndCategory category : feed.getCategories())
+                            {
+                                joiner.add(category.getLabel());
+                            }
+                            setCategory(joiner.toString());                    
+                        }
+
+                        if(isRssFile())
+                        {
+                            FileObject file = getProjectDirectory().getFileObject(RssChannelProjectFactory.PROJECT_FOLDER).getFileObject(RSS_FILE);
+                            if(file == null)
+                            {
+                                file = getProjectDirectory().getFileObject(RssChannelProjectFactory.PROJECT_FOLDER).createData(RSS_FILE);
+                                rssFile(feed, file);
+                            }
+                            else if(DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate()).isAfter(getPublishedDate()))
+                            {
+                                rssFile(feed, file);
+                            }                   
+                        }                               
+
+                        LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
+                        setPublishedDate(publishedDate);                                                      
+                    }
+                    catch (MalformedURLException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                    catch (IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }    
+                    catch (FeedException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    } 
+                    finally
+                    {
+                        task.schedule(100000);
+                    }                      
+                }
+            }                     
+        }          
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
@@ -898,6 +989,253 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
             return getProject(getProjectDirectory());
         }          
     }     
+    
+// TODO SourceGroup    
+    
+    private final class RssProviderImpl extends RssProvider implements SourceGroupProvider, FileChangeListener, Runnable
+    {         
+        private static final String PROP_TRELLO_SYNC_MEMBER = "trello.sync.member";         
+                
+        public RssProviderImpl(RssFactory factory) 
+        {
+            super(factory);   
+            if(getLastSync() == null)
+            {
+                RP.post(this);                
+            }            
+        }         
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        } 
+
+        @Override
+        public DisplayNameProvider getDisplayNameProvider()
+        {
+            return new GroupProvider.DisplayNameProviderImpl(this);
+        }
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return new GroupProvider.IconProviderSourceGroupImpl(this);
+        }        
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return new RssActionsProvider(this);
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_RSS;
+        }  
+
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getIcon(IconsProvider.ICON.RSS_CHANNEL);
+        }                        
+        
+        @Override
+        public SortedSet<NodeProvider> getNodes()
+        {
+            List<NodeProvider> list = getChannels().stream()
+                    .filter(NodeProvider.class::isInstance)
+                    .map(NodeProvider.class::cast)
+                    .toList();        
+            
+            SortedSet<NodeProvider> sorted = new TreeSet<NodeProvider>(NodeProvider.displayNameComparator());
+            sorted.addAll(list);
+            
+            return sorted;
+        }
+        
+        @Override
+        protected synchronized Map<String, RssChannel> getChannelsById()
+        {
+            if(channels == null)
+            {
+                channels = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
+                            channels.put(channel.getRssID(), channel);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return channels;
+        }                
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Reference root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }        
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
+                getChannelsById().put(channel.getRssID(), channel);               
+                changeSupport.fireChange();
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            TrelloLabel label = getLabels().get(file.getName());  
+            if(label != null)
+            {
+                
+            }
+            */
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            RssChannel channel = getChannels().remove(file.getName());  
+            if(channel != null)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }  
+
+        public LocalDateTime getLastSync()
+        {
+            String string = props.getProperty(PROP_TRELLO_SYNC_MEMBER);
+            if(string != null)
+            {
+                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        } 
+
+        public void setLastSync(LocalDateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_TRELLO_SYNC_MEMBER);
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }                
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_MEMBER, oldValue, time); 
+            }
+            else        
+            {
+                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_MEMBER, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
+                if(oldValue != null)
+                {
+                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
+                }
+                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_MEMBER, oldValue, time); 
+            }
+        } 
+        
+        @Override
+        public void run()
+        {
+            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+            if(service != null)
+            {
+                List<TrelloMember> members = service.getMembers(TrelloProject.this, factory, getTrello());
+                for(TrelloMember member : members)
+                {
+                    if(!getMembers().containsKey(member.getMemberID()))
+                    {
+                        try
+                        {
+                            OutputStream os = getRootFolder().createAndOpen(member.getMemberID() + "." + PropertiesProvider.EXTENSION);                            
+                            member.getProperties().store(os, "Created by Trello project: " + getBoardName()); 
+                            os.close();
+                            LOG.info("Trello member saved: " + member.getMemberID());                              
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        } 
+                    }
+                }
+                setLastSync(LocalDateTime.now());
+            }
+        }        
+    }      
     
 // TODO DataGroup
     

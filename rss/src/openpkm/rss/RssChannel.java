@@ -26,7 +26,8 @@ public interface RssChannel extends TitleProvider, DescriptionProvider
     public static final String PROP_LANGUAGE        = "language";
     public static final String PROP_MANAGING_EDITOR = "managing.editor";    
     public static final String PROP_CATEGORY        = "category"; 
-     
+    
+    String getRssID();  
     String getRssUrl();    
     String getLink(); 
     void setLink(String link);  
