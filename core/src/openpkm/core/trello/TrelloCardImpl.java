@@ -22,6 +22,7 @@ import openpkm.base.DisplayNameProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardFactory;
+import openpkm.trello.TrelloCardLink;
 import openpkm.youtube.YouTubeVideo;
 import openpkm.youtube.YouTubeVideoFactory;
 import org.openide.util.ChangeSupport;
@@ -34,7 +35,7 @@ import openpkm.trello.TrelloCardProvider;
  *
  * @author rok
  */
-public class TrelloCardImpl implements TrelloCard
+public class TrelloCardImpl implements TrelloCardLink, PropertyChangeListener
 {
     private static final Logger LOG = Logger.getLogger(TrelloCard.class.getName());   
     
@@ -48,6 +49,7 @@ public class TrelloCardImpl implements TrelloCard
     {
         this.props = props;  
         propertyChangeSupport = new PropertyChangeSupport(this);
+        propertyChangeSupport.addPropertyChangeListener(this);
     }     
 
     @Override
@@ -62,21 +64,14 @@ public class TrelloCardImpl implements TrelloCard
             list.add(new CardComplete());
             Lookup lookup = Lookups.fixed(list.toArray(new Object[list.size()]));  
 
-            if(isCardLink())
+            YouTubeVideoFactory provider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
+            if(provider != null)
             {
-                YouTubeVideoFactory provider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
-                if(provider != null)
+                YouTubeVideo video = provider.getVideo(props, YouTubeVideoFactory.Type.BASIC);
+                if(video != null)
                 {
-                    YouTubeVideo video = provider.getVideo(props, YouTubeVideoFactory.Type.BASIC);
-                    if(video != null)
-                    {
-                        lkp = new ProxyLookup(lookup, Lookups.proxy(video));
-                    }
+                    lkp = new ProxyLookup(lookup, Lookups.proxy(video));
                 }
-            } 
-            else
-            {
-                lkp = lookup;
             }
         }
         return lkp;
@@ -108,23 +103,29 @@ public class TrelloCardImpl implements TrelloCard
     }
 
     @Override
-    public SourceState getState()
+    public boolean isModified() 
     {
-        return state;
+        return state == SourceState.MODIFIED;
     }
 
     @Override
     public void markModified()
     {
-        SourceState oldValue = getState();
+        SourceState oldValue = state;
         state = SourceState.MODIFIED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }   
+    
+    @Override
+    public boolean isDeleted() 
+    {
+        return state == SourceState.DELETED;
+    }    
 
     @Override
     public void notifyDeleted()
     {
-        SourceState oldValue = getState();
+        SourceState oldValue = state;
         state = SourceState.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }  
@@ -334,18 +335,7 @@ public class TrelloCardImpl implements TrelloCard
     public String getCardRole() 
     {
         return props.getProperty(TrelloCardFactory.PROP_CARD_ROLE);
-    }          
-
-    @Override
-    public boolean isCardLink() 
-    {
-        String cardRole = getCardRole();
-        if(cardRole != null)
-        {
-            return cardRole.equalsIgnoreCase(TrelloCardFactory.CARD_ROLE_LINK);
-        }
-        return false;
-    }        
+    }                 
 
     // TODO PropertiesProvider        
 
@@ -361,6 +351,12 @@ public class TrelloCardImpl implements TrelloCard
         Object oldValue = props.clone();
         props.putAll(provider.getProperties());
         //propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) 
+    {
+        markModified();
     }
 
     private final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener

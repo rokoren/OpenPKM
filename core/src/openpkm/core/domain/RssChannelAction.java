@@ -103,13 +103,10 @@ public class RssChannelAction implements ActionListener
             String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
             List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);  
             SyndFeed feed = (SyndFeed) wiz.getProperty("feed");                           
-            
-         
-                                                                                             
+                                                                                                                  
             Properties props = new Properties();
             props.setProperty(RssChannel.PROP_RSS_URL, rssUrl); 
             props.setProperty(RssChannelProject.PROP_RSS_FILE, rssFile);
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(RssChannel.PROP_TITLE, title);       
             props.setProperty(RssChannel.PROP_DESCRIPTION, description);            
             props.setProperty(RssChannel.PROP_LINK, feed.getLink());

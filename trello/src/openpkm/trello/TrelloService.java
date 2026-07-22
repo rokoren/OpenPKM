@@ -33,7 +33,7 @@ public interface TrelloService
     void setCommentText(String cardID, String actionID, String text, Trello trello);    
     List<TrelloCard> getCards(TrelloList trelloList, TrelloCardFactory factory, Trello trello);
     TrelloCard createCard(String listID, String name, TrelloCardFactory factory, TrelloAccount account);
-    TrelloCard createLink(String listID, String url, TrelloCardFactory factory, TrelloAccount account);
+    TrelloCardLink createLink(String listID, String url, TrelloCardFactory factory, TrelloAccount account);
     TrelloCard getCard(String cardID, TrelloCardFactory factory, TrelloAccount account) throws UnirestException;
     List<TrelloAttachment> getAttachments(TrelloCard trelloCard, TrelloAttachmentFactory factory, TrelloAccount account);    
     List<TrelloCheckList> getCheckLists(TrelloCard trelloCard, TrelloCheckListFactory factory, TrelloAccount account);

@@ -83,25 +83,31 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         }
         return lkp;
     }          
-    
-    @Override
-    public SourceState getState()
-    {
-        return state;
-    }
 
+    @Override
+    public boolean isModified() 
+    {
+        return state == SourceState.MODIFIED;
+    }    
+    
     @Override
     public void markModified()
     {
-        SourceState oldValue = getState();
+        SourceState oldValue = state;
         state = SourceState.MODIFIED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }   
     
     @Override
+    public boolean isDeleted() 
+    {
+        return state == SourceState.DELETED;
+    }    
+    
+    @Override
     public void notifyDeleted()
     {
-        SourceState oldValue = getState();
+        SourceState oldValue = state;
         state = SourceState.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }  
@@ -920,7 +926,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         @Override
         public Image getBullet() 
         {
-            if(getState() == SourceState.DELETED)
+            if(isDeleted())
             {
                 IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
                 return provider.getImage(IconsProvider.ICON.BULLET_DELETE);                 

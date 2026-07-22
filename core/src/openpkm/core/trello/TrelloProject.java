@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +42,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.CloseSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.FileTypeProvider;
@@ -100,7 +102,6 @@ import org.openide.windows.TopComponent;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
 import openpkm.base.Source;
-import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
@@ -119,6 +120,7 @@ import openpkm.youtube.YouTubeVideoFactory;
 import openpkm.trello.TrelloActionFactory;
 import openpkm.trello.TrelloCommentFactory;
 import openpkm.trello.TrelloCardFactory;
+import openpkm.trello.TrelloCardLink;
 import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloMemberFactory;
@@ -128,7 +130,7 @@ import openpkm.trello.TrelloListFactory;
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_ACCOUNT_USERNAME  = "account.username";
     public static final String PROP_WORKSPACE_ID      = "workspace.id";    
@@ -214,6 +216,11 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             sources.put(provider.getName(), provider);                       
         }  
     } 
+    
+    public Properties getProperties()
+    {
+        return props;
+    }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -517,21 +524,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }        
-
-// TODO PropertiesProvider
-    
-    @Override
-    public Properties getProperties()
-    {
-        return props;
-    }  
-    
-    @Override
-    public void merge(PropertiesProvider provider)
-    {
-        props.putAll(provider.getProperties());
-    }    
+    }           
     
 // TODO BatchUpdateSupport    
     
@@ -730,13 +723,11 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
         {          
             propertyChangeSupport.removePropertyChangeListener(this);  
             
-            for(SourceGroup sourceGroup : sources.values())
+            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
+            for(CloseSupport provider : providers)
             {
-                if(sourceGroup instanceof SourceProvider provider)
-                {
-                    provider.projectClosed();                    
-                }
-            }             
+                provider.projectClosed();
+            }            
         }                  
 
         @Override
@@ -1035,7 +1026,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO TrelloCardsProvider
     
-    private final class TrelloCardProviderImpl extends TrelloCardProvider implements FileChangeListener, Runnable
+    private final class TrelloCardProviderImpl extends TrelloCardProvider implements FileChangeListener, CloseSupport, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/panel.png";           
@@ -1169,21 +1160,20 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 
                 for(TrelloCard card : getCards())
                 {
-                    SourceState state = card.getState();
-                    if(state != null)
+                    if(card instanceof TrelloCardLink link)
                     {
                         FileObject file = rootDir.getFileObject(card.getSourceID(), PropertiesProvider.EXTENSION);
                         if(file != null)
                         {
                             try
                             {
-                                if(state == SourceState.MODIFIED)
+                                if(link.isModified())
                                 {
                                     OutputStream os = file.getOutputStream();
                                     factory.save(card, os, "Updated by Trello project: " + getBoardName());
                                     os.close();
                                 }
-                                else if(state == SourceState.DELETED)
+                                else if(link.isDeleted())
                                 {
                                     file.delete();
                                 }                                  
@@ -1192,8 +1182,8 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                             {
                                 LOG.warning(e.getMessage());
                             }                             
-                        }                                                                                                
-                    }
+                        }                         
+                    } 
                 }                
             }
         }        
@@ -1206,7 +1196,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
             if(root != null && service != null && markdown != null)
             {
-                TrelloCard card = service.createLink(list.getListID(), url, factory, getTrelloAccount());
+                TrelloCardLink card = service.createLink(list.getListID(), url, factory, getTrelloAccount());
                 String videoID = YouTubeUtils.getVideoID(url);
                 if(videoID != null)
                 {  
@@ -1488,7 +1478,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                         try
                         {
                             TrelloCard trelloCard = service.getCard(card.getId(), factory, getTrelloAccount());
-                            if(trelloCard.isCardLink())
+                            if(trelloCard instanceof TrelloCardLink link)
                             {
                                 String videoID = YouTubeUtils.getVideoID(trelloCard.getCardName());
                                 if(videoID != null)
@@ -1499,7 +1489,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                                         YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoFactory.Type.BASIC);
                                         if(video != null)
                                         {
-                                            trelloCard.merge(video);
+                                            link.merge(video);
                                         }
                                     }
                                 }                                
@@ -1570,7 +1560,7 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
     
 // TODO SourceGroup
 
-    private final class TrelloActionProviderImpl extends TrelloActionProvider implements SourceGroupProvider, IconProvider, FileChangeListener, Runnable
+    private final class TrelloActionProviderImpl extends TrelloActionProvider implements SourceGroupProvider, IconProvider, FileChangeListener, CloseSupport, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
@@ -1682,33 +1672,27 @@ public class TrelloProject implements Notebook, TrelloBoard, PropertiesProvider,
                 
                 for(TrelloAction action : getActions())
                 {
-                    /*
-                    SourceState state = action.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(action.getActionID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(action.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    reference.save(os, "Updated by Blog project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                actionFactory.save(os, "Updated by Blog project: " + getDisplayName());
+                                os.close();
+                            }
+                            else if(action.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
-                    */
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }        

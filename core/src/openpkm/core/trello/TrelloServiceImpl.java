@@ -47,6 +47,7 @@ import openpkm.trello.TrelloCommentFactory;
 import openpkm.trello.TrelloCardFactory;
 import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloAttachmentFactory;
+import openpkm.trello.TrelloCardLink;
 import openpkm.trello.TrelloCheckListFactory;
 import openpkm.trello.TrelloMemberFactory;
 import openpkm.trello.TrelloListFactory;
@@ -563,7 +564,7 @@ public class TrelloServiceImpl implements TrelloService
     } 
     
     @Override
-    public TrelloCard createLink(String listID, String url, TrelloCardFactory factory, TrelloAccount account) throws UnirestException
+    public TrelloCardLink createLink(String listID, String url, TrelloCardFactory factory, TrelloAccount account) throws UnirestException
     {
         HttpResponse<JsonNode> response = Unirest.post("https://api.trello.com/1/cards")
           .header("Accept", "application/json")

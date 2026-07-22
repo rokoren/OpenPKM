@@ -45,6 +45,17 @@ public class FileUtils
     {
         return getFileName(LocalDateTime.now(), folder, extension);
     }   
+
+    public static String getFolderName(LocalDateTime time, FileObject folder)
+    {
+        String name = time.format(DateTimeFormatter.BASIC_ISO_DATE);
+        return FileUtil.findFreeFolderName(folder, name);
+    }   
+    
+    public static String getFolderName(FileObject folder)
+    {
+        return getFolderName(LocalDateTime.now(), folder);
+    } 
     
     private static final class ActionListenerImpl implements ActionListener
     {

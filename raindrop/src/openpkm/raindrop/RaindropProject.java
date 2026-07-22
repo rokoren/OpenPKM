@@ -56,6 +56,7 @@ import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenTopic;
+import openpkm.base.CloseSupport;
 import openpkm.base.Content;
 import openpkm.base.ContentFactory;
 import openpkm.base.DescriptionProvider;
@@ -122,7 +123,6 @@ import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
-import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
@@ -145,7 +145,7 @@ import openpkm.youtube.YouTubeChannelProvider;
  *
  * @author Rok Koren
  */
-public class RaindropProject implements Project, TitleProvider, DescriptionProvider, PropertiesProvider, TagsProvider, SourceProviders, BatchUpdateSupport
+public class RaindropProject implements Project, TitleProvider, DescriptionProvider, TagsProvider, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_RAINDROP_USER_ID         = "raindrop.user.id";    
     public static final String PROP_RAINDROP_COLLECTION_ID   = "raindrop.collection.id";
@@ -432,19 +432,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
     }     
 
-// TODO PropertiesProvider
-    
-    @Override
     public Properties getProperties()
     {
         return props;
     }  
-    
-    @Override
-    public void merge(PropertiesProvider provider)
-    {
-        props.putAll(provider.getProperties());
-    } 
 
 // TODO TagsProvider
 
@@ -608,10 +599,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         { 
             propertyChangeSupport.removePropertyChangeListener(this);
             
-            for(SourceProvider provider : sources.values())
+            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
+            for(CloseSupport provider : providers)
             {
                 provider.projectClosed();
-            }
+            } 
         } 
 
         @Override
@@ -1893,7 +1885,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO SourceGroup    
 
-    private final class ContentProviderImpl extends ContentProvider implements FileChangeListener
+    private final class ContentProviderImpl extends ContentProvider implements FileChangeListener, CloseSupport
     {  
         @StaticResource()
         private static final String ICON = "openpkm/raindrop/resources/book_edit.png";         
@@ -1918,31 +1910,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 for(Content content : getContents())
                 {
-                    SourceState state = content.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(content.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(content.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(content.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(content, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(content, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(content.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    }  
                 }                
             }
         }
@@ -2122,7 +2110,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener, CloseSupport
     {               
         public ReferenceProviderImpl(ReferenceFactory factory) 
         {
@@ -2144,31 +2132,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 for(Reference reference : getReferences())
                 {
-                    SourceState state = reference.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(reference.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(reference, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(reference, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(reference.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }        
@@ -2342,7 +2326,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }          
     } 
     
-    private final class RaindropProviderImpl extends AbstractAction implements RaindropProvider, FileChangeListener, ActionsProvider, Runnable 
+    private final class RaindropProviderImpl extends AbstractAction implements RaindropProvider, FileChangeListener, ActionsProvider, CloseSupport, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
         
@@ -2466,31 +2450,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 for(Raindrop raindrop : getRaindrops())
                 {
-                    SourceState state = raindrop.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(raindrop.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(raindrop.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(raindrop.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(raindrop, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(raindrop, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(raindrop.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }         
@@ -2840,7 +2820,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
     }  
     
-    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements FileChangeListener
+    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements FileChangeListener, CloseSupport
     {
         public YouTubeVideoProviderImpl(YouTubeVideoFactory factory) 
         {
@@ -2862,31 +2842,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 for(YouTubeVideo video : getVideos())
                 {
-                    SourceState state = video.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(video.getVideoID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(video.getVideoID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(video.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(video, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(video, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(video.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }         
@@ -3056,44 +3032,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
-        } 
-        
-        @Override
-        public void projectClosed()
-        {
-            if(rootDir != null)
-            {
-                rootDir.removeFileChangeListener(this);
-                
-                for(YouTubeChannel channel : getChannels())
-                {
-                    SourceState state = channel.getState();
-                    if(state != null)
-                    {
-                        FileObject file = rootDir.getFileObject(channel.getChannelID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {
-                            try
-                            {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(channel, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
-                }                
-            }
         }         
         
         @Override
@@ -3294,44 +3232,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
-        } 
-        
-        @Override
-        public void projectClosed()
-        {
-            if(rootDir != null)
-            {
-                rootDir.removeFileChangeListener(this);
-                
-                for(GitHubUser user : getUsers())
-                {
-                    SourceState state = user.getState();
-                    if(state != null)
-                    {
-                        FileObject file = rootDir.getFileObject(user.getUserID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {
-                            try
-                            {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(user, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
-                }                
-            }
         }         
         
         @Override
@@ -3521,7 +3421,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }         
     }     
 
-    private final class BlogProviderImpl extends BlogProvider implements FileChangeListener
+    private final class BlogProviderImpl extends BlogProvider implements FileChangeListener, CloseSupport
     {
         public BlogProviderImpl(BlogFactory factory) 
         {
@@ -3543,31 +3443,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 for(Blog blog : getBlogs())
                 {
-                    SourceState state = blog.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(blog.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(blog.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }         

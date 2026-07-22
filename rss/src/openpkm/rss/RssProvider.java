@@ -4,10 +4,12 @@
  */
 package openpkm.rss;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
+import openpkm.utils.Utils;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
@@ -32,6 +34,11 @@ public abstract class RssProvider implements SourceGroup
         changeSupport = new ChangeSupport(this); 
     } 
     
+    public RssFactory getFactory()
+    {
+        return factory;
+    }
+    
     protected abstract Map<String, RssChannel> getChannelsById();
     
     public Collection<RssChannel> getChannels()
@@ -51,7 +58,7 @@ public abstract class RssProvider implements SourceGroup
 
     public RssChannel getChannel(String channelID) 
     {
-        return getChannels().get(channelID);
+        return getChannelsById().get(channelID);
     }                                  
 
     @Override
@@ -63,12 +70,21 @@ public abstract class RssProvider implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Members";
+        return "RSS Channel";
     }
 
     @Override
     public boolean contains(FileObject file) 
     {
-        return getChannels().containsKey(file.getName());
+        try
+        {
+            RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
+            if(getChannelsById().containsKey(channel.getRssID()))
+            {
+                return true;
+            }
+        }
+        catch(IOException e) {}  
+        return false;
     }     
 }

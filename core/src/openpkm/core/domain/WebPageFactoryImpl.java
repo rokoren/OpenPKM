@@ -2,8 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core;
+package openpkm.core.domain;
 
+import com.rometools.rome.feed.synd.SyndEntry;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -25,6 +26,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import openpkm.base.Article;
+import openpkm.base.DescriptionProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
@@ -32,9 +34,11 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WebPage;
+import openpkm.base.WatchLater;
+import openpkm.domain.WebPage;
+import openpkm.domain.WebPageFactory;
 import openpkm.jcef.CefClientProvider;
-import openpkm.rss.Rss;
+import openpkm.utils.DateTimeUtils;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.cef.browser.CefBrowser;
 import org.jsoup.Jsoup;
@@ -51,7 +55,6 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.TopComponent;
-import openpkm.base.WebPageFactory;
 
 /**
  *
@@ -87,6 +90,22 @@ public class WebPageFactoryImpl implements WebPageFactory
         }
         return null;
     } 
+
+    @Override
+    public WebPage getWebPage(SyndEntry syndEntry) 
+    {
+        LocalDateTime now = LocalDateTime.now();
+        Properties props = new Properties();
+        props.setProperty(WebPageFactory.PROP_TYPE, WebPageFactory.Type.RSS.getName());                            
+        props.setProperty(WebPage.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+        props.setProperty(WebPageFactory.PROP_URI, syndEntry.getUri());                            
+        props.setProperty(WebPageFactory.PROP_LINK, syndEntry.getLink());                                     
+        props.setProperty(TitleProvider.PROP_TITLE, syndEntry.getTitle());     
+        props.setProperty(DescriptionProvider.PROP_DESCRIPTION, syndEntry.getDescription().getValue());                                                      
+        props.setProperty(WebPageFactory.PROP_PUBLISHED_DATE, DateTimeUtils.convertToLocalDateTime(syndEntry.getPublishedDate()).format(DateTimeFormatter.ISO_DATE_TIME)); 
+        props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString()); 
+        return getWebPage(props);
+    } 
     
     @Override
     public void save(WebPage page, OutputStream os, String comments) throws IOException
@@ -110,6 +129,12 @@ public class WebPageFactoryImpl implements WebPageFactory
             this.props = props;
             propertyChangeSupport = new PropertyChangeSupport(this);              
         }
+        
+        @Override
+        public String getSourceID()
+        {            
+            return getWebPageID();
+        }         
         
         @Override
         public Lookup getLookup() 
@@ -173,23 +198,29 @@ public class WebPageFactoryImpl implements WebPageFactory
         }           
 
         @Override
-        public SourceState getState()
+        public boolean isModified() 
         {
-            return state;
+            return state == SourceState.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }   
 
         @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }        
+        
+        @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }        
@@ -256,7 +287,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         }     
     }  
     
-    private static final class LinkImpl extends AbstractWebPage implements Link, TitleProvider
+    private static final class LinkImpl extends AbstractWebPage implements Link
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/www_page.png";         
@@ -267,10 +298,10 @@ public class WebPageFactoryImpl implements WebPageFactory
         }  
         
         @Override
-        public String getSourceID()
+        public String getWebPageID() 
         {
-            return getTimeCreated().getNano() + "";
-        }  
+            return getLink();
+        }        
         
         @Override
         public String getLink() 
@@ -291,7 +322,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         }       
     }
     
-    private static final class RssImpl extends AbstractWebPage implements Rss, MultiViewDescription
+    private static final class RssImpl extends AbstractWebPage implements DescriptionProvider, Link, WatchLater, MultiViewDescription
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/rss.png";         
@@ -300,18 +331,18 @@ public class WebPageFactoryImpl implements WebPageFactory
         {
             super(props);
         }  
-        
-        @Override
-        public String getSourceID()
-        {            
-            return getRssID();
-        } 
 
         @Override
-        public String getRssID() 
+        public String getWebPageID() 
         {
-            return props.getProperty(PROP_RSS_ID);
+            return getLink();
         } 
+        
+        @Override
+        public String getUri() 
+        {
+            return props.getProperty(PROP_URI);
+        }         
         
         @Override
         public String getLink() 

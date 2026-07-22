@@ -5,20 +5,19 @@
 package openpkm.domain;
 
 import openpkm.base.DescriptionProvider;
-import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 
 /**
  *
- * @author Rok Koren
+ * @author rok
  */
-public interface Blog extends Source, PropertiesProvider, TitleProvider, DescriptionProvider
+public interface HomePage extends Source, TitleProvider, DescriptionProvider
 {
     String PROP_URL     = "url"; 
     String PROP_FAVICON = "favicon";     
 
-    String getBlogID();
+    String getHomePageID();
     String getUrl();
-    String getFavicon();    
+    String getFavicon();      
 }

@@ -11,6 +11,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.trello.TrelloCard;
 import openpkm.trello.TrelloCardFactory;
+import openpkm.trello.TrelloCardLink;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -23,7 +24,7 @@ public class TrelloCardFactoryImpl implements TrelloCardFactory
     private static final Logger LOG = Logger.getLogger(TrelloCardFactory.class.getName());     
     
     @Override
-    public TrelloCard getCard(Properties props)
+    public TrelloCardLink getCard(Properties props)
     {
         return new TrelloCardImpl(props);
     }
@@ -46,7 +47,10 @@ public class TrelloCardFactoryImpl implements TrelloCardFactory
     @Override
     public void save(TrelloCard card, OutputStream os, String comments) throws IOException
     {
-        card.getProperties().store(os, comments); 
-        LOG.info("Trello Card saved");
+        if(card instanceof TrelloCardLink link)
+        {
+            link.getProperties().store(os, comments); 
+            LOG.info("Trello Card Link saved");            
+        }
     }     
 }

@@ -76,7 +76,8 @@ public class TrelloMemberFactoryImpl implements TrelloMemberFactory
     {
         private final Properties props; 
         
-        private Lookup lkp;         
+        private Lookup lkp; 
+        private SourceState state;         
         
         public TrelloMemberImpl(Properties props)
         {
@@ -160,7 +161,31 @@ public class TrelloMemberFactoryImpl implements TrelloMemberFactory
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }        
+        } 
+        
+        @Override
+        public boolean isModified() 
+        {
+            return state == SourceState.MODIFIED;
+        }
+
+        @Override
+        public void markModified()
+        {
+            state = SourceState.MODIFIED;      
+        }   
+
+        @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }    
+
+        @Override
+        public void notifyDeleted()
+        {
+            state = SourceState.DELETED;      
+        }         
 
 // TODO NodeProvider         
 

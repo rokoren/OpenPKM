@@ -9,9 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +25,7 @@ import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogProvider;
+import openpkm.utils.FileUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.netbeans.api.project.Project;
@@ -104,38 +102,10 @@ public class HomePageAction implements ActionListener
             String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
             String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
-            
-            Document document = (Document) wiz.getProperty("document"); 
-            String canonical = document.select("link[rel=canonical]").attr("href");
-            if(canonical != null && !canonical.isBlank())
-            {
-                blogID = canonical;
-            }
-            else
-            { 
-                String signature = getSignature(document, url);  
-                
-                try
-                {
-                    MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                    byte[] hash = digest.digest(signature.getBytes(StandardCharsets.UTF_8));
-
-                    StringBuilder hex = new StringBuilder();
-                    for (byte b : hash) {
-                        hex.append(String.format("%02x", b));
-                    }
-
-                    blogID = hex.toString();                      
-                } 
-                catch(NoSuchAlgorithmException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }            
+            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                        
+            Document document = (Document) wiz.getProperty("document");           
 
             Properties props = new Properties();
-            props.setProperty(Blog.PROP_BLOG_ID, blogID);
             props.setProperty(Blog.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(Blog.PROP_TITLE, title);       
             props.setProperty(Blog.PROP_DESCRIPTION, description);            
@@ -168,7 +138,8 @@ public class HomePageAction implements ActionListener
 
             try
             {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), blogID);           
+                String folderName = FileUtils.getFolderName(provider.getRootFolder());
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
 
                 OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
@@ -202,17 +173,6 @@ public class HomePageAction implements ActionListener
         }        
     }  
     
-    private static String getSignature(Document document, String url)
-    {
-        String normalized = getNormalized(url);
-        String title = document.title();
-        String description = document.select("meta[name=description]").attr("content");
-        String ogUrl = document.select("meta[property=og:url]").attr("content");
-        String ogTitle = document.select("meta[property=og:title]").attr("content");   
-        String signature = normalized + "|" + title + "|" + description + "|" + ogUrl + "|" + ogTitle; 
-        return signature;
-    }
-    
     private static String getFavicon(Document document)
     {
         //Element element = document.head().select("link[href~=.*\\.(ico|png)]").first();    
@@ -232,15 +192,5 @@ public class HomePageAction implements ActionListener
             return element.attr("content");                   
         }
         return null;
-    } 
-
-    private static String getNormalized(String url)
-    {
-        String normalized = url
-                .replaceAll("\\?.*", "")     // odstrani query parametre
-                .replaceAll("#.*", "")       // odstrani sidra
-                .replaceAll("/$", "")        // odstrani trailing slash
-                .trim();
-        return normalized;
     }     
 }

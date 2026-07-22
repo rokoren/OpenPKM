@@ -34,6 +34,6 @@ public interface TrelloCardFactory extends SourceFactory<TrelloCard>
     String PROP_CARD_DUE_COMPLETE       = "card.due.complete";
     String PROP_CARD_DATE_LAST_ACTIVITY = "card.date.last.activity";
 
-    TrelloCard getCard(Properties props);  
+    TrelloCardLink getCard(Properties props);  
     TrelloCard createCard(Card card);      
 }

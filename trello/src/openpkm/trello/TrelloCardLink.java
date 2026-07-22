@@ -2,17 +2,15 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package openpkm.rss;
+package openpkm.trello;
 
-import com.rometools.rome.feed.synd.SyndFeed;
-import java.util.Properties;
+import openpkm.base.PropertiesProvider;
 
 /**
  *
  * @author rok
  */
-public interface RssFactory 
+public interface TrelloCardLink extends TrelloCard, PropertiesProvider
 {
-    RssChannel getRssChannel(Properties props);
-    RssChannel getRssChannel(SyndFeed feed);
+    
 }

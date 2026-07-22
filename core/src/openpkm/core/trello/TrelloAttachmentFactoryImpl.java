@@ -26,7 +26,7 @@ import openpkm.trello.TrelloAttachmentFactory;
  * @author Rok Koren
  */
 @ServiceProvider(service=TrelloAttachmentFactory.class)
-public class TrelloAttachmentProviderImpl implements TrelloAttachmentFactory
+public class TrelloAttachmentFactoryImpl implements TrelloAttachmentFactory
 {    
     private static final Logger LOG = Logger.getLogger(TrelloAttachmentFactory.class.getName());    
 
@@ -54,7 +54,8 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentFactory
     {         
         private final Properties props;    
         
-        private Lookup lkp;        
+        private Lookup lkp; 
+        private SourceState state;         
         
         public TrelloAttachmentImpl(Properties props)
         {
@@ -118,6 +119,30 @@ public class TrelloAttachmentProviderImpl implements TrelloAttachmentFactory
         {
             props.putAll(provider.getProperties());
         } 
+        
+        @Override
+        public boolean isModified() 
+        {
+            return state == SourceState.MODIFIED;
+        }
+
+        @Override
+        public void markModified()
+        {
+            state = SourceState.MODIFIED;      
+        }   
+
+        @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }        
+        
+        @Override
+        public void notifyDeleted()
+        {
+            state = SourceState.DELETED;       
+        }         
         
 // TODO DisplayNameProvider        
         

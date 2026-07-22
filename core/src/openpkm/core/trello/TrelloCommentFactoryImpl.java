@@ -90,23 +90,29 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         }                
         
         @Override
-        public SourceState getState()
+        public boolean isModified() 
         {
-            return state;
+            return state == SourceState.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }   
 
         @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }         
+        
+        @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         } 

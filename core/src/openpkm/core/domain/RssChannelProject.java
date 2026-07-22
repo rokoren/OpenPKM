@@ -2081,7 +2081,7 @@ public class RssChannelProject implements Domain, RssChannel, PropertiesProvider
                 {                    
                     SyndFeedInput input = new SyndFeedInput();
                     SyndFeed feed = input.build(getReader());
-                    Iterator itr = feed.getEntries().iterator();
+                        Iterator itr = feed.getEntries().iterator();
                     while (itr.hasNext()) 
                     {
                         SyndEntry syndEntry = (SyndEntry) itr.next();

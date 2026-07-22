@@ -2,17 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package openpkm.rss;
-
-import com.rometools.rome.feed.synd.SyndFeed;
-import java.util.Properties;
+package openpkm.base;
 
 /**
  *
  * @author rok
  */
-public interface RssFactory 
+public interface CloseSupport 
 {
-    RssChannel getRssChannel(Properties props);
-    RssChannel getRssChannel(SyndFeed feed);
+    void projectClosed();    
 }

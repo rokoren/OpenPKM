@@ -87,6 +87,7 @@ public class TrelloCheckListFactorympl implements TrelloCheckListFactory
         private final PropertyChangeSupport propertyChangeSupport;           
         
         private Lookup lkp; 
+        private SourceState state; 
         private ChangeSupport changeSupport;
         
         public TrelloCheckListImpl(Properties props, TrelloCheckListProvider provider)
@@ -218,7 +219,35 @@ public class TrelloCheckListFactorympl implements TrelloCheckListFactory
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }        
+        }  
+        
+        @Override
+        public boolean isModified() 
+        {
+            return state == SourceState.MODIFIED;
+        }
+
+        @Override
+        public void markModified()
+        {
+            SourceState oldValue = state;
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
+
+        @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }    
+
+        @Override
+        public void notifyDeleted()
+        {
+            SourceState oldValue = state;
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }         
 
 // TODO NodeProvider         
 

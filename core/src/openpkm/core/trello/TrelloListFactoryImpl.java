@@ -62,6 +62,7 @@ public class TrelloListFactoryImpl implements TrelloListFactory
         private final PropertyChangeSupport propertyChangeSupport; 
 
         private Lookup lkp; 
+        private SourceState state;          
         
         public TrelloListImpl(Properties props)
         {
@@ -152,7 +153,35 @@ public class TrelloListFactoryImpl implements TrelloListFactory
         public void merge(PropertiesProvider provider)
         {
             props.putAll(provider.getProperties());
-        }        
+        }  
+        
+        @Override
+        public boolean isModified() 
+        {
+            return state == SourceState.MODIFIED;
+        }
+
+        @Override
+        public void markModified()
+        {
+            SourceState oldValue = state;
+            state = SourceState.MODIFIED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }   
+
+        @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }    
+
+        @Override
+        public void notifyDeleted()
+        {
+            SourceState oldValue = state;
+            state = SourceState.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        }          
 
 // TODO IconProvider        
         

@@ -4,11 +4,17 @@
  */
 package openpkm.core.domain;
 
+import com.rometools.rome.feed.synd.SyndEnclosure;
+import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.Image;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
@@ -34,20 +40,27 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
+import openpkm.base.AsciiDocSupport;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.CloseSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
@@ -61,14 +74,12 @@ import openpkm.base.NodeProvider;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
-import openpkm.base.Source.SourceState;
 import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
-import openpkm.base.WebPage;
 import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
@@ -76,7 +87,6 @@ import openpkm.utils.FileUtils;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
-import openpkm.utils.WebPageProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
@@ -110,11 +120,14 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
-import openpkm.base.WebPageFactory;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.BlogProvider;
 import openpkm.domain.Domain;
+import openpkm.domain.HomePage;
+import openpkm.domain.WebPage;
+import openpkm.domain.WebPageFactory;
+import openpkm.domain.WebPageProvider;
 import openpkm.github.GitHubFactory;
 import openpkm.github.GitHubProvider;
 import openpkm.github.GitHubUser;
@@ -125,12 +138,13 @@ import openpkm.rss.RssProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
+import org.openide.awt.NotificationDisplayer;
 
 /**
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Project, Domain, Blog, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class HomePageProject implements Project, HomePage, Domain, SourceProviders, BatchUpdateSupport
 {      
     private static final String DATA_FOLDER = "data";    
     
@@ -148,7 +162,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     
     private static final RequestProcessor RP = new RequestProcessor(HomePageProject.class);   
     
-    private final Map<String, SourceProvider> sources = new HashMap();  
+    private final Map<String, SourceGroup> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();         
     
     private final FileObject projectDir;        
@@ -200,8 +214,20 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         {
             SourceProvider provider = new BlogProviderImpl(blogFactory);
             sources.put(provider.getName(), provider);                       
-        }         
+        } 
+
+        RssFactory rssFactory = Lookup.getDefault().lookup(RssFactory.class);
+        if(rssFactory != null)
+        {
+            RssProvider provider = new RssProviderImpl(rssFactory);
+            sources.put(provider.getName(), provider);             
+        }
     }  
+    
+    public Properties getProperties()
+    {
+        return props;
+    }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -216,7 +242,12 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     @Override
     public SourceProvider getSourceProvider(String folder)
     {
-        return sources.get(folder);
+        SourceGroup sourceGroup = sources.get(folder);
+        if(sourceGroup instanceof SourceProvider provider)
+        {
+            return provider;
+        }
+        return null;
     }
     
     @Override
@@ -280,11 +311,11 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
 
             list.add(new LogicalViewProviderImpl(this));
             list.add(new HomePageCustomizerProvider(this));  
-
+            
             list.add(new HtmlFilesProviderImpl());                                  
 
             list.addAll(sources.values());
-
+            
             list.add(new BookDataGroupProviderImpl()); 
             list.add(new ArticleDataGroupProviderImpl()); 
             list.add(new DocumentDataGroupProviderImpl()); 
@@ -297,12 +328,12 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         return lkp;
     }      
 
-// TODO Blog    
+// TODO HomePage    
 
     @Override
-    public String getBlogID() 
+    public String getHomePageID() 
     {
-        return props.getProperty(PROP_BLOG_ID);
+        return getUrl();
     }      
 
     @Override
@@ -328,7 +359,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     @Override
     public String getSourceID()
     {
-        return getBlogID();
+        return getHomePageID();
     }  
     
     @Override
@@ -340,25 +371,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
             return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
         }
         return null;
-    }    
-    
-    @Override
-    public SourceState getState()
-    {
-        return null;
-    }
-
-    @Override
-    public void markModified()
-    {
-        state.markModified();
-    }   
-
-    @Override
-    public void notifyDeleted()
-    {
-        state.notifyDeleted();
-    }           
+    }              
     
 // TODO TitleProvider  
     
@@ -428,21 +441,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     public void removeDescriptionListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-    }      
-
-// TODO PropertiesProvider
-    
-    @Override
-    public Properties getProperties()
-    {
-        return props;
-    }    
-    
-    @Override
-    public void merge(PropertiesProvider provider)
-    {
-        props.putAll(provider.getProperties());
-    }       
+    }              
     
 // TODO BatchUpdateSupport    
     
@@ -667,64 +666,95 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
             task.cancel();  
             propertyChangeSupport.removePropertyChangeListener(this);    
             
-            for(SourceProvider provider : sources.values())
+            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
+            for(CloseSupport provider : providers)
             {
                 provider.projectClosed();
-            }              
+            }             
         }  
         
         @Override
         public void run()
         {  
-            RssProvider provider = getLookup().lookup(RssProvider.class);
-            if(provider != null)
+            RssProvider rssProvider = getLookup().lookup(RssProvider.class);
+            if(rssProvider != null)
             {
-                for(RssChannel channel : provider.getChannels())
+                for(RssChannel channel : rssProvider.getChannels())
                 {
                     try
                     {
                         URL url = new URL(channel.getRssUrl());
                         SyndFeedInput input = new SyndFeedInput();
                         SyndFeed feed = input.build(new XmlReader(url));
-                        setLink(feed.getLink());
-                        setUri(feed.getUri());
-                        setAuthor(feed.getAuthor());
-                        setCopyright(feed.getCopyright());
-                        setGenerator(feed.getGenerator());
-                        setLanguage(feed.getLanguage());
-                        setManagingEditor(feed.getManagingEditor()); 
-                        setImage(feed.getImage().getUrl());
-                        if(feed.getIcon() != null)
+                        
+                        RssChannel newValue = rssProvider.getFactory().getRssChannel(feed);
+                        if(!channel.getProperties().equals(newValue.getProperties()))
                         {
-                            setIcon(feed.getIcon().getUrl());                    
-                        }
-
-                        if(feed.getCategories() != null)
-                        {
-                            StringJoiner joiner = new StringJoiner(",");
-                            for(SyndCategory category : feed.getCategories())
+                            channel.merge(newValue);
+                            channel.markModified();
+                            WebPageProvider webPagePovider = getLookup().lookup(WebPageProvider.class);
+                            if(webPagePovider != null)
                             {
-                                joiner.add(category.getLabel());
+                                for(SyndEntry syndEntry : feed.getEntries()) 
+                                {
+                                    WebPage webPage = webPagePovider.getFactory().getWebPage(syndEntry);
+                                    if(webPage != null && !webPagePovider.getLinksById().containsKey(webPage.getWebPageID()))
+                                    {
+                                        AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
+                                        if(fileTypeProvider != null)            
+                                        {
+                                            FileObject file = webPagePovider.createData(webPage, fileTypeProvider);                           
+
+                                             if(file != null)
+                                             { 
+                                                FileObject folder = webPagePovider.getRootFolder();
+                                                if(folder != null)
+                                                {  
+                                                    String fileName = FileUtils.getFileName(folder, PropertiesProvider.EXTENSION);
+                                                    OutputStream os = folder.createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
+                                                    webPagePovider.getFactory().save(webPage, os, "New RSS Web Page Created by Project: " + getTitle());
+                                                    os.close();  
+                                                }                                                   
+                                                 
+                                                 String text = getTitle() + ": " + syndEntry.getTitle();
+
+                                                 BufferedImage image = null;
+                                                 if(!syndEntry.getEnclosures().isEmpty())
+                                                 {
+                                                     SyndEnclosure syndEnclosure = syndEntry.getEnclosures().get(0);                                  
+                                                     if(syndEnclosure.getType().startsWith("image"))
+                                                     {
+                                                         URL url2 = new URL(syndEnclosure.getUrl());
+                                                         //Image image = Utils.resizeImage(ImageIO.read(url2), 320, 180); 
+                                                         image = ImageIO.read(url2);                                         
+                                                     }
+                                                 }
+
+                                                 IconProvider provider = channel.getLookup().lookup(IconProvider.class);
+                                                 Icon icon = ImageUtilities.image2Icon(provider.getIcon(BeanInfo.ICON_COLOR_16x16)); 
+
+                                                 JLabel baloonDetails = new JLabel();
+                                                 if(image == null)
+                                                 {
+                                                     baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                                     baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                                     JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), null);                                                                
+                                                     NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");                                 
+                                                 }
+                                                 else
+                                                 {
+                                                     baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), icon.getIconWidth())));
+                                                     baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                                     baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                                     JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));                                                                
+                                                     NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");                                  
+                                                 }
+                                             }  
+                                        }                                        
+                                    }
+                                }  
                             }
-                            setCategory(joiner.toString());                    
-                        }
-
-                        if(isRssFile())
-                        {
-                            FileObject file = getProjectDirectory().getFileObject(RssChannelProjectFactory.PROJECT_FOLDER).getFileObject(RSS_FILE);
-                            if(file == null)
-                            {
-                                file = getProjectDirectory().getFileObject(RssChannelProjectFactory.PROJECT_FOLDER).createData(RSS_FILE);
-                                rssFile(feed, file);
-                            }
-                            else if(DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate()).isAfter(getPublishedDate()))
-                            {
-                                rssFile(feed, file);
-                            }                   
-                        }                               
-
-                        LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
-                        setPublishedDate(publishedDate);                                                      
+                        }                                                    
                     }
                     catch (MalformedURLException e)
                     {
@@ -992,17 +1022,11 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     
 // TODO SourceGroup    
     
-    private final class RssProviderImpl extends RssProvider implements SourceGroupProvider, FileChangeListener, Runnable
-    {         
-        private static final String PROP_TRELLO_SYNC_MEMBER = "trello.sync.member";         
-                
+    private final class RssProviderImpl extends RssProvider implements SourceGroupProvider, FileChangeListener
+    {                         
         public RssProviderImpl(RssFactory factory) 
         {
-            super(factory);   
-            if(getLastSync() == null)
-            {
-                RP.post(this);                
-            }            
+            super(factory);             
         }         
         
         @Override
@@ -1142,14 +1166,6 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            /*
-            FileObject file = evt.getFile();
-            TrelloLabel label = getLabels().get(file.getName());  
-            if(label != null)
-            {
-                
-            }
-            */
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
 
@@ -1157,7 +1173,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            RssChannel channel = getChannels().remove(file.getName());  
+            RssChannel channel = getChannelsById().remove(file.getName());  
             if(channel != null)
             {
                 changeSupport.fireChange();
@@ -1174,66 +1190,6 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         public void fileAttributeChanged(FileAttributeEvent fae) 
         {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }  
-
-        public LocalDateTime getLastSync()
-        {
-            String string = props.getProperty(PROP_TRELLO_SYNC_MEMBER);
-            if(string != null)
-            {
-                return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
-            }
-            return null;
-        } 
-
-        public void setLastSync(LocalDateTime time)
-        {
-            if(time == null)
-            {
-                Object oldValue = props.remove(PROP_TRELLO_SYNC_MEMBER);
-                if(oldValue != null)
-                {
-                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
-                }                
-                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_MEMBER, oldValue, time); 
-            }
-            else        
-            {
-                Object oldValue = props.setProperty(PROP_TRELLO_SYNC_MEMBER, time.format(DateTimeFormatter.ISO_DATE_TIME)); 
-                if(oldValue != null)
-                {
-                    oldValue = LocalDateTime.parse(oldValue.toString(), DateTimeFormatter.ISO_DATE_TIME);
-                }
-                propertyChangeSupport.firePropertyChange(PROP_TRELLO_SYNC_MEMBER, oldValue, time); 
-            }
-        } 
-        
-        @Override
-        public void run()
-        {
-            TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
-            if(service != null)
-            {
-                List<TrelloMember> members = service.getMembers(TrelloProject.this, factory, getTrello());
-                for(TrelloMember member : members)
-                {
-                    if(!getMembers().containsKey(member.getMemberID()))
-                    {
-                        try
-                        {
-                            OutputStream os = getRootFolder().createAndOpen(member.getMemberID() + "." + PropertiesProvider.EXTENSION);                            
-                            member.getProperties().store(os, "Created by Trello project: " + getBoardName()); 
-                            os.close();
-                            LOG.info("Trello member saved: " + member.getMemberID());                              
-                        }
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        } 
-                    }
-                }
-                setLastSync(LocalDateTime.now());
-            }
         }        
     }      
     
@@ -1889,7 +1845,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
     
 // TODO SourceGroup
    
-    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener
+    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener, CloseSupport
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/www_page.png";         
@@ -1914,31 +1870,27 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
                 
                 for(WebPage link : getLinks())
                 {
-                    SourceState state = link.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(link.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(link, os, "Updated by Home page project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(link, os, "Updated by Home page project: " + getTitle());
+                                os.close();
+                            }
+                            else if(link.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }          
@@ -2106,7 +2058,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         }          
     }     
     
-    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener, CloseSupport
     {               
         public ReferenceProviderImpl(ReferenceFactory factory) 
         {
@@ -2128,31 +2080,27 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
                 
                 for(Reference reference : getReferences())
                 {
-                    SourceState state = reference.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(reference.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(reference, os, "Updated by Home page project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(reference, os, "Updated by Home page project: " + getTitle());
+                                os.close();
+                            }
+                            else if(reference.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    }  
                 }                
             }
         }          
@@ -2336,44 +2284,6 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         public Lookup.Provider getProvider()
         {
             return HomePageProject.this;
-        } 
-        
-        @Override
-        public void projectClosed()
-        {
-            if(rootDir != null)
-            {
-                rootDir.removeFileChangeListener(this);
-                
-                for(YouTubeChannel channel : getChannels())
-                {
-                    SourceState state = channel.getState();
-                    if(state != null)
-                    {
-                        FileObject file = rootDir.getFileObject(channel.getChannelID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {
-                            try
-                            {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(channel, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
-                }                
-            }
         }         
         
         @Override
@@ -2574,45 +2484,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         public Lookup.Provider getProvider()
         {
             return HomePageProject.this;
-        } 
-        
-        @Override
-        public void projectClosed()
-        {
-            if(rootDir != null)
-            {
-                rootDir.removeFileChangeListener(this);
-                
-                for(GitHubUser user : getUsers())
-                {
-                    SourceState state = user.getState();
-                    if(state != null)
-                    {
-                        FileObject file = rootDir.getFileObject(user.getUserID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {
-                            try
-                            {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(user, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
-                }                
-            }
-        }         
+        }                
         
         @Override
         public synchronized Map<String, GitHubUser> getUsersById()
@@ -2801,7 +2673,7 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         }         
     }     
 
-    private final class BlogProviderImpl extends BlogProvider implements FileChangeListener
+    private final class BlogProviderImpl extends BlogProvider implements FileChangeListener, CloseSupport
     {
         public BlogProviderImpl(BlogFactory factory) 
         {
@@ -2823,31 +2695,27 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
                 
                 for(Blog blog : getBlogs())
                 {
-                    SourceState state = blog.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(blog.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(blog.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }         
@@ -3152,5 +3020,36 @@ public class HomePageProject implements Project, Domain, Blog, PropertiesProvide
         {
             return HomePageProject.this;
         }                 
-    }     
+    }  
+    
+    private static JComponent createDetails(String text, ActionListener action, Icon icon) 
+    {
+        if (null == action) {
+            return new JLabel(text);
+        }
+        JButton btn = new JButton(Utils.convertStringToHtml(text, 50));
+        btn.setFocusable(false);
+        btn.setBorder(BorderFactory.createEmptyBorder());
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setFont(btn.getFont().deriveFont(btn.getFont().getSize() + 2));
+        btn.addActionListener(action);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        Color c = UIManager.getColor("nb.html.link.foreground"); //NOI18N
+        if (c != null) {
+            btn.setForeground(c);
+        }
+        if(icon != null)
+        {
+            btn.setIcon(icon);
+            btn.setIconTextGap(10);            
+        }
+        btn.setVerticalTextPosition(SwingConstants.TOP);
+        btn.setHorizontalTextPosition(SwingConstants.LEFT);
+        btn.setVerticalAlignment(SwingConstants.CENTER);
+        btn.setHorizontalAlignment(SwingConstants.LEFT);        
+        return btn;
+    }      
 }

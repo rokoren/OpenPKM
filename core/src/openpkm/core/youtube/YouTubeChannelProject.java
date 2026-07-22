@@ -64,6 +64,7 @@ import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.BulletIconProvider;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.CloseSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
@@ -75,7 +76,6 @@ import openpkm.base.Link;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
-import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
@@ -147,7 +147,7 @@ import openpkm.youtube.YouTubeChannelProvider;
  *
  * @author Rok Koren
  */
-public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, SourceProviders, BatchUpdateSupport
 {    
     public static final String PROP_LAST_UPLOAD_TIME = "last.upload.time";    
     
@@ -215,6 +215,11 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
             sources.put(provider.getName(), provider);                       
         }         
     }
+    
+    public Properties getProperties()
+    {
+        return props;
+    }      
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -317,25 +322,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
     public String getSourceID()
     {
         return getChannelID();
-    } 
-
-    @Override
-    public SourceState getState()
-    {
-        return null;
-    }
-
-    @Override
-    public void markModified()
-    {
-        state.markModified();
     }   
-
-    @Override
-    public void notifyDeleted()
-    {
-        state.notifyDeleted();
-    }    
     
     @Override
     public String getAppID() 
@@ -781,21 +768,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
     public void removeDescriptionListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-    }      
-
-// TODO PropertiesProvider
-    
-    @Override
-    public Properties getProperties()
-    {
-        return props;
-    }   
-    
-    @Override
-    public void merge(PropertiesProvider provider)
-    {
-        props.putAll(provider.getProperties());
-    }      
+    }          
     
 // TODO BatchUpdateSupport    
     
@@ -1008,7 +981,8 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
             task.cancel();           
             propertyChangeSupport.removePropertyChangeListener(this);    
             
-            for(SourceProvider provider : sources.values())
+            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
+            for(CloseSupport provider : providers)
             {
                 provider.projectClosed();
             }            
@@ -2462,7 +2436,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
     
 // TODO SourceGroup
     
-    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener, CloseSupport
     {               
         public ReferenceProviderImpl(ReferenceFactory factory) 
         {
@@ -2484,31 +2458,27 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
                 
                 for(Reference reference : getReferences())
                 {
-                    SourceState state = reference.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(reference.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(reference, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(reference, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(reference.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    }  
                 }                
             }
         }        
@@ -2682,7 +2652,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
         }          
     }  
     
-    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements TagsProvider, PropertyChangeListener, FileChangeListener, Runnable
+    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements TagsProvider, PropertyChangeListener, FileChangeListener, CloseSupport, Runnable
     {
         public YouTubeVideoProviderImpl(YouTubeVideoFactory factory) 
         {
@@ -2706,31 +2676,27 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
                 
                 for(YouTubeVideo video : getVideos())
                 {
-                    SourceState state = video.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(video.getVideoID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(video.getVideoID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(video.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(video, os, "Updated by YouTube Channel project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(video, os, "Updated by YouTube Channel project: " + getTitle());
+                                os.close();
+                            }
+                            else if(video.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }          
@@ -3120,44 +3086,6 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
         public Lookup.Provider getProvider()
         {
             return YouTubeChannelProject.this;
-        } 
-        
-        @Override
-        public void projectClosed()
-        {
-            if(rootDir != null)
-            {
-                rootDir.removeFileChangeListener(this);
-                
-                for(GitHubUser user : getUsers())
-                {
-                    SourceState state = user.getState();
-                    if(state != null)
-                    {
-                        FileObject file = rootDir.getFileObject(user.getUserID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
-                        {
-                            try
-                            {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(user, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
-                            {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
-                }                
-            }
         }         
         
         @Override
@@ -3347,7 +3275,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
         }         
     }     
     
-   private final class BlogProviderImpl extends BlogProvider implements FileChangeListener
+   private final class BlogProviderImpl extends BlogProvider implements FileChangeListener, CloseSupport
     {
         public BlogProviderImpl(BlogFactory factory) 
         {
@@ -3369,31 +3297,27 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, P
                 
                 for(Blog blog : getBlogs())
                 {
-                    SourceState state = blog.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(blog.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(blog.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    }  
                 }                
             }
         }         

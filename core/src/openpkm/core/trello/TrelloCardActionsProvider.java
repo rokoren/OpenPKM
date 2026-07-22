@@ -140,8 +140,7 @@ public class TrelloCardActionsProvider extends AbstractCardActionsProvider
             {
                 boolean complete = getComplete(card.isCardDueComplete());
                 int status = service.setCardDueComplete(card.getCardID(), complete, account);
-                card.setCardDueComplete(complete);         
-                card.markModified();                  
+                card.setCardDueComplete(complete);                         
             }
         }
     }     

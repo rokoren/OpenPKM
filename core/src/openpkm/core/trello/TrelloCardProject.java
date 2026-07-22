@@ -151,7 +151,7 @@ import openpkm.trello.TrelloCardProvider;
  *
  * @author Rok Koren
  */
-public class TrelloCardProject implements Project, TrelloCard, PropertiesProvider, BatchUpdateSupport
+public class TrelloCardProject implements Project, TrelloCard, BatchUpdateSupport
 { 
     public static final String PROP_TRELLO_USERNAME = "trello.username";
     public static final String PROP_TRELLO_BOARD_ID = "trello.board.id";
@@ -177,8 +177,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     private final Properties props; 
     private final PropertyChangeSupport propertyChangeSupport;
     
-    private Lookup lkp; 
-    private SourceState sourceState;  
+    private Lookup lkp;    
     
     private TrelloAccount trelloAccount;
     private Trello trello;    
@@ -200,7 +199,12 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
         
         SourceGroup provider = new TrelloCheckListProviderImpl();
         sources.put(provider.getName(), provider);                              
-    }        
+    }     
+    
+    public Properties getProperties()
+    {
+        return props;
+    }     
     
     public TrelloAccount getTrelloAccount()
     {
@@ -353,28 +357,6 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     public String getSourceID()
     {
         return getCardID();
-    } 
-
-    @Override
-    public SourceState getState()
-    {
-        return sourceState;
-    }
-
-    @Override
-    public void markModified()
-    {
-        SourceState oldValue = getState();
-        sourceState = SourceState.MODIFIED;
-        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-    }   
-
-    @Override
-    public void notifyDeleted()
-    {
-        SourceState oldValue = getState();
-        sourceState = SourceState.DELETED;
-        propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }          
     
     @Override
@@ -592,32 +574,7 @@ public class TrelloCardProject implements Project, TrelloCard, PropertiesProvide
     public String getCardRole() 
     {
         return props.getProperty(TrelloCardFactory.PROP_CARD_ROLE);
-    }          
-
-    @Override
-    public boolean isCardLink() 
-    {
-        String cardRole = getCardRole();
-        if(cardRole != null)
-        {
-            return cardRole.equalsIgnoreCase(TrelloCardFactory.CARD_ROLE_LINK);
-        }
-        return false;
-    }       
-
-// TODO PropertiesProvider
-    
-    @Override
-    public Properties getProperties()
-    {
-        return props;
-    }
-    
-    @Override
-    public void merge(PropertiesProvider provider)
-    {
-        props.putAll(provider.getProperties());
-    }    
+    }                
     
 // TODO BatchUpdateSupport    
     

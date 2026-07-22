@@ -30,7 +30,6 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.utils.BulletIconProviderImpl;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.util.ImageUtilities;
@@ -114,7 +113,7 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if (lkp == null) 
             { 
-                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new BulletIconProviderImpl(this, propertyChangeSupport));              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
             }
             return lkp;
         } 
@@ -163,25 +162,31 @@ public class ContentFactoryImpl implements ContentFactory
         {
             props.putAll(provider.getProperties());
         }        
-        
-        @Override
-        public SourceState getState()
-        {
-            return state;
-        }
 
+        @Override
+        public boolean isModified() 
+        {
+            return state == SourceState.MODIFIED;
+        }        
+        
         @Override
         public void markModified()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }   
 
         @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }        
+        
+        @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }           

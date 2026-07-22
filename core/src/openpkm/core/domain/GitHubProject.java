@@ -42,6 +42,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.CloseSupport;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.Document;
@@ -53,19 +54,16 @@ import openpkm.base.Link;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
-import openpkm.base.Source.SourceState;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
-import openpkm.base.WebPage;
 import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.Utils;
-import openpkm.utils.WebPageProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
@@ -101,8 +99,10 @@ import org.openide.windows.TopComponent;
 import openpkm.github.GitHubUser;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.TopComponentProvider;
-import openpkm.base.WebPageFactory;
 import openpkm.domain.Domain;
+import openpkm.domain.WebPage;
+import openpkm.domain.WebPageFactory;
+import openpkm.domain.WebPageProvider;
 import openpkm.github.GitHubProvider;
 import openpkm.reference.ReferenceFactory;
 
@@ -110,7 +110,7 @@ import openpkm.reference.ReferenceFactory;
  *
  * @author Rok Koren
  */
-public class GitHubProject implements Project, Domain, GitHubUser, PropertiesProvider, SourceProviders, BatchUpdateSupport
+public class GitHubProject implements Project, Domain, GitHubUser, SourceProviders, BatchUpdateSupport
 {
     private static final String DATA_FOLDER = "data";    
     
@@ -259,24 +259,6 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
     public String getSourceID()
     {
         return getUserID();
-    } 
-
-    @Override
-    public SourceState getState()
-    {
-        return null;
-    }
-
-    @Override
-    public void markModified()
-    {
-        state.markModified();
-    }   
-
-    @Override
-    public void notifyDeleted()
-    {
-        state.notifyDeleted();
     }  
     
     @Override
@@ -504,19 +486,10 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
     }      
-
-// TODO PropertiesProvider
     
-    @Override
     public Properties getProperties()
     {
         return props;
-    }  
-    
-    @Override
-    public void merge(PropertiesProvider provider)
-    {
-        props.putAll(provider.getProperties());
     }    
     
 // TODO BatchUpdateSupport    
@@ -713,10 +686,11 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
         {          
             propertyChangeSupport.removePropertyChangeListener(this);  
             
-            for(SourceProvider provider : sources.values())
+            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
+            for(CloseSupport provider : providers)
             {
                 provider.projectClosed();
-            }              
+            }           
         }                  
 
         @Override
@@ -1574,7 +1548,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
     
 // TODO SourceGroup
    
-    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener
+    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener, CloseSupport
     {  
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/www_page.png";         
@@ -1599,31 +1573,27 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
                 
                 for(WebPage link : getLinks())
                 {
-                    SourceState state = link.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(link.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(link, os, "Updated by GitHub project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(link, os, "Updated by GitHub project: " + getTitle());
+                                os.close();
+                            }
+                            else if(link.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }          
@@ -1791,7 +1761,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
         }          
     }     
     
-    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener
+    private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener, CloseSupport
     {               
         public ReferenceProviderImpl(ReferenceFactory factory) 
         {
@@ -1813,31 +1783,27 @@ public class GitHubProject implements Project, Domain, GitHubUser, PropertiesPro
                 
                 for(Reference reference : getReferences())
                 {
-                    SourceState state = reference.getState();
-                    if(state != null)
+                    FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
                     {
-                        FileObject file = rootDir.getFileObject(reference.getSourceID(), PropertiesProvider.EXTENSION);
-                        if(file != null)
+                        try
                         {
-                            try
+                            if(reference.isModified())
                             {
-                                if(state == SourceState.MODIFIED)
-                                {
-                                    OutputStream os = file.getOutputStream();
-                                    factory.save(reference, os, "Updated by GitHub project: " + getTitle());
-                                    os.close();
-                                }
-                                else if(state == SourceState.DELETED)
-                                {
-                                    file.delete();
-                                }                                  
-                            }  
-                            catch(IOException e)
+                                OutputStream os = file.getOutputStream();
+                                factory.save(reference, os, "Updated by GitHub project: " + getTitle());
+                                os.close();
+                            }
+                            else if(reference.isDeleted())
                             {
-                                LOG.warning(e.getMessage());
-                            }                             
-                        }                                                                                                
-                    }
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
                 }                
             }
         }          

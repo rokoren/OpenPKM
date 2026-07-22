@@ -14,19 +14,9 @@ import org.openide.util.Lookup;
 public interface Source extends Lookup.Provider
 {        
     String PROP_APP_ID       = "app.id";        
-    String PROP_TIME_CREATED = "time.created";  
-    String PROP_STATE        = "source.state";         
+    String PROP_TIME_CREATED = "time.created";         
     
     String getSourceID();
     String getAppID();
-    LocalDateTime getTimeCreated(); 
-    void markModified();      
-    void notifyDeleted();
-    SourceState getState();
-    
-    public enum SourceState 
-    {
-        MODIFIED,
-        DELETED;    
-    }      
+    LocalDateTime getTimeCreated();      
 }

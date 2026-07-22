@@ -36,7 +36,6 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLater;
-import openpkm.utils.BulletIconProviderImpl;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
@@ -293,29 +292,35 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         {
             if (lkp == null) 
             { 
-                lkp = Lookups.fixed(this, new BulletIconProviderImpl(this, propertyChangeSupport));              
+                lkp = Lookups.fixed(this);              
             }
             return lkp;
         }            
 
         @Override
-        public SourceState getState()
+        public boolean isModified() 
         {
-            return state;
-        }
-
+            return state == SourceState.MODIFIED;
+        }        
+        
         @Override
         public void markModified()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-        }   
+        } 
+        
+        @Override
+        public boolean isDeleted() 
+        {
+            return state == SourceState.DELETED;
+        }        
 
         @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = getState();
+            SourceState oldValue = state;
             state = SourceState.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }        

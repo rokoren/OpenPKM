@@ -6,14 +6,13 @@ package openpkm.trello;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCard extends Source, PropertiesProvider
+public interface TrelloCard extends Source
 {
     String getAccountUsername();    
     String getBoardID();
@@ -32,7 +31,7 @@ public interface TrelloCard extends Source, PropertiesProvider
     String getCardRole();
     List<String> getCardLabelsID();
     void setCardLabelsID(List<String> ids);
-    boolean isCardLink();    
+    
     /*
     String getCardDescription();    
     LocalDate getDueDate();

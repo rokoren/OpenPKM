@@ -21,7 +21,6 @@ public interface SourceProvider<T extends Source> extends SourceGroup
     FileObject createData(T source, FileTypeProvider fileTypeProvider) throws IOException;
     SourceFactory<T> getFactory();
     Lookup.Provider getProvider();
-    void projectClosed();
     void addSourceListener(PropertyChangeListener listener);
     void removeSourceListener(PropertyChangeListener listener);
 }
