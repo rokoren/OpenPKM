@@ -669,7 +669,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
             Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
             for(CloseSupport provider : providers)
             {
-                provider.projectClosed();
+                provider.close();
             }             
         }  
         
@@ -1862,7 +1862,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -2072,7 +2072,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
         }  
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -2687,7 +2687,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {

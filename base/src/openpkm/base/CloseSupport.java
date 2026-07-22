@@ -10,5 +10,5 @@ package openpkm.base;
  */
 public interface CloseSupport 
 {
-    void projectClosed();    
+    void close();    
 }

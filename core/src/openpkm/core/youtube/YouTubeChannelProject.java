@@ -984,7 +984,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
             for(CloseSupport provider : providers)
             {
-                provider.projectClosed();
+                provider.close();
             }            
         }                   
         
@@ -2450,7 +2450,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }  
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -2667,7 +2667,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             propertyChangeSupport.removePropertyChangeListener(PROP_VIDEO_COUNT, this);
             if(rootDir != null)
@@ -3289,7 +3289,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {

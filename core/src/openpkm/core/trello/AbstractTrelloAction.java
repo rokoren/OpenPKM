@@ -64,7 +64,7 @@ public abstract class AbstractTrelloAction implements TrelloAction, DisplayNameP
     protected final Properties props; 
     
     protected Lookup lkp;  
-    protected SourceState state;
+    protected State state;
 
     public AbstractTrelloAction(Properties props) 
     {

@@ -11,12 +11,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -24,13 +21,12 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.DescriptionProvider;
-import openpkm.base.Domain;
-import openpkm.base.DomainsProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.rss.RssChannel;
+import openpkm.rss.RssProvider;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
 import org.openide.DialogDisplayer;
@@ -59,9 +55,9 @@ public class RssChannelAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(RssChannelAction.class.getName());     
     
-    private final DomainsProvider provider;
+    private final RssProvider provider;
 
-    public RssChannelAction(DomainsProvider provider)
+    public RssChannelAction(RssProvider provider)
     {
         this.provider = provider;
     }
@@ -105,7 +101,7 @@ public class RssChannelAction implements ActionListener
             SyndFeed feed = (SyndFeed) wiz.getProperty("feed");                           
                                                                                                                   
             Properties props = new Properties();
-            props.setProperty(RssChannel.PROP_RSS_URL, rssUrl); 
+            props.setProperty(RssChannelProjectFactory.PROP_RSS_URL, rssUrl); 
             props.setProperty(RssChannelProject.PROP_RSS_FILE, rssFile);
             props.setProperty(RssChannel.PROP_TITLE, title);       
             props.setProperty(RssChannel.PROP_DESCRIPTION, description);            
@@ -153,15 +149,7 @@ public class RssChannelAction implements ActionListener
             }  
 
             try
-            { 
-                MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                byte[] hash = digest.digest(rssUrl.getBytes(StandardCharsets.UTF_8));                                  
-                StringBuilder hex = new StringBuilder();
-                for (byte b : hash) {
-                    hex.append(String.format("%02x", b));
-                }
-                String domainID = hex.toString();                 
-                
+            {                               
                 FileObject projectDirectory = FileUtil.createFolder(provider.getRootDirectory(), domainID);           
                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, RssChannelProjectFactory.PROJECT_FOLDER);                   
 

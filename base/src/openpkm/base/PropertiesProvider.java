@@ -13,20 +13,7 @@ import java.util.Properties;
 public interface PropertiesProvider 
 {
     String EXTENSION = "properties";  
-    
-    String PROP_STATE = "source.state";      
-    
+             
     Properties getProperties();      
-    void merge(PropertiesProvider provider);
-    
-    void markModified(); 
-    boolean isModified();
-    void notifyDeleted();
-    boolean isDeleted();
-    
-    public enum SourceState 
-    {
-        MODIFIED,
-        DELETED;    
-    }     
+    boolean merge(PropertiesProvider provider);   
 }

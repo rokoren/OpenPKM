@@ -66,7 +66,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     protected final PropertyChangeSupport propertyChangeSupport;
     
     protected Lookup lkp; 
-    protected SourceState state;    
+    protected State state;    
 
     public AbstractRaindrop(Properties props) 
     {
@@ -87,28 +87,28 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     @Override
     public boolean isModified() 
     {
-        return state == SourceState.MODIFIED;
+        return state == State.MODIFIED;
     }    
     
     @Override
     public void markModified()
     {
-        SourceState oldValue = state;
-        state = SourceState.MODIFIED;
+        State oldValue = state;
+        state = State.MODIFIED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }   
     
     @Override
     public boolean isDeleted() 
     {
-        return state == SourceState.DELETED;
+        return state == State.DELETED;
     }    
     
     @Override
     public void notifyDeleted()
     {
-        SourceState oldValue = state;
-        state = SourceState.DELETED;
+        State oldValue = state;
+        state = State.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }  
     
@@ -149,10 +149,14 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     }
     
     @Override
-    public void merge(PropertiesProvider provider)
+    public boolean merge(PropertiesProvider provider)
     {
-        props.putAll(provider.getProperties());
-        markModified();
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
     }    
     
     @Override

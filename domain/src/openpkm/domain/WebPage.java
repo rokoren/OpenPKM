@@ -7,12 +7,13 @@ package openpkm.domain;
 import java.io.IOException;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
+import openpkm.base.StateSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface WebPage extends Source, PropertiesProvider
+public interface WebPage extends Source, StateSupport, PropertiesProvider
 {  
     String getWebPageID();
     org.jsoup.nodes.Document getDocument(String userAgent) throws IOException;

@@ -122,7 +122,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         protected final PropertyChangeSupport propertyChangeSupport;
         
         private Lookup lkp;  
-        protected SourceState state;        
+        protected State state;        
 
         public AbstractWebPage(Properties props) 
         {
@@ -186,9 +186,14 @@ public class WebPageFactoryImpl implements WebPageFactory
         }  
         
         @Override
-        public void merge(PropertiesProvider provider)
+        public boolean merge(PropertiesProvider provider)
         {
-            props.putAll(provider.getProperties());
+            if(props.equals(provider.getProperties()))       
+            {
+                return false;
+            }
+            props.putAll(provider.getProperties());        
+            return true;
         }               
         
         @Override
@@ -200,28 +205,28 @@ public class WebPageFactoryImpl implements WebPageFactory
         @Override
         public boolean isModified() 
         {
-            return state == SourceState.MODIFIED;
+            return state == State.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            SourceState oldValue = state;
-            state = SourceState.MODIFIED;
+            State oldValue = state;
+            state = State.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }   
 
         @Override
         public boolean isDeleted() 
         {
-            return state == SourceState.DELETED;
+            return state == State.DELETED;
         }        
         
         @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = state;
-            state = SourceState.DELETED;
+            State oldValue = state;
+            state = State.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }        
 
@@ -338,7 +343,6 @@ public class WebPageFactoryImpl implements WebPageFactory
             return getLink();
         } 
         
-        @Override
         public String getUri() 
         {
             return props.getProperty(PROP_URI);
@@ -348,21 +352,8 @@ public class WebPageFactoryImpl implements WebPageFactory
         public String getLink() 
         {
             return props.getProperty(PROP_LINK);
-        }         
+        }  
         
-        @Override
-        public Document getDocument(String userAgent) throws IOException
-        {
-            return Jsoup.connect(getLink()).ignoreContentType(true).userAgent(userAgent).get();   
-        }         
-
-        @Override
-        public String getUri()
-        {
-            return props.getProperty(PROP_URI);
-        }
-                       
-        @Override
         public LocalDateTime getPublishedDate() 
         {
             String string = props.getProperty(PROP_PUBLISHED_DATE);
@@ -371,7 +362,13 @@ public class WebPageFactoryImpl implements WebPageFactory
                 return LocalDateTime.parse(string, DateTimeFormatter.ISO_DATE_TIME);
             }
             return null;
-        }                 
+        }         
+        
+        @Override
+        public Document getDocument(String userAgent) throws IOException
+        {
+            return Jsoup.connect(getLink()).ignoreContentType(true).userAgent(userAgent).get();   
+        }                                                
         
         @Override
         public String getDescription()
@@ -482,10 +479,10 @@ public class WebPageFactoryImpl implements WebPageFactory
         } 
         
         @Override
-        public String getSourceID()
+        public String getWebPageID() 
         {
-            return getTimeCreated().getNano() + "";
-        }  
+            return getLink();
+        }          
 
         @Override
         public String getLink() 

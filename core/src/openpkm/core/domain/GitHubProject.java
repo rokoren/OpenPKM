@@ -689,7 +689,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
             for(CloseSupport provider : providers)
             {
-                provider.projectClosed();
+                provider.close();
             }           
         }                  
 
@@ -1565,7 +1565,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -1775,7 +1775,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {

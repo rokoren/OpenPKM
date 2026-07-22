@@ -9,13 +9,14 @@ import java.util.List;
 import java.util.regex.Pattern;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
+import openpkm.base.StateSupport;
 import openpkm.base.Video;
 
 /**
  *
  * @author Rok Koren
  */
-public interface YouTubeVideo extends Source, Video, PropertiesProvider
+public interface YouTubeVideo extends Source, Video, StateSupport, PropertiesProvider
 {    
     //String YOUTUBE_URL = "https://www.youtube.com/";
     String YOUTUBE_URL = "https://www.youtube-nocookie.com/";

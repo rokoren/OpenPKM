@@ -7,12 +7,13 @@ package openpkm.rss;
 import java.time.LocalDateTime;
 import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface RssChannel extends PropertiesProvider, NodeProvider
+public interface RssChannel extends StateSupport, PropertiesProvider, NodeProvider
 {   
     String getTitle();
     String getDescription();

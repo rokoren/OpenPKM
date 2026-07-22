@@ -602,7 +602,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
             for(CloseSupport provider : providers)
             {
-                provider.projectClosed();
+                provider.close();
             } 
         } 
 
@@ -1902,7 +1902,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -2124,7 +2124,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }  
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -2442,7 +2442,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }        
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -2599,9 +2599,12 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         Raindrop oldRaindrop = getRaindropsById().get(raindrop.getSourceID());   
                         if(oldRaindrop.getType() == raindrop.getType())
                         {
-                            if(isTime || !oldRaindrop.getProperties().equals(raindrop.getProperties()))
+                            if(isTime)
                             {
-                                oldRaindrop.merge(raindrop);                                                               
+                                if(oldRaindrop.merge(raindrop))
+                                {
+                                    oldRaindrop.markModified();
+                                }
                             }                                    
                         }
                         else
@@ -2834,7 +2837,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {
@@ -3435,7 +3438,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         } 
         
         @Override
-        public void projectClosed()
+        public void close()
         {
             if(rootDir != null)
             {

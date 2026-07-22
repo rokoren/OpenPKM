@@ -8,7 +8,7 @@ package openpkm.base;
  *
  * @author Rok Koren
  */
-public interface Content extends Source, PropertiesProvider
+public interface Content extends Source, StateSupport, PropertiesProvider
 {
     String PROP_CONTENT_CREATOR = "content.creator";
     
