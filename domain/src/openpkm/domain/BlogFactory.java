@@ -6,6 +6,7 @@ package openpkm.domain;
 
 import java.util.Properties;
 import openpkm.base.SourceFactory;
+import org.openide.util.RequestProcessor;
 
 /**
  *
@@ -13,5 +14,7 @@ import openpkm.base.SourceFactory;
  */
 public interface BlogFactory extends SourceFactory<Blog>
 {
+    RequestProcessor RP = new RequestProcessor(BlogFactory.class);  
+    
     Blog getBlog(Properties props);           
 }

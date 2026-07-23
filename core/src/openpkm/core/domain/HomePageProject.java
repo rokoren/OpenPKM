@@ -71,6 +71,7 @@ import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.Link;
 import openpkm.base.NodeProvider;
+import openpkm.base.OpenSupport;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
@@ -139,6 +140,8 @@ import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
 import org.openide.awt.NotificationDisplayer;
+import org.openide.cookies.CloseCookie;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -663,7 +666,13 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         {
             task = RP.create(this);   
             task.schedule(1000);                                      
-            propertyChangeSupport.addPropertyChangeListener(this);           
+            propertyChangeSupport.addPropertyChangeListener(this);   
+            
+            Collection<? extends OpenSupport> providers = getLookup().lookupAll(OpenSupport.class);            
+            for(OpenSupport provider : providers)
+            {
+                provider.open();
+            }  
         }
 
         @Override
@@ -676,7 +685,29 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             for(CloseSupport provider : providers)
             {
                 provider.close();
-            }             
+            }  
+            
+            for(TopComponent topComponent : WindowManager.getDefault().getRegistry().getOpened())
+            {
+                DataObject data = topComponent.getLookup().lookup(DataObject.class);
+                if (data != null) 
+                {
+                    SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                    if(sourceProvider != null)
+                    {
+                        Source source = sourceProvider.getSource();
+                        if(source != null)
+                        {
+                            Project project = source.getLookup().lookup(Project.class);
+                            if(project == HomePageProject.this)
+                            {
+                                CloseCookie close = data.getLookup().lookup(CloseCookie.class);
+                                close.close();
+                            }                                                                       
+                        }                                                                                                          
+                    }                                                                                                                                   
+                }                  
+            }              
         }  
         
         @Override
@@ -907,12 +938,11 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
-    {        
-        private Image icon; 
-        private boolean isLoading;
-        
+    private final class IconProviderImpl implements IconProvider, OpenSupport, CloseSupport, ChangeSupportProvider, Runnable
+    {                
         private final ChangeSupport changeSupport = new ChangeSupport(this); 
+        
+        private Image icon; 
 
         @Override
         public synchronized Image getIcon(int type)
@@ -920,11 +950,6 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             if(icon != null)
             {
                 return icon;
-            }
-            if(!isLoading)
-            {
-                isLoading = true;                
-                RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.HOME_PAGE);
@@ -962,13 +987,22 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());
-                } 
-                finally
-                {
-                    isLoading = false;
-                }                
+                }               
             }
         }                
+
+        @Override
+        public void open() 
+        {
+            RP.post(this);
+        }
+
+        @Override
+        public void close() 
+        {
+            icon = null;
+            changeSupport.fireChange();
+        }
     }    
 
 // TODO RootProjectProvider     

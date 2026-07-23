@@ -73,6 +73,7 @@ import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.Link;
+import openpkm.base.OpenSupport;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
@@ -973,7 +974,13 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         {             
             task = RP.create(this);    
             propertyChangeSupport.addPropertyChangeListener(this);            
-            task.schedule(1000);            
+            task.schedule(1000);  
+            
+            Collection<? extends OpenSupport> providers = getLookup().lookupAll(OpenSupport.class);            
+            for(OpenSupport provider : providers)
+            {
+                provider.open();
+            }             
         }
 
         @Override
@@ -1178,12 +1185,11 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
     
 // TODO IconProvider    
     
-    private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
+    private final class IconProviderImpl implements IconProvider, OpenSupport, CloseSupport, ChangeSupportProvider, Runnable
     {        
-        private Image icon; 
-        private boolean isLoading;
+        private final ChangeSupport changeSupport = new ChangeSupport(this);         
         
-        private final ChangeSupport changeSupport = new ChangeSupport(this); 
+        private Image icon;         
 
         @Override
         public synchronized Image getIcon(int type)
@@ -1191,11 +1197,6 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             if(icon != null)
             {
                 return icon;
-            }
-            if(!isLoading)
-            {
-                isLoading = true;                
-                RP.post(this);                
             }
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.YOUTUBE_CHANNEL);
@@ -1233,13 +1234,22 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 catch(IOException e)
                 {
                     LOG.warning(e.getMessage());
-                } 
-                finally
-                {
-                    isLoading = false;
-                }                
+                }               
             }
-        }                
+        }  
+        
+        @Override
+        public void open() 
+        {
+            RP.post(this);
+        }
+
+        @Override
+        public void close() 
+        {
+            icon = null;
+            changeSupport.fireChange();
+        }        
     }    
 
 // TODO RootProjectProvider     

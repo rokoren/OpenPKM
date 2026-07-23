@@ -7,7 +7,6 @@ package openpkm.core.domain;
 import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.beans.BeanInfo;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -16,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -23,8 +23,12 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
+import openpkm.base.CloseSupport;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
+import openpkm.base.OpenSupport;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.StateSupport;
 import openpkm.domain.Blog;
@@ -40,6 +44,7 @@ import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.openide.awt.UndoRedo;
+import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -68,7 +73,7 @@ public class BlogFactoryImpl implements BlogFactory
         LOG.info("Blog saved");      
     }   
 
-    public class BlogImpl implements Blog, Domain, StateSupport, IconProvider, MultiViewDescription
+    public class BlogImpl implements Blog, Domain, StateSupport, MultiViewDescription
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -115,7 +120,7 @@ public class BlogFactoryImpl implements BlogFactory
         {
             if (lkp == null) 
             {
-                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new ShortDescriptionProviderImpl(this));              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new ShortDescriptionProviderImpl(this), new IconProviderImpl());              
             }
             return lkp;
         }  
@@ -247,15 +252,6 @@ public class BlogFactoryImpl implements BlogFactory
             props.putAll(provider.getProperties());        
             return true;
         } 
-
-    // TODO IconProvider
-
-        @Override
-        public Image getIcon(int type)
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.BLOG);
-        }
        
 // TODO MultiViewDescription        
         
@@ -292,26 +288,76 @@ public class BlogFactoryImpl implements BlogFactory
         @Override
         public Image getIcon() 
         {
-            String favicon = getFavicon();
-            if(favicon != null)
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.BLOG);
+        } 
+        
+        private final class IconProviderImpl implements IconProvider, OpenSupport, CloseSupport, ChangeSupportProvider, Runnable
+        {                
+            private final ChangeSupport changeSupport = new ChangeSupport(this); 
+
+            private Image icon; 
+
+            @Override
+            public synchronized Image getIcon(int type)
             {
-                try
+                if(icon != null)
                 {
-                    URL url = new URL(favicon);
-                    BufferedImage image = ImageIO.read(url);  
-                    return Utils.resizeImage(image, 16, 16); 
+                    return icon;
                 }
-                catch(MalformedURLException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }               
+                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+                return provider.getImage(IconsProvider.ICON.BLOG);
             }
-            return getIcon(BeanInfo.ICON_COLOR_16x16);
-        }        
+
+            @Override
+            public void addChangeListener(ChangeListener listener) 
+            {
+                changeSupport.addChangeListener(listener);
+            }
+
+            @Override
+            public void removeChangeListener(ChangeListener listener) 
+            {
+                changeSupport.removeChangeListener(listener);
+            }        
+
+            @Override
+            public void run() 
+            {
+                String favicon = getFavicon();
+                if(favicon != null)
+                {
+                    try
+                    {
+                        URL url = new URL(favicon);
+                        BufferedImage image = ImageIO.read(url);  
+                        icon = Utils.resizeImage(image, 16, 16); 
+                        changeSupport.fireChange();
+                    }
+                    catch(MalformedURLException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }               
+                }
+            }                
+
+            @Override
+            public void open() 
+            {
+                RP.post(this);
+            }
+
+            @Override
+            public void close() 
+            {
+                icon = null;
+                changeSupport.fireChange();
+            }
+        }          
     }
 
     private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
@@ -398,7 +444,11 @@ public class BlogFactoryImpl implements BlogFactory
         @Override
         public void componentOpened() 
         {
-            
+            Collection<? extends OpenSupport> providers = getLookup().lookupAll(OpenSupport.class);            
+            for(OpenSupport provider : providers)
+            {
+                provider.open();
+            }              
         }
 
         @Override
@@ -408,6 +458,12 @@ public class BlogFactoryImpl implements BlogFactory
             {
                 browser.close(true);
             }
+            
+            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
+            for(CloseSupport provider : providers)
+            {
+                provider.close();
+            }              
         }
 
         @Override
