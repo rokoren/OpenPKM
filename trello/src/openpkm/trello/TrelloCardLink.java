@@ -4,13 +4,13 @@
  */
 package openpkm.trello;
 
-import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport;
 
 /**
  *
  * @author rok
  */
-public interface TrelloCardLink extends TrelloCard, PropertiesProvider
+public interface TrelloCardLink extends TrelloCard, StateSupport
 {
     
 }

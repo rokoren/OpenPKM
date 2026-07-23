@@ -7,13 +7,14 @@ package openpkm.trello;
 import java.util.Collection;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport;
 import org.openide.util.ChangeSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloCheckList extends PropertiesProvider, NodePositionProvider
+public interface TrelloCheckList extends StateSupport, PropertiesProvider, NodePositionProvider
 {
     String getBoardID();
     String getCardID();

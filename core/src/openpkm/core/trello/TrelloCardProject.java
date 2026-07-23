@@ -201,10 +201,22 @@ public class TrelloCardProject implements Project, TrelloCard, BatchUpdateSuppor
         sources.put(provider.getName(), provider);                              
     }     
     
+    @Override
     public Properties getProperties()
     {
         return props;
-    }     
+    } 
+
+    @Override
+    public boolean merge(PropertiesProvider provider)
+    {
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
+    }      
     
     public TrelloAccount getTrelloAccount()
     {

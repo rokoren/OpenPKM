@@ -63,7 +63,7 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         private final TrelloAccount account;
 
         private Lookup lkp;    
-        private SourceState state;        
+        private State state;        
         
         public TrelloCommentImpl(AbstractTrelloAction.CommentCard comment, Trello trello, TrelloAccount account) 
         {
@@ -77,7 +77,18 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         public Properties getProperties() 
         {
             return comment.getProperties();
-        }        
+        }  
+        
+        @Override
+        public boolean merge(PropertiesProvider provider)
+        {
+            if(getProperties().equals(provider.getProperties()))       
+            {
+                return false;
+            }
+            getProperties().putAll(provider.getProperties());        
+            return true;
+        }          
         
         @Override
         public Lookup getLookup() 
@@ -92,28 +103,28 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         @Override
         public boolean isModified() 
         {
-            return state == SourceState.MODIFIED;
+            return state == State.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            SourceState oldValue = state;
-            state = SourceState.MODIFIED;
+            State oldValue = state;
+            state = State.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }   
 
         @Override
         public boolean isDeleted() 
         {
-            return state == SourceState.DELETED;
+            return state == State.DELETED;
         }         
         
         @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = state;
-            state = SourceState.DELETED;
+            State oldValue = state;
+            state = State.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         } 
         
@@ -194,11 +205,6 @@ public class TrelloCommentFactoryImpl implements TrelloCommentFactory
         public Image getIcon(int type) 
         {
             return comment.getIcon(type);
-        }
-
-        @Override
-        public void merge(PropertiesProvider provider) {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
     }      
 }

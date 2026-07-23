@@ -64,7 +64,6 @@ public abstract class AbstractTrelloAction implements TrelloAction, DisplayNameP
     protected final Properties props; 
     
     protected Lookup lkp;  
-    protected State state;
 
     public AbstractTrelloAction(Properties props) 
     {
@@ -118,33 +117,14 @@ public abstract class AbstractTrelloAction implements TrelloAction, DisplayNameP
     }  
     
     @Override
-    public void merge(PropertiesProvider provider)
+    public boolean merge(PropertiesProvider provider)
     {
-        props.putAll(provider.getProperties());
-    } 
-    
-    @Override
-    public boolean isModified() 
-    {
-        return state == SourceState.MODIFIED;
-    }
-
-    @Override
-    public void markModified()
-    {
-        state = SourceState.MODIFIED;
-    }
-
-    @Override
-    public boolean isDeleted() 
-    {
-        return state == SourceState.DELETED;
-    }
-
-    @Override
-    public void notifyDeleted() 
-    {
-        state = SourceState.DELETED;
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
     }     
   
 // TODO DisplayNameProvider

@@ -5,12 +5,13 @@
 package openpkm.trello;
 
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloMember extends PropertiesProvider
+public interface TrelloMember extends StateSupport, PropertiesProvider
 {
     String getMemberID(); 
     String getMemberUsername();

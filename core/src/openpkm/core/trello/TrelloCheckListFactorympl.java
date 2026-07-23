@@ -30,6 +30,7 @@ import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
 import openpkm.base.NodePositionProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport.State;
 import openpkm.trello.TrelloCheckList;
 import openpkm.trello.TrelloCheckListItem;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -87,7 +88,7 @@ public class TrelloCheckListFactorympl implements TrelloCheckListFactory
         private final PropertyChangeSupport propertyChangeSupport;           
         
         private Lookup lkp; 
-        private SourceState state; 
+        private State state; 
         private ChangeSupport changeSupport;
         
         public TrelloCheckListImpl(Properties props, TrelloCheckListProvider provider)
@@ -216,36 +217,41 @@ public class TrelloCheckListFactorympl implements TrelloCheckListFactory
         }   
         
         @Override
-        public void merge(PropertiesProvider provider)
+        public boolean merge(PropertiesProvider provider)
         {
-            props.putAll(provider.getProperties());
+            if(props.equals(provider.getProperties()))       
+            {
+                return false;
+            }
+            props.putAll(provider.getProperties());        
+            return true;
         }  
         
         @Override
         public boolean isModified() 
         {
-            return state == SourceState.MODIFIED;
+            return state == State.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            SourceState oldValue = state;
-            state = SourceState.MODIFIED;
+            State oldValue = state;
+            state = State.MODIFIED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }   
 
         @Override
         public boolean isDeleted() 
         {
-            return state == SourceState.DELETED;
+            return state == State.DELETED;
         }    
 
         @Override
         public void notifyDeleted()
         {
-            SourceState oldValue = state;
-            state = SourceState.DELETED;
+            State oldValue = state;
+            state = State.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
         }         
 

@@ -726,7 +726,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
             for(CloseSupport provider : providers)
             {
-                provider.projectClosed();
+                provider.close();
             }            
         }                  
 
@@ -1152,7 +1152,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
         } 
         
         @Override
-        public void projectClosed() 
+        public void close() 
         {
             if(rootDir != null)
             {
@@ -1560,7 +1560,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
     
 // TODO SourceGroup
 
-    private final class TrelloActionProviderImpl extends TrelloActionProvider implements SourceGroupProvider, IconProvider, FileChangeListener, CloseSupport, Runnable
+    private final class TrelloActionProviderImpl extends TrelloActionProvider implements SourceGroupProvider, IconProvider, FileChangeListener, Runnable
     { 
         @StaticResource()
         private static final String ICON = "openpkm/core/resources/action_log.png"; 
@@ -1661,41 +1661,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                 }                
             }
             return rootDir;
-        }
-        
-        @Override
-        public void projectClosed()
-        {
-            if(rootDir != null)
-            {
-                rootDir.removeFileChangeListener(this);
-                
-                for(TrelloAction action : getActions())
-                {
-                    FileObject file = rootDir.getFileObject(action.getActionID(), PropertiesProvider.EXTENSION);
-                    if(file != null)
-                    {
-                        try
-                        {
-                            if(action.isModified())
-                            {
-                                OutputStream os = file.getOutputStream();
-                                actionFactory.save(os, "Updated by Blog project: " + getDisplayName());
-                                os.close();
-                            }
-                            else if(action.isDeleted())
-                            {
-                                file.delete();
-                            }                                  
-                        }  
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                             
-                    } 
-                }                
-            }
-        }        
+        }      
 
         @Override
         public void addPropertyChangeListener(PropertyChangeListener listener) 

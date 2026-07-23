@@ -12,6 +12,7 @@ import openpkm.base.DisplayNameProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport.State;
 import openpkm.trello.TrelloAttachment;
 import openpkm.youtube.YouTubeUtils;
 import org.openide.nodes.Children;
@@ -55,7 +56,7 @@ public class TrelloAttachmentFactoryImpl implements TrelloAttachmentFactory
         private final Properties props;    
         
         private Lookup lkp; 
-        private SourceState state;         
+        private State state;         
         
         public TrelloAttachmentImpl(Properties props)
         {
@@ -115,33 +116,38 @@ public class TrelloAttachmentFactoryImpl implements TrelloAttachmentFactory
         } 
         
         @Override
-        public void merge(PropertiesProvider provider)
+        public boolean merge(PropertiesProvider provider)
         {
-            props.putAll(provider.getProperties());
+            if(props.equals(provider.getProperties()))       
+            {
+                return false;
+            }
+            props.putAll(provider.getProperties());        
+            return true;
         } 
         
         @Override
         public boolean isModified() 
         {
-            return state == SourceState.MODIFIED;
+            return state == State.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            state = SourceState.MODIFIED;      
+            state = State.MODIFIED;      
         }   
 
         @Override
         public boolean isDeleted() 
         {
-            return state == SourceState.DELETED;
+            return state == State.DELETED;
         }        
         
         @Override
         public void notifyDeleted()
         {
-            state = SourceState.DELETED;       
+            state = State.DELETED;       
         }         
         
 // TODO DisplayNameProvider        

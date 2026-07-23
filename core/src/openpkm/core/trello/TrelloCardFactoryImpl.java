@@ -26,7 +26,7 @@ public class TrelloCardFactoryImpl implements TrelloCardFactory
     @Override
     public TrelloCardLink getCard(Properties props)
     {
-        return new TrelloCardImpl(props);
+        return new TrelloCardLinkImpl(props);
     }
     
     @Override

@@ -6,12 +6,13 @@ package openpkm.trello;
 
 import openpkm.base.NodePositionProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface TrelloList extends PropertiesProvider, NodePositionProvider
+public interface TrelloList extends StateSupport, PropertiesProvider, NodePositionProvider
 {
     String getBoardID();  
     String getListID();

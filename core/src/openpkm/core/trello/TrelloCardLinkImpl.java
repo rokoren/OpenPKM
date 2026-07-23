@@ -35,7 +35,7 @@ import openpkm.trello.TrelloCardProvider;
  *
  * @author rok
  */
-public class TrelloCardImpl implements TrelloCardLink, PropertyChangeListener
+public class TrelloCardLinkImpl implements TrelloCardLink
 {
     private static final Logger LOG = Logger.getLogger(TrelloCard.class.getName());   
     
@@ -43,13 +43,12 @@ public class TrelloCardImpl implements TrelloCardLink, PropertyChangeListener
     private final PropertyChangeSupport propertyChangeSupport;
 
     private Lookup lkp;  
-    private SourceState state;        
+    private State state;        
 
-    public TrelloCardImpl(Properties props)
+    public TrelloCardLinkImpl(Properties props)
     {
         this.props = props;  
         propertyChangeSupport = new PropertyChangeSupport(this);
-        propertyChangeSupport.addPropertyChangeListener(this);
     }     
 
     @Override
@@ -105,28 +104,28 @@ public class TrelloCardImpl implements TrelloCardLink, PropertyChangeListener
     @Override
     public boolean isModified() 
     {
-        return state == SourceState.MODIFIED;
+        return state == State.MODIFIED;
     }
 
     @Override
     public void markModified()
     {
-        SourceState oldValue = state;
-        state = SourceState.MODIFIED;
+        State oldValue = state;
+        state = State.MODIFIED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }   
     
     @Override
     public boolean isDeleted() 
     {
-        return state == SourceState.DELETED;
+        return state == State.DELETED;
     }    
 
     @Override
     public void notifyDeleted()
     {
-        SourceState oldValue = state;
-        state = SourceState.DELETED;
+        State oldValue = state;
+        state = State.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
     }  
 
@@ -346,18 +345,15 @@ public class TrelloCardImpl implements TrelloCardLink, PropertyChangeListener
     }  
 
     @Override
-    public void merge(PropertiesProvider provider)
+    public boolean merge(PropertiesProvider provider)
     {
-        Object oldValue = props.clone();
-        props.putAll(provider.getProperties());
-        //propertyChangeSupport.firePropertyChange(PROP_PROPS_ALL, oldValue, props);
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) 
-    {
-        markModified();
-    }
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
+    } 
 
     private final class DisplayNameProviderImpl implements DisplayNameProvider, ChangeSupportProvider, PropertyChangeListener
     {
@@ -423,7 +419,7 @@ public class TrelloCardImpl implements TrelloCardLink, PropertyChangeListener
         @Override
         public Action getAction(TrelloCardProvider provider) 
         {
-            return new TrelloCardActionsProvider.CardComplete(TrelloCardImpl.this, provider.getAccount());
+            return new TrelloCardActionsProvider.CardComplete(TrelloCardLinkImpl.this, provider.getAccount());
         }        
     }   
 }
