@@ -9,6 +9,7 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -44,8 +45,7 @@ import org.openide.util.lookup.ServiceProvider;
 public class RssFactoryImpl implements RssFactory
 {
     public static final String PROP_TITLE           = "title"; 
-    public static final String PROP_DESCRIPTION     = "description"; 
-    public static final String PROP_RSS_URL         = "rss.url";    
+    public static final String PROP_DESCRIPTION     = "description";    
     public static final String PROP_LINK            = "link"; 
     public static final String PROP_IMAGE           = "image";     
     public static final String PROP_ICON            = "icon";
@@ -106,14 +106,21 @@ public class RssFactoryImpl implements RssFactory
         }
 
         return getRssChannel(props);
-    }  
+    } 
+    
+    @Override
+    public void save(RssChannel channel, OutputStream os, String comments) throws IOException
+    {
+        channel.getProperties().store(os, comments);
+        LOG.info("RSS Channel saved");      
+    }     
     
     private static final class RssChannelImpl implements RssChannel, DisplayNameProvider
     {
         private final Properties props; 
         
         private Lookup lkp;  
-        private SourceState state;
+        private State state;
         
         public RssChannelImpl(Properties props)
         {
@@ -121,13 +128,7 @@ public class RssFactoryImpl implements RssFactory
         }  
 
 // TODO RssChannel        
-                        
-        @Override
-        public String getRssID() 
-        {
-            return getRssUrl();
-        }
-        
+                                
         @Override
         public String getTitle()
         {
@@ -137,13 +138,7 @@ public class RssFactoryImpl implements RssFactory
         public String getDescription()
         {
             return props.getProperty(PROP_DESCRIPTION);
-        }
-        
-        @Override
-        public String getRssUrl() 
-        {
-            return props.getProperty(PROP_RSS_URL);
-        }        
+        }      
 
         @Override
         public String getLink() 
@@ -237,33 +232,38 @@ public class RssFactoryImpl implements RssFactory
         }  
         
         @Override
-        public void merge(PropertiesProvider provider)
+        public boolean merge(PropertiesProvider provider)
         {
-            props.putAll(provider.getProperties());
+            if(props.equals(provider.getProperties()))       
+            {
+                return false;
+            }
+            props.putAll(provider.getProperties());        
+            return true;
         } 
         
         @Override
         public boolean isModified() 
         {
-            return state == SourceState.MODIFIED;
+            return state == State.MODIFIED;
         }
 
         @Override
         public void markModified()
         {
-            state = SourceState.MODIFIED;
+            state = State.MODIFIED;
         }
 
         @Override
         public boolean isDeleted() 
         {
-            return state == SourceState.DELETED;
+            return state == State.DELETED;
         }
 
         @Override
         public void notifyDeleted() 
         {
-            state = SourceState.DELETED;
+            state = State.DELETED;
         }         
 
 // TODO NodeProvider         
@@ -271,7 +271,7 @@ public class RssFactoryImpl implements RssFactory
         @Override
         public String getName() 
         {
-            return getRssID();
+            return getUri();
         }
         
         @Override

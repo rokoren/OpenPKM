@@ -683,7 +683,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
                 {
                     try
                     {
-                        URL url = new URL(channel.getRssUrl());
+                        URL url = new URL(channel.getUri());
                         SyndFeedInput input = new SyndFeedInput();
                         SyndFeed feed = input.build(new XmlReader(url));
                         
@@ -1094,7 +1094,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
                         try
                         {
                             RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-                            channels.put(channel.getRssID(), channel);
+                            channels.put(channel.getUri(), channel);
                         }
                         catch(IOException e)
                         {
@@ -1154,7 +1154,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
             try
             {
                 RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-                getChannelsById().put(channel.getRssID(), channel);               
+                getChannelsById().put(channel.getUri(), channel);               
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1173,10 +1173,17 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            RssChannel channel = getChannelsById().remove(file.getName());  
-            if(channel != null)
+            try
             {
-                changeSupport.fireChange();
+                RssChannel channel = factory.getRssChannel(Utils.getProperties(file));               
+                if(getChannelsById().remove(channel.getUri()) != null)
+                {
+                    changeSupport.fireChange();
+                }                
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
             }
         }
 

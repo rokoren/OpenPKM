@@ -5,14 +5,17 @@
 package openpkm.rss;
 
 import com.rometools.rome.feed.synd.SyndFeed;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Properties;
 
 /**
  *
  * @author rok
  */
-public interface RssFactory 
+public interface RssFactory
 {
     RssChannel getRssChannel(Properties props);
     RssChannel getRssChannel(SyndFeed feed);
+    void save(RssChannel channel, OutputStream os, String comments) throws IOException;
 }

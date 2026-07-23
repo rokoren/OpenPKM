@@ -79,7 +79,7 @@ public abstract class RssProvider implements SourceGroup
         try
         {
             RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-            if(getChannelsById().containsKey(channel.getRssID()))
+            if(getChannelsById().containsKey(channel.getUri()))
             {
                 return true;
             }
