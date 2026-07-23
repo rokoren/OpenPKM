@@ -4,9 +4,13 @@
  */
 package openpkm.core.domain;
 
+import java.io.IOException;
+import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
 import openpkm.domain.Blog;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -17,11 +21,15 @@ import org.openide.util.HelpCtx;
  */
 public class BlogWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
+    private static final Logger LOG = Logger.getLogger(BlogWizardPanel1.class.getName());       
+    
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
      */
     private BlogVisualPanel1 component;
+    
+    private Document document;  
 
     // Get the visual component for the panel. In this template, the component
     // is kept separate. This can be more efficient: if the wizard is created
@@ -60,12 +68,25 @@ public class BlogWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
     {
         if (getComponent().getFileType() == null) 
         {
-            throw new WizardValidationException(null, "File Type can not be empty", null);
+            throw new WizardValidationException(component, "File Type can not be empty", null);
         }        
         if(getComponent().getBlogUrl().isBlank()) 
         {
-            throw new WizardValidationException(null, "URL can not be empty", null);
+            throw new WizardValidationException(component, "URL can not be empty", null);
         } 
+        
+        try
+        {
+            document = Jsoup.connect(getComponent().getBlogUrl())
+                    .ignoreContentType(true)
+                    .userAgent("Mozilla/5.0 Firefox/26.0")
+                    .get();             
+        }
+        catch(IOException e)
+        {
+            LOG.warning(e.getMessage());
+            throw new WizardValidationException(component, e.getMessage(), e.getLocalizedMessage());
+        }         
     }    
 
     @Override
@@ -86,5 +107,6 @@ public class BlogWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
     {
         descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getFileType()); 
         descriptor.putProperty(Blog.PROP_URL, getComponent().getBlogUrl());
+        descriptor.putProperty("document", document);  
     }      
 }

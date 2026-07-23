@@ -15,16 +15,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.core.TopicWizardPanel;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogProvider;
 import openpkm.utils.FileUtils;
@@ -73,6 +73,7 @@ public class BlogAction implements ActionListener
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new BlogWizardPanel1());
+        panels.add(new TopicWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -97,18 +98,17 @@ public class BlogAction implements ActionListener
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
-            String blogID = null;
             
             FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
-            String url = (String) wiz.getProperty(Blog.PROP_URL);
-            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-            String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                        
-            Document document = (Document) wiz.getProperty("document");            
+            String url = (String) wiz.getProperty(Blog.PROP_URL);                      
+            Document document = (Document) wiz.getProperty("document");  
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            
+            String description = document.select("meta[name=description]").attr("content");
 
             Properties props = new Properties();
             props.setProperty(Blog.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(Blog.PROP_TITLE, title);       
+            props.setProperty(Blog.PROP_TITLE, document.title());       
             props.setProperty(Blog.PROP_DESCRIPTION, description);            
             props.setProperty(Blog.PROP_URL, url);  
             
@@ -149,9 +149,9 @@ public class BlogAction implements ActionListener
                     provider.getFactory().save(blog, os, "New Blog Created by Wizard");
                     os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Blog saved with title: " + title);                         
+                    StatusDisplayer.getDefault().setStatusText("Blog saved with title: " + blog.getTitle());                         
 
-                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Blog in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Blog in editor?", blog.getTitle(), NotifyDescriptor.YES_NO_OPTION);
                     if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                     {
                         try
