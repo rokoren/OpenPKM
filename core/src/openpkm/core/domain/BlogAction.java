@@ -72,8 +72,7 @@ public class BlogAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new HomePageWizardPanel1());
-        panels.add(new HomePageWizardPanel2());
+        panels.add(new BlogWizardPanel1());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
