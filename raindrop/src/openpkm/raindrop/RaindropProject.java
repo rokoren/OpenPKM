@@ -124,6 +124,7 @@ import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
 import openpkm.base.SourceProviderWrapper;
+import openpkm.base.StateSupport;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.BlogProvider;
@@ -3446,27 +3447,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 
                 for(Blog blog : getBlogs())
                 {
-                    FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
-                    if(file != null)
+                    if(blog instanceof StateSupport state) 
                     {
-                        try
+                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
                         {
-                            if(blog.isModified())
+                            try
                             {
-                                OutputStream os = file.getOutputStream();
-                                factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
-                                os.close();
-                            }
-                            else if(blog.isDeleted())
+                                if(state.isModified())
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state.isDeleted())
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
                             {
-                                file.delete();
-                            }                                  
-                        }  
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                             
-                    } 
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                         
+                    }                                        
                 }                
             }
         }         
@@ -3477,20 +3481,42 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             if(blogs == null)
             {
                 blogs = new HashMap<>();
-                FileObject folder = getRootFolder();
-                if(folder !=  null)
+                FileObject root = getRootFolder();
+                if(root !=  null)
                 {
-                    for (FileObject file : folder.getChildren()) 
+                    for (FileObject fo : root.getChildren()) 
                     {
-                        try
+                        if(fo.isFolder())
                         {
-                            Blog blog = factory.getBlog(Utils.getProperties(file)); 
-                            blogs.put(blog.getSourceID(), blog);
+                            try
+                            {
+                                Project project = ProjectManager.getDefault().findProject(fo);  
+                                if(project != null)
+                                {
+                                    Blog blog = project.getLookup().lookup(Blog.class);
+                                    if(blog != null)
+                                    {
+                                        blogs.put(blog.getSourceID(), blog);
+                                    }                                      
+                                }                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
                         }
-                        catch(IOException e)
+                        else
                         {
-                            LOG.warning(e.getMessage());
-                        }                                                                                                                                             
+                            try
+                            {
+                                Blog blog = factory.getBlog(Utils.getProperties(fo)); 
+                                blogs.put(blog.getSourceID(), blog);
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                              
+                        }                                                                                                                                                                                                                                           
                     }                     
                 }                
             }

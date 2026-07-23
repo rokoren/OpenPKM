@@ -79,6 +79,7 @@ import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
+import openpkm.base.StateSupport;
 import openpkm.base.TagsProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
@@ -3297,27 +3298,30 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 
                 for(Blog blog : getBlogs())
                 {
-                    FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
-                    if(file != null)
+                    if(blog instanceof StateSupport state) 
                     {
-                        try
+                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
                         {
-                            if(blog.isModified())
+                            try
                             {
-                                OutputStream os = file.getOutputStream();
-                                factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
-                                os.close();
-                            }
-                            else if(blog.isDeleted())
+                                if(state.isModified())
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state.isDeleted())
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
                             {
-                                file.delete();
-                            }                                  
-                        }  
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                             
-                    }  
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                          
+                    }                                        
                 }                
             }
         }         

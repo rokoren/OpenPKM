@@ -26,6 +26,7 @@ import javax.swing.JToolBar;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.StateSupport;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.Domain;
@@ -67,7 +68,7 @@ public class BlogFactoryImpl implements BlogFactory
         LOG.info("Blog saved");      
     }   
 
-    public class BlogImpl implements Blog, Domain, IconProvider, MultiViewDescription
+    public class BlogImpl implements Blog, Domain, StateSupport, IconProvider, MultiViewDescription
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -81,13 +82,7 @@ public class BlogFactoryImpl implements BlogFactory
             propertyChangeSupport = new PropertyChangeSupport(this);
         }    
 
-    // TODO Blog    
-
-        @Override
-        public String getBlogID() 
-        {
-            return getUrl();
-        }      
+    // TODO Blog         
 
         @Override
         public String getUrl() 
@@ -112,7 +107,7 @@ public class BlogFactoryImpl implements BlogFactory
         @Override
         public String getSourceID()
         {
-            return getBlogID();
+            return getUrl();
         }  
 
         @Override

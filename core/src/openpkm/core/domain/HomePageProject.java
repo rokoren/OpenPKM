@@ -78,6 +78,7 @@ import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
+import openpkm.base.StateSupport;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.jcef.CefClientProvider;
@@ -124,7 +125,6 @@ import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.BlogProvider;
 import openpkm.domain.Domain;
-import openpkm.domain.HomePage;
 import openpkm.domain.WebPage;
 import openpkm.domain.WebPageFactory;
 import openpkm.domain.WebPageProvider;
@@ -144,7 +144,7 @@ import org.openide.awt.NotificationDisplayer;
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Project, HomePage, Domain, SourceProviders, BatchUpdateSupport
+public class HomePageProject implements Project, Blog, Domain, SourceProviders, BatchUpdateSupport
 {      
     private static final String DATA_FOLDER = "data";    
     
@@ -224,9 +224,21 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
         }
     }  
     
+    @Override
     public Properties getProperties()
     {
         return props;
+    }  
+    
+    @Override
+    public boolean merge(PropertiesProvider provider)
+    {
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
     }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -328,14 +340,8 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
         return lkp;
     }      
 
-// TODO HomePage    
-
-    @Override
-    public String getHomePageID() 
-    {
-        return getUrl();
-    }      
-
+// TODO Blog    
+  
     @Override
     public String getUrl() 
     {
@@ -359,7 +365,7 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
     @Override
     public String getSourceID()
     {
-        return getHomePageID();
+        return getUrl();
     }  
     
     @Override
@@ -2702,27 +2708,30 @@ public class HomePageProject implements Project, HomePage, Domain, SourceProvide
                 
                 for(Blog blog : getBlogs())
                 {
-                    FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
-                    if(file != null)
+                    if(blog instanceof StateSupport state) 
                     {
-                        try
+                        FileObject file = rootDir.getFileObject(blog.getSourceID(), PropertiesProvider.EXTENSION);
+                        if(file != null)
                         {
-                            if(blog.isModified())
+                            try
                             {
-                                OutputStream os = file.getOutputStream();
-                                factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
-                                os.close();
-                            }
-                            else if(blog.isDeleted())
+                                if(state.isModified())
+                                {
+                                    OutputStream os = file.getOutputStream();
+                                    factory.save(blog, os, "Updated by Raindrop project: " + getTitle());
+                                    os.close();
+                                }
+                                else if(state.isDeleted())
+                                {
+                                    file.delete();
+                                }                                  
+                            }  
+                            catch(IOException e)
                             {
-                                file.delete();
-                            }                                  
-                        }  
-                        catch(IOException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }                             
-                    } 
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                         
+                    }
                 }                
             }
         }         

@@ -15,30 +15,31 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.DescriptionProvider;
+import openpkm.base.FileTypeProvider;
 import openpkm.base.KnowledgeGraphProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.core.TopicWizardPanel;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogProvider;
 import openpkm.utils.FileUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
-import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -71,8 +72,8 @@ public class HomePageAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new HomePageWizardPanel1());
-        panels.add(new HomePageWizardPanel2());
+        panels.add(new BlogWizardPanel1());
+        panels.add(new TopicWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -97,17 +98,17 @@ public class HomePageAction implements ActionListener
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
             LocalDateTime now = LocalDateTime.now();
-            String blogID = null;
             
-            String url = (String) wiz.getProperty(HomePageProject.PROP_URL);
-            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-            String description = (String) wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);  
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                        
-            Document document = (Document) wiz.getProperty("document");           
+            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
+            String url = (String) wiz.getProperty(Blog.PROP_URL);                      
+            Document document = (Document) wiz.getProperty("document");  
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            
+            String description = document.select("meta[name=description]").attr("content");
 
             Properties props = new Properties();
             props.setProperty(Blog.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(Blog.PROP_TITLE, title);       
+            props.setProperty(Blog.PROP_TITLE, document.title());       
             props.setProperty(Blog.PROP_DESCRIPTION, description);            
             props.setProperty(Blog.PROP_URL, url);  
             
@@ -134,42 +135,46 @@ public class HomePageAction implements ActionListener
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
-            }  
+            } 
 
-            try
-            {  
-                String folderName = FileUtils.getFolderName(provider.getRootFolder());
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
-
-                OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM Home Page Project"); 
-                os.close(); 
-                                
-                StatusDisplayer.getDefault().setStatusText("OpenPKM Home Page Project saved: " + title); 
-
-                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Home Page in editor?", title, NotifyDescriptor.YES_NO_OPTION);
-                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
-                {
-                    try
-                    {
-                        Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                        if(project != null)
-                        {
-                            Project[] projects = {project};
-                            OpenProjects.getDefault().open(projects, false);   
-                        }                          
-                    }
-                    catch(IOException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                }                  
-            }
-            catch(IOException e) 
+            FileObject root = provider.getRootFolder();
+            if(root != null)
             {
-                LOG.warning(e.getMessage());
-            }                                              
+                Blog blog = provider.getFactory().getBlog(props);
+                try
+                {
+                    FileObject file = provider.createData(blog, fileType); 
+
+                    String folderName = FileUtils.getFolderName(provider.getRootFolder());
+                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
+                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
+
+                    OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
+                    props.store(os, "OpenPKM Home Page Project"); 
+                    os.close();                    
+
+                    StatusDisplayer.getDefault().setStatusText("Home page saved with title: " + blog.getTitle());                         
+
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Home page in editor?", blog.getTitle(), NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                             
+                }                    
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }                                                          
         }        
     }  
     
