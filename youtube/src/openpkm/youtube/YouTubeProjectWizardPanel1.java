@@ -7,11 +7,16 @@ package openpkm.youtube;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.ChannelListResponse;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
 import org.openide.WizardDescriptor;
@@ -148,6 +153,37 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         descriptor.putProperty(YouTubeChannel.PROP_PRIVACY_STATUS, privacyStatus);
         descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);                     
         
-        descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getFileType());         
+        descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getFileType());  
+        
+        try
+        {                
+            URL url = new URL(thumbnail);
+            BufferedImage image = ImageIO.read(url); 
+
+            int spaceWidth = image.getWidth() / 2;
+            int spaceHeight = image.getWidth() / 2;
+
+            int newWidth = image.getWidth() + 2 * spaceWidth;
+            int newHeight = image.getHeight() + 2 * spaceHeight;
+            BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+
+            // Get the graphics context to draw on the new image
+            Graphics2D g2d = newImage.createGraphics();
+
+            // Fill the new image with a white background (or any other color)
+            g2d.setColor(new Color(0, 0, 0, 0)); 
+            g2d.fillRect(0, 0, newWidth, newHeight);
+
+            // Draw the original image onto the new image with the desired padding
+            int x = spaceWidth;
+            int y = spaceHeight;
+            g2d.drawImage(image, x, y, null);            
+
+            descriptor.putProperty("WizardPanel_image", newImage);                                            
+        }
+        catch(IOException e)
+        {
+            LOG.warning(e.getMessage());
+        }         
     }
 }

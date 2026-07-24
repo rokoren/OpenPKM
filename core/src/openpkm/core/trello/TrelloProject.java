@@ -107,7 +107,6 @@ import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
 import openpkm.youtube.YouTubeUtils;
 import openpkm.youtube.YouTubeVideo;
-import org.netbeans.api.progress.*;
 import org.openide.NotifyDescriptor;
 import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileSystem;
@@ -125,6 +124,8 @@ import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloMemberFactory;
 import openpkm.trello.TrelloListFactory;
+import org.netbeans.api.progress.ProgressHandle;
+import org.netbeans.api.progress.ProgressHandleFactory;
 
 /**
  *

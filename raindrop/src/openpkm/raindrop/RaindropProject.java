@@ -3593,6 +3593,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void fileFolderCreated(FileEvent evt) 
         {
+            FileObject folder = evt.getFile();
+            if(!getBlogsById().containsKey(folder.getName()))
+            {
+                try
+                {
+                    Project project = ProjectManager.getDefault().findProject(folder);
+                    if(project != null)
+                    {
+                        Blog blog = project.getLookup().lookup(Blog.class);  
+                        if(blog != null)
+                        {
+                            getBlogsById().put(blog.getSourceID(), blog);
+                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);    
+                        }                    
+                    }                
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }             
         }
 
         @Override

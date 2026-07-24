@@ -37,6 +37,7 @@ import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
 import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
@@ -142,13 +143,16 @@ public class HomePageAction implements ActionListener
             {
                 FileObject file = provider.createData(blog, fileType); 
 
-                String folderName = FileUtils.getFolderName(provider.getRootFolder());
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
+                FileSystem fs = provider.getRootFolder().getFileSystem();
+                fs.runAtomicAction(() -> {
+                    String folderName = FileUtils.getFolderName(provider.getRootFolder());
+                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
+                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
 
-                OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM Home Page Project"); 
-                os.close();                    
+                    OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
+                    props.store(os, "OpenPKM Home Page Project"); 
+                    os.close();     
+                });                                                   
 
                 StatusDisplayer.getDefault().setStatusText("Home page saved with title: " + blog.getTitle());                         
 

@@ -37,6 +37,7 @@ import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
 import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
@@ -159,14 +160,17 @@ public class YouTubeChannelAction implements ActionListener
             try
             {
                 FileObject file = provider.createData(channel, fileType); 
+                
+                FileSystem fs = provider.getRootFolder().getFileSystem();
+                fs.runAtomicAction(() -> {
+                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channel.getChannelID());           
+                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, YouTubeChannelProjectFactory.PROJECT_FOLDER);                   
 
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channel.getChannelID());           
-                FileObject projectFolder = FileUtil.createFolder(projectDirectory, YouTubeChannelProjectFactory.PROJECT_FOLDER);                   
-
-                OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
-                props.store(os, "YouTube Channel Project"); 
-                os.close();                    
-
+                    OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
+                    props.store(os, "YouTube Channel Project"); 
+                    os.close();   
+                });                  
+                                 
                 StatusDisplayer.getDefault().setStatusText("YouTube Channel saved with title: " + channel.getTitle());                         
 
                 NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube Channel in editor?", channel.getTitle(), NotifyDescriptor.YES_NO_OPTION);

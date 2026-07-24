@@ -68,7 +68,7 @@ public final class YouTubeProjectVisualPanel1 extends JPanel
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel1, gridBagConstraints);
 
-        jTextField1.setColumns(26);
+        jTextField1.setColumns(20);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
