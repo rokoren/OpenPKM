@@ -4,64 +4,43 @@
  */
 package openpkm.youtube;
 
-import java.util.Collections;
-import java.util.List;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JPanel;
-import openpkm.base.Topic;
-import org.controlsfx.control.CheckComboBox;
+import openpkm.base.FileTypeProvider;
 
 public final class YouTubeProjectVisualPanel1 extends JPanel 
 {
-    private final ObservableList<Topic> topics = FXCollections.observableArrayList();      
-    
-    private CheckComboBox<Topic> comboBox;
-    private JFXPanel panel;
+    private final DefaultComboBoxModel<FileTypeProvider> fileTypes = new DefaultComboBoxModel<>(); 
     
     /**
      * Creates new form YouTubeProjectVisualPanel1
      */
     public YouTubeProjectVisualPanel1() 
     {
-        initComponents();
-        Platform.runLater(new Runnable() 
-        {
-            @Override
-            public void run() 
-            {                
-                comboBox = new CheckComboBox(topics);
-                comboBox.setMaxWidth(Double.MAX_VALUE); 
-                Scene scene = new Scene(comboBox);                             
-                panel.setScene(scene);                
-            }
-        });          
+        setFileTypes();
+        initComponents();         
     }
+    
+    private void setFileTypes()
+    {
+        fileTypes.removeAllElements();
+        fileTypes.addAll(FileTypeProvider.getAll());        
+    }     
 
     @Override
     public String getName() {
-        return "Channel ID";
-    }
-    
-    public void setTopics(List<Topic> rootTopics)
-    {
-        topics.clear();
-        topics.addAll(rootTopics);
-        Collections.sort(topics, Topic.nameComparator());        
-    }     
+        return "General";
+    }    
     
     public String getChannelID()
     {
         return jTextField1.getText().trim();
     }
     
-    public List<Topic> getChannelTopics()
+    public FileTypeProvider getFileType()
     {
-        return comboBox.getCheckModel().getCheckedItems();
-    }
+        return (FileTypeProvider)fileTypes.getSelectedItem();
+    }  
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -76,7 +55,7 @@ public final class YouTubeProjectVisualPanel1 extends JPanel
         jTextField1 = new javax.swing.JTextField();
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel3 = new javax.swing.JLabel();
-        jPanel1 = new javax.swing.JPanel();
+        jComboBox1 = new javax.swing.JComboBox<>();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -110,21 +89,19 @@ public final class YouTubeProjectVisualPanel1 extends JPanel
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel3, gridBagConstraints);
 
-        jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.LINE_AXIS));
-        panel = new JFXPanel();
-        jPanel1.add(panel);
+        jComboBox1.setModel(fileTypes);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        add(jPanel1, gridBagConstraints);
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jComboBox1, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.Box.Filler filler2;
+    private javax.swing.JComboBox<FileTypeProvider> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }

@@ -218,9 +218,23 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }         
     }
     
+// TODO PropertiesProvider
+
+    @Override
     public Properties getProperties()
     {
         return props;
+    } 
+
+    @Override
+    public boolean merge(PropertiesProvider provider)
+    {
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
     }      
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException

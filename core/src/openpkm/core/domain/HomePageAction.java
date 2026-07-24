@@ -137,44 +137,40 @@ public class HomePageAction implements ActionListener
                 }
             } 
 
-            FileObject root = provider.getRootFolder();
-            if(root != null)
+            Blog blog = provider.getFactory().getBlog(props);
+            try
             {
-                Blog blog = provider.getFactory().getBlog(props);
-                try
+                FileObject file = provider.createData(blog, fileType); 
+
+                String folderName = FileUtils.getFolderName(provider.getRootFolder());
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
+                FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
+
+                OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
+                props.store(os, "OpenPKM Home Page Project"); 
+                os.close();                    
+
+                StatusDisplayer.getDefault().setStatusText("Home page saved with title: " + blog.getTitle());                         
+
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Home page in editor?", blog.getTitle(), NotifyDescriptor.YES_NO_OPTION);
+                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
-                    FileObject file = provider.createData(blog, fileType); 
-
-                    String folderName = FileUtils.getFolderName(provider.getRootFolder());
-                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
-                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
-
-                    OutputStream os = projectFolder.createAndOpen(HomePageProjectFactory.PROJECT_FILE);
-                    props.store(os, "OpenPKM Home Page Project"); 
-                    os.close();                    
-
-                    StatusDisplayer.getDefault().setStatusText("Home page saved with title: " + blog.getTitle());                         
-
-                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Home page in editor?", blog.getTitle(), NotifyDescriptor.YES_NO_OPTION);
-                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    try
                     {
-                        try
-                        {
-                            DataObject data = DataObject.find(file);
-                            OpenCookie open = data.getCookie(OpenCookie.class);
-                            open.open();                            
-                        }
-                        catch(DataObjectNotFoundException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }
-                    }                                             
-                }                    
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }                                                          
+                        DataObject data = DataObject.find(file);
+                        OpenCookie open = data.getCookie(OpenCookie.class);
+                        open.open();                            
+                    }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }                                             
+            }                    
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }                                                         
         }        
     }  
     

@@ -3073,7 +3073,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             try
                             {
                                 YouTubeChannel channel = factory.getChannel(Utils.getProperties(fo)); 
-                                channels.put(channel.getSourceID(), channel);
+                                channels.put(channel.getChannelID(), channel);
                             }
                             catch(IOException e)
                             {

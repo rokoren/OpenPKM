@@ -17,27 +17,29 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.FileTypeProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
+import openpkm.core.TopicWizardPanel;
 import openpkm.domain.Domain;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
-import openpkm.youtube.YouTubeProjectWizardPanel2;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
-import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 @ActionID(
@@ -65,7 +67,7 @@ public class YouTubeChannelAction implements ActionListener
     {         
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeProjectWizardPanel1());
-        panels.add(new YouTubeProjectWizardPanel2());
+        panels.add(new TopicWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -91,6 +93,8 @@ public class YouTubeChannelAction implements ActionListener
         { 
             LocalDateTime now = LocalDateTime.now();            
             
+            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
+            
             String channelID = (String) wiz.getProperty(YouTubeChannel.PROP_CHANNEL_ID);
             String title = (String) wiz.getProperty(YouTubeChannel.PROP_TITLE);
             String description = (String) wiz.getProperty(YouTubeChannel.PROP_DESCRIPTION);            
@@ -105,8 +109,9 @@ public class YouTubeChannelAction implements ActionListener
             BigInteger videoCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_VIDEO_COUNT);
             BigInteger commentCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_COMMENT_COUNT);    
             String privacyStatus = (String) wiz.getProperty(YouTubeChannel.PROP_PRIVACY_STATUS);
-            List<String> topicCategories = (List<String>) wiz.getProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES);            
-            List<Topic> topics = (List<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);            
+            List<String> topicCategories = (List<String>) wiz.getProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES); 
+            
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);          
             
             Properties props = new Properties();
             props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
@@ -150,39 +155,39 @@ public class YouTubeChannelAction implements ActionListener
                 props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString()); 
             }
 
+            YouTubeChannel channel = provider.getFactory().getChannel(props);
             try
-            {  
-                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channelID);           
+            {
+                FileObject file = provider.createData(channel, fileType); 
+
+                FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channel.getChannelID());           
                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, YouTubeChannelProjectFactory.PROJECT_FOLDER);                   
 
                 OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
-                props.store(os, "OpenPKM YouTube Channel Project"); 
-                os.close(); 
-                                
-                StatusDisplayer.getDefault().setStatusText("OpenPKM YouTube Channel Project saved: " + title); 
+                props.store(os, "YouTube Channel Project"); 
+                os.close();                    
 
-                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube Channel in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                StatusDisplayer.getDefault().setStatusText("YouTube Channel saved with title: " + channel.getTitle());                         
+
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube Channel in editor?", channel.getTitle(), NotifyDescriptor.YES_NO_OPTION);
                 if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
                     try
                     {
-                        Project project = ProjectManager.getDefault().findProject(projectDirectory);
-                        if(project != null)
-                        {
-                            Project[] projects = {project};
-                            OpenProjects.getDefault().open(projects, false);   
-                        }                          
+                        DataObject data = DataObject.find(file);
+                        OpenCookie open = data.getCookie(OpenCookie.class);
+                        open.open();                            
                     }
-                    catch(IOException e)
+                    catch(DataObjectNotFoundException e)
                     {
                         LOG.warning(e.getMessage());
                     }
-                }                                                
-            }
-            catch(IOException e) 
+                }                                             
+            }                    
+            catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }                                                          
+            }                                                                 
         } 
     }        
 }

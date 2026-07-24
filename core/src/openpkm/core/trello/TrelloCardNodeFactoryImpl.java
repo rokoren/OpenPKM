@@ -35,19 +35,19 @@ public class TrelloCardNodeFactoryImpl implements NodeFactory
     {
         assert project != null;
         
-        Collection<? extends GroupProvider> nodeGroups = project.getLookup().lookupAll(GroupProvider.class);
-        if(!nodeGroups.isEmpty())
+        Collection<? extends GroupProvider> providers = project.getLookup().lookupAll(GroupProvider.class);
+        if(!providers.isEmpty())
         {
             SortedSet<GroupProvider> sorted = new TreeSet<GroupProvider>(GroupProvider.positionComparator());
-            sorted.addAll(nodeGroups);
+            sorted.addAll(providers);
             
             List<AbstractNode> list = new ArrayList();            
             
             for(GroupProvider group : sorted)
             {
-                if(group instanceof SourceGroupProvider nodeGroup)
+                if(group instanceof SourceGroupProvider provider)
                 {
-                    list.add(new SourceGroupNode(nodeGroup));                     
+                    list.add(new SourceGroupNode(provider));                     
                 }
                 else if(group instanceof DataGroupProvider provider)
                 {

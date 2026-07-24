@@ -16,6 +16,7 @@ import org.netbeans.spi.project.ui.support.NodeList;
 import org.openide.nodes.AbstractNode;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.GroupProvider;
+import openpkm.base.SourceGroupProvider;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 
 /**
@@ -32,17 +33,24 @@ public class NodeFactoryImpl implements NodeFactory
     {
         assert project != null;
         
-        Collection<? extends DataGroupProvider> providers = project.getLookup().lookupAll(DataGroupProvider.class);
+        Collection<? extends GroupProvider> providers = project.getLookup().lookupAll(GroupProvider.class);
         if(!providers.isEmpty())
         {
-            SortedSet<DataGroupProvider> sorted = new TreeSet<DataGroupProvider>(GroupProvider.positionComparator());
+            SortedSet<GroupProvider> sorted = new TreeSet<GroupProvider>(GroupProvider.positionComparator());
             sorted.addAll(providers);
             
             List<AbstractNode> list = new ArrayList();            
             
-            for(DataGroupProvider provider : sorted)
+            for(GroupProvider group : sorted)
             {
-                list.add(new DataGroupNode(provider)); 
+                if(group instanceof SourceGroupProvider provider)
+                {
+                    list.add(new SourceGroupNode(provider));                     
+                }
+                else if(group instanceof DataGroupProvider provider)
+                {
+                    list.add(new DataGroupNode(provider));            
+                }  
             }         
 
             AbstractNode[] nodes = new AbstractNode[list.size()];

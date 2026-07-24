@@ -5,7 +5,9 @@
 package openpkm.youtube;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 import openpkm.base.SourceFactory;
+import org.openide.util.RequestProcessor;
 
 /**
  *
@@ -13,6 +15,9 @@ import openpkm.base.SourceFactory;
  */
 public interface YouTubeChannelFactory extends SourceFactory<YouTubeChannel>
 {
+    Logger LOG = Logger.getLogger(YouTubeChannelFactory.class.getName());  
+    RequestProcessor RP = new RequestProcessor(YouTubeChannelFactory.class);  
+    
     YouTubeChannel getChannel(Properties props);       
     YouTubeChannel getChannel(String channelID);     
 }

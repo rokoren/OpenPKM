@@ -13,9 +13,7 @@ import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
-import openpkm.base.KnowledgeGraphProvider;
-import openpkm.base.TopicsProvider;
-import org.netbeans.api.project.Project;
+import openpkm.base.FileTypeProvider;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -70,10 +68,14 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         {
             throw new WizardValidationException(getComponent(), "Google Key not found.", null);
         }         
-        if(getComponent().getChannelID().equals("")) 
+        if(getComponent().getChannelID().isBlank()) 
         {
             throw new WizardValidationException(getComponent(), "Channel ID can not be empty", null);
-        }      
+        }  
+        if (getComponent().getFileType() == null) 
+        {
+            throw new WizardValidationException(component, "File Type can not be empty", null);
+        }           
         try
         {
             YouTube youtubeService = YouTubeService.getDeafult().getService();
@@ -106,16 +108,7 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
     @Override
     public void readSettings(WizardDescriptor descriptor) 
     {
-        // use wiz.getProperty to retrieve previous panel state
-        Lookup.Provider provider = (Project)descriptor.getProperty("provider");
-        if(provider != null)
-        {
-            KnowledgeGraphProvider knowledgeGraph = provider.getLookup().lookup(KnowledgeGraphProvider.class);
-            if(knowledgeGraph != null)
-            {
-                getComponent().setTopics(knowledgeGraph.getRootTopics());               
-            }          
-        }           
+        // use wiz.getProperty to retrieve previous panel state          
     }
 
     @Override
@@ -153,7 +146,8 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         descriptor.putProperty(YouTubeChannel.PROP_VIDEO_COUNT, videoCount);
         descriptor.putProperty(YouTubeChannel.PROP_COMMENT_COUNT, commentCount);
         descriptor.putProperty(YouTubeChannel.PROP_PRIVACY_STATUS, privacyStatus);
-        descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);                    
-        descriptor.putProperty(TopicsProvider.PROP_TOPICS, getComponent().getChannelTopics());         
+        descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);                     
+        
+        descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getFileType());         
     }
 }

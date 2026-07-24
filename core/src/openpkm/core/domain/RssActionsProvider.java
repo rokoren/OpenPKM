@@ -4,18 +4,26 @@
  */
 package openpkm.core.domain;
 
-import java.awt.Component;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.XmlReader;
 import java.awt.event.ActionEvent;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.JComponent;
+import openpkm.base.PropertiesProvider;
 import openpkm.rss.AbstractRssActionsProvider;
+import openpkm.rss.RssChannel;
 import openpkm.rss.RssProvider;
+import openpkm.utils.FileUtils;
 import org.openide.DialogDisplayer;
-import org.openide.WizardDescriptor;
+import org.openide.NotifyDescriptor;
+import org.openide.awt.StatusDisplayer;
 
 /**
  *
@@ -23,6 +31,8 @@ import org.openide.WizardDescriptor;
  */
 public class RssActionsProvider extends AbstractRssActionsProvider
 {
+    private static final Logger LOG = Logger.getLogger(RssActionsProvider.class.getName());     
+    
     private final RssProvider provider;  
 
     public RssActionsProvider(RssProvider provider) 
@@ -49,35 +59,40 @@ public class RssActionsProvider extends AbstractRssActionsProvider
         @Override
         public void actionPerformed(ActionEvent evt) 
         {
-            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            //panels.add(new MemberWizardPanel1());
-            String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) 
+            NotifyDescriptor descriptor = new NotifyDescriptor.InputLine("URL:", "Add RSS Channel");
+            Object retVal = DialogDisplayer.getDefault().notify(descriptor);
+            if (retVal == NotifyDescriptor.OK_OPTION) 
             {
-                Component c = panels.get(i).getComponent();
-                // Default step name to component name of panel.
-                steps[i] = c.getName();
-                if (c instanceof JComponent) { // assume Swing components
-                    JComponent jc = (JComponent) c;
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
-                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
-                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
-                }
-            }
-            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
-            wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Rss Channel");  
-            /*
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("project", provider.getProject());
-            */
-            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {  
+                String url = ((NotifyDescriptor.InputLine)descriptor).getInputText();
 
-            }
+                try
+                {
+                    SyndFeedInput input = new SyndFeedInput();
+                    SyndFeed feed = input.build(new XmlReader(new URL(url)));   
+                    RssChannel channel = provider.getFactory().getRssChannel(feed);
+                    if(channel != null)
+                    {                      
+                        String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
+                        OutputStream os = provider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
+                        provider.getFactory().save(channel, os, "New RSS Channel Created by Dialog");
+                        os.close();  
+
+                        StatusDisplayer.getDefault().setStatusText("RSS Channel saved with title: " + channel.getTitle());    
+                    }
+                }
+                catch (MalformedURLException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+                catch (IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }    
+                catch (FeedException e)
+                {
+                    LOG.warning(e.getMessage());
+                }              
+            }  
         }
     }      
 }
