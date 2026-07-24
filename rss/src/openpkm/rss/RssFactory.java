@@ -16,6 +16,6 @@ import java.util.Properties;
 public interface RssFactory
 {
     RssChannel getRssChannel(Properties props);
-    RssChannel getRssChannel(SyndFeed feed);
+    RssChannel getRssChannel(String feedUrl, SyndFeed feed);
     void save(RssChannel channel, OutputStream os, String comments) throws IOException;
 }

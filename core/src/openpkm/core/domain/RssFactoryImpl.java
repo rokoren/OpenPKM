@@ -44,6 +44,7 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=RssFactory.class)
 public class RssFactoryImpl implements RssFactory
 {
+    public static final String PROP_FEED_URL        = "feed.url"; 
     public static final String PROP_TITLE           = "title"; 
     public static final String PROP_DESCRIPTION     = "description";    
     public static final String PROP_LINK            = "link"; 
@@ -68,28 +69,51 @@ public class RssFactoryImpl implements RssFactory
     }
 
     @Override
-    public RssChannel getRssChannel(SyndFeed feed) 
+    public RssChannel getRssChannel(String feedUrl, SyndFeed feed) 
     {
         Properties props = new Properties();
         LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
+        props.setProperty(PROP_FEED_URL, feedUrl);
         props.setProperty(PROP_PUBLISHED_DATE, publishedDate.format(DateTimeFormatter.ISO_DATE_TIME));
         props.setProperty(PROP_TITLE, feed.getTitle());
         props.setProperty(PROP_DESCRIPTION, feed.getDescription());
         props.setProperty(PROP_LINK, feed.getLink());
-        props.setProperty(PROP_URI, feed.getUri());        
-        props.setProperty(PROP_AUTHOR, feed.getAuthor());
-        props.setProperty(PROP_COPYRIGHT, feed.getCopyright());    
         
-        props.setProperty(PROP_GENERATOR, feed.getGenerator());
-        props.setProperty(PROP_LANGUAGE, feed.getLanguage());        
-        props.setProperty(PROP_MANAGING_EDITOR, feed.getManagingEditor());
+        if(feed.getUri() != null)
+        {
+            props.setProperty(PROP_URI, feed.getUri());               
+        }
+     
+        if(feed.getAuthor() != null)
+        {
+            props.setProperty(PROP_AUTHOR, feed.getAuthor());            
+        }
+
+        if(feed.getCopyright() != null)
+        {
+            props.setProperty(PROP_COPYRIGHT, feed.getCopyright());            
+        }    
+        
+        if(feed.getGenerator() != null)
+        {
+            props.setProperty(PROP_GENERATOR, feed.getGenerator());            
+        }
+
+        if(feed.getLanguage() != null)
+        {
+            props.setProperty(PROP_LANGUAGE, feed.getLanguage());               
+        }
+     
+        if(feed.getManagingEditor() != null)
+        {
+            props.setProperty(PROP_MANAGING_EDITOR, feed.getManagingEditor());            
+        }
         
         if(feed.getImage() != null)
         {
             props.setProperty(PROP_IMAGE, feed.getImage().getUrl());              
         }
-        
-        
+                
         if(feed.getIcon() != null)
         {
             props.setProperty(PROP_ICON, feed.getIcon().getUrl());                    
@@ -128,13 +152,20 @@ public class RssFactoryImpl implements RssFactory
         }  
 
 // TODO RssChannel        
-                                
+         
+        @Override
+        public String getFeedUrl()
+        {
+            return props.getProperty(PROP_FEED_URL);
+        }
+        
         @Override
         public String getTitle()
         {
             return props.getProperty(PROP_TITLE);
         }
         
+        @Override
         public String getDescription()
         {
             return props.getProperty(PROP_DESCRIPTION);

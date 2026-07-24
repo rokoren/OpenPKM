@@ -63,13 +63,13 @@ public class RssActionsProvider extends AbstractRssActionsProvider
             Object retVal = DialogDisplayer.getDefault().notify(descriptor);
             if (retVal == NotifyDescriptor.OK_OPTION) 
             {
-                String url = ((NotifyDescriptor.InputLine)descriptor).getInputText();
+                String feedUrl = ((NotifyDescriptor.InputLine)descriptor).getInputText();
 
                 try
                 {
                     SyndFeedInput input = new SyndFeedInput();
-                    SyndFeed feed = input.build(new XmlReader(new URL(url)));   
-                    RssChannel channel = provider.getFactory().getRssChannel(feed);
+                    SyndFeed feed = input.build(new XmlReader(new URL(feedUrl)));   
+                    RssChannel channel = provider.getFactory().getRssChannel(feedUrl, feed);
                     if(channel != null)
                     {                      
                         String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);

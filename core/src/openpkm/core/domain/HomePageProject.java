@@ -720,11 +720,11 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 {
                     try
                     {
-                        URL url = new URL(channel.getUri());
+                        URL url = new URL(channel.getFeedUrl());
                         SyndFeedInput input = new SyndFeedInput();
                         SyndFeed feed = input.build(new XmlReader(url));
                         
-                        RssChannel newValue = rssProvider.getFactory().getRssChannel(feed);
+                        RssChannel newValue = rssProvider.getFactory().getRssChannel(channel.getFeedUrl(), feed);
                         if(!channel.getProperties().equals(newValue.getProperties()))
                         {
                             channel.merge(newValue);
@@ -1134,7 +1134,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         try
                         {
                             RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-                            channels.put(channel.getUri(), channel);
+                            channels.put(channel.getFeedUrl(), channel);
                         }
                         catch(IOException e)
                         {
@@ -1194,7 +1194,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             try
             {
                 RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-                getChannelsById().put(channel.getUri(), channel);               
+                getChannelsById().put(channel.getFeedUrl(), channel);               
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1216,7 +1216,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             try
             {
                 RssChannel channel = factory.getRssChannel(Utils.getProperties(file));               
-                if(getChannelsById().remove(channel.getUri()) != null)
+                if(getChannelsById().remove(channel.getFeedUrl()) != null)
                 {
                     changeSupport.fireChange();
                 }                

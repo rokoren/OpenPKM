@@ -14,7 +14,8 @@ import openpkm.base.StateSupport;
  * @author Rok Koren
  */
 public interface RssChannel extends StateSupport, PropertiesProvider, NodeProvider
-{   
+{ 
+    String getFeedUrl();
     String getTitle();
     String getDescription();   
     String getLink(); 
