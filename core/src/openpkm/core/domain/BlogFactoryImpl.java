@@ -34,6 +34,7 @@ import openpkm.base.StateSupport;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.Domain;
+import openpkm.domain.FaviconProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.ShortDescriptionProviderImpl;
@@ -325,24 +326,36 @@ public class BlogFactoryImpl implements BlogFactory
             public void run() 
             {
                 String favicon = getFavicon();
-                if(favicon != null)
+                try
                 {
-                    try
+                    if(favicon != null)
                     {
-                        URL url = new URL(favicon);
-                        BufferedImage image = ImageIO.read(url);  
-                        icon = Utils.resizeImage(image, 16, 16); 
-                        changeSupport.fireChange();
-                    }
-                    catch(MalformedURLException e)
+                        try
+                        {
+                            URL url = new URL(favicon);
+                            BufferedImage image = ImageIO.read(url);  
+                            if(image != null)
+                            {
+                                icon = Utils.resizeImage(image, 16, 16); 
+                                changeSupport.fireChange();                                
+                            }
+                        }
+                        catch(MalformedURLException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }             
+                    }  
+                    if(icon == null)
                     {
-                        LOG.warning(e.getMessage());
-                    }
-                    catch(IOException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }               
+                        FaviconProvider provider = Lookup.getDefault().lookup(FaviconProvider.class);
+                        icon = provider.getFavicon(getUrl(), 16);  
+                        changeSupport.fireChange(); 
+                    }                       
                 }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }  
             }                
 
             @Override

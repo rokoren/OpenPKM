@@ -4,16 +4,21 @@
  */
 package openpkm.core.domain;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeListener;
 import openpkm.base.FileTypeProvider;
 import openpkm.domain.Blog;
+import openpkm.domain.FaviconProvider;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -107,6 +112,37 @@ public class BlogWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
     {
         descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getFileType()); 
         descriptor.putProperty(Blog.PROP_URL, getComponent().getBlogUrl());
-        descriptor.putProperty("document", document);  
+        descriptor.putProperty("document", document);          
+        
+        try 
+        {
+            FaviconProvider provider = Lookup.getDefault().lookup(FaviconProvider.class);
+            BufferedImage image = provider.getFavicon(getComponent().getBlogUrl(), 128);   
+            
+            int spaceWidth = image.getWidth() / 4;
+            int spaceHeight = image.getWidth() / 1;
+
+            int newWidth = image.getWidth() + 2 * spaceWidth;
+            int newHeight = image.getHeight() + 2 * spaceHeight;
+            BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+
+            // Get the graphics context to draw on the new image
+            Graphics2D g2d = newImage.createGraphics();
+
+            // Fill the new image with a white background (or any other color)
+            g2d.setColor(new Color(0, 0, 0, 0)); 
+            g2d.fillRect(0, 0, newWidth, newHeight);
+
+            // Draw the original image onto the new image with the desired padding
+            int x = spaceWidth;
+            int y = spaceHeight;
+            g2d.drawImage(image, x, y, null);               
+            
+            descriptor.putProperty("WizardPanel_image", newImage); 
+        } 
+        catch (IOException ex)
+        {
+            LOG.warning(ex.getMessage());
+        }        
     }      
 }
