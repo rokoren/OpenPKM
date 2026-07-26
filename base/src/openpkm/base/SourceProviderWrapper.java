@@ -13,6 +13,7 @@ import javax.swing.event.ChangeListener;
 public interface SourceProviderWrapper extends TagsProvider, ActionsProvider
 {
     Source getSource();
+    Source deleteSource();
     SourceProvider getProvider();
     void addListener(ChangeListener listener);
     void removeListener(ChangeListener listener);

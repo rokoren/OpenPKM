@@ -39,6 +39,17 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
     {
         return provider.getSource(sourceID);
     }
+    
+    @Override
+    public Source deleteSource()
+    {
+        Source source = getSource();
+        if(source != null)
+        {
+            provider.deleteSource(source);
+        }
+        return source;
+    }
 
     @Override
     public SourceProvider getProvider() 

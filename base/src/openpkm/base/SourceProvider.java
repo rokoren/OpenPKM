@@ -16,6 +16,7 @@ import org.openide.util.Lookup;
 public interface SourceProvider<T extends Source> extends SourceGroup 
 {    
     T getSource(String sourceID);
+    void deleteSource(T source);
     FileObject createData(T source, FileTypeProvider fileTypeProvider) throws IOException;
     SourceFactory<T> getFactory();
     Lookup.Provider getProvider();

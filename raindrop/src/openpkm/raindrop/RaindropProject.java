@@ -2213,7 +2213,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             } 
             
             return primaryFile;            
-        }          
+        }  
+
+        @Override
+        public void deleteSource(Content content)
+        {
+            content.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, content));
+        }
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2417,7 +2424,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }            
 
             return primaryFile;
-        }          
+        } 
+        
+        @Override
+        public void deleteSource(Reference reference)
+        {
+            reference.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, reference));
+        }        
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2871,6 +2885,13 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }               
                                   
             return primaryFile;             
+        }   
+        
+        @Override
+        public void deleteSource(Raindrop raindrop)
+        {
+            raindrop.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, raindrop));
         }          
         
         @Override
@@ -3074,7 +3095,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        }          
+        }   
+        
+        @Override
+        public void deleteSource(YouTubeVideo video)
+        {
+            video.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, video));
+        }         
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3251,7 +3279,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        }          
+        }   
+        
+        @Override
+        public void deleteSource(YouTubeChannel channel)
+        {
+            channel.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, channel));
+        }         
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3439,7 +3474,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        }          
+        } 
+        
+        @Override
+        public void deleteSource(GitHubUser user)
+        {
+            user.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, user));
+        }         
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3664,7 +3706,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        }          
+        }  
+
+        @Override
+        public void deleteSource(Blog blog)
+        {
+            blog.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, blog));
+        }
         
         @Override
         public void fileFolderCreated(FileEvent evt) 

@@ -7,9 +7,7 @@ package openpkm.asciidoc;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
-import openpkm.base.StateSupport;
 import openpkm.utils.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
@@ -136,11 +134,7 @@ public class AsciiDocDataObject extends MultiDataObject
         SourceProviderWrapper provider = getLookup().lookup(SourceProviderWrapper.class);
         if(provider != null)
         {
-            Source source = provider.getSource();
-            if(source instanceof StateSupport state)
-            {
-                state.notifyDeleted();
-            }
+            provider.deleteSource();
         }
 
         // pokličeš privzeto brisanje datoteke
