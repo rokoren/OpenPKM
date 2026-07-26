@@ -47,6 +47,7 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
@@ -123,6 +124,7 @@ import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
+import openpkm.base.SourceEvent;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.StateSupport;
 import openpkm.domain.Blog;
@@ -141,6 +143,8 @@ import openpkm.reference.ReferenceFactory;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
+import openpkm.base.SourceEventListener;
+import openpkm.utils.SourceEventImpl;
 
 /**
  *
@@ -182,7 +186,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private final FileObject projectDir;        
     private final ProjectState state;
     private final Properties props;
-    private final PropertyChangeSupport propertyChangeSupport;   
+    private final PropertyChangeSupport propertyChangeSupport;  
+    private final EventListenerList listeners;
     
     private Lookup lkp;  
     private FileObject dataDir;
@@ -197,6 +202,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         this.state = state;
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
+        listeners = new EventListenerList();        
         
         RaindropFactory raindropFactory = Lookup.getDefault().lookup(RaindropFactory.class);
         if(raindropFactory != null)
@@ -257,6 +263,33 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
         return fileSystem;
     }
+    
+    @Override
+    public void sourceDeleted(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceDeleted(evt);
+        }
+    }
+    
+    @Override
+    public void sourceModified(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceModified(evt);
+        }
+    }   
+    
+    @Override
+    public void sourceAdded(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceAdded(evt);
+        }
+    }     
     
     @Override
     public SourceProvider getSourceProvider(String folder)
@@ -1020,14 +1053,14 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO DataGroup    
 
-    private final class DomainProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DomainProviderImpl implements DataGroupProvider, SourceEventListener
     {                        
         private final ChangeSupport changeSupport; 
 
         public DomainProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }        
         
         @Override
@@ -1116,26 +1149,44 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 }                                                               
             }                                    
             return false;
-        }
+        }           
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Domain || evt.getNewValue() instanceof Domain)
+            if(evt.getSource() instanceof Domain)
             {
                 changeSupport.fireChange();
             }
-        }             
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }
     }     
     
-    private final class NoteProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class NoteProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public NoteProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }        
         
         @Override
@@ -1225,25 +1276,43 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                    
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Note || evt.getNewValue() instanceof Note)
+            if(evt.getSource() instanceof Note)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Note)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Note)
+            {
+                changeSupport.fireChange();
+            }
+        }        
     }  
     
-    private final class BookProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class BookProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public BookProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1333,25 +1402,43 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                  
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
+            if(evt.getSource() instanceof Book)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     }   
     
-    private final class ArticleProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ArticleProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public ArticleProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1441,25 +1528,43 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                    
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
+            if(evt.getSource() instanceof Article)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        }          
     } 
     
-    private final class DocumentProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DocumentProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public DocumentProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }        
         
         @Override
@@ -1549,25 +1654,43 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                    
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
+            if(evt.getSource() instanceof Document)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     }  
 
-    private final class LinkProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class LinkProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public LinkProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }               
         
         @Override
@@ -1657,25 +1780,43 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                    
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
+            if(evt.getSource() instanceof Link)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }          
     }  
 
-    private final class PictureProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class PictureProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public PictureProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -1765,25 +1906,43 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                   
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue()instanceof Picture || evt.getNewValue() instanceof Picture)
+            if(evt.getSource() instanceof Picture)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     } 
     
-    private final class VideoProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class VideoProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public VideoProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -1873,15 +2032,33 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }                                   
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
+            if(evt.getSource() instanceof Video)
             {
                 changeSupport.fireChange();
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     }    
     
 // TODO SourceGroup    
@@ -2001,19 +2178,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }         
         
         @Override
         public FileObject createData(Content content, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2068,7 +2233,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Content content = factory.getContent(Utils.getProperties(file)); 
                 getContentsById().put(content.getSourceID(), content);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, content);               
+                sourceAdded(new SourceEventImpl(this, content));
             }           
             catch(IOException e)
             {
@@ -2096,7 +2261,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Content content = getContentsById().remove(file.getName());  
             if(content != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, content, null);  
+                sourceDeleted(new SourceEventImpl(this, content)); 
             }
         }
 
@@ -2217,19 +2382,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }         
         
         @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2284,7 +2437,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);              
+                sourceAdded(new SourceEventImpl(this, reference));             
             }           
             catch(IOException e)
             {
@@ -2312,7 +2465,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);              
+                sourceDeleted(new SourceEventImpl(this, reference));                          
             }
         }
 
@@ -2396,27 +2549,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }
 
         @Override
-        public Source getSource(String sourceID) 
+        public Raindrop getSource(String sourceID) 
         {
             return getRaindropsById().get(sourceID);
         }  
-        
-        @Override
-        public void deleteSource(String sourceID) throws IOException
-        {
-            FileObject root = getRootFolder();
-            if(root != null)
-            {
-                FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
-                if(file != null)
-                {  
-                    if(RaindropUtils.removeRaindrop(getRaindropCollection().getAccount(), Integer.parseInt(sourceID)))
-                    {
-                        file.delete();
-                    }
-                }              
-            }  
-        }
 
         @Override
         public String getName() 
@@ -2535,19 +2671,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }         
         
         @Override
         public void run() 
@@ -2612,7 +2736,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         {
                             raindrop.markModified();
                             getRaindropsById().put(raindrop.getSourceID(), raindrop);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, oldRaindrop, raindrop);                                  
+                            sourceAdded(new SourceEventImpl(this, raindrop));                                
                         }                                                                                                                                                   
                     }
                     else
@@ -2767,7 +2891,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 Raindrop raindrop = AbstractRaindrop.getRaindrop(Utils.getProperties(file)); 
                 getRaindropsById().put(raindrop.getSourceID(), raindrop);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, raindrop);                             
+                sourceAdded(new SourceEventImpl(this, raindrop));                             
             }           
             catch(IOException e)
             {
@@ -2795,7 +2919,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Raindrop raindrop = getRaindropsById().remove(file.getName());  
             if(raindrop != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, raindrop, null); 
+                sourceDeleted(new SourceEventImpl(this, raindrop));
             }
         }
 
@@ -2884,7 +3008,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     {
                         try
                         {
-                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.STANDARD); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2930,19 +3054,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }         
         
         @Override
         public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2980,9 +3092,9 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.STANDARD); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
                 getVideosById().put(video.getSourceID(), video); 
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, video);             
+                sourceAdded(new SourceEventImpl(this, video));            
             }           
             catch(IOException e)
             {
@@ -3010,7 +3122,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, video, null);  
+                sourceDeleted(new SourceEventImpl(this, video));
             }
         }
 
@@ -3119,19 +3231,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }         
         
         @Override
         public FileObject createData(YouTubeChannel channel, FileTypeProvider fileTypeProvider) throws IOException    
@@ -3168,7 +3268,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         if(channel != null)
                         {
                             getChannelsById().put(channel.getChannelID(), channel);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);    
+                            sourceAdded(new SourceEventImpl(this, channel));  
                         }                    
                     }                
                 }
@@ -3189,7 +3289,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 if(channel != null)
                 {
                     getChannelsById().put(channel.getChannelID(), channel); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);                       
+                    sourceAdded(new SourceEventImpl(this, channel));                      
                 }          
             }           
             catch(IOException e)
@@ -3210,7 +3310,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             YouTubeChannel channel = getChannelsById().remove(file.getName());  
             if(channel != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, channel, null);  
+                sourceDeleted(new SourceEventImpl(this, channel)); 
             }
         }
 
@@ -3319,19 +3419,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }       
         
         @Override
         public FileObject createData(GitHubUser user, FileTypeProvider fileTypeProvider) throws IOException    
@@ -3368,7 +3456,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         if(user != null)
                         {
                             getUsersById().put(user.getUserID(), user);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);    
+                            sourceAdded(new SourceEventImpl(this, user));
                         }                    
                     }                
                 }
@@ -3389,7 +3477,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 if(user != null)
                 {
                     getUsersById().put(user.getUserID(), user); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);                       
+                    sourceAdded(new SourceEventImpl(this, user));                     
                 }          
             }           
             catch(IOException e)
@@ -3410,7 +3498,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             GitHubUser user = getUsersById().remove(file.getName());  
             if(user != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, user, null);  
+                sourceDeleted(new SourceEventImpl(this, user));
             }
         }
 
@@ -3556,19 +3644,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }         
         
         @Override
         public FileObject createData(Blog blog, FileTypeProvider fileTypeProvider) throws IOException    
@@ -3605,7 +3681,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         if(blog != null)
                         {
                             getBlogsById().put(blog.getSourceID(), blog);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);    
+                            sourceAdded(new SourceEventImpl(this, blog));   
                         }                    
                     }                
                 }
@@ -3626,7 +3702,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 if(blog != null)
                 {
                     getBlogsById().put(blog.getSourceID(), blog); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);                       
+                    sourceAdded(new SourceEventImpl(this, blog));                      
                 }          
             }           
             catch(IOException e)
@@ -3647,7 +3723,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Blog blog = getBlogsById().remove(file.getName());  
             if(blog != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, blog, null);  
+                sourceDeleted(new SourceEventImpl(this, blog)); 
             }
         }
 

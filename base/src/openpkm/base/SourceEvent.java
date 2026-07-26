@@ -6,12 +6,10 @@ package openpkm.base;
 
 /**
  *
- * @author Rok Koren
+ * @author rok
  */
-public interface WatchLater 
+public interface SourceEvent 
 {
-    String PROP_WATCH_LATER = "watch.later";
-    
-    boolean isWatchLater();
-    void setWatchLater(boolean watchLater);
+    SourceProvider getProvider();
+    Source getSource();
 }

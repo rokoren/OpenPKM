@@ -35,7 +35,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WatchLater;
+import openpkm.base.WorkflowProvider;
 import openpkm.utils.DateTimeUtils;
 import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
@@ -64,13 +64,9 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
     private static final Logger LOG = Logger.getLogger(YouTubeVideoFactory.class.getName());     
     
     @Override
-    public YouTubeVideo getVideo(Properties props, Type type) 
+    public YouTubeVideo getVideo(Properties props, boolean isDisplayName) 
     {
-        if(type == Type.WATCH_LATER)
-        {
-            return new WatchLaterImpl(props);            
-        }
-        else if(type == Type.STANDARD)
+        if(isDisplayName)
         {
             return new StandardImpl(props);
         }
@@ -78,7 +74,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
     }
     
     @Override
-    public YouTubeVideo getVideo(String videoID, Type type)
+    public YouTubeVideo getVideo(String videoID, boolean isDisplayName)
     {
         try
         {         
@@ -197,7 +193,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
                     }                     
                 }                 
 
-                return getVideo(props, type);
+                return getVideo(props, isDisplayName);
             }                 
         }
         catch (IOException e)
@@ -216,44 +212,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
     {
         video.getProperties().store(os, comments); 
         LOG.info("YouTube Video saved");
-    }     
- 
-    private static class WatchLaterImpl extends StandardImpl implements WatchLater
-    {    
-        public WatchLaterImpl(Properties props)
-        {
-            super(props);
-        }
-        
-        @Override
-        public boolean isWatchLater()
-        {
-            String string = props.getProperty(PROP_WATCH_LATER);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
-        }
-        
-        @Override
-        public void setWatchLater(boolean watchLater)
-        {
-            Object oldValue = props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater)); 
-            if(oldValue != null)
-            {
-                oldValue = Boolean.parseBoolean(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_WATCH_LATER, oldValue, watchLater);
-            markModified();
-        }  
-        
-        @Override
-        public String toString()
-        {
-            return getVideoTitle();
-        }
-    }    
+    }       
     
     private static class StandardImpl extends YouTubeVideoImpl implements DisplayNameProvider
     {    
@@ -273,13 +232,13 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         }          
     }
     
-    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, WorkflowProvider, MultiViewDescription
     {    
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;       
         
         private Lookup lkp;  
-        private State state;      
+        private State state;  
 
         public YouTubeVideoImpl(Properties props)
         {
@@ -514,7 +473,35 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
             {
                 props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
             }
-        }    
+        } 
+        
+        @Override
+        public Workflow getWorkflow()
+        {
+            String name = props.getProperty(WorkflowProvider.PROP_WORKFLOW);
+            if(name != null)
+            {
+                Optional<WorkflowProvider.Workflow> optional = WorkflowProvider.Workflow.get(name);
+                if(optional.isPresent())
+                {
+                    return optional.get();
+                }
+            }
+            return WorkflowProvider.Workflow.DEFAULT;
+        }
+        
+        @Override
+        public void setWorkflow(Workflow workflow)
+        {
+            if(workflow == null)
+            {
+                props.remove(WorkflowProvider.PROP_WORKFLOW);         
+            }
+            else
+            {
+                props.setProperty(WorkflowProvider.PROP_WORKFLOW, workflow.toString());  
+            }            
+        }
 
         @Override
         public List<String> getYouTubeTags() 

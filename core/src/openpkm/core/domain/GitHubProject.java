@@ -1571,20 +1571,20 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             {
                 rootDir.removeFileChangeListener(this);
                 
-                for(WebPage link : getLinks())
+                for(WebPage page : getPages().getPages())
                 {
-                    FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
+                    FileObject file = rootDir.getFileObject(page.getFileName(), PropertiesProvider.EXTENSION);
                     if(file != null)
                     {
                         try
                         {
-                            if(link.isModified())
+                            if(page.isModified())
                             {
                                 OutputStream os = file.getOutputStream();
-                                factory.save(link, os, "Updated by GitHub project: " + getTitle());
+                                factory.save(page, os, "Updated by GitHub project: " + getTitle());
                                 os.close();
                             }
-                            else if(link.isDeleted())
+                            else if(page.isDeleted())
                             {
                                 file.delete();
                             }                                  
@@ -1605,11 +1605,11 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }        
         
         @Override
-        public synchronized Map<String, WebPage> getLinksById()
+        public synchronized Pages getPages()
         {
-            if(links == null)
+            if(pages == null)
             {
-                links = new HashMap<>();
+                pages = new Pages();
                 FileObject folder = getRootFolder();
                 if(folder !=  null)
                 {
@@ -1617,8 +1617,8 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
                     {
                         try
                         {
-                            WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
-                            links.put(webPage.getSourceID(), webPage);
+                            WebPage page = factory.getWebPage(Utils.getProperties(file)); 
+                            pages.addPage(page);
                         }
                         catch(IOException e)
                         {
@@ -1627,8 +1627,8 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
                     }                     
                 }                
             }
-            return links;
-        }                
+            return pages;
+        }                 
 
         @Override
         public FileObject getRootFolder() 
@@ -1678,17 +1678,17 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }          
         
         @Override
-        public FileObject createData(WebPage webPage, FileTypeProvider fileTypeProvider) throws IOException    
+        public FileObject createData(WebPage page, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
             FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
             FileObject file = getFileWithAttrs(primaryFile, true);
             file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-            file.setAttribute(ATTR_SOURCE_ID, webPage.getSourceID());  
+            file.setAttribute(ATTR_SOURCE_ID, page.getSourceID());  
 
-            if(webPage instanceof Article)
+            if(page instanceof Article)
             {
-                Article article = (Article)webPage;
+                Article article = (Article)page;
                 if(fileTypeProvider instanceof ArticleProvider)
                 {
                     ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
@@ -1717,9 +1717,9 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             FileObject file = evt.getFile();
             try
             {
-                WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
-                getLinksById().put(webPage.getSourceID(), webPage);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                 
+                WebPage page = factory.getWebPage(Utils.getProperties(file)); 
+                getPages().addPage(page);             
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, page);                 
             }           
             catch(IOException e)
             {
@@ -1743,10 +1743,10 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            WebPage webPage = getLinksById().remove(file.getName());  
-            if(webPage != null)
+            WebPage page = getPages().removePage(file.getName());
+            if(page != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, webPage, null); 
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, page, null); 
             }
         }
 

@@ -13,7 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WatchLater;
+import openpkm.base.WorkflowProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.cef.browser.CefBrowser;
@@ -37,40 +37,33 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     
     private final YouTubeVideo video;    
     private CefBrowser browser;    
-    private final JComboBox<VisibilityProvider.Modifier> comboBox;   
+    private final JComboBox<WorkflowProvider.Workflow> comboBox;   
     
-    private final DefaultComboBoxModel<VisibilityProvider.Modifier> modifiers = new DefaultComboBoxModel<>();  
+    private final DefaultComboBoxModel<WorkflowProvider.Workflow> workflows = new DefaultComboBoxModel<>();  
 
     public WatchLaterWizardPanel(YouTubeVideo video) 
     {
         this.video = video;
         setModifiers();
-        comboBox = new JComboBox<>(modifiers);        
+        comboBox = new JComboBox<>(workflows);        
     }  
     
     private void setModifiers()
     {
-        modifiers.removeAllElements();
-        modifiers.addAll(Arrays.asList(VisibilityProvider.Modifier.values()));  
-        modifiers.setSelectedItem(VisibilityProvider.Modifier.PRIVATE);
+        workflows.removeAllElements();
+        workflows.addAll(Arrays.asList(WorkflowProvider.Workflow.values()));  
+        workflows.setSelectedItem(VisibilityProvider.Modifier.PRIVATE);
     }     
     
     public void finish(boolean isFinish)
     {
         if(isFinish) 
         {
-            if(video instanceof WatchLater watchLater)
+            if(video instanceof WorkflowProvider provider)
             {
-                watchLater.setWatchLater(false);                
-            }
-            if(video instanceof VisibilityProvider provider)
-            {
-                VisibilityProvider.Modifier visibility = (VisibilityProvider.Modifier)modifiers.getSelectedItem();
-                if(visibility != VisibilityProvider.Modifier.PRIVATE)
-                {
-                    provider.setModifier(visibility);  
-                    video.markModified();
-                }
+                WorkflowProvider.Workflow workflow = (WorkflowProvider.Workflow)workflows.getSelectedItem();
+                provider.setWorkflow(workflow);  
+                video.markModified();            
             }
         }            
 
@@ -138,7 +131,7 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     @Override
     public void readSettings(WizardDescriptor wiz) 
     {
-        JLabel label = new JLabel("Visibility:");
+        JLabel label = new JLabel("Workflow:");
         JPanel panel = new JPanel(new FlowLayout());
         panel.add(label);
         panel.add(comboBox);

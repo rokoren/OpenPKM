@@ -6,8 +6,6 @@ package openpkm.core.domain;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import java.awt.Image;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -21,7 +19,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
@@ -34,7 +31,7 @@ import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WatchLater;
+import openpkm.base.WorkflowProvider;
 import openpkm.domain.WebPage;
 import openpkm.domain.WebPageFactory;
 import openpkm.jcef.CefClientProvider;
@@ -99,11 +96,12 @@ public class WebPageFactoryImpl implements WebPageFactory
         props.setProperty(WebPageFactory.PROP_TYPE, WebPageFactory.Type.RSS.getName());                            
         props.setProperty(WebPage.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
         props.setProperty(WebPageFactory.PROP_URI, syndEntry.getUri());                            
-        props.setProperty(WebPageFactory.PROP_LINK, syndEntry.getLink());                                     
+        props.setProperty(WebPageFactory.PROP_LINK_URL, syndEntry.getLink());                                     
         props.setProperty(TitleProvider.PROP_TITLE, syndEntry.getTitle());     
         props.setProperty(DescriptionProvider.PROP_DESCRIPTION, syndEntry.getDescription().getValue());                                                      
         props.setProperty(WebPageFactory.PROP_PUBLISHED_DATE, DateTimeUtils.convertToLocalDateTime(syndEntry.getPublishedDate()).format(DateTimeFormatter.ISO_DATE_TIME)); 
-        props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString()); 
+        props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PRIVATE.toString()); 
+        props.setProperty(WorkflowProvider.PROP_WORKFLOW, WorkflowProvider.Workflow.READ_LATER.toString()); 
         return getWebPage(props);
     } 
     
@@ -114,7 +112,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         LOG.info("Web Page saved");
     }      
     
-    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, TopicsProvider
     {         
         protected static final Logger LOG = Logger.getLogger(AbstractWebPage.class.getName());     
 
@@ -131,9 +129,21 @@ public class WebPageFactoryImpl implements WebPageFactory
         }
         
         @Override
+        public String getLinkUrl()
+        {
+            return props.getProperty(PROP_LINK_URL);
+        }
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
+        }        
+        
+        @Override
         public String getSourceID()
         {            
-            return getWebPageID();
+            return getFileName();
         }         
         
         @Override
@@ -261,35 +271,7 @@ public class WebPageFactoryImpl implements WebPageFactory
                 return Set.of(topics.split(","));                   
             }                
             return Collections.EMPTY_SET;
-        }
-
-        @Override
-        public VisibilityProvider.Modifier getModifier()
-        {
-            String name = props.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
-            if(name != null)
-            {
-                Optional<VisibilityProvider.Modifier> optional = VisibilityProvider.Modifier.get(name);
-                if(optional.isPresent())
-                {
-                    return optional.get();
-                }
-            }
-            return VisibilityProvider.Modifier.NONE;
-        }
-
-        @Override
-        public void setModifier(VisibilityProvider.Modifier modifier)
-        {
-            if(modifier == null)
-            {
-                props.remove(VisibilityProvider.PROP_VISIBILITY_MODIFIER);         
-            }
-            else
-            {
-                props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
-            }
-        }     
+        }   
     }  
     
     private static final class LinkImpl extends AbstractWebPage implements Link
@@ -300,13 +282,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         public LinkImpl(Properties props)
         {
             super(props);
-        }  
-        
-        @Override
-        public String getWebPageID() 
-        {
-            return getLink();
-        }        
+        }         
         
         @Override
         public String getLink() 
@@ -327,7 +303,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         }       
     }
     
-    private static final class RssImpl extends AbstractWebPage implements DescriptionProvider, Link, WatchLater, MultiViewDescription
+    private static final class RssImpl extends AbstractWebPage implements DescriptionProvider, Link, WorkflowProvider, VisibilityProvider, MultiViewDescription
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/rss.png";         
@@ -336,12 +312,6 @@ public class WebPageFactoryImpl implements WebPageFactory
         {
             super(props);
         }  
-
-        @Override
-        public String getWebPageID() 
-        {
-            return getLink();
-        } 
         
         public String getUri() 
         {
@@ -404,6 +374,62 @@ public class WebPageFactoryImpl implements WebPageFactory
         } 
         
         @Override
+        public VisibilityProvider.Modifier getModifier()
+        {
+            String name = props.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
+            if(name != null)
+            {
+                Optional<VisibilityProvider.Modifier> optional = VisibilityProvider.Modifier.get(name);
+                if(optional.isPresent())
+                {
+                    return optional.get();
+                }
+            }
+            return VisibilityProvider.Modifier.NONE;
+        }
+
+        @Override
+        public void setModifier(VisibilityProvider.Modifier modifier)
+        {
+            if(modifier == null)
+            {
+                props.remove(VisibilityProvider.PROP_VISIBILITY_MODIFIER);         
+            }
+            else
+            {
+                props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, modifier.toString());  
+            }
+        } 
+        
+        @Override
+        public Workflow getWorkflow()
+        {
+            String name = props.getProperty(WorkflowProvider.PROP_WORKFLOW);
+            if(name != null)
+            {
+                Optional<WorkflowProvider.Workflow> optional = WorkflowProvider.Workflow.get(name);
+                if(optional.isPresent())
+                {
+                    return optional.get();
+                }
+            }
+            return WorkflowProvider.Workflow.DEFAULT;
+        }
+        
+        @Override
+        public void setWorkflow(Workflow workflow)
+        {
+            if(workflow == null)
+            {
+                props.remove(WorkflowProvider.PROP_WORKFLOW);         
+            }
+            else
+            {
+                props.setProperty(WorkflowProvider.PROP_WORKFLOW, workflow.toString());  
+            }            
+        }        
+        
+        @Override
         public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
@@ -413,28 +439,6 @@ public class WebPageFactoryImpl implements WebPageFactory
         public Image getIcon() 
         {  
             return ImageUtilities.loadImage(ICON);             
-        } 
-        
-        @Override
-        public boolean isWatchLater()
-        {
-            String string = props.getProperty(PROP_WATCH_LATER);
-            if(string != null)
-            {
-                return Boolean.parseBoolean(string);
-            }
-            return false;
-        }
-        
-        @Override
-        public void setWatchLater(boolean watchLater)
-        {
-            Object oldValue = props.setProperty(PROP_WATCH_LATER, Boolean.toString(watchLater)); 
-            if(oldValue != null)
-            {
-                oldValue = Boolean.parseBoolean(oldValue.toString());
-            }
-            propertyChangeSupport.firePropertyChange(PROP_WATCH_LATER, oldValue, watchLater);
         }   
         
         @Override
@@ -476,13 +480,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         public ArticleImpl(Properties props)
         {
             super(props);
-        } 
-        
-        @Override
-        public String getWebPageID() 
-        {
-            return getLink();
-        }          
+        }         
 
         @Override
         public String getLink() 
@@ -541,7 +539,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         } 
     } 
     
-    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement, ItemListener
+    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
     {
         private CefBrowser browser; 
         private JToolBar toolbar;
@@ -605,11 +603,6 @@ public class WebPageFactoryImpl implements WebPageFactory
             if(toolbar == null)
             {
                 toolbar = new JToolBar();
-                JCheckBox watchLater = new JCheckBox("Watch Later");
-                watchLater.setFocusable(false);
-                watchLater.setSelected(rss.isWatchLater());
-                watchLater.addItemListener(this);
-                toolbar.add(watchLater);
             }
             return toolbar;
         }
@@ -663,13 +656,6 @@ public class WebPageFactoryImpl implements WebPageFactory
         public void componentDeactivated() 
         {
             
-        }
-
-        @Override
-        public void itemStateChanged(ItemEvent evt) 
-        {
-            boolean isWatchLater = evt.getStateChange() == ItemEvent.SELECTED;
-            rss.setWatchLater(isWatchLater);
         }
     }    
 }

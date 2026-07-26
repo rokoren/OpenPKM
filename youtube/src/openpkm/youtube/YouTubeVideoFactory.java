@@ -13,13 +13,6 @@ import openpkm.base.SourceFactory;
  */
 public interface YouTubeVideoFactory extends SourceFactory<YouTubeVideo> 
 {
-    YouTubeVideo getVideo(Properties props, Type type);       
-    YouTubeVideo getVideo(String videoID, Type type);     
-    
-    public enum Type 
-    {
-        BASIC,
-        STANDARD,
-        WATCH_LATER;    
-    }      
+    YouTubeVideo getVideo(Properties props, boolean isDisplayName);       
+    YouTubeVideo getVideo(String videoID, boolean isDisplayName);          
 }

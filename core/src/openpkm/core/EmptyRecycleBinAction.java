@@ -2,13 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core.youtube;
+package openpkm.core;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.logging.Logger;
-import openpkm.base.ArchiveProvider;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.ActionID;
@@ -18,20 +17,21 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
+import openpkm.base.RecycleBinProvider;
 
 /**
  *
  * @author rok
  */
 @ActionID(
-        category = "OpenPKM/Archive",
-        id = "openpkm.core.youtube.EmptyRecycleBinAction"
+        category = "OpenPKM/RecycleBin",
+        id = "openpkm.core.EmptyRecycleBinAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/bin_empty.png",
         displayName = "#CTL_EmptyRecycleBinAction",
         enabledOn = @ActionState(
-        type = ArchiveProvider.class,
+        type = RecycleBinProvider.class,
         property = "notEmpty"
     )
 )
@@ -40,9 +40,9 @@ public class EmptyRecycleBinAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(EmptyRecycleBinAction.class.getName());     
     
-    private final ArchiveProvider provider;
+    private final RecycleBinProvider provider;
 
-    public EmptyRecycleBinAction(ArchiveProvider provider)
+    public EmptyRecycleBinAction(RecycleBinProvider provider)
     {
         this.provider = provider;
     }

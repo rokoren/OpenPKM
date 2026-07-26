@@ -12,13 +12,14 @@ import org.openide.filesystems.FileObject;
  * @author Rok Koren
  */
 public interface SourceProviders 
-{
-    String PROP_LAST_SOURCE = "last.source";       
-    
+{    
     String ATTR_SOURCE_ID       = "source.id";
     String ATTR_SOURCE_PROVIDER = "source.provider";     
     
     SourceProvider getSourceProvider(String name);
     FileObject getDataDirectory() throws IOException;
     FileObject getFileWithAttrs(FileObject file, boolean refresh);
+    void sourceDeleted(SourceEvent evt);
+    void sourceModified(SourceEvent evt);
+    void sourceAdded(SourceEvent evt);
 }

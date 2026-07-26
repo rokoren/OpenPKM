@@ -4,9 +4,6 @@
  */
 package openpkm.utils;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,7 +22,7 @@ import org.openide.util.ChangeSupport;
  *
  * @author rok
  */
-public class SourceProviderWrapperImpl implements SourceProviderWrapper, PropertyChangeListener
+public class SourceProviderWrapperImpl implements SourceProviderWrapper
 {
     private final String sourceID;
     private final SourceProvider provider;
@@ -35,19 +32,12 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper, Propert
         this.sourceID = sourceID;
         this.provider = provider;
         changeSupport = new ChangeSupport(this);    
-        provider.addSourceListener(this);
     }
 
     @Override
     public Source getSource() 
     {
         return provider.getSource(sourceID);
-    }
-    
-    @Override
-    public void deleteSource() throws IOException
-    {
-        provider.deleteSource(sourceID);
     }
 
     @Override
@@ -81,19 +71,6 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper, Propert
     public void removeListener(ChangeListener listener) 
     {
         changeSupport.addChangeListener(listener);
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) 
-    {
-        Source source = (Source)evt.getNewValue();
-        if(source != null)
-        {
-            if(source.getSourceID().equals(sourceID))
-            {
-                changeSupport.fireChange();
-            }
-        }
     }
 
     @Override

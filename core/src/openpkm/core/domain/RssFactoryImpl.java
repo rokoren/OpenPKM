@@ -45,6 +45,7 @@ import org.openide.util.lookup.ServiceProvider;
 public class RssFactoryImpl implements RssFactory
 {
     public static final String PROP_FEED_URL        = "feed.url"; 
+    public static final String PROP_FILE_NAME       = "file.name"; 
     public static final String PROP_TITLE           = "title"; 
     public static final String PROP_DESCRIPTION     = "description";    
     public static final String PROP_LINK            = "link"; 
@@ -69,11 +70,12 @@ public class RssFactoryImpl implements RssFactory
     }
 
     @Override
-    public RssChannel getRssChannel(String feedUrl, SyndFeed feed) 
+    public RssChannel getRssChannel(String feedUrl, String fileName, SyndFeed feed) 
     {
         Properties props = new Properties();
         LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
         props.setProperty(PROP_FEED_URL, feedUrl);
+        props.setProperty(PROP_FILE_NAME, fileName);        
         props.setProperty(PROP_PUBLISHED_DATE, publishedDate.format(DateTimeFormatter.ISO_DATE_TIME));
         props.setProperty(PROP_TITLE, feed.getTitle());
         props.setProperty(PROP_DESCRIPTION, feed.getDescription());
@@ -157,6 +159,12 @@ public class RssFactoryImpl implements RssFactory
         public String getFeedUrl()
         {
             return props.getProperty(PROP_FEED_URL);
+        }
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
         }
         
         @Override

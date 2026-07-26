@@ -17,7 +17,8 @@ import openpkm.base.SourceFactory;
 public interface WebPageFactory extends SourceFactory<WebPage>
 {
     String PROP_TYPE           = "web.page.type"; 
-    String PROP_LINK           = "link";    
+    String PROP_LINK_URL       = "link.url";  
+    String PROP_FILE_NAME      = "file.name";     
     String PROP_URI            = "uri";
     String PROP_PUBLISHED_DATE = "published.date";    
     

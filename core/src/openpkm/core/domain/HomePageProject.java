@@ -59,6 +59,7 @@ import openpkm.base.AsciiDocSupport;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
+import openpkm.base.BulletIconProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.CloseSupport;
 import openpkm.base.DataGroupProvider;
@@ -74,6 +75,7 @@ import openpkm.base.NodeProvider;
 import openpkm.base.OpenSupport;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.ReadLaterProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProvider;
@@ -82,6 +84,9 @@ import openpkm.base.SourceProviders;
 import openpkm.base.StateSupport;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
+import openpkm.base.VisibilityProvider;
+import openpkm.base.WatchLaterSupport;
+import openpkm.base.WorkflowProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
@@ -142,6 +147,8 @@ import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
 import org.openide.awt.NotificationDisplayer;
 import org.openide.cookies.CloseCookie;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.windows.WindowManager;
 
 /**
@@ -152,15 +159,15 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
 {      
     private static final String DATA_FOLDER = "data";    
     
-    private static final int POSITION_NOTES       = 100;
-    private static final int POSITION_DOCUMENTS   = 200;
-    private static final int POSITION_ARTICLES    = 300;
-    private static final int POSITION_BOOKS       = 400;
-    private static final int POSITION_LINKS       = 500;
-    private static final int POSITION_PICTURES    = 600;    
-    private static final int POSITION_VIDEOS      = 700;
-    private static final int POSITION_RSS         = 800;    
-    private static final int POSITION_WATCH_LATER = 900;
+    private static final int POSITION_NOTES      = 100;
+    private static final int POSITION_DOCUMENTS  = 200;
+    private static final int POSITION_ARTICLES   = 300;
+    private static final int POSITION_BOOKS      = 400;
+    private static final int POSITION_LINKS      = 500;
+    private static final int POSITION_PICTURES   = 600;    
+    private static final int POSITION_VIDEOS     = 700;
+    private static final int POSITION_RSS        = 800;    
+    private static final int POSITION_READ_LATER = 900;
 
     private static final Logger LOG = Logger.getLogger(HomePageProject.class.getName());        
     
@@ -337,7 +344,8 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             list.add(new DocumentDataGroupProviderImpl()); 
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
-            list.add(new VideoDataGroupProviderImpl());             
+            list.add(new VideoDataGroupProviderImpl()); 
+            list.add(new ReadLaterProviderImpl());             
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -717,7 +725,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             RssProvider rssProvider = getLookup().lookup(RssProvider.class);
             if(rssProvider != null)
             {
-                for(RssChannel channel : rssProvider.getChannels())
+                for(RssChannel channel : rssProvider.getChannels().getChannels())
                 {
                     try
                     {
@@ -725,7 +733,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         SyndFeedInput input = new SyndFeedInput();
                         SyndFeed feed = input.build(new XmlReader(url));
                         
-                        RssChannel newValue = rssProvider.getFactory().getRssChannel(channel.getFeedUrl(), feed);
+                        RssChannel newValue = rssProvider.getFactory().getRssChannel(channel.getFeedUrl(), channel.getFileName(), feed);
                         if(!channel.getProperties().equals(newValue.getProperties()))
                         {
                             channel.merge(newValue);
@@ -736,7 +744,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                                 for(SyndEntry syndEntry : feed.getEntries()) 
                                 {
                                     WebPage webPage = webPagePovider.getFactory().getWebPage(syndEntry);
-                                    if(webPage != null && !webPagePovider.getLinksById().containsKey(webPage.getWebPageID()))
+                                    if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
                                     {
                                         AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
                                         if(fileTypeProvider != null)            
@@ -805,12 +813,9 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                     catch (FeedException e)
                     {
                         LOG.warning(e.getMessage());
-                    } 
-                    finally
-                    {
-                        task.schedule(100000);
-                    }                      
+                    }                     
                 }
+                task.schedule(100000);                
             }                     
         }          
 
@@ -1075,7 +1080,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     
 // TODO SourceGroup    
     
-    private final class RssProviderImpl extends RssProvider implements SourceGroupProvider, FileChangeListener
+    private final class RssProviderImpl extends RssProvider implements SourceGroupProvider, CloseSupport, FileChangeListener
     {                         
         public RssProviderImpl(RssFactory factory) 
         {
@@ -1111,6 +1116,40 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         {
             return POSITION_RSS;
         }  
+        
+        @Override
+        public void close()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(RssChannel channel : getChannels().getChannels())
+                {
+                    FileObject file = rootDir.getFileObject(channel.getFileName(), PropertiesProvider.EXTENSION);
+                    if(file != null)
+                    {
+                        try
+                        {
+                            if(channel.isModified())
+                            {
+                                OutputStream os = file.getOutputStream();
+                                factory.save(channel, os, "Updated by Home page project: " + getTitle());
+                                os.close();
+                            }
+                            else if(channel.isDeleted())
+                            {
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    }  
+                }                
+            }
+        }         
 
         @Override
         public Icon getIcon(boolean bln) 
@@ -1122,7 +1161,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public SortedSet<NodeProvider> getNodes()
         {
-            List<NodeProvider> list = getChannels().stream()
+            List<NodeProvider> list = getChannels().getChannels().stream()
                     .filter(NodeProvider.class::isInstance)
                     .map(NodeProvider.class::cast)
                     .toList();        
@@ -1134,11 +1173,11 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
         
         @Override
-        protected synchronized Map<String, RssChannel> getChannelsById()
+        public synchronized Channels getChannels()
         {
             if(channels == null)
             {
-                channels = new HashMap<>();
+                channels = new Channels();
                 FileObject folder = getRootFolder();
                 if(folder !=  null)
                 {
@@ -1147,7 +1186,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         try
                         {
                             RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-                            channels.put(channel.getFeedUrl(), channel);
+                            channels.addChannel(channel);
                         }
                         catch(IOException e)
                         {
@@ -1207,7 +1246,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             try
             {
                 RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-                getChannelsById().put(channel.getFeedUrl(), channel);               
+                getChannels().addChannel(channel);
                 changeSupport.fireChange();
             }           
             catch(IOException e)
@@ -1219,24 +1258,15 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public void fileChanged(FileEvent evt) 
         {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }
 
         @Override
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            try
+            if(getChannels().removeChannel(file.getName()) != null)
             {
-                RssChannel channel = factory.getRssChannel(Utils.getProperties(file));               
-                if(getChannelsById().remove(channel.getFeedUrl()) != null)
-                {
-                    changeSupport.fireChange();
-                }                
-            }
-            catch(IOException e)
-            {
-                LOG.warning(e.getMessage());
+                changeSupport.fireChange();
             }
         }
 
@@ -1254,6 +1284,180 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     }      
     
 // TODO DataGroup
+   
+    private final class ReadLaterProviderImpl implements ReadLaterProvider, WatchLaterSupport, BulletIconProvider, PropertyChangeListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public ReadLaterProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_READ_LATER;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_READ_LATER;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_READ_LATER;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_READ_LATER;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Source.timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        } 
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    } 
+                    
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }                 
+                
+        @Override
+        public String getName() 
+        {
+            return "read_later";
+        }
+        
+        @Override
+        public Image getBullet()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = DataObject.find(file);
+                    if(contains(data))
+                    {
+                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
+                    }
+                }
+            }
+            catch(IOException e)                
+            {
+                LOG.warning(e.getMessage());
+            }
+            return null;
+        }         
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {                                               
+                        WorkflowProvider workflowProvider = source.getLookup().lookup(WorkflowProvider.class);
+                        if(workflowProvider != null)
+                        {                                                       
+                            return workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER;
+                        }                                                 
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) 
+        {            
+            if(evt.getOldValue() instanceof WorkflowProvider || evt.getNewValue() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }            
+        }                       
+
+        @Override
+        public void fireChange() 
+        {
+            changeSupport.fireChange();
+        }
+    }     
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
     {        
@@ -1669,6 +1873,13 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         Link link = source.getLookup().lookup(Link.class);
                         if(link != null)
                         {
+                            if(link instanceof VisibilityProvider visibilityPovider)
+                            {
+                                if(visibilityPovider.getModifier() == VisibilityProvider.Modifier.PRIVATE)
+                                {
+                                    return false;
+                                }
+                            }                                                                                  
                             return true;
                         }                                                 
                     }            
@@ -1928,20 +2139,20 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             {
                 rootDir.removeFileChangeListener(this);
                 
-                for(WebPage link : getLinks())
+                for(WebPage page : getPages().getPages())
                 {
-                    FileObject file = rootDir.getFileObject(link.getSourceID(), PropertiesProvider.EXTENSION);
+                    FileObject file = rootDir.getFileObject(page.getFileName(), PropertiesProvider.EXTENSION);
                     if(file != null)
                     {
                         try
                         {
-                            if(link.isModified())
+                            if(page.isModified())
                             {
                                 OutputStream os = file.getOutputStream();
-                                factory.save(link, os, "Updated by Home page project: " + getTitle());
+                                factory.save(page, os, "Updated by Home page project: " + getTitle());
                                 os.close();
                             }
-                            else if(link.isDeleted())
+                            else if(page.isDeleted())
                             {
                                 file.delete();
                             }                                  
@@ -1962,11 +2173,11 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }        
         
         @Override
-        public synchronized Map<String, WebPage> getLinksById()
+        public synchronized Pages getPages()
         {
-            if(links == null)
+            if(pages == null)
             {
-                links = new HashMap<>();
+                pages = new Pages();
                 FileObject folder = getRootFolder();
                 if(folder !=  null)
                 {
@@ -1974,8 +2185,8 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                     {
                         try
                         {
-                            WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
-                            links.put(webPage.getSourceID(), webPage);
+                            WebPage page = factory.getWebPage(Utils.getProperties(file)); 
+                            pages.addPage(page);
                         }
                         catch(IOException e)
                         {
@@ -1984,7 +2195,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                     }                     
                 }                
             }
-            return links;
+            return pages;
         }                
 
         @Override
@@ -2035,17 +2246,17 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }          
         
         @Override
-        public FileObject createData(WebPage webPage, FileTypeProvider fileTypeProvider) throws IOException    
+        public FileObject createData(WebPage page, FileTypeProvider fileTypeProvider) throws IOException    
         {
             String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
             FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
             FileObject file = getFileWithAttrs(primaryFile, true);
             file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
-            file.setAttribute(ATTR_SOURCE_ID, webPage.getSourceID());  
+            file.setAttribute(ATTR_SOURCE_ID, page.getSourceID());  
 
-            if(webPage instanceof Article)
+            if(page instanceof Article)
             {
-                Article article = (Article)webPage;
+                Article article = (Article)page;
                 if(fileTypeProvider instanceof ArticleProvider)
                 {
                     ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
@@ -2074,9 +2285,9 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             FileObject file = evt.getFile();
             try
             {
-                WebPage webPage = factory.getWebPage(Utils.getProperties(file)); 
-                getLinksById().put(webPage.getSourceID(), webPage);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, webPage);                
+                WebPage page = factory.getWebPage(Utils.getProperties(file)); 
+                getPages().addPage(page);                             
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, page);                
             }           
             catch(IOException e)
             {
@@ -2100,10 +2311,10 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            WebPage webPage = getLinksById().remove(file.getName());  
-            if(webPage != null)
+            WebPage page = getPages().removePage(file.getName());
+            if(page != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, webPage, null); 
+                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, page, null); 
             }
         }
 

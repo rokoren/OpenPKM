@@ -15,6 +15,7 @@ import openpkm.base.StateSupport;
  */
 public interface WebPage extends Source, StateSupport, PropertiesProvider
 {  
-    String getWebPageID();
+    String getLinkUrl();
+    String getFileName();    
     org.jsoup.nodes.Document getDocument(String userAgent) throws IOException;
 }

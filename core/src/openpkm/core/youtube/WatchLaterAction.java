@@ -16,9 +16,9 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
-import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
 import openpkm.base.WatchLaterSupport;
+import openpkm.base.WorkflowProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
@@ -94,9 +94,9 @@ public class WatchLaterAction implements ActionListener
                         if(source != null)
                         {
                             YouTubeVideo video = source.getLookup().lookup(YouTubeVideo.class);
-                            if(video instanceof WatchLater watchLater)
+                            if(video instanceof WorkflowProvider provider)
                             {
-                                if(watchLater.isWatchLater())
+                                if(provider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER)
                                 {
                                     panels.add(new WatchLaterWizardPanel(video));                  
                                 }   

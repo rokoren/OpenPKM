@@ -60,10 +60,15 @@ public interface GroupProvider
     IconProvider ICON_PROVIDER_WATCH_LATER = new IconProviderImpl(IconsProvider.ICON.WATCH_LATER);    
     ActionsProvider ACTIONS_PROVIDER_WATCH_LATER = new ActionsProviderImpl("Actions/OpenPKM/WatchLater"); 
     
-    // ARCHIVE
-    DisplayNameProvider DISPLAY_NAME_PROVIDER_ARCHIVE = new DisplayNameProviderImpl("Recycle Bin");
-    IconProvider ICON_PROVIDER_ARCHIVE = new IconProviderImpl(IconsProvider.ICON.BIN);    
-    ActionsProvider ACTIONS_PROVIDER_ARCHIVE = new ActionsProviderImpl("Actions/OpenPKM/Archive");     
+    // READ LATER
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_READ_LATER = new DisplayNameProviderImpl("Reading List");
+    IconProvider ICON_PROVIDER_READ_LATER = new IconProviderImpl(IconsProvider.ICON.READ_LATER);    
+    ActionsProvider ACTIONS_PROVIDER_READ_LATER = new ActionsProviderImpl("Actions/OpenPKM/ReadLater");     
+    
+    // RECYCLE BIN
+    DisplayNameProvider DISPLAY_NAME_PROVIDER_RECYCLE_BIN = new DisplayNameProviderImpl("Recycle Bin");
+    IconProvider ICON_PROVIDER_RECYCLE_BIN = new IconProviderImpl(IconsProvider.ICON.BIN);    
+    ActionsProvider ACTIONS_PROVIDER_RECYCLE_BIN = new ActionsProviderImpl("Actions/OpenPKM/RecycleBin");     
     
     // NOTES
     DisplayNameProvider DISPLAY_NAME_PROVIDER_NOTE = new DisplayNameProviderImpl("Notes");

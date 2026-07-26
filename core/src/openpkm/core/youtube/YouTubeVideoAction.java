@@ -44,7 +44,6 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
-import openpkm.youtube.YouTubeVideoFactory;
 
 @ActionID(
         category = "OpenPKM/Video",
@@ -211,7 +210,7 @@ public final class YouTubeVideoAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                YouTubeVideo video = provider.getFactory().getVideo(props, YouTubeVideoFactory.Type.STANDARD);
+                YouTubeVideo video = provider.getFactory().getVideo(props, true);
                 try
                 {
                     FileObject file = provider.createData(video, fileType); 

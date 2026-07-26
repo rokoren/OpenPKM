@@ -55,7 +55,6 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionsProvider;
-import openpkm.base.ArchiveProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.AsciiDocSupport;
@@ -85,7 +84,6 @@ import openpkm.base.TagsProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WatchLater;
 import openpkm.base.WatchLaterProvider;
 import openpkm.base.WatchLaterSupport;
 import openpkm.domain.Blog;
@@ -144,6 +142,8 @@ import org.openide.windows.TopComponent;
 import openpkm.youtube.YouTubeVideoFactory;
 import openpkm.reference.ReferenceFactory;
 import openpkm.youtube.YouTubeChannelProvider;
+import openpkm.base.RecycleBinProvider;
+import openpkm.base.WorkflowProvider;
 
 /**
  *
@@ -164,7 +164,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_DOMAINS     = 800;    
     private static final int POSITION_WATCH_LATER = 900;
-    private static final int POSITION_ARCHIVE     = 1000;    
+    private static final int POSITION_RECYCLE_BIN = 1000;    
 
     private static final Logger LOG = Logger.getLogger(YouTubeChannelProject.class.getName());        
     
@@ -326,7 +326,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             list.add(new PictureProviderImpl()); 
             list.add(new VideoProviderImpl());    
             list.add(new DomainProviderImpl()); 
-            list.add(new ArchiveProviderImpl());             
+            list.add(new RecycleBinProviderImpl());             
             list.add(new WatchLaterProviderImpl()); 
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
@@ -1384,7 +1384,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return timeCreatedComparator();
+            return Source.timeCreatedComparator();
         } 
         
         @Override
@@ -1470,10 +1470,10 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                     Source source = sourceProvider.getSource();
                     if(source != null)
                     {                                               
-                        WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
-                        if(watchLater != null)
+                        WorkflowProvider workflowProvider = source.getLookup().lookup(WorkflowProvider.class);
+                        if(workflowProvider != null)
                         {                                                       
-                            return watchLater.isWatchLater();
+                            return workflowProvider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER;
                         }                                                 
                     }            
                 }                                                                                  
@@ -1484,7 +1484,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {            
-            if(evt.getOldValue() instanceof WatchLater || evt.getNewValue() instanceof WatchLater)
+            if(evt.getOldValue() instanceof WorkflowProvider || evt.getNewValue() instanceof WorkflowProvider)
             {
                 changeSupport.fireChange();
             }            
@@ -1497,11 +1497,11 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
     } 
     
-    private final class ArchiveProviderImpl implements ArchiveProvider, WatchLaterSupport, PropertyChangeListener
+    private final class RecycleBinProviderImpl implements RecycleBinProvider, WatchLaterSupport, PropertyChangeListener
     {        
         private final ChangeSupport changeSupport; 
 
-        public ArchiveProviderImpl()
+        public RecycleBinProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
@@ -1516,25 +1516,25 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public DisplayNameProvider getDisplayNameProvider() 
         {
-            return DISPLAY_NAME_PROVIDER_ARCHIVE;
+            return DISPLAY_NAME_PROVIDER_RECYCLE_BIN;
         } 
         
         @Override
         public IconProvider getIconProvider()
         {
-            return ICON_PROVIDER_ARCHIVE;
+            return ICON_PROVIDER_RECYCLE_BIN;
         }
         
         @Override
         public ActionsProvider getActionsProvider() 
         {
-            return ACTIONS_PROVIDER_ARCHIVE;
+            return ACTIONS_PROVIDER_RECYCLE_BIN;
         }         
         
         @Override
         public Integer getPosition() 
         {
-            return POSITION_ARCHIVE;
+            return POSITION_RECYCLE_BIN;
         }                  
 
         @Override
@@ -1593,7 +1593,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return timeCreatedComparator();
+            return Source.timeCreatedComparator();
         } 
         
         @Override
@@ -1605,7 +1605,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public String getName() 
         {
-            return "archive";
+            return "recycle_bin";
         }               
         
         @Override
@@ -1619,18 +1619,10 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                     Source source = sourceProvider.getSource();
                     if(source != null)
                     {   
-                        VisibilityProvider visibilityProvider = source.getLookup().lookup(VisibilityProvider.class);
-                        if(visibilityProvider != null)
+                        WorkflowProvider workflowProvider = source.getLookup().lookup(WorkflowProvider.class);
+                        if(workflowProvider != null)
                         {
-                            if(visibilityProvider.getModifier() == VisibilityProvider.Modifier.PRIVATE)
-                            {
-                                WatchLater watchLater = source.getLookup().lookup(WatchLater.class);
-                                if(watchLater != null)
-                                {                                                       
-                                    return !watchLater.isWatchLater();
-                                }  
-                                return true;                                
-                            }
+                            return workflowProvider.getWorkflow() == WorkflowProvider.Workflow.RECYCLE_BIN;
                         }                                               
                     }            
                 }                                                                                  
@@ -1641,7 +1633,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public void propertyChange(PropertyChangeEvent evt) 
         {            
-            if(evt.getOldValue() instanceof VisibilityProvider || evt.getNewValue() instanceof VisibilityProvider)
+            if(evt.getOldValue() instanceof WorkflowProvider || evt.getNewValue() instanceof WorkflowProvider)
             {
                 changeSupport.fireChange();
             }            
@@ -2739,7 +2731,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                     {
                         try
                         {
-                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.WATCH_LATER); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -2851,7 +2843,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), YouTubeVideoFactory.Type.WATCH_LATER); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, video);             
             }           
@@ -2899,8 +2891,8 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         {
             Properties props = new Properties();
             
-            props.setProperty(WatchLater.PROP_WATCH_LATER, Boolean.TRUE.toString());
-            props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PRIVATE.toString());            
+            props.setProperty(WorkflowProvider.PROP_WORKFLOW, WorkflowProvider.Workflow.WATCH_LATER.toString());
+            props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PROTECTED.toString());            
             
             String videoID = response.getItems().get(0).getId();
             props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID); 
@@ -3000,7 +2992,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                                 VideoListResponse response2 = request2.setId(videoID).execute();  
                                 if(response2.getItems() != null && !response2.getItems().isEmpty())
                                 {   
-                                    YouTubeVideo video = factory.getVideo(getProperties(response2), YouTubeVideoFactory.Type.WATCH_LATER);                                
+                                    YouTubeVideo video = factory.getVideo(getProperties(response2), true);                                
                                     FileObject file = createData(video, fileTypeProvider);
 
                                     FileObject root = getRootFolder();
@@ -3650,23 +3642,5 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         {
             return YouTubeChannelProject.this;
         }                 
-    }
-    
-    public static Comparator<DataObject> timeCreatedComparator() 
-    {
-        return new Comparator<DataObject>() 
-        {
-            @Override
-            public int compare(DataObject data1, DataObject data2) 
-            {
-                YouTubeVideo video1 = data1.getLookup().lookup(YouTubeVideo.class);
-                YouTubeVideo video2 = data2.getLookup().lookup(YouTubeVideo.class);
-                if(video1 != null && video2 != null)
-                {
-                    return video1.getTimeCreated().compareTo(video2.getTimeCreated());                    
-                }
-                return -1;
-            }
-        };
-    }     
+    }    
 }

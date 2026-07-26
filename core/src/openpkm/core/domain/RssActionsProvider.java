@@ -68,11 +68,11 @@ public class RssActionsProvider extends AbstractRssActionsProvider
                 try
                 {
                     SyndFeedInput input = new SyndFeedInput();
-                    SyndFeed feed = input.build(new XmlReader(new URL(feedUrl)));   
-                    RssChannel channel = provider.getFactory().getRssChannel(feedUrl, feed);
+                    SyndFeed feed = input.build(new XmlReader(new URL(feedUrl)));  
+                    String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
+                    RssChannel channel = provider.getFactory().getRssChannel(feedUrl, fileName, feed);
                     if(channel != null)
                     {                      
-                        String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
                         OutputStream os = provider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
                         provider.getFactory().save(channel, os, "New RSS Channel Created by Dialog");
                         os.close();  

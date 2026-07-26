@@ -4,12 +4,9 @@
  */
 package openpkm.trello;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import openpkm.base.PropertiesProvider;
-import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
 
@@ -52,26 +49,10 @@ public abstract class TrelloCardProvider implements SourceProvider<TrelloCard>
     }                
 
     @Override
-    public Source getSource(String sourceID)
+    public TrelloCard getSource(String sourceID)
     {
         return getCardsById().get(sourceID);
-    }    
-
-    @Override
-    public void deleteSource(String sourceID) throws IOException
-    {
-        FileObject root = getRootFolder();
-        if(root != null)
-        {
-            FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
-            if(file != null)
-            {  
-                // TODO Call Trello API to delete card
-
-                file.delete();
-            }              
-        }  
-    }                              
+    }                                 
 
     public abstract Map<String, TrelloCard> getCardsById();
     public abstract TrelloAccount getAccount();

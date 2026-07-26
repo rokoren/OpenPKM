@@ -4,12 +4,10 @@
  */
 package openpkm.domain;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import openpkm.base.PropertiesProvider;
-import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
 
@@ -21,8 +19,8 @@ public abstract class WebPageProvider implements SourceProvider<WebPage>
 {
     protected static final String ROOT_FOLDER = "web";       
 
-    protected Map<String, WebPage> links; 
     protected FileObject rootDir; 
+    protected Pages pages;    
 
     protected final WebPageFactory factory;
 
@@ -37,32 +35,13 @@ public abstract class WebPageProvider implements SourceProvider<WebPage>
         return factory;
     }
     
-    public abstract Map<String, WebPage> getLinksById();
-    
-    public Collection<WebPage> getLinks()
-    {
-        return Collections.unmodifiableCollection(getLinksById().values());
-    }
+    public abstract Pages getPages();    
 
     @Override
-    public Source getSource(String sourceID) 
+    public WebPage getSource(String sourceID) 
     {
-        return getLinksById().get(sourceID);
-    } 
-    
-    @Override
-    public void deleteSource(String sourceID) throws IOException
-    {
-        FileObject root = getRootFolder();
-        if(root != null)
-        {
-            FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
-            if(file != null)
-            {  
-                file.delete();
-            }              
-        }  
-    }      
+        return getPages().getPagesByFile().get(sourceID);
+    }     
 
     @Override
     public String getName() 
@@ -79,6 +58,47 @@ public abstract class WebPageProvider implements SourceProvider<WebPage>
     @Override
     public boolean contains(FileObject file) 
     {
-        return getLinksById().containsKey(file.getName());
-    }     
+        if(file.isData())
+        {
+            return getPages().getPagesByFile().containsKey(file.getName());                
+        }
+        return false;   
+    }  
+    
+    public static final class Pages
+    {
+        private final Map<String, WebPage> pagesByUrl = new HashMap<>();         
+        private Map<String, WebPage> pagesByFile = new HashMap<>();  
+        
+        public Collection<WebPage> getPages()
+        {
+            return Collections.unmodifiableCollection(pagesByUrl.values());
+        }   
+        
+        public Map<String, WebPage> getPagesByUrl()
+        {
+            return pagesByUrl;
+        }
+        
+        public Map<String, WebPage> getPagesByFile()
+        {
+            return pagesByFile;
+        }        
+        
+        public void addPage(WebPage page)
+        {
+            pagesByUrl.put(page.getLinkUrl(), page);
+            pagesByFile.put(page.getFileName(), page);
+        }
+        
+        public WebPage removePage(String fileName)
+        {
+            WebPage page = pagesByFile.remove(fileName);
+            if(page != null)
+            {
+                pagesByUrl.remove(page.getLinkUrl());
+            }
+            return page;
+        }
+    }    
 }

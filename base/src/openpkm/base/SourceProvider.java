@@ -4,7 +4,6 @@
  */
 package openpkm.base;
 
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
@@ -16,11 +15,8 @@ import org.openide.util.Lookup;
  */
 public interface SourceProvider<T extends Source> extends SourceGroup 
 {    
-    Source getSource(String sourceID);
-    void deleteSource(String sourceID) throws IOException;
+    T getSource(String sourceID);
     FileObject createData(T source, FileTypeProvider fileTypeProvider) throws IOException;
     SourceFactory<T> getFactory();
     Lookup.Provider getProvider();
-    void addSourceListener(PropertyChangeListener listener);
-    void removeSourceListener(PropertyChangeListener listener);
 }

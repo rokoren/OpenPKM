@@ -1204,7 +1204,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                     YouTubeVideoFactory youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
                     if(youTubeVideoProvider != null)
                     {
-                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoFactory.Type.BASIC);
+                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
                         if(video != null)
                         {
                             card.merge(video);
@@ -1487,7 +1487,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                                     YouTubeVideoFactory youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
                                     if(youTubeVideoProvider != null)
                                     {
-                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, YouTubeVideoFactory.Type.BASIC);
+                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
                                         if(video != null)
                                         {
                                             link.merge(video);
@@ -1689,12 +1689,13 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
         }          
         
         @Override
-        public Source getSource(String sourceID)
+        public TrelloComment getSource(String sourceID)
         {
             TrelloAction action = getActionsById().get(sourceID);
             return commentFactory.getComment(action, getTrello(), getTrelloAccount());   
         }  
         
+        /*
         @Override
         public void deleteSource(String sourceID) throws IOException
         {
@@ -1715,7 +1716,8 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                     }                 
                 }              
             }  
-        }        
+        }  
+        */
         
         @Override
         public FileObject createData(TrelloComment comment, FileTypeProvider fileTypeProvider) throws IOException     

@@ -58,7 +58,10 @@ public class IconsProviderImpl implements IconsProvider
     public static final String ICON_YOUTUBE_VIDEO = "openpkm/core/resources/youtube_video.png";  
     
     @StaticResource()
-    public static final String ICON_WATCH_LATER = "openpkm/core/resources/eye.png";      
+    public static final String ICON_WATCH_LATER = "openpkm/core/resources/eye.png";     
+    
+    @StaticResource()
+    public static final String ICON_READ_LATER = "openpkm/core/resources/watch_window.png";     
     
     @StaticResource()
     public static final String ICON_YOUTUBE_CHANNEL = "openpkm/core/resources/youtube_channel.png";  
@@ -195,7 +198,9 @@ public class IconsProviderImpl implements IconsProvider
             case RSS_CHANNEL:
             return ICON_RSS_CHANNEL;             
             case WATCH_LATER:
-            return ICON_WATCH_LATER;               
+            return ICON_WATCH_LATER;   
+            case READ_LATER:
+            return ICON_READ_LATER;              
             case CHECK:
             return ICON_CHECK;
             case UNCHECK:

@@ -4,15 +4,12 @@
  */
 package openpkm.utils;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import openpkm.base.Content;
-import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
-import openpkm.base.PropertiesProvider;
 import openpkm.base.ContentFactory;
 
 /**
@@ -47,24 +44,10 @@ public abstract class ContentProvider implements SourceProvider<Content>
     }
 
     @Override
-    public Source getSource(String sourceID) 
+    public Content getSource(String sourceID) 
     {
         return getContentsById().get(sourceID);
-    }  
-    
-    @Override
-    public void deleteSource(String sourceID) throws IOException
-    {
-        FileObject root = getRootFolder();
-        if(root != null)
-        {
-            FileObject file = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
-            if(file != null)
-            {  
-                file.delete();
-            }              
-        }  
-    }    
+    }     
 
     @Override
     public String getName() 

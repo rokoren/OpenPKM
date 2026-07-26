@@ -38,6 +38,7 @@ public interface IconsProvider
         LINKEDIN,
         RSS_CHANNEL,
         WATCH_LATER,
+        READ_LATER,
         CHECK,
         UNCHECK,
         ATTACHMENT,

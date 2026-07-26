@@ -4,12 +4,11 @@
  */
 package openpkm.rss;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
-import openpkm.utils.Utils;
 import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
@@ -22,8 +21,8 @@ public abstract class RssProvider implements SourceGroup
 {
     protected static final String ROOT_FOLDER = "rss";       
 
-    protected Map<String, RssChannel> channels; 
     protected FileObject rootDir; 
+    protected Channels channels;
 
     protected final RssFactory factory;
     protected final ChangeSupport changeSupport; 
@@ -39,12 +38,7 @@ public abstract class RssProvider implements SourceGroup
         return factory;
     }
     
-    protected abstract Map<String, RssChannel> getChannelsById();
-    
-    public Collection<RssChannel> getChannels()
-    {
-        return Collections.unmodifiableCollection(getChannelsById().values());
-    }
+    public abstract Channels getChannels();
     
     public void addChangeListener(ChangeListener listener) 
     {
@@ -54,12 +48,7 @@ public abstract class RssProvider implements SourceGroup
     public void removeChangeListener(ChangeListener listener) 
     {
         changeSupport.removeChangeListener(listener);
-    }     
-
-    public RssChannel getChannel(String channelID) 
-    {
-        return getChannelsById().get(channelID);
-    }                                  
+    }                                     
 
     @Override
     public String getName() 
@@ -76,15 +65,42 @@ public abstract class RssProvider implements SourceGroup
     @Override
     public boolean contains(FileObject file) 
     {
-        try
+        if(file.isData())
         {
-            RssChannel channel = factory.getRssChannel(Utils.getProperties(file)); 
-            if(getChannelsById().containsKey(channel.getUri()))
-            {
-                return true;
-            }
+            return getChannels().hasChannel(file.getName());                
         }
-        catch(IOException e) {}  
-        return false;
-    }     
+        return false;            
+    }   
+    
+    public static final class Channels
+    {
+        private final Map<String, RssChannel> channelsByUrl = new HashMap<>();         
+        private Map<String, RssChannel> channelsByFile = new HashMap<>();  
+        
+        public Collection<RssChannel> getChannels()
+        {
+            return Collections.unmodifiableCollection(channelsByUrl.values());
+        }   
+        
+        public void addChannel(RssChannel channel)
+        {
+            channelsByUrl.put(channel.getFeedUrl(), channel);
+            channelsByFile.put(channel.getFileName(), channel);
+        }
+        
+        public RssChannel removeChannel(String fileName)
+        {
+            RssChannel channel = channelsByFile.remove(fileName);
+            if(channel != null)
+            {
+                channelsByUrl.remove(channel.getFeedUrl());
+            }
+            return channel;
+        }
+        
+        public boolean hasChannel(String fileName)
+        {
+            return channelsByFile.containsKey(fileName);
+        }
+    }
 }
