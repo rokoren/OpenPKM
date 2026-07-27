@@ -6,6 +6,7 @@ package openpkm.github;
 
 import java.time.LocalDateTime;
 import openpkm.base.DescriptionProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 
@@ -13,7 +14,7 @@ import openpkm.base.TitleProvider;
  *
  * @author Rok Koren
  */
-public interface GitHubUser extends Source, TitleProvider, DescriptionProvider
+public interface GitHubUser extends Source, PropertiesProvider, TitleProvider, DescriptionProvider
 {
     String GITHUB_URL = "https://github.com/";
     

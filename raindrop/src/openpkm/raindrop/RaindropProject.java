@@ -3284,7 +3284,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void deleteSource(YouTubeChannel channel)
         {
-            channel.notifyDeleted();
+            if(channel instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
             sourceDeleted(new SourceEventImpl(this, channel));
         }         
         
@@ -3479,7 +3482,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void deleteSource(GitHubUser user)
         {
-            user.notifyDeleted();
+            if(user instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
             sourceDeleted(new SourceEventImpl(this, user));
         }         
         

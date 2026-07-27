@@ -35,6 +35,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
@@ -54,6 +55,8 @@ import openpkm.base.Link;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
+import openpkm.base.SourceEvent;
+import openpkm.base.SourceEventListener;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
@@ -105,6 +108,7 @@ import openpkm.domain.WebPageFactory;
 import openpkm.domain.WebPageProvider;
 import openpkm.github.GitHubProvider;
 import openpkm.reference.ReferenceFactory;
+import openpkm.utils.SourceEventImpl;
 
 /**
  *
@@ -134,6 +138,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
     private final ProjectState state;
     private final Properties props; 
     private final PropertyChangeSupport propertyChangeSupport;
+    private final EventListenerList listeners;
     
     private Lookup lkp;      
     private FileObject dataDir;
@@ -145,6 +150,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         this.state = state;
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);  
+        listeners = new EventListenerList(); 
 
         WebPageFactory webPageFactory = Lookup.getDefault().lookup(WebPageFactory.class);
         if(webPageFactory != null)
@@ -159,8 +165,51 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             SourceProvider references = new ReferenceProviderImpl(referenceFactory);
             sources.put(references.getName(), references);            
         }
-
     }
+    
+    @Override
+    public Properties getProperties()
+    {
+        return props;
+    }  
+    
+    @Override
+    public boolean merge(PropertiesProvider provider)
+    {
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
+    }  
+    
+    @Override
+    public void sourceDeleted(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceDeleted(evt);
+        }
+    }
+    
+    @Override
+    public void sourceModified(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceModified(evt);
+        }
+    }   
+    
+    @Override
+    public void sourceAdded(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceAdded(evt);
+        }
+    }      
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -485,12 +534,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
     public void removeDescriptionListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-    }      
-    
-    public Properties getProperties()
-    {
-        return props;
-    }    
+    }           
     
 // TODO BatchUpdateSupport    
     
@@ -898,14 +942,14 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
     
 // TODO DataGroup
     
-    private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class BookDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public BookDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -997,23 +1041,41 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
             {
                 changeSupport.fireChange();
-            }            
+            }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }   
     
-    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public ArticleDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }             
         
         @Override
@@ -1105,23 +1167,41 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
             {
                 changeSupport.fireChange();
-            }            
-        }  
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        } 
     } 
     
-    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public DocumentDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1213,23 +1293,41 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
             {
                 changeSupport.fireChange();
-            }            
+            }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }  
 
-    private final class LinkDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class LinkDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public LinkDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }                
         
         @Override
@@ -1321,23 +1419,41 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
             {
                 changeSupport.fireChange();
-            }            
-        }  
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }
     }  
 
-    private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class PictureDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public PictureDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -1429,23 +1545,41 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Picture || evt.getNewValue() instanceof Picture)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
             {
                 changeSupport.fireChange();
-            }            
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
         } 
     } 
     
-    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class VideoDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public VideoDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -1537,12 +1671,30 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
             {
                 changeSupport.fireChange();
-            }            
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
         } 
     }    
     
@@ -1663,19 +1815,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }              
         
         @Override
         public FileObject createData(WebPage page, FileTypeProvider fileTypeProvider) throws IOException    
@@ -1699,7 +1839,14 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             }  
             
             return primaryFile;            
-        }           
+        }  
+        
+        @Override
+        public void deleteSource(WebPage page)
+        {
+            page.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, page));
+        }        
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1719,7 +1866,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             {
                 WebPage page = factory.getWebPage(Utils.getProperties(file)); 
                 getPages().addPage(page);             
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, page);                 
+                sourceAdded(new SourceEventImpl(this, page));                
             }           
             catch(IOException e)
             {
@@ -1746,7 +1893,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             WebPage page = getPages().removePage(file.getName());
             if(page != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, page, null); 
+                sourceDeleted(new SourceEventImpl(this, page));
             }
         }
 
@@ -1867,19 +2014,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                
         
         @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
@@ -1914,7 +2049,14 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             }            
 
             return primaryFile;
-        }          
+        }  
+
+        @Override
+        public void deleteSource(Reference reference)
+        {
+            reference.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, reference));
+        }  
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1934,7 +2076,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             {
                 Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                 
+                sourceAdded(new SourceEventImpl(this, reference));               
             }           
             catch(IOException e)
             {
@@ -1961,7 +2103,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);
+                sourceDeleted(new SourceEventImpl(this, reference));
             }
         }
 
