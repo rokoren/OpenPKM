@@ -146,6 +146,7 @@ import openpkm.base.RecycleBinProvider;
 import openpkm.base.SourceEvent;
 import openpkm.base.SourceEventListener;
 import openpkm.base.WorkflowProvider;
+import openpkm.utils.SourceEventImpl;
 
 /**
  *
@@ -2734,19 +2735,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                
         
         @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2781,7 +2770,14 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }            
 
             return primaryFile;
-        }          
+        }  
+
+        @Override
+        public void deleteSource(Reference reference)
+        {
+            reference.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, reference));
+        }  
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2801,7 +2797,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             {
                 Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                
+                sourceAdded(new SourceEventImpl(this, reference));                
             }           
             catch(IOException e)
             {
@@ -2829,7 +2825,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);
+                sourceDeleted(new SourceEventImpl(this, reference)); 
             }
         }
 
@@ -2952,19 +2948,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                 
         
         @Override
         public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2985,6 +2969,13 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             
             return primaryFile;             
         }  
+        
+        @Override
+        public void deleteSource(YouTubeVideo video)
+        {
+            video.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, video));
+        }          
         
         @Override
         public Set<String> getTags()
@@ -3020,7 +3011,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             {
                 YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
                 getVideosById().put(video.getSourceID(), video);                                                              
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, video);             
+                sourceAdded(new SourceEventImpl(this, video));             
             }           
             catch(IOException e)
             {
@@ -3048,7 +3039,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {              
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, video, null); 
+                sourceDeleted(new SourceEventImpl(this, video));
             }
         }
 
@@ -3361,19 +3352,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                
         
         @Override
         public FileObject createData(GitHubUser user, FileTypeProvider fileTypeProvider) throws IOException    
@@ -3393,6 +3372,16 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }
             
             return primaryFile;             
+        } 
+        
+        @Override
+        public void deleteSource(GitHubUser user)
+        {
+            if(user instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
+            sourceDeleted(new SourceEventImpl(this, user));
         }          
         
         @Override
@@ -3410,7 +3399,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                         if(user != null)
                         {
                             getUsersById().put(user.getUserID(), user);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);    
+                            sourceAdded(new SourceEventImpl(this, user));  
                         }                    
                     }                
                 }
@@ -3431,7 +3420,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 if(user != null)
                 {
                     getUsersById().put(user.getUserID(), user); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);                       
+                    sourceAdded(new SourceEventImpl(this, user));                       
                 }          
             }           
             catch(IOException e)
@@ -3452,7 +3441,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             GitHubUser user = getUsersById().remove(file.getName());  
             if(user != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, user, null);  
+                sourceDeleted(new SourceEventImpl(this, user)); 
             }
         }
 
@@ -3576,19 +3565,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                
         
         @Override
         public FileObject createData(Blog blog, FileTypeProvider fileTypeProvider) throws IOException    
@@ -3608,7 +3585,17 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }
             
             return primaryFile;             
-        }          
+        } 
+        
+        @Override
+        public void deleteSource(Blog blog)
+        {
+            if(blog instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
+            sourceDeleted(new SourceEventImpl(this, blog));
+        }        
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3625,7 +3612,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 if(blog != null)
                 {
                     getBlogsById().put(blog.getSourceID(), blog); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);                       
+                    sourceAdded(new SourceEventImpl(this, blog));                      
                 }          
             }           
             catch(IOException e)
@@ -3646,7 +3633,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             Blog blog = getBlogsById().remove(file.getName());  
             if(blog != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, blog, null);  
+                sourceDeleted(new SourceEventImpl(this, blog)); 
             }
         }
 
