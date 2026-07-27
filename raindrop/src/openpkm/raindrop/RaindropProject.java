@@ -144,6 +144,7 @@ import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.base.SourceEventListener;
+import openpkm.base.WorkflowProvider;
 import openpkm.utils.SourceEventImpl;
 
 /**
@@ -2025,6 +2026,17 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         Video video = source.getLookup().lookup(Video.class);
                         if(video != null)
                         {
+                            if(source instanceof StateSupport state)
+                            {
+                                if(state.isDeleted())
+                                {
+                                    return false;
+                                }
+                            }
+                            if(source instanceof WorkflowProvider provider)
+                            {
+                                return provider.getWorkflow() == WorkflowProvider.Workflow.DEFAULT;
+                            }
                             return true;
                         }                                                                                                
                     }            

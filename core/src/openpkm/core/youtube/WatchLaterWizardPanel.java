@@ -13,7 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import openpkm.base.SourceProviders;
-import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLaterProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.utils.SourceEventImpl;
@@ -56,7 +55,7 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     {
         workflows.removeAllElements();
         workflows.addAll(Arrays.asList(WorkflowProvider.Workflow.values()));  
-        workflows.setSelectedItem(VisibilityProvider.Modifier.PRIVATE);
+        workflows.setSelectedItem(WorkflowProvider.Workflow.WATCH_LATER);
     }     
     
     public void finish(WatchLaterProvider provider, boolean isFinish)

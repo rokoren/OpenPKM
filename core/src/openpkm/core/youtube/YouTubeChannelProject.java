@@ -1501,12 +1501,18 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 {
                     Source source = sourceProvider.getSource();
                     if(source != null)
-                    {                                               
-                        WorkflowProvider workflowProvider = source.getLookup().lookup(WorkflowProvider.class);
-                        if(workflowProvider != null)
-                        {                                                       
-                            return workflowProvider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER;
-                        }                                                 
+                    {  
+                        if(source instanceof StateSupport state)
+                        {
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            return provider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER;
+                        }                                                                        
                     }            
                 }                                                                                  
             }                                    
@@ -1662,12 +1668,18 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 {
                     Source source = sourceProvider.getSource();
                     if(source != null)
-                    {   
-                        WorkflowProvider workflowProvider = source.getLookup().lookup(WorkflowProvider.class);
-                        if(workflowProvider != null)
+                    {  
+                        if(source instanceof StateSupport state)
                         {
-                            return workflowProvider.getWorkflow() == WorkflowProvider.Workflow.RECYCLE_BIN;
-                        }                                               
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            return provider.getWorkflow() == WorkflowProvider.Workflow.RECYCLE_BIN;
+                        }                                                                     
                     }            
                 }                                                                                  
             }                                    
@@ -2584,13 +2596,17 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                         Video video = source.getLookup().lookup(Video.class);
                         if(video != null)
                         {
-                            if(video instanceof VisibilityProvider visibilityPovider)
+                            if(source instanceof StateSupport state)
                             {
-                                if(visibilityPovider.getModifier() == VisibilityProvider.Modifier.PRIVATE)
+                                if(state.isDeleted())
                                 {
                                     return false;
                                 }
-                            }                            
+                            }
+                            if(source instanceof WorkflowProvider provider)
+                            {
+                                return provider.getWorkflow() == WorkflowProvider.Workflow.DEFAULT;
+                            }                          
                             return true;
                         }                                                
                     }            

@@ -39,6 +39,7 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.ChangeSupportProvider;
@@ -102,6 +103,8 @@ import org.openide.windows.TopComponent;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
 import openpkm.base.Source;
+import openpkm.base.SourceEvent;
+import openpkm.base.SourceEventListener;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviders;
 import openpkm.trello.TrelloService;
@@ -112,6 +115,7 @@ import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileSystem;
 import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProviderWrapper;
+import openpkm.base.StateSupport;
 import openpkm.trello.TrelloComment;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.TopComponentProvider;
@@ -124,6 +128,7 @@ import openpkm.trello.TrelloCardProvider;
 import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloMemberFactory;
 import openpkm.trello.TrelloListFactory;
+import openpkm.utils.SourceEventImpl;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 
@@ -165,6 +170,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
     private final ProjectState state;
     private final Properties props;   
     private final PropertyChangeSupport propertyChangeSupport;
+    private final EventListenerList listeners;
     
     private Lookup lkp; 
     private FileObject dataDir;
@@ -180,6 +186,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
         this.state = state;
         this.props = props; 
         propertyChangeSupport = new PropertyChangeSupport(this); 
+        listeners = new EventListenerList(); 
         
         TrelloCardFactory cardFactory = Lookup.getDefault().lookup(TrelloCardFactory.class);
         if(cardFactory != null)
@@ -221,6 +228,33 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
     public Properties getProperties()
     {
         return props;
+    }   
+    
+    @Override
+    public void sourceDeleted(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceDeleted(evt);
+        }
+    }
+    
+    @Override
+    public void sourceModified(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceModified(evt);
+        }
+    }   
+    
+    @Override
+    public void sourceAdded(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceAdded(evt);
+        }
     }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -898,7 +932,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
         }          
     } 
 
-    private final class ListProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ListProviderImpl implements DataGroupProvider, PropertyChangeListener, SourceEventListener
     {        
         private final TrelloList list;
         private final ChangeSupport changeSupport; 
@@ -908,7 +942,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             this.list = list;
             changeSupport = new ChangeSupport(this); 
             propertyChangeSupport.addPropertyChangeListener(TrelloCardProvider.PROP_TRELLO_SYNC_CARD, this);
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }
         
         @Override
@@ -1011,18 +1045,43 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             {
                 changeSupport.fireChange();  
             }
-            else if(evt.getPropertyName().equals(PROP_LAST_SOURCE))
+        }
+        
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof TrelloCard card)
             {
-                if(evt.getNewValue() instanceof TrelloCard)
+                if(card.getListID() != null && card.getListID().equals(list.getListID()))
                 {
-                    TrelloCard card = (TrelloCard)evt.getNewValue();
-                    if(card.getListID() != null && card.getListID().equals(list.getListID()))
-                    {
-                        changeSupport.fireChange();                    
-                    }                      
-                }
+                    changeSupport.fireChange();                    
+                }  
             }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof TrelloCard card)
+            {
+                if(card.getListID() != null && card.getListID().equals(list.getListID()))
+                {
+                    changeSupport.fireChange();                    
+                }   
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof TrelloCard card)
+            {
+                if(card.getListID() != null && card.getListID().equals(list.getListID()))
+                {
+                    changeSupport.fireChange();                    
+                }  
+            }
+        }          
     }     
     
 // TODO TrelloCardsProvider
@@ -1054,19 +1113,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }  
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }                         
+        }                          
         
         @Override
         public FileObject createData(TrelloCard card, FileTypeProvider fileTypeProvider) throws IOException     
@@ -1077,7 +1124,17 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
             file.setAttribute(ATTR_SOURCE_ID, card.getCardID());                      
             return primaryFile; 
-        }          
+        }  
+
+        @Override
+        public void deleteSource(TrelloCard card)
+        {
+            if(card instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
+            sourceDeleted(new SourceEventImpl(this, card));
+        }  
         
         @Override
         public FileObject getRootFolder() 
@@ -1296,7 +1353,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                         if(card != null)
                         {
                             getCardsById().put(card.getCardID(), card);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, card);    
+                            sourceAdded(new SourceEventImpl(this, card));   
                         }                    
                     }                
                 }
@@ -1320,7 +1377,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                     if(card != null)
                     {
                         getCardsById().put(card.getCardID(), card);
-                        propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, card);    
+                        sourceAdded(new SourceEventImpl(this, card));     
                     }             
                 }
                 catch(IOException e)
@@ -1345,7 +1402,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                 if(card != null)
                 {
                     getCardsById().remove(card.getCardID());
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, card, null);   
+                    sourceDeleted(new SourceEventImpl(this, card));    
                 }             
             }
             catch(IOException e)
@@ -1674,19 +1731,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        } 
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                  
         
         @Override
         public TrelloComment getSource(String sourceID)
@@ -1734,6 +1779,13 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             file.setAttribute(ATTR_SOURCE_ID, comment.getActionID());                      
             return primaryFile; 
         }   
+        
+        @Override
+        public void deleteSource(TrelloComment comment)
+        {
+            comment.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, comment));
+        }          
         
         @Override
         public SortedSet<? extends NodeProvider> getNodes()
