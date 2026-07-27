@@ -1946,6 +1946,17 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         Link link = source.getLookup().lookup(Link.class);
                         if(link != null)
                         {
+                            if(source instanceof StateSupport state)
+                            {
+                                if(state.isDeleted())
+                                {
+                                    return false;
+                                }
+                            }
+                            if(source instanceof WorkflowProvider provider)
+                            {
+                                return provider.getWorkflow() == WorkflowProvider.Workflow.DEFAULT;
+                            }
                             return true;
                         }                                                  
                     }            
@@ -2915,6 +2926,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                 if(oldRaindrop.merge(raindrop))
                                 {
                                     oldRaindrop.markModified();
+                                    sourceModified(new SourceEventImpl(this, oldRaindrop));
                                 }
                             }                                    
                         }
@@ -2922,6 +2934,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         {
                             raindrop.markModified();
                             getRaindropsById().put(raindrop.getSourceID(), raindrop);
+                            sourceDeleted(new SourceEventImpl(this, oldRaindrop));   
                             sourceAdded(new SourceEventImpl(this, raindrop));                                
                         }                                                                                                                                                   
                     }
