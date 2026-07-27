@@ -3717,7 +3717,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public void deleteSource(Blog blog)
         {
-            blog.notifyDeleted();
+            if(blog instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
             sourceDeleted(new SourceEventImpl(this, blog));
         }
         

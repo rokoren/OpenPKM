@@ -52,6 +52,7 @@ import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
@@ -77,6 +78,8 @@ import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.ReadLaterProvider;
 import openpkm.base.Source;
+import openpkm.base.SourceEvent;
+import openpkm.base.SourceEventListener;
 import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
@@ -85,7 +88,6 @@ import openpkm.base.StateSupport;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
-import openpkm.base.WatchLaterSupport;
 import openpkm.base.WorkflowProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
@@ -142,6 +144,7 @@ import openpkm.reference.ReferenceFactory;
 import openpkm.rss.RssChannel;
 import openpkm.rss.RssFactory;
 import openpkm.rss.RssProvider;
+import openpkm.utils.SourceEventImpl;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
@@ -180,6 +183,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     private final ProjectState state;
     private final Properties props;
     private final PropertyChangeSupport propertyChangeSupport;
+    private final EventListenerList listeners;
     
     private Lookup lkp;  
     private FileObject dataDir;
@@ -191,6 +195,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         this.state = state;
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
+        listeners = new EventListenerList(); 
        
         WebPageFactory webPageFactory = Lookup.getDefault().lookup(WebPageFactory.class);
         if(webPageFactory != null)
@@ -250,6 +255,33 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
         props.putAll(provider.getProperties());        
         return true;
+    }   
+    
+    @Override
+    public void sourceDeleted(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceDeleted(evt);
+        }
+    }
+    
+    @Override
+    public void sourceModified(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceModified(evt);
+        }
+    }   
+    
+    @Override
+    public void sourceAdded(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceAdded(evt);
+        }
     }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
@@ -1285,14 +1317,14 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     
 // TODO DataGroup
    
-    private final class ReadLaterProviderImpl implements ReadLaterProvider, WatchLaterSupport, BulletIconProvider, PropertyChangeListener
+    private final class ReadLaterProviderImpl implements ReadLaterProvider, BulletIconProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public ReadLaterProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1441,32 +1473,44 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 }                                                                                  
             }                                    
             return false;            
-        }
+        }                     
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof WorkflowProvider || evt.getNewValue() instanceof WorkflowProvider)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
             {
                 changeSupport.fireChange();
-            }            
-        }                       
+            }
+        }
 
         @Override
-        public void fireChange() 
+        public void sourceModified(SourceEvent evt) 
         {
-            changeSupport.fireChange();
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
         }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        } 
     }     
     
-    private final class BookDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class BookDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public BookDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1558,23 +1602,41 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
             {
                 changeSupport.fireChange();
-            }            
+            }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }   
     
-    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ArticleDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public ArticleDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }               
         
         @Override
@@ -1666,23 +1728,41 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
             {
                 changeSupport.fireChange();
-            }            
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
         } 
     } 
     
-    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DocumentDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public DocumentDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }             
         
         @Override
@@ -1774,23 +1854,41 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
             {
                 changeSupport.fireChange();
-            }            
+            }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }  
 
-    private final class LinkDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class LinkDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public LinkDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }               
         
         @Override
@@ -1889,23 +1987,41 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
             {
                 changeSupport.fireChange();
-            }            
-        } 
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }  
 
-    private final class PictureDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class PictureDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public PictureDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -1997,23 +2113,41 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Picture || evt.getNewValue() instanceof Picture)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
             {
                 changeSupport.fireChange();
-            }            
-        } 
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     } 
     
-    private final class VideoDataGroupProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class VideoDataGroupProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public VideoDataGroupProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -2105,12 +2239,30 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
             {
                 changeSupport.fireChange();
-            }            
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
         } 
     }    
     
@@ -2231,19 +2383,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }               
         
         @Override
         public FileObject createData(WebPage page, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2267,7 +2407,14 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }  
             
             return primaryFile;            
-        }           
+        }  
+        
+        @Override
+        public void deleteSource(WebPage page)
+        {
+            page.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, page));
+        }        
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2287,7 +2434,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             {
                 WebPage page = factory.getWebPage(Utils.getProperties(file)); 
                 getPages().addPage(page);                             
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, page);                
+                sourceAdded(new SourceEventImpl(this, page));              
             }           
             catch(IOException e)
             {
@@ -2314,7 +2461,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             WebPage page = getPages().removePage(file.getName());
             if(page != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, page, null); 
+                sourceDeleted(new SourceEventImpl(this, page)); 
             }
         }
 
@@ -2435,19 +2582,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                 
         
         @Override
         public FileObject createData(Reference reference, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2482,6 +2617,13 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }            
 
             return primaryFile;
+        }  
+
+        @Override
+        public void deleteSource(Reference reference)
+        {
+            reference.notifyDeleted();
+            sourceDeleted(new SourceEventImpl(this, reference));
         }          
         
         @Override
@@ -2502,7 +2644,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             {
                 Reference reference = factory.getReference(Utils.getProperties(file)); 
                 getReferencesById().put(reference.getSourceID(), reference);               
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, reference);                
+                sourceAdded(new SourceEventImpl(this, reference));               
             }           
             catch(IOException e)
             {
@@ -2529,7 +2671,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, reference, null);
+                sourceDeleted(new SourceEventImpl(this, reference)); 
             }
         }
 
@@ -2638,19 +2780,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                 
         
         @Override
         public FileObject createData(YouTubeChannel channel, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2670,7 +2800,17 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }
             
             return primaryFile;             
-        }          
+        }  
+
+        @Override
+        public void deleteSource(YouTubeChannel channel)
+        {
+            if(channel instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
+            sourceDeleted(new SourceEventImpl(this, channel));
+        }         
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2687,7 +2827,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         if(channel != null)
                         {
                             getChannelsById().put(channel.getChannelID(), channel);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);    
+                            sourceAdded(new SourceEventImpl(this, channel));    
                         }                    
                     }                
                 }
@@ -2708,7 +2848,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 if(channel != null)
                 {
                     getChannelsById().put(channel.getChannelID(), channel); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, channel);                       
+                    sourceAdded(new SourceEventImpl(this, channel));                      
                 }          
             }           
             catch(IOException e)
@@ -2729,7 +2869,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             YouTubeChannel channel = getChannelsById().remove(file.getName());  
             if(channel != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, channel, null);  
+                sourceDeleted(new SourceEventImpl(this, channel));  
             }
         }
 
@@ -2838,19 +2978,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                
         
         @Override
         public FileObject createData(GitHubUser user, FileTypeProvider fileTypeProvider) throws IOException    
@@ -2870,7 +2998,17 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }
             
             return primaryFile;             
-        }          
+        }   
+        
+        @Override
+        public void deleteSource(GitHubUser user)
+        {
+            if(user instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
+            sourceDeleted(new SourceEventImpl(this, user));
+        }           
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2887,7 +3025,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         if(user != null)
                         {
                             getUsersById().put(user.getUserID(), user);
-                            propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);    
+                            sourceAdded(new SourceEventImpl(this, user));   
                         }                    
                     }                
                 }
@@ -2908,7 +3046,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 if(user != null)
                 {
                     getUsersById().put(user.getUserID(), user); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, user);                       
+                    sourceAdded(new SourceEventImpl(this, user));                     
                 }          
             }           
             catch(IOException e)
@@ -2929,7 +3067,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             GitHubUser user = getUsersById().remove(file.getName());  
             if(user != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, user, null);  
+                sourceDeleted(new SourceEventImpl(this, user)); 
             }
         }
 
@@ -3053,19 +3191,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void removePropertyChangeListener(PropertyChangeListener listener) 
         {
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
-        }
-        
-        @Override
-        public void addSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }
-
-        @Override
-        public void removeSourceListener(PropertyChangeListener listener) 
-        {
-            propertyChangeSupport.removePropertyChangeListener(PROP_LAST_SOURCE, listener);
-        }          
+        }                 
         
         @Override
         public FileObject createData(Blog blog, FileTypeProvider fileTypeProvider) throws IOException    
@@ -3085,7 +3211,17 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }
             
             return primaryFile;             
-        }          
+        }  
+
+        @Override
+        public void deleteSource(Blog blog)
+        {
+            if(blog instanceof StateSupport state)
+            {
+                state.notifyDeleted();                
+            }
+            sourceDeleted(new SourceEventImpl(this, blog));
+        }
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3102,7 +3238,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 if(blog != null)
                 {
                     getBlogsById().put(blog.getSourceID(), blog); 
-                    propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, null, blog);                       
+                    sourceAdded(new SourceEventImpl(this, blog));                      
                 }          
             }           
             catch(IOException e)
@@ -3123,7 +3259,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             Blog blog = getBlogsById().remove(file.getName());  
             if(blog != null)
             {
-                propertyChangeSupport.firePropertyChange(PROP_LAST_SOURCE, blog, null);  
+                sourceDeleted(new SourceEventImpl(this, blog)); 
             }
         }
 
