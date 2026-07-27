@@ -10,14 +10,12 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.WatchLaterProvider;
-import openpkm.base.WatchLaterSupport;
 import openpkm.base.WorkflowProvider;
 import openpkm.youtube.YouTubeVideo;
 import org.openide.DialogDisplayer;
@@ -52,11 +50,11 @@ public class WatchLaterAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterAction.class.getName());     
     
-    private final WatchLaterProvider watchLaterProvider;
+    private final WatchLaterProvider provider;
 
-    public WatchLaterAction(WatchLaterProvider watchLaterProvider)
+    public WatchLaterAction(WatchLaterProvider provider)
     {
-        this.watchLaterProvider = watchLaterProvider;
+        this.provider = provider;
     }
     
     @Override
@@ -66,7 +64,7 @@ public class WatchLaterAction implements ActionListener
         
         try
         {
-            for(FileObject file : watchLaterProvider.getFiles())
+            for(FileObject file : provider.getFiles())
             {
                 DataObject data = null;
                 if(file.isData())
@@ -94,9 +92,9 @@ public class WatchLaterAction implements ActionListener
                         if(source != null)
                         {
                             YouTubeVideo video = source.getLookup().lookup(YouTubeVideo.class);
-                            if(video instanceof WorkflowProvider provider)
+                            if(video instanceof WorkflowProvider workflowProvider)
                             {
-                                if(provider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER)
+                                if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER)
                                 {
                                     panels.add(new WatchLaterWizardPanel(video));                  
                                 }   
@@ -136,16 +134,8 @@ public class WatchLaterAction implements ActionListener
         {
             if(panel instanceof WatchLaterWizardPanel watchLaterPanel)
             {
-                watchLaterPanel.finish(isFinish);
+                watchLaterPanel.finish(provider, isFinish);
             }           
-        }        
-        if(isFinish)
-        {
-            Collection<? extends WatchLaterSupport> providers = watchLaterProvider.getProvider().getLookup().lookupAll(WatchLaterSupport.class);
-            for(WatchLaterSupport provider : providers)
-            {
-                provider.fireChange();                
-            }
-        }                                                           
+        }                                                                 
     }      
 }

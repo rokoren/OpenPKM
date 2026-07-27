@@ -12,10 +12,14 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
+import openpkm.base.SourceProviders;
 import openpkm.base.VisibilityProvider;
+import openpkm.base.WatchLaterProvider;
 import openpkm.base.WorkflowProvider;
+import openpkm.utils.SourceEventImpl;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
+import openpkm.youtube.YouTubeVideoProvider;
 import org.cef.browser.CefBrowser;
 import org.openide.WizardDescriptor;
 import org.openide.util.HelpCtx;
@@ -55,15 +59,21 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
         workflows.setSelectedItem(VisibilityProvider.Modifier.PRIVATE);
     }     
     
-    public void finish(boolean isFinish)
+    public void finish(WatchLaterProvider provider, boolean isFinish)
     {
         if(isFinish) 
         {
-            if(video instanceof WorkflowProvider provider)
+            if(video instanceof WorkflowProvider workflowProvider)
             {
                 WorkflowProvider.Workflow workflow = (WorkflowProvider.Workflow)workflows.getSelectedItem();
-                provider.setWorkflow(workflow);  
-                video.markModified();            
+                workflowProvider.setWorkflow(workflow);  
+                video.markModified();       
+                SourceProviders sourceProviders = provider.getProvider().getLookup().lookup(SourceProviders.class);
+                YouTubeVideoProvider youTubeVideoProvider = provider.getProvider().getLookup().lookup(YouTubeVideoProvider.class);
+                if(sourceProviders != null && youTubeVideoProvider != null)
+                {
+                    sourceProviders.sourceModified(new SourceEventImpl(youTubeVideoProvider, video));
+                }
             }
         }            
 

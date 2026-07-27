@@ -37,7 +37,7 @@ public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVide
         return factory;
     }
     
-    protected abstract Map<String, YouTubeVideo> getVideosById();
+    protected abstract Map<String, YouTubeVideo> getVideosById();    
     
     public Collection<YouTubeVideo> getVideos()
     {
@@ -48,7 +48,7 @@ public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVide
     public YouTubeVideo getSource(String sourceID) 
     {
         return getVideosById().get(sourceID);
-    }     
+    }           
 
     @Override
     public String getName() 

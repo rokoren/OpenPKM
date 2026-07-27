@@ -3102,7 +3102,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         {
             video.notifyDeleted();
             sourceDeleted(new SourceEventImpl(this, video));
-        }         
+        }                 
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
