@@ -54,6 +54,7 @@ import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
@@ -85,7 +86,6 @@ import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLaterProvider;
-import openpkm.base.WatchLaterSupport;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.BlogProvider;
@@ -143,6 +143,8 @@ import openpkm.youtube.YouTubeVideoFactory;
 import openpkm.reference.ReferenceFactory;
 import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.base.RecycleBinProvider;
+import openpkm.base.SourceEvent;
+import openpkm.base.SourceEventListener;
 import openpkm.base.WorkflowProvider;
 
 /**
@@ -177,6 +179,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
     private final ProjectState state;
     private final Properties props;
     private final PropertyChangeSupport propertyChangeSupport;
+    private final EventListenerList listeners;
     
     private Lookup lkp;     
     private FileObject dataDir;
@@ -188,6 +191,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         this.state = state;
         this.props = props;
         propertyChangeSupport = new PropertyChangeSupport(this);
+        listeners = new EventListenerList(); 
        
         ReferenceFactory referenceFactory = Lookup.getDefault().lookup(ReferenceFactory.class);
         if(referenceFactory != null)
@@ -235,7 +239,34 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
         props.putAll(provider.getProperties());        
         return true;
-    }      
+    }   
+    
+    @Override
+    public void sourceDeleted(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceDeleted(evt);
+        }
+    }
+    
+    @Override
+    public void sourceModified(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceModified(evt);
+        }
+    }   
+    
+    @Override
+    public void sourceAdded(SourceEvent evt)
+    {
+        for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
+        {
+            listener.sourceAdded(evt);
+        }
+    }     
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -1323,14 +1354,14 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
     
 // TODO DataGroup     
 
-    private final class WatchLaterProviderImpl implements WatchLaterProvider, WatchLaterSupport, BulletIconProvider, PropertyChangeListener
+    private final class WatchLaterProviderImpl implements WatchLaterProvider, BulletIconProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public WatchLaterProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1479,32 +1510,44 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 }                                                                                  
             }                                    
             return false;            
-        }
-
+        } 
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof WorkflowProvider || evt.getNewValue() instanceof WorkflowProvider)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
             {
                 changeSupport.fireChange();
-            }            
-        }                       
+            }
+        }
 
         @Override
-        public void fireChange() 
+        public void sourceModified(SourceEvent evt) 
         {
-            changeSupport.fireChange();
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
         }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     } 
     
-    private final class RecycleBinProviderImpl implements RecycleBinProvider, WatchLaterSupport, PropertyChangeListener
+    private final class RecycleBinProviderImpl implements RecycleBinProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public RecycleBinProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1631,29 +1674,41 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof WorkflowProvider || evt.getNewValue() instanceof WorkflowProvider)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
             {
                 changeSupport.fireChange();
-            }            
-        }                       
+            }
+        }
 
         @Override
-        public void fireChange() 
+        public void sourceModified(SourceEvent evt) 
         {
-            changeSupport.fireChange();
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
         }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        } 
     }   
     
-    private final class DomainProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DomainProviderImpl implements DataGroupProvider, SourceEventListener
     {                        
         private final ChangeSupport changeSupport; 
 
         public DomainProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }        
         
         @Override
@@ -1743,25 +1798,43 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }                                    
             return false;
         }
-
+        
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
+        public void sourceDeleted(SourceEvent evt) 
         {
-            if(evt.getOldValue() instanceof Domain || evt.getNewValue() instanceof Domain)
+            if(evt.getSource() instanceof Domain)
             {
                 changeSupport.fireChange();
             }
-        }             
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     }       
     
-    private final class BookProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class BookProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public BookProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }              
         
         @Override
@@ -1853,23 +1926,41 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Book || evt.getNewValue() instanceof Book)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
             {
                 changeSupport.fireChange();
-            }            
+            }
         }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Book)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }   
     
-    private final class ArticleProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class ArticleProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public ArticleProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }               
         
         @Override
@@ -1961,23 +2052,41 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Article || evt.getNewValue() instanceof Article)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
             {
                 changeSupport.fireChange();
-            }            
-        } 
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Article)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     } 
     
-    private final class DocumentProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class DocumentProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public DocumentProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }             
         
         @Override
@@ -2069,23 +2178,41 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Document || evt.getNewValue() instanceof Document)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
             {
                 changeSupport.fireChange();
-            }            
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Document)
+            {
+                changeSupport.fireChange();
+            }
         }   
     }  
 
-    private final class LinkProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class LinkProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
 
         public LinkProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         }            
         
         @Override
@@ -2177,23 +2304,41 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Link || evt.getNewValue() instanceof Link)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
             {
                 changeSupport.fireChange();
-            }            
-        } 
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Link)
+            {
+                changeSupport.fireChange();
+            }
+        }   
     }  
 
-    private final class PictureProviderImpl implements DataGroupProvider, PropertyChangeListener
+    private final class PictureProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public PictureProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -2285,23 +2430,41 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Picture || evt.getNewValue() instanceof Picture)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
             {
                 changeSupport.fireChange();
-            }            
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Picture)
+            {
+                changeSupport.fireChange();
+            }
         } 
     } 
     
-    private final class VideoProviderImpl implements DataGroupProvider, WatchLaterSupport, PropertyChangeListener
+    private final class VideoProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
                 
         public VideoProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
-            propertyChangeSupport.addPropertyChangeListener(PROP_LAST_SOURCE, this);
+            listeners.add(SourceEventListener.class, this);
         } 
         
         @Override
@@ -2436,19 +2599,31 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
 
         @Override
-        public void propertyChange(PropertyChangeEvent evt) 
-        {            
-            if(evt.getOldValue() instanceof Video || evt.getNewValue() instanceof Video)
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
             {
                 changeSupport.fireChange();
-            }            
-        } 
+            }
+        }
 
         @Override
-        public void fireChange() 
+        public void sourceModified(SourceEvent evt) 
         {
-            changeSupport.fireChange();
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
         }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Video)
+            {
+                changeSupport.fireChange();
+            }
+        }  
     }    
     
 // TODO SourceGroup
