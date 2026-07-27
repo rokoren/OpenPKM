@@ -124,6 +124,7 @@ import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
 import openpkm.base.NotebooksProvider;
 import openpkm.base.Notebook;
+import openpkm.base.RecycleBinProvider;
 import openpkm.base.SourceEvent;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.StateSupport;
@@ -146,6 +147,8 @@ import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.base.SourceEventListener;
 import openpkm.base.WorkflowProvider;
 import openpkm.utils.SourceEventImpl;
+import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObjectNotFoundException;
 
 /**
  *
@@ -166,14 +169,15 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
     private static final String DATA_FOLDER = "data";    
     
-    private static final int POSITION_NOTES     = 100;
-    private static final int POSITION_DOCUMENTS = 200;
-    private static final int POSITION_ARTICLES  = 300;
-    private static final int POSITION_BOOKS     = 400;
-    private static final int POSITION_LINKS     = 500;
-    private static final int POSITION_PICTURES  = 600;    
-    private static final int POSITION_VIDEOS    = 700;
-    private static final int POSITION_DOMAINS   = 800;    
+    private static final int POSITION_NOTES       = 100;
+    private static final int POSITION_DOCUMENTS   = 200;
+    private static final int POSITION_ARTICLES    = 300;
+    private static final int POSITION_BOOKS       = 400;
+    private static final int POSITION_LINKS       = 500;
+    private static final int POSITION_PICTURES    = 600;    
+    private static final int POSITION_VIDEOS      = 700;
+    private static final int POSITION_DOMAINS     = 800;  
+    private static final int POSITION_RECYCLE_BIN = 900;      
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
@@ -390,6 +394,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 list.add(new LinkProviderImpl());                
                 list.add(new PictureProviderImpl()); 
                 list.add(new VideoProviderImpl()); 
+                list.add(new RecycleBinProviderImpl());  
             }                                   
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
@@ -1054,6 +1059,173 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
 // TODO DataGroup    
 
+    private final class RecycleBinProviderImpl implements RecycleBinProvider, SourceEventListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public RecycleBinProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_RECYCLE_BIN;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_RECYCLE_BIN;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_RECYCLE_BIN;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_RECYCLE_BIN;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    }  
+
+                    return contains(data);
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }          
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return Source.timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        }                
+                
+        @Override
+        public String getName() 
+        {
+            return "recycle_bin";
+        }               
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {  
+                        if(source instanceof StateSupport state)
+                        {
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            return provider.getWorkflow() == WorkflowProvider.Workflow.RECYCLE_BIN;
+                        }                                                                     
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }
+
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        } 
+    }     
+    
     private final class DomainProviderImpl implements DataGroupProvider, SourceEventListener
     {                        
         private final ChangeSupport changeSupport; 
@@ -2786,9 +2958,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     for(String key : keys)
                     {
                         Raindrop raindrop = getRaindropsById().get(key);
-                        if (raindrop != null)
+                        if (raindrop != null && raindrop.getWorkflow() != WorkflowProvider.Workflow.RECYCLE_BIN)
                         {
-                            raindrop.notifyDeleted();
+                            raindrop.setWorkflow(WorkflowProvider.Workflow.RECYCLE_BIN);
+                            raindrop.markModified();
+                            sourceModified(new SourceEventImpl(this, raindrop));
                         }                     
                     }
                 } 

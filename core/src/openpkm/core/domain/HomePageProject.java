@@ -1986,13 +1986,17 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         Link link = source.getLookup().lookup(Link.class);
                         if(link != null)
                         {
-                            if(link instanceof VisibilityProvider visibilityPovider)
+                            if(source instanceof StateSupport state)
                             {
-                                if(visibilityPovider.getModifier() == VisibilityProvider.Modifier.PRIVATE)
+                                if(state.isDeleted())
                                 {
                                     return false;
                                 }
-                            }                                                                                  
+                            }
+                            if(source instanceof WorkflowProvider provider)
+                            {
+                                return provider.getWorkflow() == WorkflowProvider.Workflow.DEFAULT;
+                            }                          
                             return true;
                         }                                                 
                     }            

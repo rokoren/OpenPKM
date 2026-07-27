@@ -36,6 +36,7 @@ import openpkm.base.Video;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
+import openpkm.base.WorkflowProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.cef.browser.CefBrowser;
@@ -110,7 +111,35 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         State oldValue = state;
         state = State.DELETED;
         propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-    }  
+    } 
+    
+    @Override
+    public Workflow getWorkflow()
+    {
+        String name = props.getProperty(WorkflowProvider.PROP_WORKFLOW);
+        if(name != null)
+        {
+            Optional<WorkflowProvider.Workflow> optional = WorkflowProvider.Workflow.get(name);
+            if(optional.isPresent())
+            {
+                return optional.get();
+            }
+        }
+        return WorkflowProvider.Workflow.DEFAULT;
+    }
+
+    @Override
+    public void setWorkflow(Workflow workflow)
+    {
+        if(workflow == null)
+        {
+            props.remove(WorkflowProvider.PROP_WORKFLOW);         
+        }
+        else
+        {
+            props.setProperty(WorkflowProvider.PROP_WORKFLOW, workflow.toString());  
+        }            
+    }    
     
     @Override
     public int getRaindropID() 
@@ -930,12 +959,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         @Override
         public Image getBullet() 
         {
-            if(isDeleted())
-            {
-                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
-                return provider.getImage(IconsProvider.ICON.BULLET_DELETE);                 
-            }
-            else if(isImportant())
+            if(isImportant())
             {
                 IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
                 return provider.getImage(IconsProvider.ICON.BULLET_STAR);                

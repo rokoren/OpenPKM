@@ -12,13 +12,14 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.StateSupport;
 import openpkm.base.TitleProvider;
+import openpkm.base.WorkflowProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 
 /**
  *
  * @author Rok Koren
  */
-public interface Raindrop extends Source, TitleProvider, StateSupport, PropertiesProvider
+public interface Raindrop extends Source, TitleProvider, StateSupport, PropertiesProvider, WorkflowProvider
 {
     @StaticResource()
     String ICON = "openpkm/raindrop/resources/raindrop.png";      
