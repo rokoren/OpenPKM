@@ -184,13 +184,7 @@ public class TrelloMemberFactoryImpl implements TrelloMemberFactory
         public boolean isDeleted() 
         {
             return state == State.DELETED;
-        }    
-
-        @Override
-        public void notifyDeleted()
-        {
-            state = State.DELETED;      
-        }         
+        }            
 
 // TODO NodeProvider         
 

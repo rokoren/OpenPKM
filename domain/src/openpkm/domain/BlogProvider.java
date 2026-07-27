@@ -6,6 +6,7 @@ package openpkm.domain;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import javax.swing.Icon;
 import openpkm.base.IconsProvider;
@@ -20,9 +21,9 @@ import org.openide.util.Lookup;
 public abstract class BlogProvider implements SourceProvider<Blog>
 {
     protected static final String ROOT_FOLDER = "blog";       
-
-    protected Map<String, Blog> blogs; 
+    
     protected FileObject rootDir; 
+    protected Blogs blogs;
 
     protected final BlogFactory factory;
 
@@ -37,17 +38,12 @@ public abstract class BlogProvider implements SourceProvider<Blog>
         return factory;
     }
     
-    protected abstract Map<String, Blog> getBlogsById();
-    
-    public Collection<Blog> getBlogs()
-    {
-        return Collections.unmodifiableCollection(getBlogsById().values());
-    }
+    protected abstract Blogs getBlogs();    
 
     @Override
     public Blog getSource(String sourceID) 
     {
-        return getBlogsById().get(sourceID);
+        return getBlogs().getBlogsByFile().get(sourceID);
     }     
 
     @Override
@@ -71,11 +67,44 @@ public abstract class BlogProvider implements SourceProvider<Blog>
 
     @Override
     public boolean contains(FileObject file) 
-{
-        if(file.isData())
+    {
+        return getBlogs().getBlogsByFile().containsKey(file.getName());        
+    } 
+
+    public static final class Blogs
+    {
+        private final Map<String, Blog> blogsByUrl = new HashMap<>();         
+        private Map<String, Blog> blogsByFile = new HashMap<>();  
+        
+        public Collection<Blog> getBlogs()
         {
-            return getBlogsById().containsKey(file.getName());                
+            return Collections.unmodifiableCollection(blogsByUrl.values());
+        }   
+        
+        public Map<String, Blog> getBlogsByUrl()
+        {
+            return blogsByUrl;
         }
-        return false;        
-    }     
+        
+        public Map<String, Blog> getBlogsByFile()
+        {
+            return blogsByFile;
+        }        
+        
+        public void addBlog(Blog blog)
+        {
+            blogsByUrl.put(blog.getUrl(), blog);
+            blogsByFile.put(blog.getFileName(), blog);
+        }
+        
+        public Blog removeBlog(String fileName)
+        {
+            Blog blog = blogsByFile.remove(fileName);
+            if(blog != null)
+            {
+                blogsByUrl.remove(blog.getUrl());
+            }
+            return blog;
+        }
+    } 
 }

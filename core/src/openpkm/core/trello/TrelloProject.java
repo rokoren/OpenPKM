@@ -115,7 +115,6 @@ import org.openide.filesystems.FileAlreadyLockedException;
 import org.openide.filesystems.FileSystem;
 import openpkm.base.SourceGroupProvider;
 import openpkm.base.SourceProviderWrapper;
-import openpkm.base.StateSupport;
 import openpkm.trello.TrelloComment;
 import openpkm.utils.DateTimeUtils;
 import openpkm.utils.TopComponentProvider;
@@ -1125,16 +1124,6 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             file.setAttribute(ATTR_SOURCE_ID, card.getCardID());                      
             return primaryFile; 
         }  
-
-        @Override
-        public void deleteSource(TrelloCard card)
-        {
-            if(card instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, card));
-        }  
         
         @Override
         public FileObject getRootFolder() 
@@ -1402,6 +1391,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                 if(card != null)
                 {
                     getCardsById().remove(card.getCardID());
+                    card.notifyDeleted();
                     sourceDeleted(new SourceEventImpl(this, card));    
                 }             
             }
@@ -1778,13 +1768,6 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
             file.setAttribute(ATTR_SOURCE_ID, comment.getActionID());                      
             return primaryFile; 
-        }   
-        
-        @Override
-        public void deleteSource(TrelloComment comment)
-        {
-            comment.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, comment));
         }          
         
         @Override

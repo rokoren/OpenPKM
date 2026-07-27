@@ -2226,13 +2226,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             
             return primaryFile;            
         }  
-
-        @Override
-        public void deleteSource(Content content)
-        {
-            content.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, content));
-        }
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2280,6 +2273,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Content content = getContentsById().remove(file.getName());  
             if(content != null)
             {
+                content.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, content)); 
             }
         }
@@ -2436,14 +2430,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }            
 
             return primaryFile;
-        } 
-        
-        @Override
-        public void deleteSource(Reference reference)
-        {
-            reference.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, reference));
-        }        
+        }              
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2491,6 +2478,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
+                reference.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, reference));                          
             }
         }
@@ -2897,14 +2885,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }               
                                   
             return primaryFile;             
-        }   
-        
-        @Override
-        public void deleteSource(Raindrop raindrop)
-        {
-            raindrop.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, raindrop));
-        }          
+        }                   
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2952,6 +2933,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             Raindrop raindrop = getRaindropsById().remove(file.getName());  
             if(raindrop != null)
             {
+                raindrop.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, raindrop));
             }
         }
@@ -3107,14 +3089,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        }   
-        
-        @Override
-        public void deleteSource(YouTubeVideo video)
-        {
-            video.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, video));
-        }                 
+        }                          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3162,6 +3137,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
             {
+                video.notifyDeleted();   
                 sourceDeleted(new SourceEventImpl(this, video));
             }
         }
@@ -3291,17 +3267,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        }   
-        
-        @Override
-        public void deleteSource(YouTubeChannel channel)
-        {
-            if(channel instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, channel));
-        }         
+        }                
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3360,6 +3326,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             YouTubeChannel channel = getChannelsById().remove(file.getName());  
             if(channel != null)
             {
+                channel.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, channel)); 
             }
         }
@@ -3489,17 +3456,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             }
             
             return primaryFile;             
-        } 
-        
-        @Override
-        public void deleteSource(GitHubUser user)
-        {
-            if(user instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, user));
-        }         
+        }                
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3558,6 +3515,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             GitHubUser user = getUsersById().remove(file.getName());  
             if(user != null)
             {
+                user.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, user));
             }
         }
@@ -3593,7 +3551,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             {
                 rootDir.removeFileChangeListener(this);
                 
-                for(Blog blog : getBlogs())
+                for(Blog blog : getBlogs().getBlogs())
                 {
                     if(blog instanceof StateSupport state) 
                     {
@@ -3624,11 +3582,11 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         }         
         
         @Override
-        public synchronized Map<String, Blog> getBlogsById()
+        public synchronized Blogs getBlogs()
         {
             if(blogs == null)
             {
-                blogs = new HashMap<>();
+                blogs = new Blogs();
                 FileObject root = getRootFolder();
                 if(root !=  null)
                 {
@@ -3644,7 +3602,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                                     Blog blog = project.getLookup().lookup(Blog.class);
                                     if(blog != null)
                                     {
-                                        blogs.put(blog.getSourceID(), blog);
+                                        blogs.addBlog(blog);
                                     }                                      
                                 }                                
                             }
@@ -3658,7 +3616,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             try
                             {
                                 Blog blog = factory.getBlog(Utils.getProperties(fo)); 
-                                blogs.put(blog.getSourceID(), blog);
+                                blogs.addBlog(blog);
                             }
                             catch(IOException e)
                             {
@@ -3725,41 +3683,28 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             
             return primaryFile;             
         }  
-
-        @Override
-        public void deleteSource(Blog blog)
-        {
-            if(blog instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, blog));
-        }
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
         {
             FileObject folder = evt.getFile();
-            if(!getBlogsById().containsKey(folder.getName()))
+            try
             {
-                try
+                Project project = ProjectManager.getDefault().findProject(folder);
+                if(project != null)
                 {
-                    Project project = ProjectManager.getDefault().findProject(folder);
-                    if(project != null)
+                    Blog blog = project.getLookup().lookup(Blog.class);  
+                    if(blog != null)
                     {
-                        Blog blog = project.getLookup().lookup(Blog.class);  
-                        if(blog != null)
-                        {
-                            getBlogsById().put(blog.getSourceID(), blog);
-                            sourceAdded(new SourceEventImpl(this, blog));   
-                        }                    
-                    }                
-                }
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }                 
-            }             
+                        getBlogs().addBlog(blog);
+                        sourceAdded(new SourceEventImpl(this, blog));   
+                    }                    
+                }                
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }              
         }
 
         @Override
@@ -3771,7 +3716,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 Blog blog = factory.getBlog(Utils.getProperties(file)); 
                 if(blog != null)
                 {
-                    getBlogsById().put(blog.getSourceID(), blog); 
+                    getBlogs().addBlog(blog); 
                     sourceAdded(new SourceEventImpl(this, blog));                      
                 }          
             }           
@@ -3790,9 +3735,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Blog blog = getBlogsById().remove(file.getName());  
+            Blog blog = getBlogs().removeBlog(file.getName());  
             if(blog != null)
             {
+                blog.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, blog)); 
             }
         }

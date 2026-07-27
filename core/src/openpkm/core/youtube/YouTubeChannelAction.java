@@ -25,7 +25,6 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.core.TopicWizardPanel;
-import openpkm.domain.Domain;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
@@ -115,7 +114,7 @@ public class YouTubeChannelAction implements ActionListener
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);          
             
             Properties props = new Properties();
-            props.setProperty(Domain.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(YouTubeChannel.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(YouTubeChannel.PROP_CHANNEL_ID, channelID); 
             props.setProperty(YouTubeChannel.PROP_TITLE, title);       
             props.setProperty(YouTubeChannel.PROP_DESCRIPTION, description);

@@ -216,7 +216,13 @@ public class TrelloCardProject implements Project, TrelloCard, BatchUpdateSuppor
         }
         props.putAll(provider.getProperties());        
         return true;
-    }      
+    } 
+    
+    @Override
+    public void notifyDeleted()
+    {
+        state.notifyDeleted();
+    }    
     
     public TrelloAccount getTrelloAccount()
     {

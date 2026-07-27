@@ -137,40 +137,38 @@ public class BlogAction implements ActionListener
                 }
             }
             
-            FileObject root = provider.getRootFolder();
-            if(root != null)
+            String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
+            props.setProperty(Blog.PROP_FILE_NAME, fileName); 
+            
+            Blog blog = provider.getFactory().getBlog(props);
+            try
             {
-                Blog blog = provider.getFactory().getBlog(props);
-                try
+                FileObject file = provider.createData(blog, fileType); 
+                OutputStream os = provider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
+                provider.getFactory().save(blog, os, "New Blog Created by Wizard");
+                os.close();  
+
+                StatusDisplayer.getDefault().setStatusText("Blog saved with title: " + blog.getTitle());                         
+
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Blog in editor?", blog.getTitle(), NotifyDescriptor.YES_NO_OPTION);
+                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
-                    FileObject file = provider.createData(blog, fileType); 
-                    String fileName = FileUtils.getFileName(root, PropertiesProvider.EXTENSION);
-                    OutputStream os = root.createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
-                    provider.getFactory().save(blog, os, "New Blog Created by Wizard");
-                    os.close();  
-
-                    StatusDisplayer.getDefault().setStatusText("Blog saved with title: " + blog.getTitle());                         
-
-                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Blog in editor?", blog.getTitle(), NotifyDescriptor.YES_NO_OPTION);
-                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    try
                     {
-                        try
-                        {
-                            DataObject data = DataObject.find(file);
-                            OpenCookie open = data.getCookie(OpenCookie.class);
-                            open.open();                            
-                        }
-                        catch(DataObjectNotFoundException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }
-                    }                                             
-                }                    
-                catch(IOException e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }                                                           
+                        DataObject data = DataObject.find(file);
+                        OpenCookie open = data.getCookie(OpenCookie.class);
+                        open.open();                            
+                    }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }                                             
+            }                    
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }                                                          
         }        
     }  
     

@@ -240,7 +240,13 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }
         props.putAll(provider.getProperties());        
         return true;
-    }   
+    }  
+    
+    @Override
+    public void notifyDeleted()
+    {
+        state.notifyDeleted();
+    }
     
     @Override
     public void sourceDeleted(SourceEvent evt)
@@ -2787,13 +2793,6 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
 
             return primaryFile;
         }  
-
-        @Override
-        public void deleteSource(Reference reference)
-        {
-            reference.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, reference));
-        }  
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2841,6 +2840,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
+                reference.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, reference)); 
             }
         }
@@ -2984,14 +2984,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }
             
             return primaryFile;             
-        }  
-        
-        @Override
-        public void deleteSource(YouTubeVideo video)
-        {
-            video.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, video));
-        }          
+        }                  
         
         @Override
         public Set<String> getTags()
@@ -3054,7 +3047,8 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             FileObject file = evt.getFile();
             YouTubeVideo video = getVideosById().remove(file.getName());  
             if(video != null)
-            {              
+            {  
+                video.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, video));
             }
         }
@@ -3388,17 +3382,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }
             
             return primaryFile;             
-        } 
-        
-        @Override
-        public void deleteSource(GitHubUser user)
-        {
-            if(user instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, user));
-        }          
+        }                
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3457,6 +3441,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             GitHubUser user = getUsersById().remove(file.getName());  
             if(user != null)
             {
+                user.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, user)); 
             }
         }
@@ -3492,7 +3477,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             {
                 rootDir.removeFileChangeListener(this);
                 
-                for(Blog blog : getBlogs())
+                for(Blog blog : getBlogs().getBlogs())
                 {
                     if(blog instanceof StateSupport state) 
                     {
@@ -3523,11 +3508,11 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         }         
         
         @Override
-        public synchronized Map<String, Blog> getBlogsById()
+        public synchronized Blogs getBlogs()
         {
             if(blogs == null)
             {
-                blogs = new HashMap<>();
+                blogs = new Blogs();
                 FileObject folder = getRootFolder();
                 if(folder !=  null)
                 {
@@ -3536,7 +3521,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                         try
                         {
                             Blog blog = factory.getBlog(Utils.getProperties(file)); 
-                            blogs.put(blog.getSourceID(), blog);
+                            blogs.addBlog(blog);
                         }
                         catch(IOException e)
                         {
@@ -3601,17 +3586,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             }
             
             return primaryFile;             
-        } 
-        
-        @Override
-        public void deleteSource(Blog blog)
-        {
-            if(blog instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, blog));
-        }        
+        }              
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3627,7 +3602,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                 Blog blog = factory.getBlog(Utils.getProperties(file)); 
                 if(blog != null)
                 {
-                    getBlogsById().put(blog.getSourceID(), blog); 
+                    getBlogs().addBlog(blog); 
                     sourceAdded(new SourceEventImpl(this, blog));                      
                 }          
             }           
@@ -3646,9 +3621,10 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Blog blog = getBlogsById().remove(file.getName());  
+            Blog blog = getBlogs().removeBlog(file.getName());  
             if(blog != null)
             {
+                blog.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, blog)); 
             }
         }

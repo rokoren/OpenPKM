@@ -178,15 +178,7 @@ public class TrelloListFactoryImpl implements TrelloListFactory
         public boolean isDeleted() 
         {
             return state == State.DELETED;
-        }    
-
-        @Override
-        public void notifyDeleted()
-        {
-            State oldValue = state;
-            state = State.DELETED;
-            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-        }          
+        }             
 
 // TODO IconProvider        
         

@@ -88,6 +88,14 @@ public class BlogFactoryImpl implements BlogFactory
             propertyChangeSupport = new PropertyChangeSupport(this);
         }    
 
+    // TODO Domain
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
+        }         
+        
     // TODO Blog         
 
         @Override
@@ -113,7 +121,7 @@ public class BlogFactoryImpl implements BlogFactory
         @Override
         public String getSourceID()
         {
-            return getUrl();
+            return getFileName();
         }  
 
         @Override

@@ -4,12 +4,10 @@
  */
 package openpkm.domain;
 
-import openpkm.base.Source;
-
 /**
  *
  * @author rok
  */
-public interface Domain extends Source
-{
+public interface Domain
+{    
 }

@@ -14,7 +14,6 @@ public interface StateSupport
     
     void markModified(); 
     boolean isModified();
-    void notifyDeleted();
     boolean isDeleted();
     
     public enum State 

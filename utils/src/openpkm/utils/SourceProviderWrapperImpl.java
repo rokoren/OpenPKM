@@ -4,6 +4,7 @@
  */
 package openpkm.utils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,10 +13,12 @@ import java.util.Set;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.TagsProvider;
+import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
 
 /**
@@ -41,14 +44,21 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
     }
     
     @Override
-    public Source deleteSource()
+    public void deleteSource() throws IOException
     {
-        Source source = getSource();
-        if(source != null)
+        FileObject root = provider.getRootFolder();
+        if(root != null)
         {
-            provider.deleteSource(source);
-        }
-        return source;
+            FileObject fo = root.getFileObject(sourceID);
+            if(fo == null)
+            {
+                fo = root.getFileObject(sourceID, PropertiesProvider.EXTENSION);
+            }
+            if(fo != null)
+            {  
+                fo.delete();
+            }              
+        }          
     }
 
     @Override

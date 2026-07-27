@@ -142,13 +142,7 @@ public class TrelloAttachmentFactoryImpl implements TrelloAttachmentFactory
         public boolean isDeleted() 
         {
             return state == State.DELETED;
-        }        
-        
-        @Override
-        public void notifyDeleted()
-        {
-            state = State.DELETED;       
-        }         
+        }                      
         
 // TODO DisplayNameProvider        
         

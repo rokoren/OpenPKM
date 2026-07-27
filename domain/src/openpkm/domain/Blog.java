@@ -15,9 +15,11 @@ import openpkm.base.TitleProvider;
  */
 public interface Blog extends Source, PropertiesProvider, TitleProvider, DescriptionProvider
 {
-    String PROP_URL     = "url"; 
-    String PROP_FAVICON = "favicon";     
-
+    String PROP_URL       = "url"; 
+    String PROP_FAVICON   = "favicon";     
+    String PROP_FILE_NAME = "file.name"; 
+    
+    String getFileName();         
     String getUrl();
     String getFavicon();    
 }

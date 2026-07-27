@@ -137,15 +137,16 @@ public class HomePageAction implements ActionListener
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
             } 
+            
+            String folderName = FileUtils.getFolderName(provider.getRootFolder());
+            props.setProperty(Blog.PROP_FILE_NAME, folderName);  
 
             Blog blog = provider.getFactory().getBlog(props);
             try
             {
                 FileObject file = provider.createData(blog, fileType); 
-
                 FileSystem fs = provider.getRootFolder().getFileSystem();
                 fs.runAtomicAction(() -> {
-                    String folderName = FileUtils.getFolderName(provider.getRootFolder());
                     FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), folderName);           
                     FileObject projectFolder = FileUtil.createFolder(projectDirectory, HomePageProjectFactory.PROJECT_FOLDER);                   
 

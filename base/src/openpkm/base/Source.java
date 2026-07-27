@@ -20,7 +20,8 @@ public interface Source extends Lookup.Provider
     
     String getSourceID();
     String getAppID();
-    LocalDateTime getTimeCreated();    
+    LocalDateTime getTimeCreated();   
+    void notifyDeleted();
     
     public static Comparator<DataObject> timeCreatedComparator() 
     {

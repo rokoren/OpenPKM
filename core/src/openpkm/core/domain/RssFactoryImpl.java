@@ -297,13 +297,7 @@ public class RssFactoryImpl implements RssFactory
         public boolean isDeleted() 
         {
             return state == State.DELETED;
-        }
-
-        @Override
-        public void notifyDeleted() 
-        {
-            state = State.DELETED;
-        }         
+        }       
 
 // TODO NodeProvider         
 

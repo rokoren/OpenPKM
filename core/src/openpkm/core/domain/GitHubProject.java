@@ -185,6 +185,12 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
     }  
     
     @Override
+    public void notifyDeleted()
+    {
+        state.notifyDeleted();
+    }    
+    
+    @Override
     public void sourceDeleted(SourceEvent evt)
     {
         for(SourceEventListener listener : listeners.getListeners(SourceEventListener.class))
@@ -1839,14 +1845,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             }  
             
             return primaryFile;            
-        }  
-        
-        @Override
-        public void deleteSource(WebPage page)
-        {
-            page.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, page));
-        }        
+        }           
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -1893,6 +1892,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             WebPage page = getPages().removePage(file.getName());
             if(page != null)
             {
+                page.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, page));
             }
         }
@@ -2050,13 +2050,6 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
 
             return primaryFile;
         }  
-
-        @Override
-        public void deleteSource(Reference reference)
-        {
-            reference.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, reference));
-        }  
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2103,6 +2096,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
+                reference.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, reference));
             }
         }

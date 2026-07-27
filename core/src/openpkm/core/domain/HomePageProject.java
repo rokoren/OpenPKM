@@ -240,6 +240,15 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
     }  
     
+// TODO Domain
+        
+    @Override
+    public String getFileName()
+    {
+        return props.getProperty(PROP_FILE_NAME);
+    } 
+               
+    
     @Override
     public Properties getProperties()
     {
@@ -256,6 +265,12 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         props.putAll(provider.getProperties());        
         return true;
     }   
+    
+    @Override
+    public void notifyDeleted()
+    {
+        state.notifyDeleted();
+    }    
     
     @Override
     public void sourceDeleted(SourceEvent evt)
@@ -409,7 +424,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     @Override
     public String getSourceID()
     {
-        return getUrl();
+        return getFileName();
     }  
     
     @Override
@@ -2407,14 +2422,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }  
             
             return primaryFile;            
-        }  
-        
-        @Override
-        public void deleteSource(WebPage page)
-        {
-            page.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, page));
-        }        
+        }                
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2461,6 +2469,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             WebPage page = getPages().removePage(file.getName());
             if(page != null)
             {
+                page.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, page)); 
             }
         }
@@ -2617,13 +2626,6 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }            
 
             return primaryFile;
-        }  
-
-        @Override
-        public void deleteSource(Reference reference)
-        {
-            reference.notifyDeleted();
-            sourceDeleted(new SourceEventImpl(this, reference));
         }          
         
         @Override
@@ -2671,6 +2673,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             Reference reference = getReferencesById().remove(file.getName());  
             if(reference != null)
             {
+                reference.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, reference)); 
             }
         }
@@ -2800,17 +2803,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }
             
             return primaryFile;             
-        }  
-
-        @Override
-        public void deleteSource(YouTubeChannel channel)
-        {
-            if(channel instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, channel));
-        }         
+        }          
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -2869,6 +2862,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             YouTubeChannel channel = getChannelsById().remove(file.getName());  
             if(channel != null)
             {
+                channel.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, channel));  
             }
         }
@@ -2998,17 +2992,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             }
             
             return primaryFile;             
-        }   
-        
-        @Override
-        public void deleteSource(GitHubUser user)
-        {
-            if(user instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, user));
-        }           
+        }                     
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
@@ -3067,6 +3051,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             GitHubUser user = getUsersById().remove(file.getName());  
             if(user != null)
             {
+                user.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, user)); 
             }
         }
@@ -3102,7 +3087,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             {
                 rootDir.removeFileChangeListener(this);
                 
-                for(Blog blog : getBlogs())
+                for(Blog blog : getBlogs().getBlogs())
                 {
                     if(blog instanceof StateSupport state) 
                     {
@@ -3133,11 +3118,11 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }         
         
         @Override
-        public synchronized Map<String, Blog> getBlogsById()
+        public synchronized Blogs getBlogs()
         {
             if(blogs == null)
             {
-                blogs = new HashMap<>();
+                blogs = new Blogs();
                 FileObject folder = getRootFolder();
                 if(folder !=  null)
                 {
@@ -3146,7 +3131,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         try
                         {
                             Blog blog = factory.getBlog(Utils.getProperties(file)); 
-                            blogs.put(blog.getSourceID(), blog);
+                            blogs.addBlog(blog);
                         }
                         catch(IOException e)
                         {
@@ -3212,20 +3197,10 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             
             return primaryFile;             
         }  
-
-        @Override
-        public void deleteSource(Blog blog)
-        {
-            if(blog instanceof StateSupport state)
-            {
-                state.notifyDeleted();                
-            }
-            sourceDeleted(new SourceEventImpl(this, blog));
-        }
         
         @Override
         public void fileFolderCreated(FileEvent evt) 
-        {
+        {             
         }
 
         @Override
@@ -3237,7 +3212,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 Blog blog = factory.getBlog(Utils.getProperties(file)); 
                 if(blog != null)
                 {
-                    getBlogsById().put(blog.getSourceID(), blog); 
+                    getBlogs().addBlog(blog); 
                     sourceAdded(new SourceEventImpl(this, blog));                      
                 }          
             }           
@@ -3256,9 +3231,10 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         public void fileDeleted(FileEvent evt) 
         {
             FileObject file = evt.getFile();
-            Blog blog = getBlogsById().remove(file.getName());  
+            Blog blog = getBlogs().removeBlog(file.getName());  
             if(blog != null)
             {
+                blog.notifyDeleted();
                 sourceDeleted(new SourceEventImpl(this, blog)); 
             }
         }
