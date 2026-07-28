@@ -5,8 +5,6 @@
 package openpkm.base;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import org.openide.loaders.DataObject;
 import org.openide.util.Lookup;
 
 /**
@@ -21,28 +19,5 @@ public interface Source extends Lookup.Provider
     String getSourceID();
     String getAppID();
     LocalDateTime getTimeCreated();   
-    void notifyDeleted();
-    
-    public static Comparator<DataObject> timeCreatedComparator() 
-    {
-        return new Comparator<DataObject>() 
-        {
-            @Override
-            public int compare(DataObject data1, DataObject data2) 
-            {
-                SourceProviderWrapper provider1 = data1.getLookup().lookup(SourceProviderWrapper.class);
-                SourceProviderWrapper provider2 = data2.getLookup().lookup(SourceProviderWrapper.class);
-                if(provider1 != null && provider2 != null)
-                {
-                    Source source1 = provider1.getSource();
-                    Source source2 = provider2.getSource();
-                    if(source1 != null && source2 != null)
-                    {
-                        return source1.getTimeCreated().compareTo(source2.getTimeCreated());                         
-                    }                   
-                }
-                return -1;
-            }
-        };
-    }     
+    void notifyDeleted();   
 }

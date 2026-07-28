@@ -1422,7 +1422,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Source.timeCreatedComparator();
+            return DataGroupProvider.timeCreatedComparator();
         } 
         
         @Override
@@ -1649,7 +1649,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Source.timeCreatedComparator();
+            return DataGroupProvider.timeCreatedComparator();
         } 
         
         @Override

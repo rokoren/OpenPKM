@@ -21,6 +21,29 @@ public interface DataGroupProvider extends GroupProvider
     Comparator<DataObject> getComparator();
     boolean isReversed();
     
+    public static Comparator<DataObject> timeCreatedComparator() 
+    {
+        return new Comparator<DataObject>() 
+        {
+            @Override
+            public int compare(DataObject data1, DataObject data2) 
+            {
+                SourceProviderWrapper provider1 = data1.getLookup().lookup(SourceProviderWrapper.class);
+                SourceProviderWrapper provider2 = data2.getLookup().lookup(SourceProviderWrapper.class);
+                if(provider1 != null && provider2 != null)
+                {
+                    Source source1 = provider1.getSource();
+                    Source source2 = provider2.getSource();
+                    if(source1 != null && source2 != null)
+                    {
+                        return source1.getTimeCreated().compareTo(source2.getTimeCreated());                         
+                    }                   
+                }
+                return -1;
+            }
+        };
+    }      
+    
     public static Comparator<DataObject> titleComparator() 
     {
         return new Comparator<DataObject>() 
@@ -28,13 +51,18 @@ public interface DataGroupProvider extends GroupProvider
             @Override
             public int compare(DataObject data1, DataObject data2) 
             {
-                TitleProvider provider1 = data1.getLookup().lookup(TitleProvider.class);
-                TitleProvider provider2 = data2.getLookup().lookup(TitleProvider.class);
-                if(provider1 != null && provider2 != null)
+                SourceProviderWrapper sourceProvider1 = data1.getLookup().lookup(SourceProviderWrapper.class);
+                SourceProviderWrapper sourceProvider2 = data2.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider1 != null && sourceProvider2 != null)
                 {
-                    return provider1.getTitle().compareTo(provider2.getTitle());                    
+                    Source source1 = sourceProvider1.getSource();
+                    Source source2 = sourceProvider2.getSource();
+                    if(source1 instanceof TitleProvider provider1 && source2 instanceof TitleProvider provider2)
+                    {
+                        return provider1.getTitle().compareTo(provider2.getTitle());                         
+                    }                   
                 }
-                return -1;
+                return -1;                
             }
         };
     } 

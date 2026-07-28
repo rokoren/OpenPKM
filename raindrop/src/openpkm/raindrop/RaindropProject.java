@@ -1155,7 +1155,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Source.timeCreatedComparator();
+            return DataGroupProvider.timeCreatedComparator();
         } 
         
         @Override

@@ -89,10 +89,11 @@ public class WebPageFactoryImpl implements WebPageFactory
     } 
 
     @Override
-    public WebPage getWebPage(SyndEntry syndEntry) 
+    public WebPage getWebPage(String fileName, SyndEntry syndEntry) 
     {
         LocalDateTime now = LocalDateTime.now();
         Properties props = new Properties();
+        props.setProperty(WebPageFactory.PROP_FILE_NAME, fileName); 
         props.setProperty(WebPageFactory.PROP_TYPE, WebPageFactory.Type.RSS.getName());                            
         props.setProperty(WebPage.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
         props.setProperty(WebPageFactory.PROP_URI, syndEntry.getUri());                            
@@ -311,7 +312,13 @@ public class WebPageFactoryImpl implements WebPageFactory
         public RssImpl(Properties props)
         {
             super(props);
-        }  
+        } 
+        
+        @Override
+        public LocalDateTime getTimeCreated() 
+        {
+            return getPublishedDate();
+        }          
         
         public String getUri() 
         {

@@ -23,7 +23,7 @@ public interface WebPageFactory extends SourceFactory<WebPage>
     String PROP_PUBLISHED_DATE = "published.date";    
     
     WebPage getWebPage(Properties props);  
-    WebPage getWebPage(SyndEntry syndEntry);     
+    WebPage getWebPage(String fileName, SyndEntry syndEntry);     
     
     public enum Type 
     {

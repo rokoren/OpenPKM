@@ -87,7 +87,6 @@ import openpkm.base.SourceProviders;
 import openpkm.base.StateSupport;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
-import openpkm.base.VisibilityProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
@@ -790,7 +789,8 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                             {
                                 for(SyndEntry syndEntry : feed.getEntries()) 
                                 {
-                                    WebPage webPage = webPagePovider.getFactory().getWebPage(syndEntry);
+                                    String fileName = FileUtils.getFileName(webPagePovider.getRootFolder(), PropertiesProvider.EXTENSION);
+                                    WebPage webPage = webPagePovider.getFactory().getWebPage(fileName, syndEntry);
                                     if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
                                     {
                                         AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
@@ -800,14 +800,9 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
 
                                              if(file != null)
                                              { 
-                                                FileObject folder = webPagePovider.getRootFolder();
-                                                if(folder != null)
-                                                {  
-                                                    String fileName = FileUtils.getFileName(folder, PropertiesProvider.EXTENSION);
-                                                    OutputStream os = folder.createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
-                                                    webPagePovider.getFactory().save(webPage, os, "New RSS Web Page Created by Project: " + getTitle());
-                                                    os.close();  
-                                                }                                                   
+                                                OutputStream os = webPagePovider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
+                                                webPagePovider.getFactory().save(webPage, os, "New RSS Web Page Created by Project: " + getTitle());
+                                                os.close();                                                   
                                                  
                                                  String text = getTitle() + ": " + syndEntry.getTitle();
 
@@ -1393,7 +1388,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return Source.timeCreatedComparator();
+            return DataGroupProvider.timeCreatedComparator();
         } 
         
         @Override
