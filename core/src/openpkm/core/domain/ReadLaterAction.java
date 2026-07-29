@@ -89,7 +89,7 @@ public class ReadLaterAction implements ActionListener
                     {
                         if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER)
                         {
-                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.READ_LATER));                  
+                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.RECYCLE_BIN));                  
                         }            
                     }                                                                                 
                 }                  

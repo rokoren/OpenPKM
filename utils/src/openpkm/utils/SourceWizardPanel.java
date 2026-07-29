@@ -57,7 +57,7 @@ public class SourceWizardPanel implements ActionListener, WizardDescriptor.Finis
         this.sourceProvider = sourceProvider;
         setModifiers(selectedWorkflow);
         comboBox = new JComboBox<>(workflows);  
-        button = new JButton("Delete");
+        button = new JButton("Archive");
         button.addActionListener(this);
     }  
     
@@ -198,6 +198,6 @@ public class SourceWizardPanel implements ActionListener, WizardDescriptor.Finis
     
     public void actionPerformed(ActionEvent evt)
     {
-        workflows.setSelectedItem(WorkflowProvider.Workflow.RECYCLE_BIN);        
+        workflows.setSelectedItem(WorkflowProvider.Workflow.DEFAULT);        
     }
 }

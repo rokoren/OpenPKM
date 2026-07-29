@@ -89,7 +89,7 @@ public class WatchLaterAction implements ActionListener
                     {
                         if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER)
                         {
-                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.WATCH_LATER));                  
+                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.RECYCLE_BIN));                  
                         }            
                     }                                                                                  
                 }                  
