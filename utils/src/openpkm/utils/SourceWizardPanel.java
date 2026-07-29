@@ -6,12 +6,16 @@ package openpkm.utils;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.logging.Logger;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
@@ -31,7 +35,7 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<WizardDescriptor>
+public class SourceWizardPanel implements ActionListener, WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
     private static final Logger LOG = Logger.getLogger(SourceWizardPanel.class.getName());     
         
@@ -44,6 +48,7 @@ public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<Wizar
     private final SourceProviderWrapper sourceProvider;    
     private CefBrowser browser;    
     private final JComboBox<WorkflowProvider.Workflow> comboBox;   
+    private final JButton button;
     
     private final DefaultComboBoxModel<WorkflowProvider.Workflow> workflows = new DefaultComboBoxModel<>();  
 
@@ -51,7 +56,9 @@ public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<Wizar
     {
         this.sourceProvider = sourceProvider;
         setModifiers(selectedWorkflow);
-        comboBox = new JComboBox<>(workflows);        
+        comboBox = new JComboBox<>(workflows);  
+        button = new JButton("Delete");
+        button.addActionListener(this);
     }  
     
     private void setModifiers(WorkflowProvider.Workflow selectedWorkflow)
@@ -173,6 +180,8 @@ public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<Wizar
         JPanel panel = new JPanel(new FlowLayout());
         panel.add(label);
         panel.add(comboBox);
+        panel.add(new JSeparator(JSeparator.VERTICAL));
+        panel.add(button);
         Object[] options = {panel};
         wiz.setAdditionalOptions(options);        
     }
@@ -185,5 +194,10 @@ public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<Wizar
     public boolean isFinishPanel() 
     {
         return true;
-    }    
+    }  
+    
+    public void actionPerformed(ActionEvent evt)
+    {
+        workflows.setSelectedItem(WorkflowProvider.Workflow.RECYCLE_BIN);        
+    }
 }
