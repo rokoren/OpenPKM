@@ -196,6 +196,7 @@ public class SourceWizardPanel implements ActionListener, WizardDescriptor.Finis
         return true;
     }  
     
+    @Override    
     public void actionPerformed(ActionEvent evt)
     {
         workflows.setSelectedItem(WorkflowProvider.Workflow.DEFAULT);        
