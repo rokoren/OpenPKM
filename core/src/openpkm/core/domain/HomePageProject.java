@@ -73,6 +73,7 @@ import openpkm.base.OpenSupport;
 import openpkm.base.Picture;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.ReadLaterProvider;
+import openpkm.base.RecycleBinProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceEvent;
 import openpkm.base.SourceEventListener;
@@ -83,6 +84,7 @@ import openpkm.base.SourceProviders;
 import openpkm.base.StateSupport;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
+import openpkm.base.WatchLaterProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
@@ -121,7 +123,6 @@ import openpkm.domain.BlogFactory;
 import openpkm.domain.BlogProvider;
 import openpkm.domain.Domain;
 import openpkm.domain.FaviconProvider;
-import openpkm.domain.MultiViewElementImpl;
 import openpkm.domain.WebPage;
 import openpkm.domain.WebPageFactory;
 import openpkm.domain.WebPageProvider;
@@ -150,15 +151,17 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
 {      
     private static final String DATA_FOLDER = "data";    
     
-    private static final int POSITION_NOTES      = 100;
-    private static final int POSITION_DOCUMENTS  = 200;
-    private static final int POSITION_ARTICLES   = 300;
-    private static final int POSITION_BOOKS      = 400;
-    private static final int POSITION_LINKS      = 500;
-    private static final int POSITION_PICTURES   = 600;    
-    private static final int POSITION_VIDEOS     = 700;
-    private static final int POSITION_RSS        = 800;    
-    private static final int POSITION_READ_LATER = 900;
+    private static final int POSITION_NOTES       = 100;
+    private static final int POSITION_DOCUMENTS   = 200;
+    private static final int POSITION_ARTICLES    = 300;
+    private static final int POSITION_BOOKS       = 400;
+    private static final int POSITION_LINKS       = 500;
+    private static final int POSITION_PICTURES    = 600;    
+    private static final int POSITION_VIDEOS      = 700;
+    private static final int POSITION_RSS         = 800;    
+    private static final int POSITION_READ_LATER  = 900;
+    private static final int POSITION_WATCH_LATER = 1000;    
+    private static final int POSITION_RECYCLE_BIN = 1100;     
 
     private static final Logger LOG = Logger.getLogger(HomePageProject.class.getName());        
     
@@ -379,7 +382,9 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             list.add(new LinkDataGroupProviderImpl());                
             list.add(new PictureDataGroupProviderImpl()); 
             list.add(new VideoDataGroupProviderImpl()); 
-            list.add(new ReadLaterProviderImpl());             
+            list.add(new ReadLaterProviderImpl());  
+            list.add(new WatchLaterProviderImpl());             
+            list.add(new RecycleBinProviderImpl());                         
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
         }
@@ -1174,6 +1179,173 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     
 // TODO DataGroup
    
+    private final class RecycleBinProviderImpl implements RecycleBinProvider, SourceEventListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public RecycleBinProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_RECYCLE_BIN;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_RECYCLE_BIN;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_RECYCLE_BIN;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_RECYCLE_BIN;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    }  
+
+                    return contains(data);
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }          
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        }                
+                
+        @Override
+        public String getName() 
+        {
+            return "recycle_bin";
+        }               
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {  
+                        if(source instanceof StateSupport state)
+                        {
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            return provider.getWorkflow() == WorkflowProvider.Workflow.RECYCLE_BIN;
+                        }                                                                     
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }
+
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        } 
+    }     
+    
     private final class ReadLaterProviderImpl implements ReadLaterProvider, BulletIconProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
@@ -1358,6 +1530,198 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                 changeSupport.fireChange();
             }
         } 
+    }  
+    
+    private final class WatchLaterProviderImpl implements WatchLaterProvider, BulletIconProvider, SourceEventListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public WatchLaterProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_WATCH_LATER;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_WATCH_LATER;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_WATCH_LATER;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_WATCH_LATER;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        } 
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    } 
+                    
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }                 
+                
+        @Override
+        public String getName() 
+        {
+            return "watch_later";
+        }
+        
+        @Override
+        public Image getBullet()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = DataObject.find(file);
+                    if(contains(data))
+                    {
+                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
+                    }
+                }
+            }
+            catch(IOException e)                
+            {
+                LOG.warning(e.getMessage());
+            }
+            return null;
+        }         
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {  
+                        if(source instanceof StateSupport state)
+                        {
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            return provider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER;
+                        }                                                                        
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        } 
+        
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }         
     }     
     
     private final class BookDataGroupProviderImpl implements DataGroupProvider, SourceEventListener

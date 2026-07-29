@@ -48,18 +48,18 @@ public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<Wizar
     
     private final DefaultComboBoxModel<WorkflowProvider.Workflow> workflows = new DefaultComboBoxModel<>();  
 
-    public SourceWizardPanel(SourceProviderWrapper sourceProvider) 
+    public SourceWizardPanel(SourceProviderWrapper sourceProvider, WorkflowProvider.Workflow selectedWorkflow) 
     {
         this.sourceProvider = sourceProvider;
-        setModifiers();
+        setModifiers(selectedWorkflow);
         comboBox = new JComboBox<>(workflows);        
     }  
     
-    private void setModifiers()
+    private void setModifiers(WorkflowProvider.Workflow selectedWorkflow)
     {
         workflows.removeAllElements();
         workflows.addAll(Arrays.asList(WorkflowProvider.Workflow.values()));  
-        workflows.setSelectedItem(WorkflowProvider.Workflow.WATCH_LATER);
+        workflows.setSelectedItem(selectedWorkflow);
     }     
     
     public void finish(boolean isFinish)

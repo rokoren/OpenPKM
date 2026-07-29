@@ -29,7 +29,6 @@ import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.Domain;
 import openpkm.domain.FaviconProvider;
-import openpkm.domain.MultiViewElementImpl;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.ShortDescriptionProviderImpl;
 import openpkm.utils.Utils;

@@ -44,7 +44,7 @@ import org.openide.util.NbBundle.Messages;
         property = "notEmpty"
     )
 )
-@Messages("CTL_WatchLaterAction=Watch YouTube Videos")
+@Messages("CTL_WatchLaterAction=Watch All")
 public class WatchLaterAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(WatchLaterAction.class.getName());     
@@ -89,7 +89,7 @@ public class WatchLaterAction implements ActionListener
                     {
                         if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER)
                         {
-                            panels.add(new SourceWizardPanel(sourceProvider));                  
+                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.WATCH_LATER));                  
                         }            
                     }                                                                                  
                 }                  

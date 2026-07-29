@@ -44,7 +44,7 @@ import org.openide.util.NbBundle.Messages;
         property = "notEmpty"
     )
 )
-@Messages("CTL_ReadLaterAction=Read RSS News")
+@Messages("CTL_ReadLaterAction=Read All")
 public class ReadLaterAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(ReadLaterAction.class.getName());     
@@ -89,7 +89,7 @@ public class ReadLaterAction implements ActionListener
                     {
                         if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER)
                         {
-                            panels.add(new SourceWizardPanel(sourceProvider));                  
+                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.READ_LATER));                  
                         }            
                     }                                                                                 
                 }                  

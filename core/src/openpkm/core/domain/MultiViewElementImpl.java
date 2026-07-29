@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.domain;
+package openpkm.core.domain;
 
 import java.awt.BorderLayout;
 import java.util.logging.Logger;
@@ -10,6 +10,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import openpkm.domain.Blog;
 import openpkm.jcef.CefClientProvider;
 import org.cef.browser.CefBrowser;
 import org.netbeans.core.spi.multiview.CloseOperationState;
