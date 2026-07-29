@@ -589,11 +589,9 @@ public class WebPageFactoryImpl implements WebPageFactory
                 {
                     try
                     {
-                        browser = provider.getCefClient().createBrowser(rss.getLink(), false, false);      ;   
-                        if(browser != null)
-                        {
-                            add(browser.getUIComponent());
-                        }
+                        browser = provider.getCefClient().createBrowser(rss.getLinkUrl(), true, false); 
+                        browser.setFocus(false);
+                        add(browser.getUIComponent());
                     }
                     catch(Exception e)
                     {

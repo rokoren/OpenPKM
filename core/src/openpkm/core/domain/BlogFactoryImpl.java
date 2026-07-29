@@ -4,7 +4,6 @@
  */
 package openpkm.core.domain;
 
-import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
@@ -15,14 +14,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.Action;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.CloseSupport;
@@ -35,16 +29,12 @@ import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
 import openpkm.domain.Domain;
 import openpkm.domain.FaviconProvider;
-import openpkm.jcef.CefClientProvider;
+import openpkm.domain.MultiViewElementImpl;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.ShortDescriptionProviderImpl;
 import openpkm.utils.Utils;
-import org.cef.browser.CefBrowser;
-import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
-import org.netbeans.core.spi.multiview.MultiViewElementCallback;
-import org.openide.awt.UndoRedo;
 import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
@@ -379,136 +369,5 @@ public class BlogFactoryImpl implements BlogFactory
                 changeSupport.fireChange();
             }
         }          
-    }
-
-    private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
-    {
-        private CefBrowser browser; 
-        private JToolBar toolbar;
-        
-        private transient MultiViewElementCallback callback;  
-        
-        private final Blog blog;
-
-        public MultiViewElementImpl(Blog blog) 
-        {
-            this.blog = blog;
-            setLayout(new BorderLayout());
-        }                
-        
-        @Override
-        public UndoRedo getUndoRedo() 
-        {
-            return UndoRedo.NONE;
-        }
-
-        @Override
-        public void setMultiViewCallback(MultiViewElementCallback callback) 
-        {
-            this.callback = callback;
-        }
-
-        @Override
-        public CloseOperationState canCloseElement() 
-        {
-            return CloseOperationState.STATE_OK;
-        } 
-        
-        @Override
-        public JComponent getVisualRepresentation() 
-        {
-            CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-            if(provider != null)
-            {
-                try
-                {
-                    browser = provider.getCefClient().createBrowser(blog.getUrl(), false, false);      ;   
-                    add(browser.getUIComponent(), BorderLayout.CENTER);
-                    return this;
-                }
-                catch(Exception e)
-                {
-                    LOG.warning(e.getMessage());
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public JComponent getToolbarRepresentation() 
-        {
-            if(toolbar == null)
-            {
-                toolbar = new JToolBar();
-                /*
-                JCheckBox watchLater = new JCheckBox("Watch Later");
-                watchLater.setFocusable(false);
-                watchLater.addItemListener(this);
-                toolbar.add(watchLater);
-                */
-            }
-            return toolbar;
-        }
-
-        @Override
-        public Action[] getActions() 
-        {
-            return new Action[0];
-        }
-
-        @Override
-        public Lookup getLookup() 
-        {
-            return blog.getLookup();
-        }        
-
-        @Override
-        public void componentOpened() 
-        {
-            Collection<? extends OpenSupport> providers = getLookup().lookupAll(OpenSupport.class);            
-            for(OpenSupport provider : providers)
-            {
-                provider.open();
-            }              
-        }
-
-        @Override
-        public void componentClosed() 
-        {
-            if(browser != null)
-            {
-                browser.close(true);
-            }
-            
-            Collection<? extends CloseSupport> providers = getLookup().lookupAll(CloseSupport.class);            
-            for(CloseSupport provider : providers)
-            {
-                provider.close();
-            }              
-        }
-
-        @Override
-        public void componentShowing() 
-        {
-            
-        }
-
-        @Override
-        public void componentHidden() 
-        {
-            
-        }
-
-        @Override
-        public void componentActivated() 
-        {
-            
-        }
-
-        @Override
-        public void componentDeactivated() 
-        {
-            
-        }
     }
 }

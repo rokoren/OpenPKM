@@ -6,8 +6,6 @@ package openpkm.core;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.HashSet;
-import java.util.Set;
 import javax.swing.SwingUtilities;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
@@ -17,7 +15,6 @@ import org.netbeans.core.api.multiview.MultiViewHandler;
 import org.netbeans.core.api.multiview.MultiViewPerspective;
 import org.netbeans.core.api.multiview.MultiViews;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
-import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.windows.OnShowing;
@@ -39,72 +36,65 @@ public class Installer implements Runnable
             @Override
             public void propertyChange(PropertyChangeEvent evt) 
             {
-                System.out.println("Event: " + evt.getPropertyName());
-                if (evt.getPropertyName().equals("opened")) 
+                //System.out.println("Event: " + evt.getPropertyName() + ", Value: " + evt.getNewValue().getClass().getName());
+                if (evt.getPropertyName().equals("tcOpened"))  
                 {
-                    HashSet<TopComponent> newHashSet = (HashSet<TopComponent>) evt.getNewValue();
-                    HashSet<TopComponent> oldHashSet = (HashSet<TopComponent>) evt.getOldValue();
-                    for (TopComponent topComponent : newHashSet) 
+                    TopComponent topComponent = (TopComponent) evt.getNewValue();                    
+                    DataObject data = topComponent.getLookup().lookup(DataObject.class);
+                    if (data != null) 
                     {
-                        //if (!oldHashSet.contains(topComponent)) 
+                        SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                        if(sourceProvider != null)
                         {
-                            DataObject data = topComponent.getLookup().lookup(DataObject.class);
-                            if (data != null) 
+                            Source source = sourceProvider.getSource();
+                            if(source != null)
                             {
-                                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
-                                if(sourceProvider != null)
+                                Project project = source.getLookup().lookup(Project.class);
+                                if(project != null)
                                 {
-                                    Source source = sourceProvider.getSource();
-                                    if(source != null)
+                                    Project[] projects = {project};
+                                    OpenProjects.getDefault().open(projects, false);                                         
+                                }                                 
+
+                                FileObject currentFile = data.getPrimaryFile();  
+
+                                MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
+                                if(mvd != null)
+                                {
+                                    MultiViewHandler handler = MultiViews.findMultiViewHandler(topComponent);
+                                    if(handler != null)
                                     {
-                                        Project project = source.getLookup().lookup(Project.class);
-                                        if(project != null)
+                                        MultiViewPerspective[] perspectives = handler.getPerspectives();
+                                        if(!hasPerspective(perspectives, mvd.preferredID()))
                                         {
-                                            Project[] projects = {project};
-                                            OpenProjects.getDefault().open(projects, false);                                         
-                                        }                                 
-
-                                        FileObject currentFile = data.getPrimaryFile();  
-
-                                        MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
-                                        if(mvd != null)
-                                        {
-                                            MultiViewHandler handler = MultiViews.findMultiViewHandler(topComponent);
-                                            if(handler != null)
+                                            MultiViewPerspective perspective = handler.getSelectedPerspective();
+                                            handler.addMultiViewDescription(mvd, 3);
+                                            if(perspective != null)
                                             {
-                                                MultiViewPerspective[] perspectives = handler.getPerspectives();
-                                                if(!hasPerspective(perspectives, mvd.preferredID()))
-                                                {
-                                                    MultiViewPerspective perspective = handler.getSelectedPerspective();
-                                                    handler.addMultiViewDescription(mvd, 3);
-                                                    if(perspective != null)
-                                                    {
-                                                        handler.requestActive(perspective);
-                                                    }                                             
-                                                }                                      
-                                            }                                                                       
+                                                handler.requestActive(perspective);
+                                            }                                             
+                                        }                                      
+                                    }                                                                       
 
-                                            //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
-                                            /*
-                                            if (currentFile != null & amp; & amp;
-                                            currentFile.getMIMEType().equals("text/x-java")
+                                    //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
+                                    /*
+                                    if (currentFile != null & amp; & amp;
+                                    currentFile.getMIMEType().equals("text/x-java")
 
-                                                ) {
+                                        ) {
 
-                                                currentFile.addFileChangeListener(new FileChangeAdapter() {
-                                                    @Override
-                                                    public void fileChanged(FileEvent fe) {
-                                                        StatusDisplayer.getDefault().setStatusText("Hurray! "
-                                                                + "Saved " + fe.getFile().getNameExt(), 1);
-                                                    }
-                                                });
+                                        currentFile.addFileChangeListener(new FileChangeAdapter() {
+                                            @Override
+                                            public void fileChanged(FileEvent fe) {
+                                                StatusDisplayer.getDefault().setStatusText("Hurray! "
+                                                        + "Saved " + fe.getFile().getNameExt(), 1);
                                             }
-                                            */                                    
-                                        }                                        
-                                    }                                                                                                          
-                                }                                                                                                                                   
-                            }
-                        }
+                                        });
+                                    }
+                                    */                                    
+                                }                                        
+                            }                                                                                                          
+                        }                                                                                                                                   
                     }
                 }
                 else if(evt.getPropertyName().equals("tcClosed"))

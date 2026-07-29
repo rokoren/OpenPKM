@@ -39,16 +39,12 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.Action;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
@@ -88,31 +84,23 @@ import openpkm.base.StateSupport;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WorkflowProvider;
-import openpkm.jcef.CefClientProvider;
 import openpkm.reference.Reference;
 import openpkm.reference.ReferenceProvider;
 import openpkm.utils.FileUtils;
 import openpkm.utils.LogicalViewProviderImpl;
-import openpkm.utils.TopComponentProvider;
 import openpkm.utils.Utils;
-import org.cef.browser.CefBrowser;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectManager;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
-import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
-import org.netbeans.core.spi.multiview.MultiViewElementCallback;
-import org.netbeans.core.spi.multiview.MultiViewFactory;
 import org.netbeans.spi.project.ParentProjectProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.RootProjectProvider;
-import org.netbeans.spi.project.SubprojectProvider;
 import org.netbeans.spi.project.ui.ProjectOpenedHook;
-import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -133,6 +121,7 @@ import openpkm.domain.BlogFactory;
 import openpkm.domain.BlogProvider;
 import openpkm.domain.Domain;
 import openpkm.domain.FaviconProvider;
+import openpkm.domain.MultiViewElementImpl;
 import openpkm.domain.WebPage;
 import openpkm.domain.WebPageFactory;
 import openpkm.domain.WebPageProvider;
@@ -157,7 +146,7 @@ import org.openide.windows.WindowManager;
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Project, Blog, Domain, SourceProviders, BatchUpdateSupport
+public class HomePageProject implements Project, Blog, Domain, SourceProviders, MultiViewDescription, BatchUpdateSupport
 {      
     private static final String DATA_FOLDER = "data";    
     
@@ -373,7 +362,6 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             list.add(new SourcesImpl());  
             list.add(new DisplayNameProviderImpl());
             list.add(new IconProviderImpl());
-            list.add(new TopComponentProviderImpl());
             list.add(new ProjectOpenedHookImpl());   
             list.add(new RootProjectProviderImpl());
             list.add(new ParentProjectProviderImpl());              
@@ -505,7 +493,44 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     public void removeDescriptionListener(PropertyChangeListener listener)
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-    }              
+    } 
+    
+    @Override
+    public String preferredID() 
+    {
+        return "home_page";
+    }         
+
+    @Override
+    public MultiViewElement createElement() 
+    {
+        return new MultiViewElementImpl(this);
+    } 
+
+    @Override
+    public HelpCtx getHelpCtx() 
+    {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    @Override
+    public String getDisplayName() 
+    {
+        return "Home Page";
+    }   
+
+    @Override
+    public int getPersistenceType() 
+    {
+        return TopComponent.PERSISTENCE_NEVER;
+    }  
+
+    @Override
+    public Image getIcon() 
+    {    
+        IconProvider provider = getLookup().lookup(IconProvider.class);
+        return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
+    }      
     
 // TODO BatchUpdateSupport    
     
@@ -528,187 +553,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         }
         cookies.clear();
         return true;
-    }  
-    
-// TODO TopComponentProvider
-    
-    private final class TopComponentProviderImpl extends JPanel implements TopComponentProvider, MultiViewDescription, MultiViewElement
-    {
-        private TopComponent tc;           
-        private CefBrowser browser; 
-        private JToolBar toolbar;
-        
-        private transient MultiViewElementCallback callback;          
-        
-        public TopComponentProviderImpl() 
-        {
-            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-        }         
-        
-        @Override
-        public TopComponent getTopComponent()
-        {
-            if(tc == null)
-            {
-                List<MultiViewDescription> list = new ArrayList<>();
-                list.add(this);
-                SubprojectProvider provider = getLookup().lookup(SubprojectProvider.class);
-                if(provider != null)
-                {
-                    for(Project project : provider.getSubprojects())
-                    {
-                        MultiViewDescription mvd = project.getLookup().lookup(MultiViewDescription.class);
-                        if(mvd != null)
-                        {
-                            list.add(mvd);
-                        }
-                    }
-                }
-                tc = MultiViewFactory.createMultiView(list.toArray(new MultiViewDescription[list.size()]), this);
-                tc.setDisplayName(getTitle());
-            }
-            return tc;
-        }        
-        
-        @Override
-        public String preferredID() 
-        {
-            return "home_page";
-        }         
-        
-        @Override
-        public MultiViewElement createElement() 
-        {
-            return this;
-        } 
-
-        @Override
-        public HelpCtx getHelpCtx() 
-        {
-            return HelpCtx.DEFAULT_HELP;
-        }
-        
-        @Override
-        public String getDisplayName() 
-        {
-            return "Home Page";
-        }   
-        
-        @Override
-        public int getPersistenceType() 
-        {
-            return TopComponent.PERSISTENCE_NEVER;
-        }  
-        
-        @Override
-        public Image getIcon() 
-        {    
-            IconProvider provider = getLookup().lookup(IconProvider.class);
-            return provider.getIcon(BeanInfo.ICON_COLOR_16x16);
-        }  
-        
-        @Override
-        public UndoRedo getUndoRedo() 
-        {
-            return UndoRedo.NONE;
-        }
-
-        @Override
-        public void setMultiViewCallback(MultiViewElementCallback callback) 
-        {
-            this.callback = callback;
-        }
-
-        @Override
-        public CloseOperationState canCloseElement() 
-        {
-            return CloseOperationState.STATE_OK;
-        } 
-        
-        @Override
-        public JComponent getVisualRepresentation() 
-        {
-            if(browser == null)
-            {
-                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-                if(provider != null)
-                {
-                    try
-                    {
-                        browser = provider.getCefClient().createBrowser(getUrl(), false, false);      ;   
-                        if(browser != null)
-                        {
-                            add(browser.getUIComponent());
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                }
-            }
-            return this;
-        }
-
-        @Override
-        public JComponent getToolbarRepresentation() 
-        {
-            if(toolbar == null)
-            {
-                toolbar = new JToolBar();
-            }
-            return toolbar;
-        }
-
-        @Override
-        public Action[] getActions() 
-        {
-            return new Action[0];
-        }
-
-        @Override
-        public Lookup getLookup() 
-        {
-            return HomePageProject.this.getLookup();
-        }        
-
-        @Override
-        public void componentOpened() 
-        {
-            
-        }
-
-        @Override
-        public void componentClosed() 
-        {
-            /*
-            if(browser != null)
-            {
-                browser.close(true);
-            }
-            */
-        }
-
-        @Override
-        public void componentShowing() 
-        {            
-        }
-
-        @Override
-        public void componentHidden() 
-        {            
-        }
-
-        @Override
-        public void componentActivated() 
-        {            
-        }
-
-        @Override
-        public void componentDeactivated() 
-        {            
-        }        
-    }     
+    }      
     
 // TODO ProjectOpenedHook    
     
@@ -3436,5 +3281,5 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         btn.setVerticalAlignment(SwingConstants.CENTER);
         btn.setHorizontalAlignment(SwingConstants.LEFT);        
         return btn;
-    }      
+    }  
 }
