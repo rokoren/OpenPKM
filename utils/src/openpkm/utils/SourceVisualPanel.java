@@ -4,6 +4,8 @@
  */
 package openpkm.utils;
 
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.Source;
 import openpkm.base.TitleProvider;
 import org.cef.browser.CefBrowser;
 
@@ -13,14 +15,14 @@ import org.cef.browser.CefBrowser;
  */
 public class SourceVisualPanel extends javax.swing.JPanel 
 { 
-    private final TitleProvider provider;
+    private final Source source;
     
     /**
      * Creates new form WatchLaterVisualPanel
      */
-    public SourceVisualPanel(TitleProvider provider, CefBrowser browser) 
+    public SourceVisualPanel(Source source, CefBrowser browser) 
     {
-        this.provider = provider;
+        this.source = source;
         initComponents(); 
         add(browser.getUIComponent());        
     }
@@ -28,7 +30,12 @@ public class SourceVisualPanel extends javax.swing.JPanel
     @Override
     public String getName() 
     {
-        return provider.getTitle();
+        if(source instanceof TitleProvider provider)
+        {
+            return provider.getTitle();            
+        }
+        DisplayNameProvider provider = source.getLookup().lookup(DisplayNameProvider.class);
+        return provider.getDisplayName(DisplayNameProvider.TextFormat.PLAIN);
     } 
 
     /**

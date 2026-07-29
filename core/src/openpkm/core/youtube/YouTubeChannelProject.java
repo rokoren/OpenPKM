@@ -1635,7 +1635,10 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                         data = DataFolder.findFolder(file);
                     }  
 
-                    return contains(data);
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
                 }              
             } 
             catch(IOException e)

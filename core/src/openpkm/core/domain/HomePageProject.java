@@ -1261,7 +1261,10 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                         data = DataFolder.findFolder(file);
                     }  
 
-                    return contains(data);
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
                 }              
             } 
             catch(IOException e)

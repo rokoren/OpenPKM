@@ -1141,7 +1141,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                         data = DataFolder.findFolder(file);
                     }  
 
-                    return contains(data);
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
                 }              
             } 
             catch(IOException e)

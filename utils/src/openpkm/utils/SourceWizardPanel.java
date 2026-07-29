@@ -17,7 +17,6 @@ import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import openpkm.base.StateSupport;
-import openpkm.base.TitleProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.domain.WebPage;
 import openpkm.jcef.CefClientProvider;
@@ -132,12 +131,8 @@ public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<Wizar
         }        
         if (component == null && browser != null) 
         {
-            Source source = sourceProvider.getSource();
-            if(source instanceof TitleProvider provider)
-            {
-                component = new SourceVisualPanel(provider, browser);                  
-            }  
-            if(source instanceof WebPage)
+            component = new SourceVisualPanel(sourceProvider.getSource(), browser);   
+            if(sourceProvider.getSource() instanceof WebPage)
             {
                 component.setPreferredSize(new Dimension(800, 800));
             }              
