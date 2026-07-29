@@ -2,8 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core.youtube;
+package openpkm.utils;
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -12,13 +13,16 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
+import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
-import openpkm.base.WatchLaterProvider;
+import openpkm.base.StateSupport;
+import openpkm.base.TitleProvider;
 import openpkm.base.WorkflowProvider;
-import openpkm.utils.SourceEventImpl;
+import openpkm.domain.WebPage;
+import openpkm.jcef.CefClientProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeVideoProvider;
 import org.cef.browser.CefBrowser;
 import org.openide.WizardDescriptor;
 import org.openide.util.HelpCtx;
@@ -28,25 +32,25 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<WizardDescriptor>
+public class SourceWizardPanel implements WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
-    private static final Logger LOG = Logger.getLogger(WatchLaterWizardPanel.class.getName());     
+    private static final Logger LOG = Logger.getLogger(SourceWizardPanel.class.getName());     
         
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
      */
-    private WatchLaterVisualPanel component;
+    private SourceVisualPanel component;
     
-    private final YouTubeVideo video;    
+    private final SourceProviderWrapper sourceProvider;    
     private CefBrowser browser;    
     private final JComboBox<WorkflowProvider.Workflow> comboBox;   
     
     private final DefaultComboBoxModel<WorkflowProvider.Workflow> workflows = new DefaultComboBoxModel<>();  
 
-    public WatchLaterWizardPanel(YouTubeVideo video) 
+    public SourceWizardPanel(SourceProviderWrapper sourceProvider) 
     {
-        this.video = video;
+        this.sourceProvider = sourceProvider;
         setModifiers();
         comboBox = new JComboBox<>(workflows);        
     }  
@@ -58,22 +62,25 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
         workflows.setSelectedItem(WorkflowProvider.Workflow.WATCH_LATER);
     }     
     
-    public void finish(WatchLaterProvider provider, boolean isFinish)
+    public void finish(boolean isFinish)
     {
         if(isFinish) 
         {
-            if(video instanceof WorkflowProvider workflowProvider)
+            Source source = sourceProvider.getSource();
+            if(source instanceof WorkflowProvider workflowProvider)
             {
                 WorkflowProvider.Workflow workflow = (WorkflowProvider.Workflow)workflows.getSelectedItem();
-                workflowProvider.setWorkflow(workflow);  
-                video.markModified();       
-                SourceProviders sourceProviders = provider.getProvider().getLookup().lookup(SourceProviders.class);
-                YouTubeVideoProvider youTubeVideoProvider = provider.getProvider().getLookup().lookup(YouTubeVideoProvider.class);
-                if(sourceProviders != null && youTubeVideoProvider != null)
+                workflowProvider.setWorkflow(workflow);
+                if(source instanceof StateSupport state)
                 {
-                    sourceProviders.sourceModified(new SourceEventImpl(youTubeVideoProvider, video));
+                    state.markModified();
                 }
-            }
+                SourceProviders sourceProviders = sourceProvider.getProvider().getProvider().getLookup().lookup(SourceProviders.class);
+                if(sourceProviders != null)
+                {
+                    sourceProviders.sourceModified(new SourceEventImpl(sourceProvider.getProvider(), source));
+                }
+            }            
         }            
 
         if(browser != null)
@@ -87,26 +94,53 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     // but never displayed, or not all panels are displayed, it is better to
     // create only those which really need to be visible.
     @Override
-    public WatchLaterVisualPanel getComponent() 
+    public SourceVisualPanel getComponent() 
     {
         if(browser == null)
         {
-            YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
-            if(provider != null)
+            Source source = sourceProvider.getSource();
+            if(source instanceof WebPage page)
             {
-                try
+                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+                if(provider != null)
                 {
-                    browser = provider.getBrowser(video);                     
-                }
-                catch(Exception e)
+                    try
+                    {
+                        browser = provider.getCefClient().createBrowser(page.getLinkUrl(), true, false);  
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                   
+                }                  
+            }            
+            else if(source instanceof YouTubeVideo video)
+            {
+                YouTubeCefClientProvider provider = Lookup.getDefault().lookup(YouTubeCefClientProvider.class);
+                if(provider != null)
                 {
-                    LOG.warning(e.getMessage());
-                }                   
-            }  
+                    try
+                    {
+                        browser = provider.getBrowser(video);                     
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                   
+                }                  
+            }            
         }        
-        if (component == null) 
+        if (component == null && browser != null) 
         {
-            component = new WatchLaterVisualPanel(video, browser);                                   
+            Source source = sourceProvider.getSource();
+            if(source instanceof TitleProvider provider)
+            {
+                component = new SourceVisualPanel(provider, browser);                  
+            }  
+            if(source instanceof WebPage)
+            {
+                component.setPreferredSize(new Dimension(800, 800));
+            }              
         }
         return component;
     }
@@ -156,5 +190,5 @@ public class WatchLaterWizardPanel implements WizardDescriptor.FinishablePanel<W
     public boolean isFinishPanel() 
     {
         return true;
-    }
+    }    
 }

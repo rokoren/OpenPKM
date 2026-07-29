@@ -504,7 +504,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     @Override
     public MultiViewElement createElement() 
     {
-        return new MultiViewElementImpl(this);
+        return new MultiViewElementImpl(this, false);
     } 
 
     @Override
@@ -968,7 +968,10 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
 // TODO SourceGroup    
     
     private final class RssProviderImpl extends RssProvider implements SourceGroupProvider, CloseSupport, FileChangeListener
-    {                         
+    {
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/rss.png";         
+        
         public RssProviderImpl(RssFactory factory) 
         {
             super(factory);             
@@ -1041,8 +1044,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Icon getIcon(boolean bln) 
         {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getIcon(IconsProvider.ICON.RSS_CHANNEL);
+            return ImageUtilities.loadIcon(ICON);
         }                        
         
         @Override

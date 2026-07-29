@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core.youtube;
+package openpkm.core.domain;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.ReadLaterProvider;
 import openpkm.base.SourceProviderWrapper;
-import openpkm.base.WatchLaterProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.utils.SourceWizardPanel;
 import org.openide.DialogDisplayer;
@@ -33,25 +33,25 @@ import org.openide.util.NbBundle.Messages;
  * @author Rok Koren
  */
 @ActionID(
-        category = "OpenPKM/WatchLater",
-        id = "openpkm.core.youtube.WatchLaterAction"
+        category = "OpenPKM/ReadLater",
+        id = "openpkm.core.domain.ReadLaterAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/core/resources/eye.png",
-        displayName = "#CTL_WatchLaterAction",
+        iconBase = "openpkm/core/resources/watch_window.png",
+        displayName = "#CTL_ReadLaterAction",
         enabledOn = @ActionState(
-        type = WatchLaterProvider.class,
+        type = ReadLaterProvider.class,
         property = "notEmpty"
     )
 )
-@Messages("CTL_WatchLaterAction=Watch YouTube Videos")
-public class WatchLaterAction implements ActionListener
+@Messages("CTL_ReadLaterAction=Read RSS News")
+public class ReadLaterAction implements ActionListener
 {
-    private static final Logger LOG = Logger.getLogger(WatchLaterAction.class.getName());     
+    private static final Logger LOG = Logger.getLogger(ReadLaterAction.class.getName());     
     
-    private final WatchLaterProvider provider;
+    private final ReadLaterProvider provider;
 
-    public WatchLaterAction(WatchLaterProvider provider)
+    public ReadLaterAction(ReadLaterProvider provider)
     {
         this.provider = provider;
     }
@@ -87,11 +87,11 @@ public class WatchLaterAction implements ActionListener
                     SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
                     if(sourceProvider.getSource() instanceof WorkflowProvider workflowProvider)
                     {
-                        if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER)
+                        if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER)
                         {
                             panels.add(new SourceWizardPanel(sourceProvider));                  
                         }            
-                    }                                                                                  
+                    }                                                                                 
                 }                  
             }              
         } 
@@ -118,12 +118,12 @@ public class WatchLaterAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Watch YouTube Videos");  
+        wiz.setTitle("Watch RSS News");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         boolean isFinish = DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION;
         for(SourceWizardPanel panel : panels)
         {
             panel.finish(isFinish);          
-        }                                                                 
-    }      
+        }                                                                  
+    }     
 }

@@ -24,18 +24,20 @@ import org.openide.util.Lookup;
  */
 public class MultiViewElementImpl extends JPanel implements MultiViewElement
 {
-    private static final Logger LOG = Logger.getLogger(MultiViewElementImpl.class.getName());      
-    
-    private CefBrowser browser; 
-    private JToolBar toolbar;
-
-    private transient MultiViewElementCallback callback;  
+    private static final Logger LOG = Logger.getLogger(MultiViewElementImpl.class.getName());           
 
     private final Blog blog;
+    private final boolean isOffscreenRendered;
+    
+    private CefBrowser browser; 
+    private JToolBar toolbar;  
+    
+    private transient MultiViewElementCallback callback;     
 
-    public MultiViewElementImpl(Blog blog) 
+    public MultiViewElementImpl(Blog blog, boolean isOffscreenRendered) 
     {
         this.blog = blog;
+        this.isOffscreenRendered = isOffscreenRendered;
         setLayout(new BorderLayout());
     }                
 
@@ -101,7 +103,7 @@ public class MultiViewElementImpl extends JPanel implements MultiViewElement
             {
                 try
                 {
-                    browser = provider.getCefClient().createBrowser(blog.getUrl(), true, false);
+                    browser = provider.getCefClient().createBrowser(blog.getUrl(), isOffscreenRendered, false);
                     add(browser.getUIComponent(), BorderLayout.CENTER);
                 }
                 catch(Exception e)

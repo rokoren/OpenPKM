@@ -263,7 +263,7 @@ public class BlogFactoryImpl implements BlogFactory
         @Override
         public MultiViewElement createElement() 
         {
-            return new MultiViewElementImpl(this);
+            return new MultiViewElementImpl(this, false);
         }  
 
         @Override

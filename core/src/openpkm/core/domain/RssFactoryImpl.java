@@ -7,19 +7,13 @@ package openpkm.core.domain;
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndFeed;
 import java.awt.Image;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
-import javax.imageio.ImageIO;
-import javax.swing.event.ChangeListener;
-import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
@@ -28,9 +22,7 @@ import openpkm.base.PropertiesProvider;
 import openpkm.rss.RssChannel;
 import openpkm.rss.RssFactory;
 import openpkm.utils.DateTimeUtils;
-import openpkm.utils.Utils;
 import org.openide.nodes.Children;
-import org.openide.util.ChangeSupport;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
@@ -141,8 +133,8 @@ public class RssFactoryImpl implements RssFactory
         LOG.info("RSS Channel saved");      
     }     
     
-    private static final class RssChannelImpl implements RssChannel, DisplayNameProvider
-    {
+    private static final class RssChannelImpl implements RssChannel, DisplayNameProvider, IconProvider
+    {                 
         private final Properties props; 
         
         private Lookup lkp;  
@@ -312,7 +304,7 @@ public class RssFactoryImpl implements RssFactory
         {
             if (lkp == null) 
             {
-                lkp = Lookups.fixed(this, new IconProviderImpl());              
+                lkp = Lookups.fixed(this);              
             }
             return lkp;
         }                           
@@ -329,70 +321,13 @@ public class RssFactoryImpl implements RssFactory
             return HelpCtx.DEFAULT_HELP;
         }  
 
-        // TODO IconProvider    
+// TODO IconProvider    
     
-        private final class IconProviderImpl implements IconProvider, ChangeSupportProvider, Runnable
-        {        
-            private Image icon; 
-            private boolean isLoading;
-
-            private final ChangeSupport changeSupport = new ChangeSupport(this); 
-
-            @Override
-            public synchronized Image getIcon(int type)
-            {
-                if(icon != null)
-                {
-                    return icon;
-                }
-                if(!isLoading)
-                {
-                    isLoading = true;                
-                    RP.post(this);                
-                }
-                IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-                return provider.getImage(IconsProvider.ICON.RSS_CHANNEL);
-            }
-
-            @Override
-            public void addChangeListener(ChangeListener listener) 
-            {
-                changeSupport.addChangeListener(listener);
-            }
-
-            @Override
-            public void removeChangeListener(ChangeListener listener) 
-            {
-                changeSupport.removeChangeListener(listener);
-            }        
-
-            @Override
-            public void run() 
-            {
-                String string = getImage();
-                if(string != null)
-                {
-                    try
-                    {
-                        URL url = new URL(string);
-                        BufferedImage image = ImageIO.read(url);  
-                        icon = Utils.resizeImage(image, 16, 16); 
-                        changeSupport.fireChange();
-                    }
-                    catch(MalformedURLException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                    catch(IOException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    } 
-                    finally
-                    {
-                        isLoading = false;
-                    }                
-                }
-            }                
-        } 
+        @Override
+        public synchronized Image getIcon(int type)
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getImage(IconsProvider.ICON.RSS_CHANNEL);            
+        }
     }      
 }

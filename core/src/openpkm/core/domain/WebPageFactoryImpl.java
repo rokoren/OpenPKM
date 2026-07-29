@@ -5,6 +5,7 @@
 package openpkm.core.domain;
 
 import com.rometools.rome.feed.synd.SyndEntry;
+import java.awt.BorderLayout;
 import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -18,7 +19,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.Action;
-import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
@@ -113,8 +113,11 @@ public class WebPageFactoryImpl implements WebPageFactory
         LOG.info("Web Page saved");
     }      
     
-    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, TopicsProvider
-    {         
+    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, TopicsProvider, MultiViewDescription
+    {  
+        @StaticResource()
+        public static final String ICON = "openpkm/core/resources/www_page.png";           
+        
         protected static final Logger LOG = Logger.getLogger(AbstractWebPage.class.getName());     
 
         protected final Properties props; 
@@ -273,13 +276,52 @@ public class WebPageFactoryImpl implements WebPageFactory
             }                
             return Collections.EMPTY_SET;
         }   
+        
+        @Override
+        public Image getIcon(int type) 
+        {  
+            return ImageUtilities.loadImage(ICON);             
+        }          
+        
+        @Override
+        public Image getIcon() 
+        {  
+            return ImageUtilities.loadImage(ICON);             
+        }   
+        
+        @Override
+        public String preferredID() 
+        {
+            return "web_page";
+        }         
+        
+        @Override
+        public MultiViewElement createElement() 
+        {
+            return new MultiViewElementImpl(this);
+        } 
+
+        @Override
+        public HelpCtx getHelpCtx() 
+        {
+            return HelpCtx.DEFAULT_HELP;
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            return "Web Page";
+        }   
+        
+        @Override
+        public int getPersistenceType() 
+        {
+            return TopComponent.PERSISTENCE_NEVER;
+        }         
     }  
     
     private static final class LinkImpl extends AbstractWebPage implements Link
-    { 
-        @StaticResource()
-        public static final String ICON = "openpkm/core/resources/www_page.png";         
-     
+    {            
         public LinkImpl(Properties props)
         {
             super(props);
@@ -304,11 +346,8 @@ public class WebPageFactoryImpl implements WebPageFactory
         }       
     }
     
-    private static final class RssImpl extends AbstractWebPage implements DescriptionProvider, Link, WorkflowProvider, VisibilityProvider, MultiViewDescription
-    { 
-        @StaticResource()
-        public static final String ICON = "openpkm/core/resources/rss.png";         
-     
+    private static final class RssImpl extends AbstractWebPage implements DescriptionProvider, Link, WorkflowProvider, VisibilityProvider
+    {             
         public RssImpl(Properties props)
         {
             super(props);
@@ -434,49 +473,7 @@ public class WebPageFactoryImpl implements WebPageFactory
             {
                 props.setProperty(WorkflowProvider.PROP_WORKFLOW, workflow.toString());  
             }            
-        }        
-        
-        @Override
-        public Image getIcon(int type) 
-        {  
-            return ImageUtilities.loadImage(ICON);             
-        }          
-        
-        @Override
-        public Image getIcon() 
-        {  
-            return ImageUtilities.loadImage(ICON);             
-        }   
-        
-        @Override
-        public String preferredID() 
-        {
-            return "rss";
-        }         
-        
-        @Override
-        public MultiViewElement createElement() 
-        {
-            return new MultiViewElementImpl(this);
-        } 
-
-        @Override
-        public HelpCtx getHelpCtx() 
-        {
-            return HelpCtx.DEFAULT_HELP;
-        }
-        
-        @Override
-        public String getDisplayName() 
-        {
-            return "RSS";
-        }   
-        
-        @Override
-        public int getPersistenceType() 
-        {
-            return TopComponent.PERSISTENCE_NEVER;
-        }         
+        }                        
     }    
     
     private static final class ArticleImpl extends AbstractWebPage implements Article, Link
@@ -553,12 +550,12 @@ public class WebPageFactoryImpl implements WebPageFactory
         
         private transient MultiViewElementCallback callback;  
         
-        private final RssImpl rss;
+        private final WebPage page;
 
-        public MultiViewElementImpl(RssImpl rss) 
+        public MultiViewElementImpl(WebPage page) 
         {
-            this.rss = rss;
-            setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            this.page = page;
+            setLayout(new BorderLayout());
         }                
         
         @Override
@@ -582,23 +579,6 @@ public class WebPageFactoryImpl implements WebPageFactory
         @Override
         public JComponent getVisualRepresentation() 
         {
-            if(browser == null)
-            {
-                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
-                if(provider != null)
-                {
-                    try
-                    {
-                        browser = provider.getCefClient().createBrowser(rss.getLinkUrl(), true, false); 
-                        browser.setFocus(false);
-                        add(browser.getUIComponent());
-                    }
-                    catch(Exception e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                }
-            }
             return this;
         }
 
@@ -627,7 +607,22 @@ public class WebPageFactoryImpl implements WebPageFactory
         @Override
         public void componentOpened() 
         {
-            
+            if(browser == null)
+            {
+                CefClientProvider provider = Lookup.getDefault().lookup(CefClientProvider.class);
+                if(provider != null)
+                {
+                    try
+                    {
+                        browser = provider.getCefClient().createBrowser(page.getLinkUrl(), false, false); 
+                        add(browser.getUIComponent(), BorderLayout.CENTER);
+                    }
+                    catch(Exception e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
+            }            
         }
 
         @Override
@@ -654,13 +649,13 @@ public class WebPageFactoryImpl implements WebPageFactory
         @Override
         public void componentActivated() 
         {
-            
+            browser.setFocus(true); 
         }
 
         @Override
         public void componentDeactivated() 
         {
-            
+            browser.setFocus(false);  
         }
     }    
 }

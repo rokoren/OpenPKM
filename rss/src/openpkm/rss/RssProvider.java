@@ -59,7 +59,7 @@ public abstract class RssProvider implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "RSS Channel";
+        return "Feeds";
     }
 
     @Override
