@@ -128,6 +128,7 @@ import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloMemberFactory;
 import openpkm.trello.TrelloListFactory;
 import openpkm.utils.SourceEventImpl;
+import openpkm.youtube.GooglePasswordProvider;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 
@@ -1181,7 +1182,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                         {
                             try
                             {
-                                TrelloCard card = factory.getCard(Utils.getProperties(fo));
+                                TrelloCard card = getFactory().getCard(Utils.getProperties(fo));
                                 if(card != null)
                                 {
                                     cards.put(card.getCardID(), card);
@@ -1217,7 +1218,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                                 if(link.isModified())
                                 {
                                     OutputStream os = file.getOutputStream();
-                                    factory.save(card, os, "Updated by Trello project: " + getBoardName());
+                                    getFactory().save(card, os, "Updated by Trello project: " + getBoardName());
                                     os.close();
                                 }
                                 else if(link.isDeleted())
@@ -1243,17 +1244,21 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
             if(root != null && service != null && markdown != null)
             {
-                TrelloCardLink card = service.createLink(list.getListID(), url, factory, getTrelloAccount());
+                TrelloCardLink card = service.createLink(list.getListID(), url, getFactory(), getTrelloAccount());
                 String videoID = YouTubeUtils.getVideoID(url);
                 if(videoID != null)
                 {  
-                    YouTubeVideoFactory youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
-                    if(youTubeVideoProvider != null)
+                    YouTubeVideoFactory factory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
+                    if(factory != null)
                     {
-                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
-                        if(video != null)
+                        GooglePasswordProvider provider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+                        if(provider != null)
                         {
-                            card.merge(video);
+                            YouTubeVideo video = factory.getVideo(provider, videoID);
+                            if(video != null)
+                            {
+                                card.merge(video);
+                            }                            
                         }
                     }
                 }                                
@@ -1265,7 +1270,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                     fs.runAtomicAction(() -> {
                         FileObject file = root.createData(card.getCardID(), PropertiesProvider.EXTENSION);
                         OutputStream os = file.getOutputStream();
-                        factory.save(card, os, "Saved by Trello project: " + getBoardName());
+                        getFactory().save(card, os, "Saved by Trello project: " + getBoardName());
                         os.close();  
                     });                                                             
                 }
@@ -1284,7 +1289,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);
             if(root != null && service != null && markdown != null)
             {
-                TrelloCard card = service.createCard(list.getListID(), name, factory, getTrelloAccount());                                               
+                TrelloCard card = service.createCard(list.getListID(), name, getFactory(), getTrelloAccount());                                               
                 try
                 {
                     createData(card, markdown); 
@@ -1293,7 +1298,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                         FileObject projectDirectory = FileUtil.createFolder(root, card.getCardID());           
                         FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
                         OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                        factory.save(card, os, "OpenPKM Trello Card Project");
+                        getFactory().save(card, os, "OpenPKM Trello Card Project");
                         //props.store(os, "OpenPKM Trello Card Project"); 
                         os.close();  
                     });                                                             
@@ -1362,7 +1367,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                 try                         
                 {
                     Properties props = Utils.getProperties(file); 
-                    TrelloCard card = factory.getCard(props);
+                    TrelloCard card = getFactory().getCard(props);
                     if(card != null)
                     {
                         getCardsById().put(card.getCardID(), card);
@@ -1387,7 +1392,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
             try
             {
                 Properties props = Utils.getProperties(evt.getFile()); 
-                TrelloCard card = factory.getCard(props);
+                TrelloCard card = getFactory().getCard(props);
                 if(card != null)
                 {
                     getCardsById().remove(card.getCardID());
@@ -1479,7 +1484,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                         if(isTime)
                         {
                             TrelloCard oldCard = getCardsById().get(card.getId()); 
-                            TrelloCard newCard = service.getCard(card.getId(), factory, getTrelloAccount());
+                            TrelloCard newCard = service.getCard(card.getId(), getFactory(), getTrelloAccount());
                             if(!oldCard.getProperties().equals(newCard.getProperties()))
                             {
                                 oldCard.merge(newCard);
@@ -1525,26 +1530,30 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                     {
                         try
                         {
-                            TrelloCard trelloCard = service.getCard(card.getId(), factory, getTrelloAccount());
+                            TrelloCard trelloCard = service.getCard(card.getId(), getFactory(), getTrelloAccount());
                             if(trelloCard instanceof TrelloCardLink link)
                             {
                                 String videoID = YouTubeUtils.getVideoID(trelloCard.getCardName());
                                 if(videoID != null)
                                 {  
-                                    YouTubeVideoFactory youTubeVideoProvider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
-                                    if(youTubeVideoProvider != null)
+                                    YouTubeVideoFactory factory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
+                                    if(factory != null)
                                     {
-                                        YouTubeVideo video = youTubeVideoProvider.getVideo(videoID, false);
-                                        if(video != null)
+                                        GooglePasswordProvider provider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+                                        if(provider != null)
                                         {
-                                            link.merge(video);
-                                        }
+                                            YouTubeVideo video = factory.getVideo(provider, videoID);
+                                            if(video != null)
+                                            {
+                                                link.merge(video);
+                                            }
+                                        }                                                                                                                        
                                     }
                                 }                                
                                 
                                 FileObject file = root.createData(card.getId(), PropertiesProvider.EXTENSION);
                                 OutputStream os = file.getOutputStream();
-                                factory.save(trelloCard, os, "Saved by Trello project: " + getBoardName());
+                                getFactory().save(trelloCard, os, "Saved by Trello project: " + getBoardName());
                                 os.close();                                  
                             }
                             else
@@ -1553,7 +1562,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                                 FileObject projectFolder = FileUtil.createFolder(projectDirectory, TrelloCardProjectFactory.PROJECT_FOLDER);                   
 
                                 OutputStream os = projectFolder.createAndOpen(TrelloCardProjectFactory.PROJECT_FILE);
-                                factory.save(trelloCard, os, "OpenPKM Trello Card Project");
+                                getFactory().save(trelloCard, os, "OpenPKM Trello Card Project");
                                 //props.store(os, "OpenPKM Trello Card Project"); 
                                 os.close();  
 

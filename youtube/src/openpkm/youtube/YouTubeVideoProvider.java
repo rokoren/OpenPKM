@@ -73,5 +73,5 @@ public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVide
     public boolean contains(FileObject file) 
     {
         return getVideosById().containsKey(file.getName());
-    }    
+    }        
 }

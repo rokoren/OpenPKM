@@ -472,6 +472,15 @@ public class Utils
         result.append("</html>");
         return result.toString();
     }  
+    
+    public static String getDescription(String desc, int max)
+    {
+        if(desc.length() > max)
+        {
+            return desc.substring(0, max) + "...";
+        }  
+        return desc;
+    }      
 
     public static Project getRootProject(Project project)
     {

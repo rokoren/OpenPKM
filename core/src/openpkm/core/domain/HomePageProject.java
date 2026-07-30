@@ -4,6 +4,11 @@
  */
 package openpkm.core.domain;
 
+import com.google.api.client.util.DateTime;
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.Activity;
+import com.google.api.services.youtube.model.ActivityListResponse;
+import com.google.api.services.youtube.model.VideoListResponse;
 import com.rometools.rome.feed.synd.SyndEnclosure;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
@@ -25,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,9 +38,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -82,6 +90,7 @@ import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
 import openpkm.base.StateSupport;
+import openpkm.base.TagsProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
 import openpkm.base.WatchLaterProvider;
@@ -133,10 +142,16 @@ import openpkm.reference.ReferenceFactory;
 import openpkm.rss.RssChannel;
 import openpkm.rss.RssFactory;
 import openpkm.rss.RssProvider;
+import openpkm.utils.NotificationUtils;
 import openpkm.utils.SourceEventImpl;
+import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
+import openpkm.youtube.YouTubeService;
+import openpkm.youtube.YouTubeVideo;
+import openpkm.youtube.YouTubeVideoFactory;
+import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.awt.NotificationDisplayer;
 import org.openide.cookies.CloseCookie;
 import org.openide.loaders.DataFolder;
@@ -202,6 +217,13 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             SourceProvider references = new ReferenceProviderImpl(referenceFactory);
             sources.put(references.getName(), references);            
         }
+        
+        YouTubeVideoFactory youTubeFactory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
+        if(youTubeFactory != null)
+        {
+            SourceProvider provider = new YouTubeVideoProviderImpl(youTubeFactory);
+            sources.put(provider.getName(), provider);                       
+        }         
 
         YouTubeChannelFactory youTubeChannelFactory = Lookup.getDefault().lookup(YouTubeChannelFactory.class);
         if(youTubeChannelFactory != null)
@@ -619,98 +641,186 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         
         @Override
         public void run()
-        {  
-            RssProvider rssProvider = getLookup().lookup(RssProvider.class);
-            if(rssProvider != null)
+        { 
+            AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
+            if(fileTypeProvider != null)
             {
-                for(RssChannel channel : rssProvider.getChannels().getChannels())
+                GooglePasswordProvider googlePasswordProvider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+                YouTubeChannelProvider youTubeChannelProvider = getLookup().lookup(YouTubeChannelProvider.class);
+                YouTubeVideoProvider youTubeVideoProvider = getLookup().lookup(YouTubeVideoProvider.class);
+                if(youTubeChannelProvider != null && youTubeVideoProvider != null && googlePasswordProvider != null)
                 {
-                    try
-                    {
-                        URL url = new URL(channel.getFeedUrl());
-                        SyndFeedInput input = new SyndFeedInput();
-                        SyndFeed feed = input.build(new XmlReader(url));
-                        
-                        RssChannel newValue = rssProvider.getFactory().getRssChannel(channel.getFeedUrl(), channel.getFileName(), feed);
-                        if(!channel.getProperties().equals(newValue.getProperties()))
+                    for(YouTubeChannel channel : youTubeChannelProvider.getChannels())
+                    {                    
+                        try
                         {
-                            channel.merge(newValue);
-                            channel.markModified();
-                            WebPageProvider webPagePovider = getLookup().lookup(WebPageProvider.class);
-                            if(webPagePovider != null)
+                            YouTubeChannel newValue = youTubeChannelProvider.getFactory().getChannel(googlePasswordProvider, channel.getChannelID());
+                            if(newValue.getVideoCount() > channel.getVideoCount())
                             {
-                                for(SyndEntry syndEntry : feed.getEntries()) 
+                                channel.setVideoCount(newValue.getVideoCount());
+                                if(channel instanceof StateSupport state)
                                 {
-                                    String fileName = FileUtils.getFileName(webPagePovider.getRootFolder(), PropertiesProvider.EXTENSION);
-                                    WebPage webPage = webPagePovider.getFactory().getWebPage(fileName, syndEntry);
-                                    if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
+                                    state.markModified();                                 
+                                }   
+
+                                DateTime lastUploadTime = channel.getLastUploadTime();                            
+
+                                YouTube.Activities.List request1 = YouTubeService.getDeafult().getService().activities().list("contentDetails,snippet");
+                                request1.setKey(googlePasswordProvider.getKey());
+                                ActivityListResponse response1 = request1.setChannelId(channel.getChannelID()).execute(); 
+                                if(response1.getItems() != null && !response1.isEmpty())
+                                {                                           
+                                    DateTime publishedAtMax = null;
+                                    for (Activity activity : response1.getItems())
                                     {
-                                        AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
-                                        if(fileTypeProvider != null)            
+                                        DateTime publishedAt = activity.getSnippet().getPublishedAt();
+                                        String type = activity.getSnippet().getType();                    
+                                        if (type.equals(YouTubeService.ACTIVITY_TYPE_UPLOAD) && (lastUploadTime == null || publishedAt.getValue() > lastUploadTime.getValue()))
                                         {
-                                            FileObject file = webPagePovider.createData(webPage, fileTypeProvider);                           
+                                            String videoID = activity.getContentDetails().getUpload().getVideoId();
+                                            String title = activity.getSnippet().getTitle();
+                                            String description = activity.getSnippet().getDescription();
+                                            String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
 
-                                             if(file != null)
-                                             { 
-                                                OutputStream os = webPagePovider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
-                                                webPagePovider.getFactory().save(webPage, os, "New RSS Web Page Created by Project: " + getTitle());
-                                                os.close();                                                   
-                                                 
-                                                 String text = getTitle() + ": " + syndEntry.getTitle();
+                                            YouTube.Videos.List request2 = YouTubeService.getDeafult().getService().videos().list("snippet,contentDetails,statistics,topicDetails");
+                                            request2.setKey(googlePasswordProvider.getKey());
+                                            VideoListResponse response2 = request2.setId(videoID).execute();  
+                                            if(response2.getItems() != null && !response2.getItems().isEmpty())
+                                            {   
+                                                YouTubeVideo video = youTubeVideoProvider.getFactory().getVideo(YouTubeVideoFactory.getProperties(response2), true);                                
+                                                FileObject file = youTubeVideoProvider.createData(video, fileTypeProvider);
 
-                                                 BufferedImage image = null;
-                                                 if(!syndEntry.getEnclosures().isEmpty())
-                                                 {
-                                                     SyndEnclosure syndEnclosure = syndEntry.getEnclosures().get(0);                                  
-                                                     if(syndEnclosure.getType().startsWith("image"))
-                                                     {
-                                                         URL url2 = new URL(syndEnclosure.getUrl());
-                                                         //Image image = Utils.resizeImage(ImageIO.read(url2), 320, 180); 
-                                                         image = ImageIO.read(url2);                                         
-                                                     }
-                                                 }
+                                                FileObject root = youTubeVideoProvider.getRootFolder();
+                                                if(root != null)
+                                                {  
+                                                    OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                                                    youTubeVideoProvider.getFactory().save(video, os, "New YouTube Video Created");
+                                                    os.close();  
+                                                }                                 
 
-                                                 IconProvider provider = channel.getLookup().lookup(IconProvider.class);
-                                                 Icon icon = ImageUtilities.image2Icon(provider.getIcon(BeanInfo.ICON_COLOR_16x16)); 
+                                                String text = getTitle() + ": " + title;
+                                                IconProvider iconProvider = getLookup().lookup(IconProvider.class);
+                                                Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16));                           
 
-                                                 JLabel baloonDetails = new JLabel();
-                                                 if(image == null)
-                                                 {
-                                                     baloonDetails.addMouseListener(FileUtils.clicked2open(file));
-                                                     baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                                                     JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), null);                                                                
-                                                     NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");                                 
-                                                 }
-                                                 else
-                                                 {
-                                                     baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), icon.getIconWidth())));
-                                                     baloonDetails.addMouseListener(FileUtils.clicked2open(file));
-                                                     baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                                                     JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));                                                                
-                                                     NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");                                  
-                                                 }
-                                             }  
-                                        }                                        
+                                                URL url = new URL(thumbnail);
+                                                BufferedImage image = ImageIO.read(url);                          
+
+                                                JLabel baloonDetails = new JLabel();
+                                                baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
+                                                baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                                baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                                JComponent details = NotificationUtils.createDetails(Utils.getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+
+                                                //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
+                                                NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                 
+                                            }                                                                    
+
+                                            if (publishedAtMax == null || publishedAt.getValue() > publishedAtMax.getValue())
+                                            {
+                                                publishedAtMax = publishedAt;
+                                            }
+                                        }
                                     }
-                                }  
+                                    if(publishedAtMax != null && (lastUploadTime == null || publishedAtMax.getValue() > lastUploadTime.getValue()))
+                                    {
+                                        channel.setLastUploadTime(publishedAtMax);                      
+                                    } 
+                                }                             
                             }
-                        }                                                    
+                        }  
+                        catch(GeneralSecurityException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
                     }
-                    catch (MalformedURLException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }
-                    catch (IOException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }    
-                    catch (FeedException e)
-                    {
-                        LOG.warning(e.getMessage());
-                    }                     
                 }
-                task.schedule(100000);                
-            }                     
+
+
+                RssProvider rssProvider = getLookup().lookup(RssProvider.class);
+                if(rssProvider != null)
+                {
+                    for(RssChannel channel : rssProvider.getChannels().getChannels())
+                    {
+                        try
+                        {
+                            URL url = new URL(channel.getFeedUrl());
+                            SyndFeedInput input = new SyndFeedInput();
+                            SyndFeed feed = input.build(new XmlReader(url));
+
+                            RssChannel newValue = rssProvider.getFactory().getRssChannel(channel.getFeedUrl(), channel.getFileName(), feed);
+                            if(!channel.getProperties().equals(newValue.getProperties()))
+                            {
+                                channel.merge(newValue);
+                                channel.markModified();
+                                WebPageProvider webPagePovider = getLookup().lookup(WebPageProvider.class);
+                                if(webPagePovider != null)
+                                {
+                                    for(SyndEntry syndEntry : feed.getEntries()) 
+                                    {
+                                        String fileName = FileUtils.getFileName(webPagePovider.getRootFolder(), PropertiesProvider.EXTENSION);
+                                        WebPage webPage = webPagePovider.getFactory().getWebPage(fileName, syndEntry);
+                                        if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
+                                        {
+                                            FileObject file = webPagePovider.createData(webPage, fileTypeProvider);
+                                            if (file != null) {
+                                                OutputStream os = webPagePovider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);
+                                                webPagePovider.getFactory().save(webPage, os, "New RSS Web Page Created by Project: " + getTitle());
+                                                os.close();
+
+                                                String text = getTitle() + ": " + syndEntry.getTitle();
+
+                                                BufferedImage image = null;
+                                                if (!syndEntry.getEnclosures().isEmpty()) {
+                                                    SyndEnclosure syndEnclosure = syndEntry.getEnclosures().get(0);
+                                                    if (syndEnclosure.getType().startsWith("image")) {
+                                                        URL url2 = new URL(syndEnclosure.getUrl());
+                                                        //Image image = Utils.resizeImage(ImageIO.read(url2), 320, 180); 
+                                                        image = ImageIO.read(url2);
+                                                    }
+                                                }
+
+                                                IconProvider provider = channel.getLookup().lookup(IconProvider.class);
+                                                Icon icon = ImageUtilities.image2Icon(provider.getIcon(BeanInfo.ICON_COLOR_16x16));
+
+                                                JLabel baloonDetails = new JLabel();
+                                                if (image == null) {
+                                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                                    JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), null);
+                                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");
+                                                } else {
+                                                    baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), icon.getIconWidth())));
+                                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                                    JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+                                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");
+                                                }
+                                            }                                       
+                                        }
+                                    }  
+                                }
+                            }                                                    
+                        }
+                        catch (MalformedURLException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                        catch (IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }    
+                        catch (FeedException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                     
+                    }             
+                }    
+                task.schedule(100000);                   
+            }                    
         }          
 
         @Override
@@ -3218,6 +3328,212 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }         
     } 
+    
+    private final class YouTubeVideoProviderImpl extends YouTubeVideoProvider implements TagsProvider, FileChangeListener, CloseSupport
+    {
+        public YouTubeVideoProviderImpl(YouTubeVideoFactory factory) 
+        {
+            super(factory);          
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        } 
+        
+        @Override
+        public void close()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(YouTubeVideo video : getVideos())
+                {
+                    FileObject file = rootDir.getFileObject(video.getVideoID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
+                    {
+                        try
+                        {
+                            if(video.isModified())
+                            {
+                                OutputStream os = file.getOutputStream();
+                                factory.save(video, os, "Updated by Home Page project: " + getTitle());
+                                os.close();
+                            }
+                            else if(video.isDeleted())
+                            {
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
+                }                
+            }
+        }          
+        
+        @Override
+        public synchronized Map<String, YouTubeVideo> getVideosById()
+        {
+            if(videos == null)
+            {
+                videos = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                            videos.put(video.getSourceID(), video);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return videos;
+        }        
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("YouTube root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }                 
+        
+        @Override
+        public FileObject createData(YouTubeVideo video, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, video.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(video.getVideoTitle(), video.getChannelTitle()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }                  
+        
+        @Override
+        public Set<String> getTags()
+        {
+            Collection<YouTubeVideo> videos = getVideos();
+            if(!videos.isEmpty())
+            {
+                Set<String> tags = new HashSet<>();  
+                for(YouTubeVideo video : videos)
+                {
+                    tags.addAll(video.getYouTubeTags());
+                }  
+                return Collections.unmodifiableSet(tags);
+            }                        
+            return Collections.EMPTY_SET;
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            setLastData(data);
+            */
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                getVideosById().put(video.getSourceID(), video);                                                              
+                sourceAdded(new SourceEventImpl(this, video));             
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            YouTubeVideo video = getVideosById().get(file.getName());  
+            if(video != null)
+            {
+                setLastSource(video);
+            }
+            */
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            YouTubeVideo video = getVideosById().remove(file.getName());  
+            if(video != null)
+            {  
+                video.notifyDeleted();
+                sourceDeleted(new SourceEventImpl(this, video));
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }                      
+    }     
     
     private final class GitHubProviderImpl extends GitHubProvider implements FileChangeListener
     {

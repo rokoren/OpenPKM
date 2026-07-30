@@ -23,7 +23,7 @@ public abstract class TrelloCardProvider implements SourceProvider<TrelloCard>
     protected Map<String, TrelloCard> cards; 
     protected FileObject rootDir;            
 
-    protected final TrelloCardFactory factory;    
+    private final TrelloCardFactory factory;    
 
     public TrelloCardProvider(TrelloCardFactory factory)
     {

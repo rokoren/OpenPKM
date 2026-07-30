@@ -74,11 +74,10 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
     }
     
     @Override
-    public YouTubeVideo getVideo(String videoID, boolean isDisplayName)
+    public YouTubeVideo getVideo(GooglePasswordProvider provider, String videoID)
     {
         try
         {         
-            GooglePasswordProvider provider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
             YouTube youtubeService = YouTubeService.getDeafult().getService();
             YouTube.Videos.List request = youtubeService.videos().list("snippet,contentDetails,statistics,topicDetails");
             //YouTube.Videos.List request = youtubeService.videos().list("snippet");
@@ -193,7 +192,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
                     }                     
                 }                 
 
-                return getVideo(props, isDisplayName);
+                return getVideo(props, true);
             }                 
         }
         catch (IOException e)

@@ -10,11 +10,9 @@ import com.google.api.services.youtube.model.Activity;
 import com.google.api.services.youtube.model.ActivityListResponse;
 import com.google.api.services.youtube.model.ChannelListResponse;
 import com.google.api.services.youtube.model.VideoListResponse;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Image;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
@@ -43,16 +41,12 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
-import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
@@ -84,7 +78,6 @@ import openpkm.base.StateSupport;
 import openpkm.base.TagsProvider;
 import openpkm.base.UpdateCookie;
 import openpkm.base.Video;
-import openpkm.base.VisibilityProvider;
 import openpkm.base.WatchLaterProvider;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
@@ -146,6 +139,7 @@ import openpkm.base.RecycleBinProvider;
 import openpkm.base.SourceEvent;
 import openpkm.base.SourceEventListener;
 import openpkm.base.WorkflowProvider;
+import openpkm.utils.NotificationUtils;
 import openpkm.utils.SourceEventImpl;
 
 /**
@@ -153,9 +147,7 @@ import openpkm.utils.SourceEventImpl;
  * @author Rok Koren
  */
 public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, SourceProviders, BatchUpdateSupport
-{    
-    public static final String PROP_LAST_UPLOAD_TIME = "last.upload.time";    
-    
+{           
     private static final String DATA_FOLDER = "data";    
     
     private static final int POSITION_NOTES       = 100;
@@ -722,6 +714,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         } 
     }
     
+    @Override
     public DateTime getLastUploadTime()
     {
         String string = props.getProperty(PROP_LAST_UPLOAD_TIME);
@@ -732,6 +725,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         return null;
     }
 
+    @Override
     public void setLastUploadTime(DateTime time)
     {
         if(time == null)
@@ -3064,80 +3058,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-        }
-        
-        private static Properties getProperties(VideoListResponse response)
-        {
-            Properties props = new Properties();
-            
-            props.setProperty(WorkflowProvider.PROP_WORKFLOW, WorkflowProvider.Workflow.WATCH_LATER.toString());
-            props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, VisibilityProvider.Modifier.PROTECTED.toString());            
-            
-            String videoID = response.getItems().get(0).getId();
-            props.setProperty(YouTubeVideo.PROP_VIDEO_ID, videoID); 
-            String videoTitle = response.getItems().get(0).getSnippet().getTitle();
-            props.setProperty(YouTubeVideo.PROP_VIDEO_TITLE, videoTitle); 
-            String channelID = response.getItems().get(0).getSnippet().getChannelId();
-            props.setProperty(YouTubeVideo.PROP_CHANNEL_ID, channelID);  
-            String channelTitle = response.getItems().get(0).getSnippet().getChannelTitle();
-            props.setProperty(YouTubeVideo.PROP_CHANNEL_TITLE, channelTitle);            
-            DateTime publishedAt = response.getItems().get(0).getSnippet().getPublishedAt();
-            props.setProperty(YouTubeVideo.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339()); 
-            String duration = response.getItems().get(0).getContentDetails().getDuration();  
-            props.setProperty(YouTubeVideo.PROP_DURATION, duration); 
-            String caption = response.getItems().get(0).getContentDetails().getCaption();  
-            props.setProperty(YouTubeVideo.PROP_CAPTION, caption);             
-            BigInteger views = response.getItems().get(0).getStatistics().getViewCount();  
-            if(views != null)
-            {
-                props.setProperty(YouTubeVideo.PROP_VIEW_COUNT, views.toString());                 
-            }
-            List<String> youTubeTags = response.getItems().get(0).getSnippet().getTags();
-            if(youTubeTags != null)
-            {
-                StringJoiner joiner = new StringJoiner(",");
-                for(String tag : youTubeTags)
-                {
-                    joiner.add(tag);
-                }
-                props.setProperty(YouTubeVideo.PROP_YOUTUBE_TAGS, joiner.toString());
-            }   
-            if(response.getItems().get(0).getTopicDetails() != null)
-            {
-                List<String> topicCategories = response.getItems().get(0).getTopicDetails().getTopicCategories();                
-                if(topicCategories != null)
-                {
-                    StringJoiner joiner = new StringJoiner(",");
-                    for(String topic : topicCategories)
-                    {
-                        joiner.add(topic);
-                    }
-                    props.setProperty(YouTubeVideo.PROP_TOPIC_CATEGORIES, joiner.toString());
-                }                                                
-            }             
-            String defaultLanguage = response.getItems().get(0).getSnippet().getDefaultLanguage();
-            props.setProperty(YouTubeVideo.PROP_DEFAULT_LANGUAGE, defaultLanguage);
-            String defaultAudioLanguage = response.getItems().get(0).getSnippet().getDefaultAudioLanguage();               
-            props.setProperty(YouTubeVideo.PROP_DEFAULT_AUDIO_LANGUAGE, defaultAudioLanguage);
-            String description = response.getItems().get(0).getSnippet().getDescription();
-            props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description); 
-            String liveBroadcastContent = response.getItems().get(0).getSnippet().getLiveBroadcastContent();
-            props.setProperty(YouTubeVideo.PROP_LIVEBROADCAST_CONTENT, liveBroadcastContent); 
-            
-            String thumbnailDefault = response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();
-            props.setProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT, thumbnailDefault); 
-            String thumbnailMedium = response.getItems().get(0).getSnippet().getThumbnails().getMedium().getUrl();
-            props.setProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM, thumbnailMedium); 
-            String thumbnailHigh = response.getItems().get(0).getSnippet().getThumbnails().getHigh().getUrl();
-            props.setProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH, thumbnailHigh); 
-            if(response.getItems().get(0).getSnippet().getThumbnails().getStandard() != null)
-            {
-                String thumbnailStandard = response.getItems().get(0).getSnippet().getThumbnails().getStandard().getUrl();  
-                props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);                
-            }             
-            
-            return props;
-        }        
+        }               
 
         @Override
         public void run()
@@ -3171,7 +3092,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                                 VideoListResponse response2 = request2.setId(videoID).execute();  
                                 if(response2.getItems() != null && !response2.getItems().isEmpty())
                                 {   
-                                    YouTubeVideo video = factory.getVideo(getProperties(response2), true);                                
+                                    YouTubeVideo video = factory.getVideo(YouTubeVideoFactory.getProperties(response2), true);                                
                                     FileObject file = createData(video, fileTypeProvider);
 
                                     FileObject root = getRootFolder();
@@ -3193,7 +3114,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                                     baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
                                     baloonDetails.addMouseListener(FileUtils.clicked2open(file));
                                     baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                                    JComponent details = createDetails(getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+                                    JComponent details = NotificationUtils.createDetails(Utils.getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
 
                                     //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
                                     NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                 
@@ -3220,46 +3141,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                     LOG.warning(e.getMessage());
                 }                  
             }                                    
-        }
-        
-        private static String getDescription(String desc, int max)
-        {
-            if(desc.length() > max)
-            {
-                return desc.substring(0, max) + "...";
-            }  
-            return desc;
-        }          
-        
-        private static JComponent createDetails(String text, ActionListener action, Icon icon) 
-        {
-            if (null == action) 
-            {
-                return new JLabel(text);
-            }   
-
-            JButton btn = new JButton(Utils.convertStringToHtml(text, 50));
-            btn.setFocusable(false);
-            btn.setBorder(BorderFactory.createEmptyBorder());
-            btn.setBorderPainted(false);
-            btn.setFocusPainted(false);
-            btn.setOpaque(false);
-            btn.setContentAreaFilled(false);
-            btn.setFont(btn.getFont().deriveFont(btn.getFont().getSize() + 2));
-            btn.addActionListener(action);
-            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            Color c = UIManager.getColor("nb.html.link.foreground"); //NOI18N
-            if (c != null) {
-                btn.setForeground(c);
-            }
-            btn.setIcon(icon);
-            btn.setIconTextGap(10);        
-            btn.setVerticalTextPosition(SwingConstants.TOP);
-            btn.setHorizontalTextPosition(SwingConstants.LEFT);
-            btn.setVerticalAlignment(SwingConstants.CENTER);
-            btn.setHorizontalAlignment(SwingConstants.LEFT);
-            return btn;
-        }        
+        }                       
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) 

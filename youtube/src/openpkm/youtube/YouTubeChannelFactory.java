@@ -4,6 +4,8 @@
  */
 package openpkm.youtube;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Properties;
 import java.util.logging.Logger;
 import openpkm.base.SourceFactory;
@@ -19,5 +21,5 @@ public interface YouTubeChannelFactory extends SourceFactory<YouTubeChannel>
     RequestProcessor RP = new RequestProcessor(YouTubeChannelFactory.class);  
     
     YouTubeChannel getChannel(Properties props);       
-    YouTubeChannel getChannel(String channelID);     
+    YouTubeChannel getChannel(GooglePasswordProvider provider, String channelID) throws GeneralSecurityException, IOException;    
 }

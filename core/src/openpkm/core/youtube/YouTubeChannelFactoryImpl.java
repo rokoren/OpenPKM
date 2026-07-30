@@ -5,6 +5,8 @@
 package openpkm.core.youtube;
 
 import com.google.api.client.util.DateTime;
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.ChannelListResponse;
 import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -12,10 +14,13 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -38,9 +43,11 @@ import openpkm.domain.Domain;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.ShortDescriptionProviderImpl;
 import openpkm.utils.Utils;
+import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
+import openpkm.youtube.YouTubeService;
 import org.cef.browser.CefBrowser;
 import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
@@ -68,8 +75,64 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
     }
 
     @Override
-    public YouTubeChannel getChannel(String channelID) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public YouTubeChannel getChannel(GooglePasswordProvider provider, String channelID) throws GeneralSecurityException, IOException
+    {
+        YouTube service = YouTubeService.getDeafult().getService();
+        YouTube.Channels.List request = service.channels().list("snippet, statistics, topicDetails, status, brandingSettings");                       
+        request.setKey(provider.getKey());
+        ChannelListResponse response = request.setId(channelID).execute();  
+        
+        if(response.getItems().get(0).getId().equals(channelID))
+        {
+            String title = response.getItems().get(0).getSnippet().getTitle();
+            String description = response.getItems().get(0).getSnippet().getDescription();
+            String thumbnail = response.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl();  
+            DateTime publishedAt = response.getItems().get(0).getSnippet().getPublishedAt();
+            String customUrl = response.getItems().get(0).getSnippet().getCustomUrl();
+            String country = response.getItems().get(0).getSnippet().getCountry();
+            String localizedTitle = response.getItems().get(0).getSnippet().getLocalized().getTitle();
+            String localizedDescription = response.getItems().get(0).getSnippet().getLocalized().getDescription();  
+            BigInteger viewCount = response.getItems().get(0).getStatistics().getViewCount(); 
+            BigInteger subscriberCount = response.getItems().get(0).getStatistics().getSubscriberCount(); 
+            BigInteger videoCount = response.getItems().get(0).getStatistics().getVideoCount(); 
+            BigInteger commentCount = response.getItems().get(0).getStatistics().getCommentCount(); 
+            String privacyStatus = response.getItems().get(0).getStatus().getPrivacyStatus();
+            List<String> topicCategories = response.getItems().get(0).getTopicDetails().getTopicCategories();  
+            
+            Properties props = new Properties();
+            props.setProperty(YouTubeChannel.PROP_CHANNEL_ID, channelID); 
+            props.setProperty(YouTubeChannel.PROP_TITLE, title);       
+            props.setProperty(YouTubeChannel.PROP_DESCRIPTION, description);
+            props.setProperty(YouTubeChannel.PROP_THUMBNAIL, thumbnail);
+            props.setProperty(YouTubeChannel.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());
+            props.setProperty(YouTubeChannel.PROP_CUSTOM_URL, customUrl);
+            if(country != null)
+            {
+                props.setProperty(YouTubeChannel.PROP_COUNTRY, country);                
+            }
+            props.setProperty(YouTubeChannel.PROP_LOCALIZED_TITLE, localizedTitle);
+            props.setProperty(YouTubeChannel.PROP_LOCALIZED_DESCRIPTION, localizedDescription);
+            props.setProperty(YouTubeChannel.PROP_VIEW_COUNT, viewCount.toString());
+            props.setProperty(YouTubeChannel.PROP_SUBSCRIBER_COUNT, subscriberCount.toString());
+            props.setProperty(YouTubeChannel.PROP_VIDEO_COUNT, videoCount.toString());
+            if(commentCount != null)
+            {
+                props.setProperty(YouTubeChannel.PROP_COMMENT_COUNT, commentCount.toString());
+            }
+            props.setProperty(YouTubeChannel.PROP_PRIVACY_STATUS, privacyStatus);
+            if(topicCategories != null)
+            {
+                StringJoiner joiner = new StringJoiner(",");
+                for(String topicCategory : topicCategories)
+                {
+                    joiner.add(topicCategory);
+                }            
+                props.setProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, joiner.toString());                
+            }            
+            
+            return getChannel(props);
+        }
+        return null;
     }
 
     @Override
@@ -110,12 +173,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
         @Override
         public LocalDateTime getTimeCreated() 
         {
-            String created = props.getProperty(PROP_TIME_CREATED);
-            if(created != null)
-            {
-                return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
-            }
-            return null;
+            return Instant.ofEpochMilli(getPublishedAt().getValue()).atZone(ZoneId.systemDefault()).toLocalDateTime();
         }           
 
         @Override
@@ -573,6 +631,40 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
                 propertyChangeSupport.firePropertyChange(PROP_PRIVACY_STATUS, oldValue, privacyStatus);
             } 
         }  
+        
+        @Override
+        public DateTime getLastUploadTime()
+        {
+            String string = props.getProperty(PROP_LAST_UPLOAD_TIME);
+            if(string != null)
+            {
+                return new DateTime(string);
+            }
+            return null;
+        }
+
+        @Override
+        public void setLastUploadTime(DateTime time)
+        {
+            if(time == null)
+            {
+                Object oldValue = props.remove(PROP_LAST_UPLOAD_TIME);
+                if(oldValue != null)
+                {
+                    oldValue = new DateTime(oldValue.toString());
+                }            
+                propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_LAST_UPLOAD_TIME, time.toStringRfc3339());  
+                if(oldValue != null)
+                {
+                    oldValue = new DateTime(oldValue.toString());
+                }
+                propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
+            }
+        }         
         
 // TODO MultiViewDescription        
         
