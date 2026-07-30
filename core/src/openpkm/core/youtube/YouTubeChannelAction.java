@@ -22,9 +22,11 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.PropertiesProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.core.TopicWizardPanel;
+import openpkm.domain.Domain;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.youtube.YouTubeProjectWizardPanel1;
@@ -160,16 +162,25 @@ public class YouTubeChannelAction implements ActionListener
             {
                 FileObject file = provider.createData(channel, fileType); 
                 
-                FileSystem fs = provider.getRootFolder().getFileSystem();
-                fs.runAtomicAction(() -> {
-                    FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channel.getChannelID());           
-                    FileObject projectFolder = FileUtil.createFolder(projectDirectory, YouTubeChannelProjectFactory.PROJECT_FOLDER);                   
+                if(provider.getProvider() instanceof Domain)
+                {
+                    OutputStream os = provider.getRootFolder().createAndOpen(channel.getChannelID() + "." + PropertiesProvider.EXTENSION);  
+                    provider.getFactory().save(channel, os, "New YouTube Channel Created by Wizard");
+                    os.close();                      
+                }
+                else
+                {
+                    FileSystem fs = provider.getRootFolder().getFileSystem();
+                    fs.runAtomicAction(() -> {
+                        FileObject projectDirectory = FileUtil.createFolder(provider.getRootFolder(), channel.getChannelID());           
+                        FileObject projectFolder = FileUtil.createFolder(projectDirectory, YouTubeChannelProjectFactory.PROJECT_FOLDER);                   
 
-                    OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
-                    props.store(os, "YouTube Channel Project"); 
-                    os.close();   
-                });                  
-                                 
+                        OutputStream os = projectFolder.createAndOpen(YouTubeChannelProjectFactory.PROJECT_FILE);
+                        props.store(os, "YouTube Channel Project"); 
+                        os.close();   
+                    });                      
+                }
+                                                                 
                 StatusDisplayer.getDefault().setStatusText("YouTube Channel saved with title: " + channel.getTitle());                         
 
                 NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube Channel in editor?", channel.getTitle(), NotifyDescriptor.YES_NO_OPTION);

@@ -158,10 +158,11 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     private static final int POSITION_LINKS       = 500;
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
-    private static final int POSITION_RSS         = 800;    
-    private static final int POSITION_READ_LATER  = 900;
-    private static final int POSITION_WATCH_LATER = 1000;    
-    private static final int POSITION_RECYCLE_BIN = 1100;     
+    private static final int POSITION_DOMAINS     = 800;      
+    private static final int POSITION_RSS         = 900;    
+    private static final int POSITION_READ_LATER  = 1000;
+    private static final int POSITION_WATCH_LATER = 1100;    
+    private static final int POSITION_RECYCLE_BIN = 1200;     
 
     private static final Logger LOG = Logger.getLogger(HomePageProject.class.getName());        
     
@@ -376,6 +377,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
 
             list.addAll(sources.values());
             
+            list.add(new DomainProviderImpl()); 
             list.add(new BookDataGroupProviderImpl()); 
             list.add(new ArticleDataGroupProviderImpl()); 
             list.add(new DocumentDataGroupProviderImpl()); 
@@ -1179,6 +1181,132 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     
 // TODO DataGroup
    
+    private final class DomainProviderImpl implements DataGroupProvider, SourceEventListener
+    {                        
+        private final ChangeSupport changeSupport; 
+
+        public DomainProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return HomePageProject.this;
+        }   
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_DOMAIN;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_DOMAIN;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_DOMAIN;
+        }          
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_DOMAINS;
+        }                
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.titleComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }        
+
+        @Override
+        public String getName() 
+        {
+            return "domain";
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Domain domain = source.getLookup().lookup(Domain.class);
+                        if(domain != null)
+                        {
+                            return true;
+                        }  
+                    }            
+                }                                                               
+            }                                    
+            return false;
+        }           
+
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Domain)
+            {
+                changeSupport.fireChange();
+            }
+        }
+    }     
+    
     private final class RecycleBinProviderImpl implements RecycleBinProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 

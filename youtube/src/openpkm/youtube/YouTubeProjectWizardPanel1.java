@@ -164,7 +164,7 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
             int spaceHeight = image.getWidth() / 2;
 
             int newWidth = image.getWidth() + 2 * spaceWidth;
-            int newHeight = image.getHeight() + 2 * spaceHeight;
+            int newHeight = image.getHeight() + 4 * spaceHeight;
             BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
 
             // Get the graphics context to draw on the new image
