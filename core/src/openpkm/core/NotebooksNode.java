@@ -22,8 +22,8 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
-import openpkm.base.NotebooksProvider;
-import openpkm.base.Notebook;
+import openpkm.base.ProjectManagementProvider;
+import openpkm.base.ProjectManagement;
 
 /**
  *
@@ -33,9 +33,9 @@ public class NotebooksNode extends AbstractNode implements NodeSupport
 {
     private static final Logger LOG = Logger.getLogger(NotebooksNode.class.getName());    
     
-    private final NotebooksProvider provider;
+    private final ProjectManagementProvider provider;
     
-    public NotebooksNode(NotebooksProvider provider) 
+    public NotebooksNode(ProjectManagementProvider provider) 
     {
         super(new ChildrenImpl(provider), Lookups.proxy(provider.getProvider()));
         setName(provider.getName());
@@ -91,11 +91,11 @@ public class NotebooksNode extends AbstractNode implements NodeSupport
         */
     } 
     
-    private static final class ChildrenImpl extends Children.Keys<Notebook> implements ChangeListener 
+    private static final class ChildrenImpl extends Children.Keys<ProjectManagement> implements ChangeListener 
     {
-        private final NotebooksProvider provider;            
+        private final ProjectManagementProvider provider;            
 
-        public ChildrenImpl(NotebooksProvider provider)
+        public ChildrenImpl(ProjectManagementProvider provider)
         {
             this.provider = provider;   
             provider.addChangeListener(this);             
@@ -109,8 +109,8 @@ public class NotebooksNode extends AbstractNode implements NodeSupport
 
         private void updateKeys() 
         { 
-            SortedSet<Notebook> sorted = new TreeSet<Notebook>(titleComparator());
-            sorted.addAll(provider.getNotebooks());
+            SortedSet<ProjectManagement> sorted = new TreeSet<ProjectManagement>(titleComparator());
+            sorted.addAll(provider.getProjects());
             setKeys(sorted); 
             
             /*
@@ -127,11 +127,11 @@ public class NotebooksNode extends AbstractNode implements NodeSupport
         protected void removeNotify()
         {
             provider.removeChangeListener(this);            
-            setKeys(Collections.<Notebook>emptySet());
+            setKeys(Collections.<ProjectManagement>emptySet());
         }
 
         @Override
-        protected Node[] createNodes(Notebook board) 
+        protected Node[] createNodes(ProjectManagement board) 
         {
             return new Node[] {new ProjectNode(board)};
         }          
@@ -143,12 +143,12 @@ public class NotebooksNode extends AbstractNode implements NodeSupport
         }                 
     }  
     
-    private static Comparator<Notebook> titleComparator() 
+    private static Comparator<ProjectManagement> titleComparator() 
     {
-        return new Comparator<Notebook>() 
+        return new Comparator<ProjectManagement>() 
         {
             @Override
-            public int compare(Notebook board1, Notebook board2) 
+            public int compare(ProjectManagement board1, ProjectManagement board2) 
             {
                 TitleProvider provider1 = board1.getLookup().lookup(TitleProvider.class);
                 TitleProvider provider2 = board2.getLookup().lookup(TitleProvider.class);

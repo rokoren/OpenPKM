@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
-import openpkm.base.Notebook;
-import openpkm.base.NotebooksProvider;
 import openpkm.utils.Utils;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
@@ -30,6 +28,8 @@ import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.NbBundle.Messages;
+import openpkm.base.ProjectManagementProvider;
+import openpkm.base.ProjectManagement;
 
 /**
  *
@@ -48,9 +48,9 @@ public class TrelloBoardAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(TrelloBoardAction.class.getName());     
     
-    private final NotebooksProvider provider;
+    private final ProjectManagementProvider provider;
 
-    public TrelloBoardAction(NotebooksProvider provider)
+    public TrelloBoardAction(ProjectManagementProvider provider)
     {
         this.provider = provider;
     }   
@@ -88,8 +88,8 @@ public class TrelloBoardAction implements ActionListener
             String boardID = props.getProperty(TrelloProject.PROP_BOARD_ID);
             if(boardID != null)
             {
-                props.setProperty(Notebook.PROP_APP_ID, Utils.getAppID());
-                props.setProperty(Notebook.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));  
+                props.setProperty(ProjectManagement.PROP_APP_ID, Utils.getAppID());
+                props.setProperty(ProjectManagement.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));  
 
                 try
                 {  
@@ -105,10 +105,10 @@ public class TrelloBoardAction implements ActionListener
                     Project project = ProjectManager.getDefault().findProject(projectDirectory);
                     if(project != null)
                     {
-                        Notebook notebook = project.getLookup().lookup(Notebook.class);
+                        ProjectManagement notebook = project.getLookup().lookup(ProjectManagement.class);
                         if(notebook != null)
                         {
-                            provider.addNotebook(notebook);
+                            provider.addProject(notebook);
                             /*
                             Project[] projects = {domain};
                             OpenProjects.getDefault().open(projects, false);   

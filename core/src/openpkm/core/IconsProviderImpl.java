@@ -25,7 +25,10 @@ public class IconsProviderImpl implements IconsProvider
     private static final String ICON_WEB_PAGE = "openpkm/core/resources/www_page.png";     
     
     @StaticResource()
-    private static final String ICON_NOTEBOOKS = "openpkm/core/resources/books_stack.png";    
+    private static final String ICON_NOTEBOOKS = "openpkm/core/resources/books_stack.png";   
+    
+    @StaticResource()
+    private static final String ICON_PROJECTS = "openpkm/core/resources/file_manager.png";      
     
     @StaticResource()
     private static final String ICON_HOME_PAGE = "openpkm/core/resources/home_page.png";     
@@ -162,7 +165,9 @@ public class IconsProviderImpl implements IconsProvider
             case WEB_PAGE:
             return ICON_WEB_PAGE;            
             case NOTEBOOKS:
-            return ICON_NOTEBOOKS;            
+            return ICON_NOTEBOOKS;              
+            case PROJECTS:
+            return ICON_PROJECTS;                         
             case HOME_PAGE:
             return ICON_HOME_PAGE;   
             case BLOG:

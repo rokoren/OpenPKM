@@ -9,7 +9,7 @@ import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 import org.netbeans.spi.project.ui.support.NodeList;
-import openpkm.base.NotebooksProvider;
+import openpkm.base.ProjectManagementProvider;
 
 /**
  *
@@ -25,7 +25,7 @@ public class BoardNodeFactory implements NodeFactory
     {
         assert project != null;
         
-        NotebooksProvider provider = project.getLookup().lookup(NotebooksProvider.class);
+        ProjectManagementProvider provider = project.getLookup().lookup(ProjectManagementProvider.class);
         if(provider != null)
         {
             return NodeFactorySupport.fixedNodeList(new NotebooksNode(provider));             

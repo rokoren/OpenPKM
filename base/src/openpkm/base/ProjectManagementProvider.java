@@ -17,12 +17,12 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-public interface NotebooksProvider
+public interface ProjectManagementProvider
 {
     FileObject getRootDirectory() throws IOException;    
-    Collection<Notebook> getNotebooks();  
-    void addNotebook(Notebook notebook);
-    void removeNotebook(String notebookID);
+    Collection<ProjectManagement> getProjects();  
+    void addProject(ProjectManagement project);
+    void removeProject(String projectID);
     Lookup.Provider getProvider();
     void addChangeListener(ChangeListener listener);
     void removeChangeListener(ChangeListener listener); 

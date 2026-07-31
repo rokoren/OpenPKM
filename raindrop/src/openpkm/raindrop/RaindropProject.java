@@ -122,8 +122,6 @@ import openpkm.youtube.YouTubeVideoProvider;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.LocalFileSystem;
 import org.openide.util.Utilities;
-import openpkm.base.NotebooksProvider;
-import openpkm.base.Notebook;
 import openpkm.base.RecycleBinProvider;
 import openpkm.base.SourceEvent;
 import openpkm.base.SourceProviderWrapper;
@@ -149,6 +147,8 @@ import openpkm.base.WorkflowProvider;
 import openpkm.utils.SourceEventImpl;
 import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObjectNotFoundException;
+import openpkm.base.ProjectManagementProvider;
+import openpkm.base.ProjectManagement;
 
 /**
  *
@@ -176,8 +176,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private static final int POSITION_LINKS       = 500;
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
-    private static final int POSITION_DOMAINS     = 800;  
-    private static final int POSITION_RECYCLE_BIN = 900;      
+    private static final int POSITION_RECYCLE_BIN = 800;     
+    private static final int POSITION_DOMAINS     = 900;       
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
@@ -380,7 +380,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 */
                 
                 list.add(new DomainProviderImpl()); 
-                list.add(new NotebooksProviderImpl()); 
+                list.add(new ProjectManagementProviderImpl()); 
                 list.add(new HtmlFilesProviderImpl());                                 
                 list.add(new KnowledgeGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
@@ -923,16 +923,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
 // TODO BoardsProvider
 
-    private final class NotebooksProviderImpl implements NotebooksProvider
-    {                        
-        private static final String ROOT_FOLDER = "notebook";          
+    private final class ProjectManagementProviderImpl implements ProjectManagementProvider
+    {                 
+        private static final String ROOT_FOLDER = "projects";          
         
-        private Map<String, Notebook> notebooks; 
+        private Map<String, ProjectManagement> projects; 
         private FileObject rootDir;            
         
         private final ChangeSupport changeSupport;              
 
-        public NotebooksProviderImpl()
+        public ProjectManagementProviderImpl()
         {
             changeSupport = new ChangeSupport(this); 
         } 
@@ -952,30 +952,30 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             return rootDir;       
         }         
         
-        private synchronized Map<String, Notebook> getNotebooksById()
+        private synchronized Map<String, ProjectManagement> getProjectsById()
         {
-            if(notebooks == null)
+            if(projects == null)
             {
-                notebooks = new HashMap<>();
+                projects = new HashMap<>();
                 try
                 {
                     for (FileObject fo : getRootDirectory().getChildren()) 
                     {
                         if(fo.isFolder())
                         {
-                            Project project = ProjectManager.getDefault().findProject(fo);
-                            if(project instanceof Notebook notebook)
+                            Project prj = ProjectManager.getDefault().findProject(fo);
+                            if(prj instanceof ProjectManagement project)
                             {
-                                notebooks.put(notebook.getNotebookID(), notebook);
+                                projects.put(project.getProjectID(), project);
                             }                                                                                    
                         }
                         else
                         {
                             DataObject data = DataObject.find(fo);
-                            Notebook notebook = data.getLookup().lookup(Notebook.class);
-                            if(notebook != null)
+                            ProjectManagement project = data.getLookup().lookup(ProjectManagement.class);
+                            if(project != null)
                             {
-                                notebooks.put(notebook.getNotebookID(), notebook);
+                                projects.put(project.getProjectID(), project);
                             }                            
                         }                                                                                                                                            
                     }                      
@@ -985,27 +985,27 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                     LOG.warning(e.getMessage());
                 }                              
             }
-            return notebooks;
+            return projects;
         }  
 
         @Override
-        public Collection<Notebook> getNotebooks()
+        public Collection<ProjectManagement> getProjects()
         {
-            return Collections.unmodifiableCollection(getNotebooksById().values());
+            return Collections.unmodifiableCollection(getProjectsById().values());
         }
         
         @Override
-        public void addNotebook(Notebook notebook)
+        public void addProject(ProjectManagement project)
         {
-            getNotebooksById().put(notebook.getNotebookID(), notebook);
+            getProjectsById().put(project.getProjectID(), project);
             changeSupport.fireChange();            
         }
         
         @Override
-        public void removeNotebook(String motebookID)
+        public void removeProject(String projectID)
         {
-            Notebook notebook = getNotebooksById().remove(motebookID);
-            if(notebook != null)
+            ProjectManagement project = getProjectsById().remove(projectID);
+            if(project != null)
             {
                 changeSupport.fireChange();                            
             }
@@ -1015,7 +1015,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         public List<Action> getActions() 
         {
             List<Action> actions = new ArrayList();
-            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/Notebook"));         
+            actions.addAll(Utilities.actionsForPath("Actions/OpenPKM/ProjectManagement"));         
             return actions;
         }        
         
@@ -1040,20 +1040,20 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public String getName() 
         {
-            return "notebook";
+            return "project_management";
         }
 
         @Override
         public String getDisplayName() 
         {
-            return "Notebooks";
+            return "Projects";
         }
 
         @Override
         public Image getIcon(boolean hasChildren) 
         {
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(IconsProvider.ICON.NOTEBOOKS);
+            return provider.getImage(IconsProvider.ICON.PROJECTS);
         }               
     }     
     

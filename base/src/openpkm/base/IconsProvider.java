@@ -21,6 +21,7 @@ public interface IconsProvider
         DOMAINS,
         WEB_PAGE,
         NOTEBOOKS,
+        PROJECTS,
         HOME_PAGE,
         BLOG,
         NOTES,

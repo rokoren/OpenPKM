@@ -100,8 +100,6 @@ import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.TopComponent;
-import openpkm.base.NotebooksProvider;
-import openpkm.base.Notebook;
 import openpkm.base.Source;
 import openpkm.base.SourceEvent;
 import openpkm.base.SourceEventListener;
@@ -131,12 +129,14 @@ import openpkm.utils.SourceEventImpl;
 import openpkm.youtube.GooglePasswordProvider;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
+import openpkm.base.ProjectManagementProvider;
+import openpkm.base.ProjectManagement;
 
 /**
  *
  * @author Rok Koren
  */
-public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, BatchUpdateSupport
+public class TrelloProject implements ProjectManagement, TrelloBoard, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_ACCOUNT_USERNAME  = "account.username";
     public static final String PROP_WORKSPACE_ID      = "workspace.id";    
@@ -539,7 +539,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
 // TODO Notebook  
     
     @Override
-    public String getNotebookID() 
+    public String getProjectID() 
     {
         return getBoardID();
     }    
@@ -902,7 +902,7 @@ public class TrelloProject implements Notebook, TrelloBoard, SourceProviders, Ba
                     try
                     {
                         Project project = ProjectManager.getDefault().findProject(parent);
-                        NotebooksProvider provider = project.getLookup().lookup(NotebooksProvider.class);
+                        ProjectManagementProvider provider = project.getLookup().lookup(ProjectManagementProvider.class);
                         if(provider != null)
                         {
                             return project;                        
