@@ -22,6 +22,9 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Book;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
@@ -29,7 +32,8 @@ import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.core.TopicWizardPanel;
+import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.reference.AbstractFilesProvider;
 import openpkm.reference.BookWizardPanel2;
 import openpkm.reference.Reference;
@@ -79,6 +83,7 @@ public class BookAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new FileWizardPanel1(AbstractFilesProvider.BOOKS));
         panels.add(new TopicWizardPanel());
+        panels.add(new GoalWizardPanel());
         panels.add(new BookWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
@@ -111,6 +116,7 @@ public class BookAction implements ActionListener
             String title = (String)wiz.getProperty(TitleProvider.PROP_TITLE);
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);    
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME)); 
@@ -162,6 +168,20 @@ public class BookAction implements ActionListener
                         joiner.add(knowledgeGraphProvider.getTreeID(topic));
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
+                }
+            } 
+            
+            if(goals != null)
+            {
+                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                if(goalsGraphProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Goal goal : goals)
+                    {
+                        joiner.add(goalsGraphProvider.getTreeID(goal));
+                    }
+                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
                 }
             }              
 

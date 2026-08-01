@@ -30,7 +30,6 @@ import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.core.TopicWizardPanel;
 import openpkm.utils.ContentProvider;
 import openpkm.utils.Utils;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -50,6 +49,7 @@ import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
 import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 
 /**
  *

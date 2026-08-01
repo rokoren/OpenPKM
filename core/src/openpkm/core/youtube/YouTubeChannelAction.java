@@ -22,10 +22,14 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
-import openpkm.core.TopicWizardPanel;
+import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.domain.Domain;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelProvider;
@@ -70,6 +74,7 @@ public class YouTubeChannelAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeProjectWizardPanel1());
         panels.add(new TopicWizardPanel());
+        panels.add(new GoalWizardPanel());        
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -113,7 +118,8 @@ public class YouTubeChannelAction implements ActionListener
             String privacyStatus = (String) wiz.getProperty(YouTubeChannel.PROP_PRIVACY_STATUS);
             List<String> topicCategories = (List<String>) wiz.getProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES); 
             
-            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);          
+            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS); 
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
             
             Properties props = new Properties();
             props.setProperty(YouTubeChannel.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
@@ -156,6 +162,20 @@ public class YouTubeChannelAction implements ActionListener
                 }
                 props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString()); 
             }
+            
+            if(goals != null)
+            {
+                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                if(goalsGraphProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Goal goal : goals)
+                    {
+                        joiner.add(goalsGraphProvider.getTreeID(goal));
+                    }
+                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
+                }
+            }             
 
             YouTubeChannel channel = provider.getFactory().getChannel(props);
             try

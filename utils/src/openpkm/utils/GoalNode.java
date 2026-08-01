@@ -197,7 +197,7 @@ public class GoalNode extends AbstractNode
                 String name = (String) wiz.getProperty("name");
                 String tag = (String) wiz.getProperty("tag");
                 VisibilityProvider.Modifier visibilityModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
-                //provider.addChildrenGoal(goal.getGoalID(), name, tag, visibilityModifier);
+                provider.addChildrenGoal(goal.getGoalID(), name, tag, null, null, null, null, null, null, null, null, null, visibilityModifier);
             }
         }
     }     

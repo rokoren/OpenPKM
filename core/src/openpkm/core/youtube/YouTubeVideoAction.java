@@ -22,13 +22,17 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.core.TopicWizardPanel;
+import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.reference.Reference;
 import openpkm.utils.Utils;
 import openpkm.youtube.YouTubeVideoProvider;
@@ -71,6 +75,7 @@ public final class YouTubeVideoAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeWizardPanel1());
         panels.add(new TopicWizardPanel());
+        panels.add(new GoalWizardPanel());
         /*
         panels.add(new YouTubeWizardPanel2());
         panels.add(new YouTubeWizardPanel3());
@@ -116,10 +121,12 @@ public final class YouTubeVideoAction implements ActionListener
             String thumbnailDefault = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_DEFAULT);
             String thumbnailMedium = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_MEDIUM);
             String thumbnailHigh = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_HIGH);
-            String thumbnailStandard = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD);
+            String thumbnailStandard = (String) wiz.getProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD);          
+            List<String> youTubeTags = (List<String>) wiz.getProperty(YouTubeVideo.PROP_YOUTUBE_TAGS);   
+            
             List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
-            List<String> youTubeTags = (List<String>) wiz.getProperty(YouTubeVideo.PROP_YOUTUBE_TAGS);        
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);              
 
             Properties props = new Properties();
             props.setProperty(Reference.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));             
@@ -173,6 +180,17 @@ public final class YouTubeVideoAction implements ActionListener
             {
                 props.setProperty(YouTubeVideo.PROP_THUMBNAIL_STANDARD, thumbnailStandard);
             }
+            
+            if(youTubeTags != null)
+            {
+                StringJoiner joiner = new StringJoiner(",");
+                for(String tag : youTubeTags)
+                {
+                    joiner.add(tag);
+                }
+                props.setProperty(YouTubeVideo.PROP_YOUTUBE_TAGS, joiner.toString());
+            }             
+            
             if(tags != null)
             {
                 StringJoiner joiner = new StringJoiner(",");
@@ -195,17 +213,21 @@ public final class YouTubeVideoAction implements ActionListener
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
-            }   
+            } 
             
-            if(youTubeTags != null)
+            if(goals != null)
             {
-                StringJoiner joiner = new StringJoiner(",");
-                for(String tag : youTubeTags)
+                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                if(goalsGraphProvider != null)
                 {
-                    joiner.add(tag);
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Goal goal : goals)
+                    {
+                        joiner.add(goalsGraphProvider.getTreeID(goal));
+                    }
+                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
                 }
-                props.setProperty(YouTubeVideo.PROP_YOUTUBE_TAGS, joiner.toString());
-            }        
+            }                                
 
             FileObject root = provider.getRootFolder();
             if(root != null)

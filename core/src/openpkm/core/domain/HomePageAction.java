@@ -20,10 +20,14 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
-import openpkm.core.TopicWizardPanel;
+import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogProvider;
 import openpkm.utils.FileUtils;
@@ -75,6 +79,8 @@ public class HomePageAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new BlogWizardPanel1());
         panels.add(new TopicWizardPanel());
+        panels.add(new GoalWizardPanel());
+        
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -104,6 +110,7 @@ public class HomePageAction implements ActionListener
             String url = (String) wiz.getProperty(Blog.PROP_URL);                      
             Document document = (Document) wiz.getProperty("document");  
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
             
             String description = document.select("meta[name=description]").attr("content");
 
@@ -137,6 +144,20 @@ public class HomePageAction implements ActionListener
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
             } 
+            
+            if(goals != null)
+            {
+                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                if(goalsGraphProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Goal goal : goals)
+                    {
+                        joiner.add(goalsGraphProvider.getTreeID(goal));
+                    }
+                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
+                }
+            }             
             
             String folderName = FileUtils.getFolderName(provider.getRootFolder());
             props.setProperty(Blog.PROP_FILE_NAME, folderName);  

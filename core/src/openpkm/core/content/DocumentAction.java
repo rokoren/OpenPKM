@@ -30,7 +30,6 @@ import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.core.TopicWizardPanel;
 import openpkm.reference.DocumentWizardPanel2;
 import openpkm.utils.ContentProvider;
 import openpkm.utils.Utils;
@@ -46,6 +45,11 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 import openpkm.base.ContentFactory;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
+import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 
 /**
  *
@@ -77,6 +81,7 @@ public class DocumentAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new NoteWizardPanel1());
         panels.add(new TopicWizardPanel());
+        panels.add(new GoalWizardPanel());
         panels.add(new DocumentWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
@@ -107,6 +112,7 @@ public class DocumentAction implements ActionListener
             String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);      
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
 
             Properties props = new Properties();
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
@@ -155,6 +161,20 @@ public class DocumentAction implements ActionListener
                         joiner.add(knowledgeGraphProvider.getTreeID(topic));
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
+                }
+            } 
+            
+            if(goals != null)
+            {
+                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                if(goalsGraphProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Goal goal : goals)
+                    {
+                        joiner.add(goalsGraphProvider.getTreeID(goal));
+                    }
+                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
                 }
             }              
 
