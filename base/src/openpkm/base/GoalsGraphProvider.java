@@ -26,6 +26,7 @@ public interface GoalsGraphProvider extends GraphProvider
     Collection<Goal> getSelectedGoals();
     void clearSelectedGoals();
     boolean isGoal(GoalsProvider provider);
+    String getTreeID(Goal goal);
     Set<String> getTags(Collection<Goal> goals);
     void selectGoal(Goal goal);    
 }

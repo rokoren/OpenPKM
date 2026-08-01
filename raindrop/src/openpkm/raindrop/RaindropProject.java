@@ -4386,23 +4386,47 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public boolean isGoal(GoalsProvider provider)
         {
-            if(selectedGoals.isEmpty())
+            Set<String> goals = provider.getGoals();
+            if(selectedGoals.isEmpty() || goals.isEmpty())
             {
                 return true;
             }
             else
             {
-                Set<String> rootTopics = getRootGoals(getSelectedGoals());
-                for(String topic : provider.getRootGoals())
+                Iterator<Goal> iterator1 = getSelectedGoals().iterator();
+                while(iterator1.hasNext())
                 {
-                    if(rootTopics.contains(topic))
+                    String treeID = getTreeID(iterator1.next());
+                    Iterator<String> iterator2 = goals.iterator();
+                    while(iterator2.hasNext())
                     {
-                        return true;
+                        if(iterator2.next().startsWith(treeID))
+                        {
+                            return true;
+                        }                        
                     }
                 }                
             }
-            return false;            
+            return false;                         
         }
+        
+        @Override
+        public String getTreeID(Goal goal)
+        {
+            if(goal instanceof ChildrenTopic)
+            {
+                ChildrenGoal childrenGoal = (ChildrenGoal)goal;
+                Goal parentGoal = goals.get(childrenGoal.getParentID());
+                if(parentGoal != null)
+                {
+                    StringBuilder sb = new StringBuilder();                        
+                    sb.append(getTreeID(parentGoal));
+                    sb.append(goal.getGoalID());
+                    return sb.toString();
+                }  
+            }
+            return goal.getGoalID();
+        }        
         
         private Set<String> getRootGoals(Collection<Goal> goals)
         {

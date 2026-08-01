@@ -4,7 +4,7 @@
  */
 package openpkm.base;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface GoalsProvider 
 {
-    String PROP_GOAL_ROOT = "goal.root";
+    String PROP_GOALS = "goals"; 
     
-    List<String> getRootGoals();     
+    Set<String> getGoals();  
 }

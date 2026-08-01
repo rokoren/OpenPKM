@@ -46,6 +46,10 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 import openpkm.base.ContentFactory;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
+import openpkm.core.neo4j.GoalWizardPanel;
 
 /**
  *
@@ -80,6 +84,7 @@ public class IdeaAction implements ActionListener
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new IdeaWizardPanel1());
         panels.add(new TopicWizardPanel());
+        panels.add(new GoalWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -108,6 +113,7 @@ public class IdeaAction implements ActionListener
             LocalDate tickleDate = (LocalDate) wiz.getProperty(SomedayMaybeProvider.PROP_TICKLE_DATE);        
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -144,7 +150,21 @@ public class IdeaAction implements ActionListener
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
-            }       
+            }      
+            
+            if(goals != null)
+            {
+                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                if(goalsGraphProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Goal goal : goals)
+                    {
+                        joiner.add(goalsGraphProvider.getTreeID(goal));
+                    }
+                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
+                }
+            }             
 
             if (tickleDate != null)
             {
