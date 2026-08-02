@@ -29,6 +29,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import openpkm.base.DisplayNameProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
@@ -231,7 +232,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         }          
     }
     
-    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, TagsProvider, VisibilityProvider, WorkflowProvider, MultiViewDescription
+    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, GoalsProvider, TagsProvider, VisibilityProvider, WorkflowProvider, MultiViewDescription
     {    
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;       
@@ -445,6 +446,17 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
             }                
             return Collections.EMPTY_SET;
         } 
+        
+        @Override
+        public Set<String> getGoals()
+        {
+            String goals = props.getProperty(PROP_GOALS);
+            if(goals != null)
+            {
+                return Set.of(goals.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }         
 
         @Override
         public VisibilityProvider.Modifier getModifier()
