@@ -37,6 +37,7 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import openpkm.base.ContentFactory;
+import openpkm.base.GoalsProvider;
 
 /**
  *
@@ -92,7 +93,7 @@ public class ContentFactoryImpl implements ContentFactory
         LOG.info("Content saved");
     }      
     
-    private static abstract class AbstractContent implements Content, TitleProvider, IconProvider, TagsProvider, TopicsProvider, VisibilityProvider
+    private static abstract class AbstractContent implements Content, TitleProvider, IconProvider, TagsProvider, TopicsProvider, GoalsProvider, VisibilityProvider
     {          
         protected static final Logger LOG = Logger.getLogger(AbstractContent.class.getName());     
 
@@ -253,6 +254,17 @@ public class ContentFactoryImpl implements ContentFactory
             }                
             return Collections.EMPTY_SET;
         }
+        
+        @Override
+        public Set<String> getGoals()
+        {
+            String goals = props.getProperty(PROP_GOALS);
+            if(goals != null)
+            {
+                return Set.of(goals.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }        
 
         @Override
         public VisibilityProvider.Modifier getModifier()

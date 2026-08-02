@@ -21,6 +21,8 @@ import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.FilterTagsProvider;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import org.openide.filesystems.FileObject;
@@ -187,6 +189,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
         private final DataGroupProvider provider;   
         private final FilterTagsProvider filterTags;
         private final KnowledgeGraphProvider topicProvider;
+        private final GoalsGraphProvider goalProvider;
 
         public ChildrenImpl(DataGroupProvider provider)
         {
@@ -203,6 +206,12 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             {
                 csp.addChangeListener(this);
             }
+            
+            goalProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+            if(goalProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.addChangeListener(this);
+            }            
         }  
 
         @Override
@@ -239,6 +248,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                     {                        
                         boolean isTag = true;
                         boolean isTopic = true;
+                        boolean isGoal = true;
                         
                         if(filterTags != null)
                         {
@@ -266,7 +276,24 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                             }                                                                                    
                         }
                         
-                        if(isTag && isTopic)                    
+                        if(goalProvider != null)
+                        {
+                            SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                            if(sourceProvider != null)
+                            {
+                                Source source = sourceProvider.getSource();
+                                if(source != null)
+                                {
+                                    GoalsProvider goalsProvider = source.getLookup().lookup(GoalsProvider.class);
+                                    if(goalsProvider != null)
+                                    {
+                                        isGoal = goalProvider.isGoal(goalsProvider);
+                                    }                                                 
+                                }            
+                            }                                                                                    
+                        }                        
+                        
+                        if(isTag && isTopic && isGoal)                    
                         {
                             sorted.add(data);                  
                         }                        
@@ -306,7 +333,12 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             if(topicProvider instanceof ChangeSupportProvider csp)
             {
                 csp.removeChangeListener(this);
-            }            
+            }   
+            
+            if(goalProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.removeChangeListener(this);
+            }              
             
             setKeys(Collections.<DataObject>emptySet());
         }

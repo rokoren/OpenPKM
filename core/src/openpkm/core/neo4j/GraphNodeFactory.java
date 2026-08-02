@@ -11,9 +11,12 @@ import java.awt.event.ActionEvent;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
@@ -89,13 +92,30 @@ public class GraphNodeFactory implements NodeFactory
             super(new TopicsChildren(project, topicProvider), Lookups.fixed(project));
             this.topicProvider = topicProvider;
             setName("topics"); // NOI18N
-            setDisplayName("Topics ");
             
             if(topicProvider instanceof ChangeSupportProvider provider)
             {
                 provider.addChangeListener(this);                    
             }             
-        }       
+        } 
+        
+        private String getTopicsName(Collection<Topic> topics)
+        {
+            if(!topics.isEmpty())
+            {
+                StringJoiner joiner = new StringJoiner(", ");
+                Iterator<Topic> iterator = topics.iterator();
+                while(iterator.hasNext())
+                {
+                    joiner.add(iterator.next().getName());
+                } 
+
+                LOG.info("Topics: " + joiner.toString());
+
+                return joiner.toString();                
+            }
+            return null;
+        }        
 
         @Override
         public Action[] getActions(boolean context) 
@@ -106,6 +126,17 @@ public class GraphNodeFactory implements NodeFactory
                 new ClearSelectedNodes(topicProvider)
             };
         }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            String topicsName = getTopicsName(topicProvider.getSelectedTopics());
+            if(topicsName != null)
+            {
+                return "Topics [" + topicsName + "]";      
+            }
+            return "Topics";
+        }         
 
         private Image getIcon(boolean opened) 
         {
@@ -258,13 +289,30 @@ public class GraphNodeFactory implements NodeFactory
             super(new GoalsChildren(project, goalProvider), Lookups.fixed(project));
             this.goalProvider = goalProvider;
             setName("goals"); // NOI18N
-            setDisplayName("Goals ");
             
             if(goalProvider instanceof ChangeSupportProvider provider)
             {
                 provider.addChangeListener(this);                    
             }             
-        }       
+        } 
+        
+        private String getGoalsName(Collection<Goal> goals)
+        {
+            if(!goals.isEmpty())
+            {
+                StringJoiner joiner = new StringJoiner(", ");
+                Iterator<Goal> iterator = goals.iterator();
+                while(iterator.hasNext())
+                {
+                    joiner.add(iterator.next().getName());
+                } 
+
+                LOG.info("Goals: " + joiner.toString());
+
+                return joiner.toString();                
+            }
+            return null;
+        }          
 
         @Override
         public Action[] getActions(boolean context) 
@@ -275,6 +323,17 @@ public class GraphNodeFactory implements NodeFactory
                 new ResetSelectedGoals(goalProvider)
             };
         }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            String goalsName = getGoalsName(goalProvider.getSelectedGoals());
+            if(goalsName != null)
+            {
+                return "Goals [" + goalsName + "]";      
+            }
+            return "Goals";
+        }         
 
         private Image getIcon(boolean opened) 
         {

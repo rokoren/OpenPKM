@@ -4413,7 +4413,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public String getTreeID(Goal goal)
         {
-            if(goal instanceof ChildrenTopic)
+            if(goal instanceof ChildrenGoal)
             {
                 ChildrenGoal childrenGoal = (ChildrenGoal)goal;
                 Goal parentGoal = goals.get(childrenGoal.getParentID());

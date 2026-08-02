@@ -7,10 +7,7 @@ package openpkm.utils;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -21,10 +18,8 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.OpenIconProvider;
 import openpkm.base.ShortDescriptionProvider;
-import openpkm.base.Topic;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
@@ -48,7 +43,6 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     private ShortDescriptionProvider shortDescriptionProvider;
     private IconProvider iconProvider;
     private OpenIconProvider openIconProvider;  
-    private KnowledgeGraphProvider topicProvider;
     
     private final Project project;
     
@@ -87,54 +81,10 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
         }
         return super.getDisplayName();        
     }
-
-    private String getTopicsName(Collection<Topic> topics)
-    {
-        if(!topics.isEmpty())
-        {
-            StringJoiner joiner = new StringJoiner(", ");
-            Iterator<Topic> iterator = topics.iterator();
-            while(iterator.hasNext())
-            {
-                joiner.add(iterator.next().getName());
-            } 
-
-            LOG.info("Topics: " + joiner.toString());
-
-            return joiner.toString();                
-        }
-        return null;
-    }
-    
-    private String getTopicsName()
-    {
-        if(topicProvider == null)
-        {
-            topicProvider = project.getLookup().lookup(KnowledgeGraphProvider.class);
-            if(topicProvider != null)
-            {                
-                if(topicProvider instanceof ChangeSupportProvider provider)
-                {
-                    provider.addChangeListener(this);                    
-                }                                   
-                return getTopicsName(topicProvider.getSelectedTopics());
-            }             
-        } 
-        else
-        {
-            return getTopicsName(topicProvider.getSelectedTopics());
-        }
-        return null;
-    }
     
     @Override
     public String getDisplayName() 
     {
-        String topicsName = getTopicsName();
-        if(topicsName != null)
-        {
-            return getDisplayName(TextFormat.PLAIN) + " [" + topicsName + "]";      
-        }
         return getDisplayName(TextFormat.PLAIN);
     } 
     
@@ -241,7 +191,7 @@ public class OpenProjectNode extends FilterNode implements ChangeListener
     @Override
     public void stateChanged(ChangeEvent evt) 
     {
-        if(evt.getSource() == displayNameProvider || evt.getSource() == topicProvider)
+        if(evt.getSource() == displayNameProvider)
         {
             fireDisplayNameChange(null, getDisplayName());
         }
