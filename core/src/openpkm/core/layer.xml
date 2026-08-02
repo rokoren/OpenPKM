@@ -16,6 +16,20 @@
                 <attr name="displayName" bundlevalue="openpkm.core.Bundle#QuickSearch/Book/openpkm-core-search-BookSearchProvider.instance"/>
             </file>
         </folder>
+        <folder name="Domain">
+            <attr name="command" stringvalue="d"/>
+            <attr name="position" intvalue="600"/>
+            <file name="openpkm-core-search-DomainSearchProvider.instance">
+                <attr name="displayName" bundlevalue="openpkm.core.Bundle#QuickSearch/Domain/openpkm-core-search-DomainSearchProvider.instance"/>
+            </file>
+        </folder>
+        <folder name="Link">
+            <attr name="command" stringvalue="l"/>
+            <attr name="position" intvalue="500"/>
+            <file name="openpkm-core-search-LinkSearchProvider.instance">
+                <attr name="displayName" bundlevalue="openpkm.core.Bundle#QuickSearch/Link/openpkm-core-search-LinkSearchProvider.instance"/>
+            </file>
+        </folder>
         <folder name="Video">
             <attr name="command" stringvalue="v"/>
             <attr name="position" intvalue="300"/>

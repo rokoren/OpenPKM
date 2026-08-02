@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import openpkm.base.GoalsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
@@ -33,7 +34,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rokor
  */
-public abstract class AbstractReference implements Reference, TitleProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, VisibilityProvider
+public abstract class AbstractReference implements Reference, TitleProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, GoalsProvider, VisibilityProvider
 {
     public static final String EXT_GIF = "gif";
     public static final String EXT_JPG = "jpg";
@@ -179,6 +180,17 @@ public abstract class AbstractReference implements Reference, TitleProvider, Ico
         }                
         return Collections.EMPTY_SET;
     }
+    
+    @Override
+    public Set<String> getGoals()
+    {
+        String goals = props.getProperty(PROP_GOALS);
+        if(goals != null)
+        {
+            return Set.of(goals.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }     
 
     @Override
     public VisibilityProvider.Modifier getModifier()
