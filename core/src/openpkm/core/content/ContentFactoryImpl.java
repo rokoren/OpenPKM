@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
@@ -37,6 +38,7 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import openpkm.base.ContentFactory;
+import openpkm.base.DisplayNameProvider;
 import openpkm.base.GoalsProvider;
 
 /**
@@ -80,7 +82,11 @@ public class ContentFactoryImpl implements ContentFactory
                 else if(type.get() == Type.COMMENT)
                 {
                     return new Comment(props);
-                }                 
+                }   
+                else if(type.get() == Type.DAILY_JOT)
+                {
+                    return new DailyJot(props);
+                }                  
             }
         }
         return null;
@@ -93,64 +99,22 @@ public class ContentFactoryImpl implements ContentFactory
         LOG.info("Content saved");
     }      
     
-    private static abstract class AbstractContent implements Content, TitleProvider, IconProvider, TagsProvider, TopicsProvider, GoalsProvider, VisibilityProvider
+    private static abstract class AbstractContent implements Content, IconProvider, TagsProvider, TopicsProvider, GoalsProvider, VisibilityProvider
     {          
         protected static final Logger LOG = Logger.getLogger(AbstractContent.class.getName());     
 
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;
         
-        private Lookup lkp;   
+        protected Lookup lkp;  
+        
         private State state;        
 
         public AbstractContent(Properties props) 
         {
             this.props = props;
             propertyChangeSupport = new PropertyChangeSupport(this);             
-        }
-        
-        @Override
-        public Lookup getLookup() 
-        {
-            if (lkp == null) 
-            { 
-                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
-            }
-            return lkp;
-        } 
-        
-        @Override
-        public String getTitle()
-        {
-            return props.getProperty(TitleProvider.PROP_TITLE);
-        }
-
-        @Override
-        public void setTitle(String title)
-        {
-            if(title == null)
-            {
-                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
-                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
-            }
-            else
-            {
-                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
-                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
-            }
-        }  
-
-        @Override
-        public void addTitleListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
-        }
-
-        @Override
-        public void removeTitleListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
-        }         
+        }                       
                 
         @Override
         public Properties getProperties()
@@ -312,9 +276,19 @@ public class ContentFactoryImpl implements ContentFactory
         } 
         
         @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }         
+        
+        @Override
         public String getTitle()
         {
-            return props.getProperty(PROP_TITLE);
+            return props.getProperty(TitleProvider.PROP_TITLE);
         }
 
         @Override
@@ -322,12 +296,59 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if(title == null)
             {
-                props.remove(PROP_TITLE);
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
             else
             {
-                props.setProperty(PROP_TITLE, title);
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }  
+        
+        @Override
+        public String getDescription()
+        {
+            return props.getProperty(PROP_DESCRIPTION);
+        } 
+        
+        @Override
+        public void setDescription(String description)
+        {
+            if(description == null)
+            {
+                Object oldValue = props.remove(PROP_DESCRIPTION);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
+                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
+            }
+        } 
+
+        @Override
+        public void addDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
+        }
+
+        @Override
+        public void removeDescriptionListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
         }         
         
         @Override
@@ -447,40 +468,7 @@ public class ContentFactoryImpl implements ContentFactory
             {
                 props.setProperty(PROP_ISBN, isbn);
             }
-        }
-        
-        @Override
-        public String getDescription()
-        {
-            return props.getProperty(PROP_DESCRIPTION);
-        } 
-        
-        @Override
-        public void setDescription(String description)
-        {
-            if(description == null)
-            {
-                Object oldValue = props.remove(PROP_DESCRIPTION);
-                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
-            }
-            else
-            {
-                Object oldValue = props.setProperty(PROP_DESCRIPTION, description);
-                propertyChangeSupport.firePropertyChange(PROP_DESCRIPTION, oldValue, description);
-            }
-        } 
-
-        @Override
-        public void addDescriptionListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-        }
-
-        @Override
-        public void removeDescriptionListener(PropertyChangeListener listener)
-        {
-            propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
-        } 
+        }        
         
         @Override
         public Image getIcon(int type) 
@@ -506,9 +494,19 @@ public class ContentFactoryImpl implements ContentFactory
         } 
         
         @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }         
+        
+        @Override
         public String getTitle()
         {
-            return props.getProperty(PROP_TITLE);
+            return props.getProperty(TitleProvider.PROP_TITLE);
         }
 
         @Override
@@ -516,12 +514,26 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if(title == null)
             {
-                props.remove(PROP_TITLE);
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
             else
             {
-                props.setProperty(PROP_TITLE, title);
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
         }         
 
         @Override
@@ -569,7 +581,7 @@ public class ContentFactoryImpl implements ContentFactory
         } 
     }    
     
-    private static final class DocumentImpl extends AbstractContent implements Document, TitleProvider
+    private static final class DocumentImpl extends AbstractContent implements Document
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/document_notes.png";         
@@ -586,9 +598,19 @@ public class ContentFactoryImpl implements ContentFactory
         } 
         
         @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }           
+        
+        @Override
         public String getTitle()
         {
-            return props.getProperty(PROP_TITLE);
+            return props.getProperty(TitleProvider.PROP_TITLE);
         }
 
         @Override
@@ -596,12 +618,26 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if(title == null)
             {
-                props.remove(PROP_TITLE);
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
             else
             {
-                props.setProperty(PROP_TITLE, title);
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
         }         
         
         @Override
@@ -724,13 +760,23 @@ public class ContentFactoryImpl implements ContentFactory
         @Override
         public String getSourceID()
         {
-            return getTimeCreated().getNano() + "";
+            return getFileName();
         }  
+
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }           
         
         @Override
         public String getTitle()
         {
-            return props.getProperty(PROP_TITLE);
+            return props.getProperty(TitleProvider.PROP_TITLE);
         }
 
         @Override
@@ -738,13 +784,33 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if(title == null)
             {
-                props.remove(PROP_TITLE);
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
             else
             {
-                props.setProperty(PROP_TITLE, title);
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
-        }         
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        } 
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
+        }                           
 
         @Override
         public String getLanguage() 
@@ -769,7 +835,7 @@ public class ContentFactoryImpl implements ContentFactory
         public Image getIcon(int type) 
         {  
             return ImageUtilities.loadImage(ICON);             
-        }         
+        }        
     } 
     
     private static final class Idea extends AbstractContent implements Note, SomedayMaybeProvider, TitleProvider
@@ -788,13 +854,29 @@ public class ContentFactoryImpl implements ContentFactory
         @Override
         public String getSourceID()
         {
-            return getTimeCreated().getNano() + "";
-        }
-
+            return getFileName();
+        }        
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
+        }    
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }           
+        
         @Override
         public String getTitle()
         {
-            return props.getProperty(PROP_TITLE);
+            return props.getProperty(TitleProvider.PROP_TITLE);
         }
 
         @Override
@@ -802,12 +884,26 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if(title == null)
             {
-                props.remove(PROP_TITLE);
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
             else
             {
-                props.setProperty(PROP_TITLE, title);
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
         }         
 
         @Override
@@ -891,13 +987,29 @@ public class ContentFactoryImpl implements ContentFactory
         @Override
         public String getSourceID()
         {
-            return getTimeCreated().getNano() + "";
-        }    
+            return getFileName();
+        }          
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
+        }                   
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this));              
+            }
+            return lkp;
+        }           
         
         @Override
         public String getTitle()
         {
-            return props.getProperty(PROP_TITLE);
+            return props.getProperty(TitleProvider.PROP_TITLE);
         }
 
         @Override
@@ -905,12 +1017,26 @@ public class ContentFactoryImpl implements ContentFactory
         {
             if(title == null)
             {
-                props.remove(PROP_TITLE);
+                Object oldValue = props.remove(TitleProvider.PROP_TITLE);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
             else
             {
-                props.setProperty(PROP_TITLE, title);
+                Object oldValue = props.setProperty(TitleProvider.PROP_TITLE, title);
+                propertyChangeSupport.firePropertyChange(TitleProvider.PROP_TITLE, oldValue, title);
             }
+        }  
+
+        @Override
+        public void addTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
+        }
+
+        @Override
+        public void removeTitleListener(PropertyChangeListener listener)
+        {
+            propertyChangeSupport.addPropertyChangeListener(PROP_TITLE, listener);
         }         
 
         @Override
@@ -937,5 +1063,76 @@ public class ContentFactoryImpl implements ContentFactory
         {    
             return ImageUtilities.loadImage(ICON);           
         }         
+    }   
+    
+    private static final class DailyJot extends AbstractContent implements Note
+    { 
+        @StaticResource()
+        public static final String ICON = "openpkm/core/resources/calendar_edit.png";        
+        
+        public DailyJot(Properties props)
+        {
+            super(props);
+        } 
+        
+        @Override
+        public String getSourceID()
+        {
+            return getFileName();
+        }          
+        
+        @Override
+        public String getFileName()
+        {
+            return props.getProperty(PROP_FILE_NAME);
+        }          
+        
+        @Override
+        public Lookup getLookup() 
+        {
+            if (lkp == null) 
+            { 
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl());              
+            }
+            return lkp;
+        }                           
+
+        @Override
+        public String getLanguage() 
+        {
+            return props.getProperty(PROP_LANGUAGE);
+        }
+
+        @Override
+        public void setLanguage(String lang)
+        {
+            if(lang == null)
+            {
+                props.remove(PROP_LANGUAGE);
+            }
+            else
+            {
+                props.setProperty(PROP_LANGUAGE, lang);
+            }
+        }       
+        
+        @Override
+        public Image getIcon(int type) 
+        {    
+            return ImageUtilities.loadImage(ICON);           
+        }   
+        
+        private final class DisplayNameProviderImpl implements DisplayNameProvider
+        {
+            @Override
+            public String getDisplayName(TextFormat format)
+            {
+                if(format == TextFormat.PLAIN)
+                {
+                    return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.MEDIUM).format(getTimeCreated());
+                }
+                return null;
+            }            
+        }        
     }     
 }

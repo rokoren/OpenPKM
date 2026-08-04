@@ -48,8 +48,10 @@ import openpkm.base.ContentFactory;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
+import openpkm.base.Note;
 import openpkm.core.neo4j.GoalWizardPanel;
 import openpkm.core.neo4j.TopicWizardPanel;
+import openpkm.utils.FileUtils;
 
 /**
  *
@@ -169,40 +171,39 @@ public class IdeaAction implements ActionListener
             if (tickleDate != null)
             {
                 props.setProperty(SomedayMaybeProvider.PROP_TICKLE_DATE, tickleDate.format(DateTimeFormatter.ISO_DATE)); 
-            }                                           
+            }  
+            
+            String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
+            props.setProperty(Note.PROP_FILE_NAME, fileName);              
 
-            FileObject root = provider.getRootFolder();
-            if(root != null)
+            Content content = provider.getFactory().getContent(props);
+            try
             {
-                Content content = provider.getFactory().getContent(props);
-                try
-                {
-                    FileObject file = provider.createData(content, fileType); 
-                    OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    provider.getFactory().save(content, os, "New Idea Content created by Wizard");
-                    os.close();  
+                FileObject file = provider.createData(content, fileType); 
+                OutputStream os = provider.getRootFolder().createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                provider.getFactory().save(content, os, "New Idea Content created by Wizard");
+                os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Idea content saved with title: " + title); 
-                    
-                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open idea in editor?", title, NotifyDescriptor.YES_NO_OPTION);
-                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
-                    {
-                        try
-                        {
-                            DataObject data = DataObject.find(file);
-                            OpenCookie open = data.getCookie(OpenCookie.class);
-                            open.open();                            
-                        }
-                        catch(DataObjectNotFoundException e)
-                        {
-                            LOG.warning(e.getMessage());
-                        }
-                    }                                             
-                }                      
-                catch(IOException e)
+                StatusDisplayer.getDefault().setStatusText("Idea content saved with title: " + title); 
+
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open idea in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
-                    LOG.warning(e.getMessage());
-                }                   
+                    try
+                    {
+                        DataObject data = DataObject.find(file);
+                        OpenCookie open = data.getCookie(OpenCookie.class);
+                        open.open();                            
+                    }
+                    catch(DataObjectNotFoundException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }                                             
+            }                      
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
             }               
                                
         }                                                      

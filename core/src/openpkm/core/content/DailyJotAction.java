@@ -20,15 +20,22 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Content;
+import openpkm.base.ContentFactory;
 import openpkm.base.FileTypeProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
 import openpkm.base.KnowledgeGraphProvider;
+import openpkm.base.Note;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
-import openpkm.base.TitleProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
+import openpkm.core.neo4j.GoalWizardPanel;
+import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.utils.ContentProvider;
+import openpkm.utils.FileUtils;
 import openpkm.utils.Utils;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
@@ -42,14 +49,6 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
-import openpkm.base.ContentFactory;
-import openpkm.base.Goal;
-import openpkm.base.GoalsGraphProvider;
-import openpkm.base.GoalsProvider;
-import openpkm.base.Note;
-import openpkm.core.neo4j.GoalWizardPanel;
-import openpkm.core.neo4j.TopicWizardPanel;
-import openpkm.utils.FileUtils;
 
 /**
  *
@@ -57,23 +56,23 @@ import openpkm.utils.FileUtils;
  */
 @ActionID(
         category = "OpenPKM/Note",
-        id = "openpkm.core.content.NoteAction"
+        id = "openpkm.core.content.DailyJotAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/core/resources/note_pin.png",
-        displayName = "#CTL_NoteAction"
+        iconBase = "openpkm/core/resources/calendar_edit.png",
+        displayName = "#CTL_DailyJotAction"
 )
-@Messages("CTL_NoteAction=Add Note")
-public class NoteAction implements ActionListener
+@Messages("CTL_DailyJotAction=Add Daily Jot")
+public class DailyJotAction implements ActionListener
 {
     @StaticResource()
-    private static final String BANNER = "openpkm/core/resources/note_pin.png";     
+    private static final String BANNER = "openpkm/core/resources/lightbulb.png";     
     
-    private static final Logger LOG = Logger.getLogger(NoteAction.class.getName());     
+    private static final Logger LOG = Logger.getLogger(DailyJotAction.class.getName());     
     
     private final ContentProvider provider;
 
-    public NoteAction(ContentProvider provider)
+    public DailyJotAction(ContentProvider provider)
     {
         this.provider = provider;
     }
@@ -82,7 +81,7 @@ public class NoteAction implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new NoteWizardPanel1());
+        panels.add(new DailyJotWizardPanel1());
         panels.add(new TopicWizardPanel());
         panels.add(new GoalWizardPanel());
         String[] steps = new String[panels.size()];
@@ -103,13 +102,12 @@ public class NoteAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add Note");  
+        wiz.setTitle("Add Daily Jot");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         {  
-            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
-            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);      
+            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);      
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
             Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
@@ -118,14 +116,13 @@ public class NoteAction implements ActionListener
 
             Properties props = new Properties(); 
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.NOTE.getName());
-            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());          
+            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.DAILY_JOT.getName());
+            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());           
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)
             {
                 props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());                  
             }          
-            props.setProperty(TitleProvider.PROP_TITLE, title);
 
             if(tags != null)
             {
@@ -149,7 +146,7 @@ public class NoteAction implements ActionListener
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }
-            }  
+            }      
             
             if(goals != null)
             {
@@ -163,22 +160,22 @@ public class NoteAction implements ActionListener
                     }
                     props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
                 }
-            } 
+            }    
             
             String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
-            props.setProperty(Note.PROP_FILE_NAME, fileName);              
+            props.setProperty(Note.PROP_FILE_NAME, fileName);             
 
             Content content = provider.getFactory().getContent(props);
             try
             {
                 FileObject file = provider.createData(content, fileType); 
                 OutputStream os = provider.getRootFolder().createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                provider.getFactory().save(content, os, "New Note Content created by Wizard");
+                provider.getFactory().save(content, os, "New Daily Jot Content created by Wizard");
                 os.close();  
 
-                StatusDisplayer.getDefault().setStatusText("Note content saved with title: " + title); 
+                StatusDisplayer.getDefault().setStatusText("Daily Jot content saved"); 
 
-                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open note in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open daily jot in editor?", "Daily Jot", NotifyDescriptor.YES_NO_OPTION);
                 if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
                     try
@@ -191,13 +188,12 @@ public class NoteAction implements ActionListener
                     {
                         LOG.warning(e.getMessage());
                     }
-                }                                            
+                }                                             
             }                      
             catch(IOException e)
             {
                 LOG.warning(e.getMessage());
-            }               
-                                 
+            }                                              
         }                                                      
-    }     
+    }      
 }

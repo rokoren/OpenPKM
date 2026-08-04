@@ -10,8 +10,10 @@ package openpkm.base;
  */
 public interface Note
 {
-    String PROP_LANGUAGE = "note.language";     
+    String PROP_LANGUAGE  = "note.language";  
+    String PROP_FILE_NAME = "file.name";     
     
+    String getFileName(); 
     String getLanguage();
     void setLanguage(String lang);      
 }

@@ -44,7 +44,7 @@ public interface DataGroupProvider extends GroupProvider
         };
     }      
     
-    public static Comparator<DataObject> titleComparator() 
+    public static Comparator<DataObject> displayNameComparator() 
     {
         return new Comparator<DataObject>() 
         {
@@ -57,10 +57,15 @@ public interface DataGroupProvider extends GroupProvider
                 {
                     Source source1 = sourceProvider1.getSource();
                     Source source2 = sourceProvider2.getSource();
-                    if(source1 instanceof TitleProvider provider1 && source2 instanceof TitleProvider provider2)
+                    if(source1 != null && source2 != null)
                     {
-                        return provider1.getTitle().compareTo(provider2.getTitle());                         
-                    }                   
+                        DisplayNameProvider provider1 = source1.getLookup().lookup(DisplayNameProvider.class);
+                        DisplayNameProvider provider2 = source2.getLookup().lookup(DisplayNameProvider.class);
+                        if(provider1 != null && provider2 != null)
+                        {
+                            return provider1.getDisplayName(DisplayNameProvider.TextFormat.PLAIN).compareTo(provider2.getDisplayName(DisplayNameProvider.TextFormat.PLAIN));       
+                        }
+                    }               
                 }
                 return -1;                
             }

@@ -24,6 +24,7 @@ public interface ContentFactory extends SourceFactory<Content>
         ARTICLE("article"),        
         DOCUMENT("document"),       
         IDEA("idea"),        
+        DAILY_JOT("daily-jot"), 
         COMMENT("comment"),         
         NOTE("note");
 

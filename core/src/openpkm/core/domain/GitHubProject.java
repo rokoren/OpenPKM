@@ -1009,7 +1009,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -1135,7 +1135,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -1261,7 +1261,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -1387,7 +1387,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -1513,7 +1513,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -1639,7 +1639,7 @@ public class GitHubProject implements Project, Domain, GitHubUser, SourceProvide
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override

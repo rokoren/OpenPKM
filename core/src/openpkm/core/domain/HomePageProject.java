@@ -1352,7 +1352,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -2026,7 +2026,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2152,7 +2152,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2278,7 +2278,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2404,7 +2404,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2541,7 +2541,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2667,7 +2667,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override

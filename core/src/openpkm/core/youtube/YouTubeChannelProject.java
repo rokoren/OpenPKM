@@ -1778,7 +1778,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -1904,7 +1904,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2030,7 +2030,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2156,7 +2156,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2282,7 +2282,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2408,7 +2408,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2570,7 +2570,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override

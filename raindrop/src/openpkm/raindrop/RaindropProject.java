@@ -1290,7 +1290,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -1416,7 +1416,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -1542,7 +1542,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -1668,7 +1668,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -1794,7 +1794,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -1920,7 +1920,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         }  
         
         @Override
@@ -2057,7 +2057,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
@@ -2183,7 +2183,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Comparator<DataObject> getComparator() 
         {
-            return DataGroupProvider.titleComparator();
+            return DataGroupProvider.displayNameComparator();
         } 
         
         @Override
