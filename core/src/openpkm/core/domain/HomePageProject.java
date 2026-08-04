@@ -698,8 +698,8 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                                                     os.close();  
                                                 }                                 
 
-                                                String text = getTitle() + ": " + title;
-                                                IconProvider iconProvider = getLookup().lookup(IconProvider.class);
+                                                String text = channel.getTitle() + ": " + title;
+                                                IconProvider iconProvider = channel.getLookup().lookup(IconProvider.class);
                                                 Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16));                           
 
                                                 URL url = new URL(thumbnail);

@@ -85,13 +85,16 @@ public class ReadLaterAction implements ActionListener
                 if(data != null)
                 {
                     SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
-                    if(sourceProvider.getSource() instanceof WorkflowProvider workflowProvider)
+                    if(sourceProvider != null)
                     {
-                        if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER)
+                        if(sourceProvider.getSource() instanceof WorkflowProvider workflowProvider)
                         {
-                            panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.RECYCLE_BIN));                  
-                        }            
-                    }                                                                                 
+                            if(workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER)
+                            {
+                                panels.add(new SourceWizardPanel(sourceProvider, WorkflowProvider.Workflow.RECYCLE_BIN));                  
+                            }            
+                        }                          
+                    }                                                                                                                        
                 }                  
             }              
         } 
