@@ -46,7 +46,7 @@ import org.openide.util.ImageUtilities;
 public class RaindropCollectionNode extends AbstractNode
 {
     @StaticResource()
-    public static final String BANNER = "openpkm/core/resources/raindrop48.png";  
+    public static final String BANNER = "openpkm/core/resources/raindrop128.png";  
     
     private static final Logger LOG = Logger.getLogger(RaindropCollectionNode.class.getName());      
     
@@ -134,15 +134,13 @@ public class RaindropCollectionNode extends AbstractNode
             // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
             wiz.setTitleFormat(new MessageFormat("{0}"));
             wiz.setTitle("New OpenPKM Root Project");
-            wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));            
+            wiz.putProperty("WizardPanel_image", Utils.getWizardImage(ImageUtilities.loadImage(BANNER), 128, 128));            
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {
                 String title = (String)wiz.getProperty(TitleProvider.PROP_TITLE);                   
                 Neo4jInstance neo4j = (Neo4jInstance)wiz.getProperty("neo4j");
                 String description = (String)wiz.getProperty(DescriptionProvider.PROP_DESCRIPTION);   
-                String location = (String)wiz.getProperty("location");  
-                
-                String secondBrainID = System.currentTimeMillis() + "";
+                String location = (String)wiz.getProperty("location");                  
 
                 Properties props = new Properties();
                 props.setProperty(RaindropProject.PROP_TITLE, title);     
@@ -154,7 +152,7 @@ public class RaindropCollectionNode extends AbstractNode
                 
                 try
                 {             
-                    File projectDirectory = new File(location, secondBrainID);
+                    File projectDirectory = new File(location, title.toLowerCase());
                     projectDirectory.mkdir();            
                     File projectFolder = new File(projectDirectory, RaindropProjectFactory.PROJECT_FOLDER);
                     projectFolder.mkdir();
@@ -177,6 +175,6 @@ public class RaindropCollectionNode extends AbstractNode
                     LOG.warning(e.getMessage());
                 }                 
             }
-        }   
+        }         
     }    
 }

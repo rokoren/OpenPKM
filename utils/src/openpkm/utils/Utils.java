@@ -4,6 +4,7 @@
  */
 package openpkm.utils;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -326,6 +327,30 @@ public class Utils
         return null;         
     } 
     */
+    
+    public static BufferedImage getWizardImage(Image image, int width, int height) 
+    {
+        int spaceWidth = width / 4;
+        int spaceHeight = height / 2;
+
+        int newWidth = width + 2 * spaceWidth;
+        int newHeight = height + 2 * spaceHeight;
+        BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+
+        // Get the graphics context to draw on the new image
+        Graphics2D g2d = newImage.createGraphics();
+
+        // Fill the new image with a white background (or any other color)
+        g2d.setColor(new Color(0, 0, 0, 0)); 
+        g2d.fillRect(0, 0, newWidth, newHeight);
+
+        // Draw the original image onto the new image with the desired padding
+        int x = spaceWidth;
+        int y = spaceHeight;
+        g2d.drawImage(image, x, y, null);  
+        
+        return newImage;
+    }      
     
     public static BufferedImage resizeImage(BufferedImage originalImage, int width, int height) 
     {
