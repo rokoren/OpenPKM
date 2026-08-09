@@ -150,7 +150,7 @@ public class TrelloProject implements ProjectManagement, TrelloBoard, SourceProv
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";
     
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/trello.png";     
+    public static final String ICON = "openpkm/core/resources/trello-16.png";     
     
     private static final String DATA_FOLDER = "data";    
     

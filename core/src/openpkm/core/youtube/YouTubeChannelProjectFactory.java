@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
+import openpkm.base.PropertiesProvider;
 import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ProjectFactory;
 import org.netbeans.spi.project.ProjectState;
@@ -57,11 +58,11 @@ public class YouTubeChannelProjectFactory implements ProjectFactory
     @Override
     public void saveProject(Project project) throws IOException, ClassCastException 
     {
-        if(project instanceof YouTubeChannelProject youTubeChannelProject)
+        if(project instanceof PropertiesProvider provider)
         {            
             OutputStream os = new FileOutputStream(project.getProjectDirectory().getFileObject(PROJECT_FOLDER).getFileObject(PROJECT_FILE).getPath());
-            youTubeChannelProject.getProperties().store(os, "YouTube Channel project updated");
-            os.close();   
-        }  
+            provider.getProperties().store(os, "YouTube Channel project updated");
+            os.close();               
+        }
     }     
 }

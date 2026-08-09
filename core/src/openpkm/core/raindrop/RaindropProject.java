@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -149,12 +149,22 @@ import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObjectNotFoundException;
 import openpkm.base.ProjectManagementProvider;
 import openpkm.base.ProjectManagement;
+import openpkm.raindrop.Raindrop;
+import openpkm.raindrop.RaindropAccount;
+import openpkm.raindrop.RaindropChildrenCollection;
+import openpkm.raindrop.RaindropCollection;
+import openpkm.raindrop.RaindropCollectionProvider;
+import openpkm.raindrop.RaindropFactory;
+import openpkm.raindrop.RaindropProvider;
+import openpkm.raindrop.RaindropService;
+import openpkm.raindrop.RaindropTag;
+import openpkm.raindrop.RaindropUtils;
 
 /**
  *
  * @author Rok Koren
  */
-public class RaindropProject implements Project, TitleProvider, DescriptionProvider, TagsProvider, SourceProviders, BatchUpdateSupport
+public class RaindropProject implements Project, PropertiesProvider, RaindropCollectionProvider, TitleProvider, DescriptionProvider, TagsProvider, SourceProviders, BatchUpdateSupport
 {
     public static final String PROP_RAINDROP_USER_ID         = "raindrop.user.id";    
     public static final String PROP_RAINDROP_COLLECTION_ID   = "raindrop.collection.id";
@@ -163,9 +173,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     
     public static final String PROP_NEO4J_INSTANCE_ID   = "neo4j.instance.id";   
     public static final String PROP_TRELLO_USERNAME     = "trello.username"; 
-    public static final String PROP_TRELLO_WORKSPACE_ID = "trello.workspace.id";                
-    
-    private static final String RAINDROP_FEED_URL = "https://raindrop.io/collection/";   
+    public static final String PROP_TRELLO_WORKSPACE_ID = "trello.workspace.id";                      
     
     private static final String DATA_FOLDER = "data";    
     
@@ -181,7 +189,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
-    private static final RequestProcessor RP = new RequestProcessor(RaindropProject.class);   
+    private static final RequestProcessor RP = new RequestProcessor(RaindropProject.class);         
     
     private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();  
@@ -257,7 +265,26 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             SourceProvider provider = new BlogProviderImpl(blogFactory);
             sources.put(provider.getName(), provider);                       
         }          
-    }     
+    } 
+
+// TODO PropertiesProvider
+
+    @Override
+    public Properties getProperties()
+    {
+        return props;
+    } 
+
+    @Override
+    public boolean merge(PropertiesProvider provider)
+    {
+        if(props.equals(provider.getProperties()))       
+        {
+            return false;
+        }
+        props.putAll(provider.getProperties());        
+        return true;
+    }  
     
     private synchronized LocalFileSystem getFileSystem() throws IOException, PropertyVetoException
     {
@@ -472,11 +499,6 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
     }     
 
-    public Properties getProperties()
-    {
-        return props;
-    }  
-
 // TODO TagsProvider
 
     @Override
@@ -544,9 +566,10 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         return true;
     }     
 
-// TODO Raindrop     
+// TODO RaindropCollectionProvider     
     
-    private synchronized RaindropCollection getRaindropCollection()
+    @Override
+    public synchronized RaindropCollection getRaindropCollection()
     {
         if(raindropCollection == null)
         {
@@ -664,7 +687,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Icon getIcon()
         {                    
-            return new ImageIcon(ImageUtilities.loadImage(Raindrop.ICON));
+            return new ImageIcon(ImageUtilities.loadImage(AbstractRaindrop.ICON));
         }
 
         @Override
@@ -748,7 +771,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 isLoading = true;                
                 RP.post(this);                
             }
-            return ImageUtilities.loadImage(Raindrop.ICON);
+            return ImageUtilities.loadImage(AbstractRaindrop.ICON);
         }
 
         @Override
@@ -2264,7 +2287,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
     private final class ContentProviderImpl extends ContentProvider implements FileChangeListener, CloseSupport
     {  
         @StaticResource()
-        private static final String ICON = "openpkm/raindrop/resources/book_edit.png";         
+        private static final String ICON = "openpkm/core/resources/book_edit.png";         
         
         public ContentProviderImpl(ContentFactory factory) 
         {
@@ -2769,7 +2792,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
         @Override
         public Icon getIcon(boolean bln) 
         {
-            return new ImageIcon(ImageUtilities.loadImage(Raindrop.ICON));
+            return new ImageIcon(ImageUtilities.loadImage(AbstractRaindrop.ICON));
         }
 
         @Override
@@ -2899,7 +2922,16 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                 handle.start();
                 handle.switchToIndeterminate();                
                 
-                List<Raindrop> raindrops = getRaindropCollection().getRaindrops();
+                List<Properties> props = RaindropUtils.getRaindrops(getRaindropCollection());                
+                List<Raindrop> raindrops = new ArrayList<>(props.size());
+                for(Properties prop : props)
+                {
+                    Raindrop raindrop = getFactory().getRaindrop(prop);
+                    if(raindrop != null)
+                    {
+                        raindrops.add(raindrop);
+                    }
+                }
 
                 Set<String> keys = new HashSet<>(getRaindropsById().keySet());
                 for(Raindrop raindrop : raindrops)
@@ -2953,7 +2985,7 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
                             URL url = new URL(raindrop.getCover());
                             Image image = Utils.resizeImage(ImageIO.read(url), 320, 180); 
                             Icon picture = ImageUtilities.image2Icon(image);                                                                                                  
-                            Icon icon = ImageUtilities.loadImageIcon(Raindrop.ICON, true);                                
+                            Icon icon = ImageUtilities.loadImageIcon(AbstractRaindrop.ICON, true);                                
                             JLabel baloonDetails = new JLabel(picture);
                             baloonDetails.addMouseListener(FileUtils.clicked2open(file));
                             baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -3037,7 +3069,8 @@ public class RaindropProject implements Project, TitleProvider, DescriptionProvi
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
             if(root != null && markdown != null)
             {
-                Raindrop raindrop = RaindropUtils.createRaindrop(getRaindropCollection().getAccount(), getRaindropCollection(), link, important, tags, note);
+                Properties props = RaindropUtils.createRaindrop(getRaindropCollection(), link, important, tags, note);
+                Raindrop raindrop = getFactory().getRaindrop(props);
                 if(raindrop != null)
                 {
                     try

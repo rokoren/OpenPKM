@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -18,6 +18,11 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.raindrop.RaindropAccount;
+import openpkm.raindrop.RaindropService;
+import openpkm.raindrop.RaindropUser;
+import openpkm.raindrop.RaindropWizardPanel1;
+import openpkm.raindrop.RaindropWizardPanel2;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.core.ide.ServicesTabNodeRegistration;
 import org.openide.DialogDisplayer;
@@ -31,11 +36,11 @@ import org.openide.util.ImageUtilities;
  *
  * @author Rok Koren
  */
-@ServicesTabNodeRegistration(name="raindrop", displayName="Raindrop.io", iconResource = "openpkm/raindrop/resources/raindrop.png")
+@ServicesTabNodeRegistration(name="raindrop", displayName="Raindrop.io", iconResource = "openpkm/core/resources/raindrop.png")
 public class RaindropNode extends AbstractNode
 {
     @StaticResource()
-    public static final String BANNER = "openpkm/raindrop/resources/banner.png";      
+    public static final String BANNER = "openpkm/core/resources/raindrop512.png";      
     
     public RaindropNode() 
     {
@@ -43,7 +48,7 @@ public class RaindropNode extends AbstractNode
         setName("raindrop");
         setDisplayName("Raindrop.io");
         setShortDescription("All-in-one bookmark manager");
-        setIconBaseWithExtension(Raindrop.ICON);
+        setIconBaseWithExtension(AbstractRaindrop.ICON);
     } 
         
     @Override

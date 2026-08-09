@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
@@ -106,13 +105,7 @@ public class RaindropRootCollection implements RaindropCollection
     public RaindropAccount getAccount() 
     {
         return account;
-    }
-    
-    @Override
-    public List<Raindrop> getRaindrops()
-    {
-        return RaindropUtils.getRaindrops(account, this);
-    }     
+    }  
     
     @Override
     public String toString()

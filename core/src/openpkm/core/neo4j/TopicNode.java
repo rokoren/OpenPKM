@@ -8,12 +8,15 @@ import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
@@ -23,6 +26,8 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
+import openpkm.raindrop.RaindropCollection;
+import openpkm.raindrop.RaindropCollectionProvider;
 import openpkm.utils.Utils;
 import org.netbeans.api.project.Project;
 import org.openide.DialogDisplayer;
@@ -38,6 +43,8 @@ import org.openide.util.lookup.Lookups;
  */
 public class TopicNode extends AbstractNode
 {
+    private static final Logger LOG = Logger.getLogger(TopicNode.class.getName());      
+    
     private final KnowledgeGraphProvider provider;
     private final Topic topic;
 
@@ -62,6 +69,30 @@ public class TopicNode extends AbstractNode
     
     private Image getIcon(boolean opened) 
     {
+        RaindropCollectionProvider raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
+        if(raindrop != null)
+        {
+            try
+            {
+                RaindropCollection collection = raindrop.getRaindropCollection().getAccount().getCollection(Integer.parseInt(topic.getTopicID()));  
+                if(collection != null)
+                {
+                    BufferedImage image = collection.getImage();
+                    if(image != null)
+                    {
+                        return Utils.resizeImage(image, 16, 16);
+                    }                    
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                LOG.fine(e.getMessage());
+            }             
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+        }
         return Utils.getTreeFolderIcon(opened);
     }
 

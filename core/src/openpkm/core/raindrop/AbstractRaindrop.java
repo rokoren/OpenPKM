@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import java.awt.Image;
 import java.beans.PropertyChangeEvent;
@@ -38,8 +38,14 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.jcef.CefClientProvider;
+import openpkm.raindrop.Raindrop;
+import openpkm.raindrop.RaindropAccount;
+import openpkm.raindrop.RaindropCollection;
+import openpkm.raindrop.RaindropService;
+import openpkm.raindrop.RaindropUser;
 import openpkm.utils.DisplayNameProviderImpl;
 import org.cef.browser.CefBrowser;
+import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.core.spi.multiview.CloseOperationState;
 import org.netbeans.core.spi.multiview.MultiViewDescription;
 import org.netbeans.core.spi.multiview.MultiViewElement;
@@ -59,6 +65,9 @@ import org.openide.windows.TopComponent;
  */
 public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, MultiViewDescription
 {
+    @StaticResource()
+    public static final String ICON = "openpkm/core/resources/raindrop.png";       
+    
     private static final Logger LOG = Logger.getLogger(AbstractRaindrop.class.getName());  
     
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");     
@@ -521,7 +530,7 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     @Override
     public Image getIcon() 
     {
-        return ImageUtilities.loadImage(Raindrop.ICON);
+        return ImageUtilities.loadImage(ICON);
     }
     
     @Override

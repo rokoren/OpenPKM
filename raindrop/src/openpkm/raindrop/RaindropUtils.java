@@ -427,7 +427,7 @@ public class RaindropUtils
         return collections;
     }   
     
-    public static List<Raindrop> getRaindrops(RaindropAccount account, RaindropCollection collection)
+    public static List<Properties> getRaindrops(RaindropCollection collection)
     {
         // Construct the URL for the Raindrop.io API endpoint
         String apiUrl = "https://api.raindrop.io/rest/v1/raindrops/";
@@ -444,7 +444,7 @@ public class RaindropUtils
             connection.setRequestMethod("GET");
 
             // Set the API key in the request header
-            connection.setRequestProperty("Authorization", "Bearer " + account.getToken());
+            connection.setRequestProperty("Authorization", "Bearer " + collection.getAccount().getToken());
 
             // Get the response code
             int responseCode = connection.getResponseCode();
@@ -462,7 +462,7 @@ public class RaindropUtils
                 reader.close();
 
                 // Parse the JSON response
-                return getRaindrops(account, collection, response.toString());
+                return getRaindrops(collection, response.toString());
             } 
             else 
             {
@@ -492,9 +492,9 @@ public class RaindropUtils
         return Collections.EMPTY_LIST;
     }   
     
-    private static List<Raindrop> getRaindrops(RaindropAccount account, RaindropCollection collection, String jsonResponse)
+    private static List<Properties> getRaindrops(RaindropCollection collection, String jsonResponse)
     {
-        List<Raindrop> raindrops = new ArrayList<>();
+        List<Properties> raindrops = new ArrayList<>();
         // Create a JSON object from the response string
         JSONObject jsonObject = new JSONObject(jsonResponse);
 
@@ -505,7 +505,7 @@ public class RaindropUtils
         for (int i = 0; i < raindropsArray.length(); i++) 
         {
             JSONObject json = raindropsArray.getJSONObject(i);                             
-            Raindrop raindrop = getRaindrop(account, collection, json);
+            Properties raindrop = getRaindrop(collection, json);
             if(raindrop != null)
             {
                 raindrops.add(raindrop);                      
@@ -514,7 +514,7 @@ public class RaindropUtils
         return raindrops;
     }  
 
-    public static Raindrop createRaindrop(RaindropAccount account, RaindropCollection collection, String link, boolean important, List<String> tags, String note)
+    public static Properties createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note)
     {
         // Construct the URL for the Raindrop.io API endpoint
         String apiUrl = "https://api.raindrop.io/rest/v1/raindrop";
@@ -531,7 +531,7 @@ public class RaindropUtils
             connection.setRequestMethod("POST");
 
             // Set the API key in the request header
-            connection.setRequestProperty("Authorization", "Bearer " + account.getToken());
+            connection.setRequestProperty("Authorization", "Bearer " + collection.getAccount().getToken());
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Accept", "application/json");
             connection.setDoOutput(true);
@@ -584,7 +584,7 @@ public class RaindropUtils
                 reader.close();
 
                 // Parse the JSON response
-                return getRaindrop(account, collection, response.toString());
+                return getRaindrop(collection, response.toString());
             } 
             else 
             {
@@ -681,7 +681,7 @@ public class RaindropUtils
         return false;
     }      
     
-    private static Raindrop getRaindrop(RaindropAccount account, RaindropCollection collection, String jsonResponse)
+    private static Properties getRaindrop(RaindropCollection collection, String jsonResponse)
     {
         // Create a JSON object from the response string
         JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -691,16 +691,16 @@ public class RaindropUtils
         if(result)
         {
             JSONObject item = jsonObject.getJSONObject("item");
-            return getRaindrop(account, collection, item);
+            return getRaindrop(collection, item);
         }
         return null;
     }   
     
-    private static Raindrop getRaindrop(RaindropAccount account, RaindropCollection collection, JSONObject json)
+    private static Properties getRaindrop(RaindropCollection collection, JSONObject json)
     {
         int raindropID = json.getInt("_id");
         //System.out.println("Type: " + json1.getString("type"));
-        Optional<AbstractRaindrop.Type> type = AbstractRaindrop.Type.get(json.getString("type"));
+        Optional<Raindrop.Type> type = Raindrop.Type.get(json.getString("type"));
         if(type.isPresent())
         {
             RaindropUser creator = null; 
@@ -767,7 +767,7 @@ public class RaindropUtils
             Properties props = new Properties();
             props.setProperty(Raindrop.PROPS_TYPE, type.get().toString()); 
             props.setProperty(Raindrop.PROPS_RAINDROP_ID, raindropID + "");
-            props.setProperty(Raindrop.PROPS_RAINDROP_USER_ID, account.getUser().getUserID() + "");
+            props.setProperty(Raindrop.PROPS_RAINDROP_USER_ID, collection.getAccount().getUser().getUserID() + "");
             props.setProperty(Raindrop.PROPS_RAINDROP_CREATOR_ID, creator.getUserID() + "");
             props.setProperty(Raindrop.PROPS_RAINDROP_COLLECTION_ID, collection.getCollectionID() + "");
             props.setProperty(Raindrop.PROPS_LINK, link);
@@ -808,7 +808,7 @@ public class RaindropUtils
                 props.setProperty(Raindrop.PROPS_FILE_TYPE, fileType); 
             }
 
-            return AbstractRaindrop.getRaindrop(props);
+            return props;
         }
         return null;
     }      

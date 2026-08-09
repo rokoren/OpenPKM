@@ -29,6 +29,7 @@ import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
+import openpkm.raindrop.RaindropCollectionProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.spi.project.ui.support.NodeFactory;
@@ -123,6 +124,7 @@ public class GraphNodeFactory implements NodeFactory
             return new Action[]
             {
                 new AddNode(topicProvider),
+                new AddNodeRaindrop(topicProvider),
                 new ClearSelectedNodes(topicProvider)
             };
         }
@@ -261,6 +263,52 @@ public class GraphNodeFactory implements NodeFactory
                 }
             }
         }  
+        
+        private static final class AddNodeRaindrop extends AbstractAction
+        {
+            private final KnowledgeGraphProvider provider; 
+            private final RaindropCollectionProvider raindrop;
+            
+            public AddNodeRaindrop(KnowledgeGraphProvider provider) 
+            {
+                super("Add Root Topic from Raindrop");
+                this.provider = provider;
+                raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
+                setEnabled(raindrop != null);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent evt) 
+            {
+                List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+                panels.add(new TopicWizardPanel1());
+                String[] steps = new String[panels.size()];
+                for (int i = 0; i < panels.size(); i++) 
+                {
+                    Component c = panels.get(i).getComponent();
+                    // Default step name to component name of panel.
+                    steps[i] = c.getName();
+                    if (c instanceof JComponent) { // assume Swing components
+                        JComponent jc = (JComponent) c;
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                        jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+                    }
+                }
+                WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+                // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+                wiz.setTitleFormat(new MessageFormat("{0}"));
+                wiz.setTitle("Add Root Topic");        
+                if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+                {
+                    String name = (String) wiz.getProperty("name");
+                    String tag = (String) wiz.getProperty("tag");
+                    provider.addRootTopic(name, tag);
+                }
+            }
+        }          
 
         private static final class ClearSelectedNodes extends AbstractAction
         {

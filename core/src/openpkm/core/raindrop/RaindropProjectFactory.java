@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -58,9 +58,8 @@ public class RaindropProjectFactory implements ProjectFactory
     @Override
     public void saveProject(Project project) throws IOException, ClassCastException 
     {
-        if(project instanceof PropertiesProvider)
+        if(project instanceof PropertiesProvider provider)
         {            
-            PropertiesProvider provider = (PropertiesProvider)project;
             OutputStream os = new FileOutputStream(project.getProjectDirectory().getFileObject(PROJECT_FOLDER).getFileObject(PROJECT_FILE).getPath());
             provider.getProperties().store(os, "Raindrop project updated");
             os.close();   

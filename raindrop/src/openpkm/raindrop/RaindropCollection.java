@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Comparator;
-import java.util.List;
 
 /**
  *
@@ -27,7 +26,6 @@ public interface RaindropCollection
     void setCover(String cover);
     BufferedImage getImage() throws MalformedURLException, IOException;
     RaindropAccount getAccount();
-    List<Raindrop> getRaindrops();
     boolean isPublic();
     void setPublic(boolean share);  
     

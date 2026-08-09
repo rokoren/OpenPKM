@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/contextAction.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -14,6 +14,8 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.LinkProvider;
 import openpkm.base.TagsProvider;
+import openpkm.raindrop.Raindrop;
+import openpkm.raindrop.RaindropProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -32,10 +34,10 @@ import org.openide.util.NbBundle.Messages;
 
 @ActionID(
         category = "OpenPKM",
-        id = "openpkm.raindrop.RaindropAction"
+        id = "openpkm.core.raindrop.RaindropAction"
 )
 @ActionRegistration(
-        iconBase = "openpkm/raindrop/resources/raindrop.png",
+        iconBase = "openpkm/core/resources/raindrop.png",
         displayName = "#CTL_RaindropAction"
 )
 @ActionReferences({
@@ -46,7 +48,7 @@ import org.openide.util.NbBundle.Messages;
 public final class RaindropAction implements ActionListener 
 {
     @StaticResource()
-    public static final String BANNER = "openpkm/raindrop/resources/banner.png";  
+    public static final String BANNER = "openpkm/core/resources/raindrop512.png";  
     
     private static final Logger LOG = Logger.getLogger(RaindropAction.class.getName());    
     

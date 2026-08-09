@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import java.awt.Component;
 import java.awt.Image;
@@ -26,6 +26,7 @@ import openpkm.utils.DescriptionWizardPanel;
 import openpkm.utils.RootProjectWizardPanel1;
 import openpkm.utils.Utils;
 import openpkm.neo4j.Neo4jInstance;
+import openpkm.raindrop.RaindropCollection;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
@@ -45,10 +46,7 @@ import org.openide.util.ImageUtilities;
 public class RaindropCollectionNode extends AbstractNode
 {
     @StaticResource()
-    public static final String ICON = "openpkm/raindrop/resources/collection.png";    
-
-    @StaticResource()
-    public static final String BANNER = "openpkm/raindrop/resources/banner.png";  
+    public static final String BANNER = "openpkm/core/resources/raindrop48.png";  
     
     private static final Logger LOG = Logger.getLogger(RaindropCollectionNode.class.getName());      
     
@@ -60,36 +58,36 @@ public class RaindropCollectionNode extends AbstractNode
         setName(collection.getCollectionID() + "");
         setDisplayName(collection.getTitle());
         setShortDescription(collection.getDescription());
-        setIconBaseWithExtension(ICON);
         this.collection = collection;
     }  
     
-    @Override
-    public Image getIcon(int type) 
+    private Image getIcon(boolean opened)
     {
         try 
         {
             BufferedImage image = collection.getImage();
             if(image != null)
             {
-                if(collection.isPublic())
-                {
-                    return Utils.resizeImage(image, 16, 16);                      
-                }
-                return ImageUtilities.createDisabledImage(Utils.resizeImage(image, 16, 16));
+                return Utils.resizeImage(image, 16, 16);
             }
         } 
         catch (IOException e) 
         {
             LOG.warning(e.getMessage());
         }
-        return ImageUtilities.loadImage(ICON, true);
+        return Utils.getTreeFolderIcon(opened);        
+    }
+    
+    @Override
+    public Image getIcon(int type) 
+    {
+        return getIcon(false);
     }
 
     @Override
     public Image getOpenedIcon(int type) 
     {
-        return getIcon(type);
+        return getIcon(true);
     }  
     
     @Override

@@ -1,33 +1,32 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/wizardPanel.java to edit this template
  */
-package openpkm.raindrop;
+package openpkm.core.raindrop;
 
 import javax.swing.event.ChangeListener;
+import openpkm.base.TagsProvider;
+import openpkm.raindrop.Raindrop;
 import org.openide.WizardDescriptor;
+import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 
-/**
- *
- * @author rok
- */
-public class CreateRaindropWizardPanel2 implements WizardDescriptor.Panel<WizardDescriptor>
+public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>, WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
      */
-    private CreateRaindropVisualPanel2 component;
+    private CreateRaindropVisualPanel1 component;
 
     // Get the visual component for the panel. In this template, the component
     // is kept separate. This can be more efficient: if the wizard is created
     // but never displayed, or not all panels are displayed, it is better to
     // create only those which really need to be visible.
     @Override
-    public CreateRaindropVisualPanel2 getComponent() {
+    public CreateRaindropVisualPanel1 getComponent() {
         if (component == null) {
-            component = new CreateRaindropVisualPanel2();
+            component = new CreateRaindropVisualPanel1();
         }
         return component;
     }
@@ -48,7 +47,23 @@ public class CreateRaindropWizardPanel2 implements WizardDescriptor.Panel<Wizard
         // this condition changes (last form field filled in...) then
         // use ChangeSupport to implement add/removeChangeListener below.
         // WizardDescriptor.ERROR/WARNING/INFORMATION_MESSAGE will also be useful.
-    }    
+    }
+    
+    @Override
+    public void validate() throws WizardValidationException 
+    {
+        RaindropProject project = getComponent().getSelectedProject();
+        if(project == null) 
+        {
+            throw new WizardValidationException(null, "Collection can not be empty", null);
+        }          
+    }  
+
+    @Override
+    public boolean isFinishPanel() 
+    {
+        return true;
+    }
 
     @Override
     public void addChangeListener(ChangeListener l) {
@@ -68,6 +83,12 @@ public class CreateRaindropWizardPanel2 implements WizardDescriptor.Panel<Wizard
     public void storeSettings(WizardDescriptor wiz) 
     {
         // use wiz.putProperty to remember current panel state
-        wiz.putProperty(Raindrop.PROPS_NOTE, getComponent().getRaindropNote());        
-    }    
+        RaindropProject project = getComponent().getSelectedProject();
+        if(project != null)
+        {
+            wiz.putProperty("project", project); 
+        }
+        wiz.putProperty(Raindrop.PROPS_IMPORTANT, Boolean.valueOf(getComponent().isRaindropImportant()));        
+        wiz.putProperty(TagsProvider.PROP_TAGS, getComponent().getSelectedTags());        
+    }
 }
