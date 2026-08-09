@@ -226,6 +226,33 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         }
         return null;
     }
+    
+    @Override
+    public Topic addRootTopic(String projectID, String topicID, String name, String tag) 
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
+            session.executeWriteWithoutResult(tx -> createRootTopic(tx, projectID, topicID, name, tag));
+            Topic t = new TopicImpl(topicID);
+            t.setName(name);
+            t.setTag(tag);
+            return t;
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }
+        return null;
+    }    
 
     @Override
     public void removeRootTopic(String topicID) {
@@ -548,7 +575,14 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         var t = result.single();
         var topicID = t.get("ID").asString();
         return topicID;
-    }    
+    }  
+    
+    private static void createRootTopic(TransactionContext tx, String projectID, String topicID, String name, String tag) 
+    {
+        tx.run("""
+            CREATE (t:Topic {id: $topicID, createdDate: datetime(), project: $project, name: $name, tag: $tag})
+        """, Map.of("project", projectID, "topicID", topicID, "name", name, "tag", tag));
+    }     
     
     private static String createChildrenTopic(TransactionContext tx, String parentID, String name, String tag, VisibilityProvider.Modifier modifier) 
     {

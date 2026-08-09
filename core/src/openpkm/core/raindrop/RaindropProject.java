@@ -4046,6 +4046,18 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 changeSupport.fireChange();                 
             }             
         }
+        
+        @Override
+        public void addRootTopic(String topicID, String name, String tag) 
+        {
+            Topic topic = getNeo4jInstance().addRootTopic(getProjectDirectory().getName(), topicID, name, tag);
+            if(topic != null)
+            {
+                getRootTopics().add(topic);
+                topics.put(topic.getTopicID(), topic);
+                changeSupport.fireChange();                 
+            }             
+        }        
 
         @Override
         public void removeRootTopic(Topic topic) 

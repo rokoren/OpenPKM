@@ -79,5 +79,4 @@ public class TopicWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizar
         wiz.putProperty("name", name); 
         wiz.putProperty("tag", tag); 
     }
-
 }

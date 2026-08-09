@@ -23,6 +23,7 @@ public interface KnowledgeGraphProvider extends GraphProvider
     boolean isTopic(TopicsProvider project);
     List<ChildrenTopic> getChildrenTopics(String parentID);
     void addRootTopic(String name, String tag);
+    void addRootTopic(String topicID, String name, String tag);    
     void removeRootTopic(Topic topic);
     void addChildrenTopic(String parentID, String name, String tag, VisibilityProvider.Modifier modifier);
     void removeChildrenTopic(ChildrenTopic topic);   

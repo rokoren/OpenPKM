@@ -29,6 +29,8 @@ import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
+import openpkm.core.raindrop.TopicRaindropWizardPanel1;
+import openpkm.raindrop.RaindropCollection;
 import openpkm.raindrop.RaindropCollectionProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
@@ -281,7 +283,7 @@ public class GraphNodeFactory implements NodeFactory
             public void actionPerformed(ActionEvent evt) 
             {
                 List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-                panels.add(new TopicWizardPanel1());
+                panels.add(new TopicRaindropWizardPanel1(raindrop.getRaindropCollection()));
                 String[] steps = new String[panels.size()];
                 for (int i = 0; i < panels.size(); i++) 
                 {
@@ -300,12 +302,12 @@ public class GraphNodeFactory implements NodeFactory
                 WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
                 // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
                 wiz.setTitleFormat(new MessageFormat("{0}"));
-                wiz.setTitle("Add Root Topic");        
+                wiz.setTitle("Add Root Topic from Raindrop");        
                 if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
                 {
-                    String name = (String) wiz.getProperty("name");
+                    RaindropCollection collection = (RaindropCollection) wiz.getProperty("collection");
                     String tag = (String) wiz.getProperty("tag");
-                    provider.addRootTopic(name, tag);
+                    provider.addRootTopic(collection.getCollectionID() + "", collection.getTitle(), tag);
                 }
             }
         }          
