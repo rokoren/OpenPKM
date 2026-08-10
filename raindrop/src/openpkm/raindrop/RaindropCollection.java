@@ -25,7 +25,6 @@ public interface RaindropCollection
     String getCover();
     void setCover(String cover);
     BufferedImage getImage() throws MalformedURLException, IOException;
-    RaindropAccount getAccount();
     boolean isPublic();
     void setPublic(boolean share);  
     

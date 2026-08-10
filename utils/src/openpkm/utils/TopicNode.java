@@ -73,7 +73,7 @@ public class TopicNode extends AbstractNode
         {
             try
             {
-                RaindropCollection collection = raindrop.getRaindropCollection().getAccount().getCollection(Integer.parseInt(topic.getTopicID()));  
+                RaindropCollection collection = raindrop.getRaindropAccount().getCollection(Integer.parseInt(topic.getTopicID()));  
                 if(collection != null)
                 {
                     BufferedImage image = collection.getImage();

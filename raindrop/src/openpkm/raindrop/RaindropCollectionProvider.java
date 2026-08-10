@@ -10,5 +10,6 @@ package openpkm.raindrop;
  */
 public interface RaindropCollectionProvider 
 {
+    RaindropAccount getRaindropAccount();
     RaindropCollection getRaindropCollection();
 }

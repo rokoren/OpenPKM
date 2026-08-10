@@ -4,8 +4,9 @@
  */
 package openpkm.core.raindrop;
 
+import java.util.List;
 import javax.swing.event.ChangeListener;
-import openpkm.raindrop.RaindropCollection;
+import openpkm.raindrop.RaindropChildrenCollection;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -16,11 +17,11 @@ import org.openide.util.HelpCtx;
  */
 public class TopicRaindropWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
-    private final RaindropCollection collection;
+    private final List<RaindropChildrenCollection> collections;
 
-    public TopicRaindropWizardPanel1(RaindropCollection collection) 
+    public TopicRaindropWizardPanel1(List<RaindropChildrenCollection> collections) 
     {
-        this.collection = collection;
+        this.collections = collections;
     }  
     
     /**
@@ -80,7 +81,7 @@ public class TopicRaindropWizardPanel1 implements WizardDescriptor.ValidatingPan
     public void readSettings(WizardDescriptor wiz) 
     {
         // use wiz.getProperty to retrieve previous panel state
-        getComponent().setRaindrop(collection);
+        getComponent().setRaindropCollections(collections);
     }
 
     @Override

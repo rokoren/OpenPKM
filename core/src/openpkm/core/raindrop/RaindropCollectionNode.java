@@ -26,6 +26,7 @@ import openpkm.utils.DescriptionWizardPanel;
 import openpkm.utils.RootProjectWizardPanel1;
 import openpkm.utils.Utils;
 import openpkm.neo4j.Neo4jInstance;
+import openpkm.raindrop.RaindropAccount;
 import openpkm.raindrop.RaindropCollection;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
@@ -50,14 +51,16 @@ public class RaindropCollectionNode extends AbstractNode
     
     private static final Logger LOG = Logger.getLogger(RaindropCollectionNode.class.getName());      
     
+    private final RaindropAccount account;
     private final RaindropCollection collection;
     
-    public RaindropCollectionNode(RaindropCollection collection) 
+    public RaindropCollectionNode(RaindropAccount account, RaindropCollection collection) 
     {
         super(Children.LEAF);
         setName(collection.getCollectionID() + "");
         setDisplayName(collection.getTitle());
         setShortDescription(collection.getDescription());
+        this.account = account;
         this.collection = collection;
     }  
     
@@ -146,7 +149,7 @@ public class RaindropCollectionNode extends AbstractNode
                 props.setProperty(RaindropProject.PROP_TITLE, title);     
                 props.setProperty(RaindropProject.PROP_NEO4J_INSTANCE_ID, neo4j.getInstanceID()); 
                 props.setProperty(RaindropProject.PROP_DESCRIPTION, description);
-                props.setProperty(RaindropProject.PROP_RAINDROP_USER_ID, collection.getAccount().getUser().getUserID() + "");   
+                props.setProperty(RaindropProject.PROP_RAINDROP_USER_ID, account.getUser().getUserID() + "");   
                 props.setProperty(RaindropProject.PROP_RAINDROP_COLLECTION_ID, collection.getCollectionID() + ""); 
                 props.setProperty(RaindropProject.PROP_RAINDROP_COLLECTION_ROOT, Boolean.TRUE.toString()); 
                 

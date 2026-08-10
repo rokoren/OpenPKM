@@ -205,7 +205,8 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private Lookup lkp;  
     private FileObject dataDir;
     private LocalFileSystem fileSystem;
-      
+    
+    private RaindropAccount raindropAccount; 
     private RaindropCollection raindropCollection;  
     private Neo4jInstance neo4jInstance;       
     
@@ -569,16 +570,29 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
 // TODO RaindropCollectionProvider     
     
     @Override
+    public synchronized RaindropAccount getRaindropAccount()
+    {
+        if(raindropAccount == null)
+        {
+            String userID = props.getProperty(PROP_RAINDROP_USER_ID);
+            if (userID != null)
+            {
+                raindropAccount = RaindropService.getDefault().getAccount(Integer.parseInt(userID));              
+            }             
+        }
+        return raindropAccount;
+    }     
+    
+    @Override
     public synchronized RaindropCollection getRaindropCollection()
     {
         if(raindropCollection == null)
-        {
-            String userID = props.getProperty(PROP_RAINDROP_USER_ID);
+        {            
             String collectionID = props.getProperty(PROP_RAINDROP_COLLECTION_ID);
             String string = props.getProperty(PROP_RAINDROP_COLLECTION_ROOT);
-            if (userID != null && collectionID != null && string != null)
+            if (collectionID != null && string != null)
             {
-                RaindropAccount account = RaindropService.getDefault().getAccount(Integer.parseInt(userID));
+                RaindropAccount account = getRaindropAccount();
                 if(account != null)
                 {
                     boolean isRoot= Boolean.parseBoolean(string);                        
@@ -2899,7 +2913,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         @Override
         public void run() 
         {
-            List<RaindropTag> list = RaindropUtils.getTags(getRaindropCollection().getAccount(), getRaindropCollection());
+            List<RaindropTag> list = RaindropUtils.getTags(getRaindropAccount(), getRaindropCollection());
             
             Set<String> tags = new HashSet<>();
             tags.addAll(getTags());
@@ -2922,7 +2936,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 handle.start();
                 handle.switchToIndeterminate();                
                 
-                List<Properties> props = RaindropUtils.getRaindrops(getRaindropCollection());                
+                List<Properties> props = RaindropUtils.getRaindrops(getRaindropAccount(), getRaindropCollection());                
                 List<Raindrop> raindrops = new ArrayList<>(props.size());
                 for(Properties prop : props)
                 {
@@ -3069,7 +3083,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
             if(root != null && markdown != null)
             {
-                Properties props = RaindropUtils.createRaindrop(getRaindropCollection(), link, important, tags, note);
+                Properties props = RaindropUtils.createRaindrop(getRaindropAccount(), getRaindropCollection(), link, important, tags, note);
                 Raindrop raindrop = getFactory().getRaindrop(props);
                 if(raindrop != null)
                 {
@@ -4078,6 +4092,18 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 changeSupport.fireChange();                 
             }
         }
+        
+        @Override
+        public void addChildrenTopic(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier) 
+        {
+            ChildrenTopic topic = getNeo4jInstance().addChildrenTopic(parentID, topicID, name, tag, modifier);
+            if(topic != null)
+            {
+                getChildrenTopics(topic.getParentID()).add(topic);
+                topics.put(topic.getTopicID(), topic);
+                changeSupport.fireChange();                 
+            }
+        }        
 
         @Override
         public void removeChildrenTopic(ChildrenTopic topic) 

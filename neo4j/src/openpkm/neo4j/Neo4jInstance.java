@@ -51,6 +51,7 @@ public interface Neo4jInstance
     Topic addRootTopic(String projectID, String topicID, String name, String tag);
     void removeRootTopic(String topicID);
     ChildrenTopic addChildrenTopic(String parentID, String name, String tag, VisibilityProvider.Modifier modifier);
+    ChildrenTopic addChildrenTopic(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier);
     void removeChildrenTopic(ChildrenTopic topic);
    
     List<Goal> getRootGoals(String topicID);    

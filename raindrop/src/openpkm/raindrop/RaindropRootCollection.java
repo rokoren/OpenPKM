@@ -19,7 +19,6 @@ public class RaindropRootCollection implements RaindropCollection
 {
     private static final Logger LOG = Logger.getLogger(RaindropRootCollection.class.getName());    
     
-    private final RaindropAccount account;
     private final int collectionID;  
     
     private String title;
@@ -29,9 +28,8 @@ public class RaindropRootCollection implements RaindropCollection
     private boolean share;
     private BufferedImage image;
 
-    public RaindropRootCollection(RaindropAccount account, int collectionID, boolean isPublic) 
+    public RaindropRootCollection(int collectionID, boolean isPublic) 
     {
-        this.account = account;
         this.collectionID = collectionID;
         this.share = isPublic;        
     }        
@@ -100,12 +98,6 @@ public class RaindropRootCollection implements RaindropCollection
         }
         return image;
     } 
-
-    @Override
-    public RaindropAccount getAccount() 
-    {
-        return account;
-    }  
     
     @Override
     public String toString()

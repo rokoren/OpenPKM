@@ -287,6 +287,35 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         }        
         return null;
     }
+    
+    @Override
+    public ChildrenTopic addChildrenTopic(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
+            session.executeWriteWithoutResult(tx -> createChildrenTopic(tx, parentID, topicID, name, tag, modifier));
+            ChildrenTopicImpl t = new ChildrenTopicImpl(topicID);
+            t.setParentID(parentID);
+            t.setName(name);
+            t.setTag(tag);
+            t.setModifier(modifier);
+            return t;
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }        
+        return null;
+    }    
 
     @Override
     public void removeChildrenTopic(ChildrenTopic topic) {
@@ -595,6 +624,14 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         addTopicToParent(tx, parentID, topicID, modifier);
         return topicID;
     }  
+    
+    private static void createChildrenTopic(TransactionContext tx, String topicID, String parentID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    {
+        var result = tx.run("""
+            CREATE (t:Topic {id: $topicID, createdDate: datetime(), name: $name, tag: $tag})
+        """, Map.of("topicID", topicID, "name", name, "tag", tag));
+        addTopicToParent(tx, parentID, topicID, modifier);
+    }      
     
     private static void addTopicToParent(TransactionContext tx, String parentID, String topicID, VisibilityProvider.Modifier modifier) 
     {

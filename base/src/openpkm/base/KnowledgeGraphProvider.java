@@ -26,6 +26,7 @@ public interface KnowledgeGraphProvider extends GraphProvider
     void addRootTopic(String topicID, String name, String tag);    
     void removeRootTopic(Topic topic);
     void addChildrenTopic(String parentID, String name, String tag, VisibilityProvider.Modifier modifier);
+    void addChildrenTopic(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier);
     void removeChildrenTopic(ChildrenTopic topic);   
     List<String> getTags(Topic topic);
     Set<String> getTags(Collection<Topic> topics);    

@@ -6,6 +6,7 @@ package openpkm.core.raindrop;
 
 import java.awt.Component;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -59,19 +60,12 @@ public class TopicRaindropVisualPanel1 extends javax.swing.JPanel
         return jTextField1.getText().trim();
     }      
     
-    public void setRaindrop(RaindropCollection collection)
+    public void setRaindropCollections(List<RaindropChildrenCollection> collections)
     {
-        Set<RaindropChildrenCollection> collections = new TreeSet<RaindropChildrenCollection>(RaindropCollection.titleComparator());
+        Set<RaindropChildrenCollection> sorted = new TreeSet<RaindropChildrenCollection>(RaindropCollection.titleComparator());
         model.removeAllElements();
-        try
-        {
-            collections.addAll(collection.getAccount().getChildrenCollections(collection.getCollectionID()));
-            model.addAll(collections);              
-        }
-        catch(IOException e)
-        {
-            LOG.warning(e.getMessage());
-        }
+        sorted.addAll(collections);
+        model.addAll(sorted);           
     }  
     
     private static class ListCellRendererImpl extends JLabel implements ListCellRenderer<RaindropChildrenCollection>

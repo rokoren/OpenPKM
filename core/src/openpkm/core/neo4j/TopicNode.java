@@ -26,6 +26,8 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
+import openpkm.core.raindrop.TopicRaindropWizardPanel1;
+import openpkm.raindrop.RaindropChildrenCollection;
 import openpkm.raindrop.RaindropCollection;
 import openpkm.raindrop.RaindropCollectionProvider;
 import openpkm.utils.Utils;
@@ -63,7 +65,8 @@ public class TopicNode extends AbstractNode
         return new Action[]
         {
             new SelectTopic(provider, topic),
-            new AddTopic(provider, topic)
+            new AddTopic(provider, topic),
+            new AddTopicRaindrop(provider, topic)
         };
     }  
     
@@ -74,7 +77,7 @@ public class TopicNode extends AbstractNode
         {
             try
             {
-                RaindropCollection collection = raindrop.getRaindropCollection().getAccount().getCollection(Integer.parseInt(topic.getTopicID()));  
+                RaindropCollection collection = raindrop.getRaindropAccount().getCollection(Integer.parseInt(topic.getTopicID()));  
                 if(collection != null)
                 {
                     BufferedImage image = collection.getImage();
@@ -235,4 +238,73 @@ public class TopicNode extends AbstractNode
             }
         }
     } 
+    
+    private static final class AddTopicRaindrop extends AbstractAction
+    {
+        private final KnowledgeGraphProvider provider;      
+        private final Topic topic; 
+        
+        private List<RaindropChildrenCollection> collections;        
+
+        public AddTopicRaindrop(KnowledgeGraphProvider provider, Topic topic) 
+        {
+            super("Add Topic from Raindrop");
+            this.provider = provider;
+            this.topic = topic;
+            RaindropCollectionProvider raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
+            if(raindrop != null)
+            {
+                try
+                {
+                    RaindropCollection collection = raindrop.getRaindropAccount().getCollection(Integer.parseInt(topic.getTopicID())); 
+                    if(collection != null)
+                    {
+                        collections = raindrop.getRaindropAccount().getChildrenCollections(collection.getCollectionID());                        
+                    }
+                }
+                catch(NumberFormatException e)
+                {
+                    LOG.fine(e.getMessage());
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                  
+            }          
+            setEnabled(collections != null && !collections.isEmpty());            
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {            
+            List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+            panels.add(new TopicRaindropWizardPanel1(collections));
+            panels.add(new AccessibilityWizardPanel2());
+            String[] steps = new String[panels.size()];
+            for (int i = 0; i < panels.size(); i++) {
+                Component c = panels.get(i).getComponent();
+                // Default step name to component name of panel.
+                steps[i] = c.getName();
+                if (c instanceof JComponent) { // assume Swing components
+                    JComponent jc = (JComponent) c;
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                    jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                    jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+                }
+            }
+            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+            wiz.setTitleFormat(new MessageFormat("{0}"));
+            wiz.setTitle("Add Topic from Raindrop");        
+            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+            {
+                RaindropCollection collection = (RaindropCollection) wiz.getProperty("collection");
+                String tag = (String) wiz.getProperty("tag");
+                VisibilityProvider.Modifier visibilityModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
+                provider.addChildrenTopic(topic.getTopicID(), collection.getCollectionID() + "", collection.getTitle(), tag, visibilityModifier);
+            }
+        }
+    }     
 }

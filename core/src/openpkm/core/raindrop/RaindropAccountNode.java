@@ -96,7 +96,7 @@ public class RaindropAccountNode extends AbstractNode
         @Override
         protected Node[] createNodes(RaindropCollection collection) 
         {
-            return new Node[] {new RaindropCollectionNode(collection)};
+            return new Node[] {new RaindropCollectionNode(account, collection)};
         }        
     } 
     

@@ -12,9 +12,9 @@ public class RaindropChildrenCollection extends RaindropRootCollection
 {
     private final int parentID;
 
-    public RaindropChildrenCollection(RaindropAccount account, int collectionID, int parentID, boolean isPublic)
+    public RaindropChildrenCollection(int collectionID, int parentID, boolean isPublic)
     {
-        super(account, collectionID, isPublic);
+        super(collectionID, isPublic);
         this.parentID = parentID;
     }
     

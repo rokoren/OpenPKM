@@ -8,6 +8,7 @@ import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import openpkm.base.GoalsGraphProvider;
 import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.core.raindrop.TopicRaindropWizardPanel1;
+import openpkm.raindrop.RaindropChildrenCollection;
 import openpkm.raindrop.RaindropCollection;
 import openpkm.raindrop.RaindropCollectionProvider;
 import org.netbeans.api.annotations.common.StaticResource;
@@ -269,21 +271,33 @@ public class GraphNodeFactory implements NodeFactory
         private static final class AddNodeRaindrop extends AbstractAction
         {
             private final KnowledgeGraphProvider provider; 
-            private final RaindropCollectionProvider raindrop;
+            
+            private List<RaindropChildrenCollection> collections;             
             
             public AddNodeRaindrop(KnowledgeGraphProvider provider) 
             {
                 super("Add Root Topic from Raindrop");
                 this.provider = provider;
-                raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
-                setEnabled(raindrop != null);
+                RaindropCollectionProvider raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
+                if(raindrop != null)
+                {
+                    try
+                    {
+                        collections = raindrop.getRaindropAccount().getChildrenCollections(raindrop.getRaindropCollection().getCollectionID());
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                      
+                }
+                setEnabled(collections != null && !collections.isEmpty());
             }
 
             @Override
             public void actionPerformed(ActionEvent evt) 
             {
                 List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-                panels.add(new TopicRaindropWizardPanel1(raindrop.getRaindropCollection()));
+                panels.add(new TopicRaindropWizardPanel1(collections));
                 String[] steps = new String[panels.size()];
                 for (int i = 0; i < panels.size(); i++) 
                 {
