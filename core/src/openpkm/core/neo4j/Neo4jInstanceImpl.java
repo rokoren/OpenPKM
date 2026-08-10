@@ -625,7 +625,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         return topicID;
     }  
     
-    private static void createChildrenTopic(TransactionContext tx, String topicID, String parentID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    private static void createChildrenTopic(TransactionContext tx, String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier) 
     {
         var result = tx.run("""
             CREATE (t:Topic {id: $topicID, createdDate: datetime(), name: $name, tag: $tag})
