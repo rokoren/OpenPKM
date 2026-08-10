@@ -2910,23 +2910,80 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
         }         
         
+        private List<RaindropTag> getTags(RaindropCollection collection) throws IOException
+        {
+            List<RaindropTag> tags = RaindropUtils.getTags(getRaindropAccount(), collection);
+            List<RaindropChildrenCollection> collections = getRaindropAccount().getChildrenCollections(collection.getCollectionID());
+            if(!collections.isEmpty())
+            {
+                for(RaindropChildrenCollection childrenCollection : collections)
+                {
+                    tags.addAll(getTags(childrenCollection));
+                }
+            }
+            return tags;
+        }  
+        
+        private List<Properties> getRaindrops(RaindropCollection collection)
+        {
+            List<Properties> props = RaindropUtils.getRaindrops(getRaindropAccount(), collection); 
+            try
+            {
+                List<RaindropChildrenCollection> collections = getRaindropAccount().getChildrenCollections(collection.getCollectionID());
+                if(!collections.isEmpty())
+                {
+                    for(RaindropChildrenCollection childrenCollection : collections)
+                    {
+                        props.addAll(getRaindrops(childrenCollection));
+                    }
+                }                
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+            return props;
+        } 
+
+        private String getTreeID(RaindropChildrenCollection collection) throws IOException
+        {
+            RaindropCollection rc = getRaindropAccount().getCollection(collection.getParentID());
+            if(rc instanceof RaindropChildrenCollection)
+            {
+                RaindropChildrenCollection childrenCollection = (RaindropChildrenCollection)rc;
+                StringBuilder sb = new StringBuilder();                        
+                sb.append(getTreeID(childrenCollection));
+                sb.append(collection.getCollectionID());
+                return sb.toString();
+            }
+            return collection.getCollectionID() + "";
+        }        
+        
         @Override
         public void run() 
         {
-            List<RaindropTag> list = RaindropUtils.getTags(getRaindropAccount(), getRaindropCollection());
-            
-            Set<String> tags = new HashSet<>();
-            tags.addAll(getTags());
-            
-            if(!list.isEmpty())
+            try
             {
-                for(RaindropTag tag : list)
+                //List<RaindropTag> list = RaindropUtils.getTags(getRaindropAccount(), getRaindropCollection());
+                List<RaindropTag> list = getTags(getRaindropCollection());
+
+                Set<String> tags = new HashSet<>();
+                tags.addAll(RaindropProject.this.getTags());
+
+                if(!list.isEmpty())
                 {
-                    tags.add(tag.getTag());
-                }             
-            } 
-            
-            setTags(tags);
+                    for(RaindropTag tag : list)
+                    {
+                        tags.add(tag.getTag());
+                    }             
+                } 
+                setTags(tags);                
+            }
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+
             
             FileObject root = getRootFolder();
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
@@ -2936,7 +2993,8 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 handle.start();
                 handle.switchToIndeterminate();                
                 
-                List<Properties> props = RaindropUtils.getRaindrops(getRaindropAccount(), getRaindropCollection());                
+                // List<Properties> props = RaindropUtils.getRaindrops(getRaindropAccount(), getRaindropCollection());   
+                List<Properties> props = getRaindrops(getRaindropCollection());                
                 List<Raindrop> raindrops = new ArrayList<>(props.size());
                 for(Properties prop : props)
                 {
@@ -2944,6 +3002,19 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                     if(raindrop != null)
                     {
                         raindrops.add(raindrop);
+                        
+                        if(raindrop.getCollection() instanceof RaindropChildrenCollection collection)
+                        {
+                            try
+                            {
+                                String topic = getTreeID(collection);
+                                raindrop.getProperties().setProperty(TopicsProvider.PROP_TOPICS, topic);                               
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }                        
                     }
                 }
 
@@ -2990,7 +3061,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                     else
                     {                                
                         try
-                        {
+                        {                            
                             OutputStream os = root.createAndOpen(raindrop.getSourceID() + "." + PropertiesProvider.EXTENSION);                            
                             raindrop.getProperties().store(os, "Created by Raindrop project: " + getTitle()); 
                             os.close();

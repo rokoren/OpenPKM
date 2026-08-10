@@ -36,6 +36,7 @@ import openpkm.base.Video;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
+import openpkm.base.TopicsProvider;
 import openpkm.base.WorkflowProvider;
 import openpkm.jcef.CefClientProvider;
 import openpkm.raindrop.Raindrop;
@@ -63,7 +64,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, MultiViewDescription
+public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, TopicsProvider, MultiViewDescription
 {
     @StaticResource()
     public static final String ICON = "openpkm/core/resources/raindrop.png";       
@@ -373,6 +374,17 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
         }                
         return Collections.EMPTY_SET;
     }
+    
+    @Override
+    public Set<String> getTopics()
+    {
+        String topics = props.getProperty(PROP_TOPICS);
+        if(topics != null)
+        {
+            return Set.of(topics.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }    
 
     @Override
     public boolean isImportant() 
