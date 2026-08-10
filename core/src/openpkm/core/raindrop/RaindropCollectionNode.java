@@ -155,7 +155,7 @@ public class RaindropCollectionNode extends AbstractNode
                 
                 try
                 {             
-                    File projectDirectory = new File(location, title.toLowerCase());
+                    File projectDirectory = new File(location, title.toLowerCase().replaceAll(" ", "_"));
                     projectDirectory.mkdir();            
                     File projectFolder = new File(projectDirectory, RaindropProjectFactory.PROJECT_FOLDER);
                     projectFolder.mkdir();
