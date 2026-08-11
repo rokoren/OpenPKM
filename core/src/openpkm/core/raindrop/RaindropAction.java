@@ -15,6 +15,7 @@ import javax.swing.JComponent;
 import openpkm.base.LinkProvider;
 import openpkm.base.TagsProvider;
 import openpkm.raindrop.Raindrop;
+import openpkm.raindrop.RaindropCollection;
 import openpkm.raindrop.RaindropProvider;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.openide.DialogDisplayer;
@@ -88,11 +89,12 @@ public final class RaindropAction implements ActionListener
             RaindropProvider provider = project.getLookup().lookup(RaindropProvider.class);
             if(provider != null)
             {
+                RaindropCollection collection = (RaindropCollection)wiz.getProperty("collection");
                 String note = (String) wiz.getProperty(Raindrop.PROPS_NOTE);
                 List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
-                Boolean important = (Boolean) wiz.getProperty(Raindrop.PROPS_IMPORTANT);
+                Boolean important = (Boolean) wiz.getProperty(Raindrop.PROPS_IMPORTANT);                
                 
-                FileObject file = provider.createRaindrop(context.getLink(), important.booleanValue(), tags, note);
+                FileObject file = collection == null ? provider.createRaindrop(context.getLink(), important.booleanValue(), tags, note) : provider.createRaindrop(collection, context.getLink(), important.booleanValue(), tags, note);
                 if(file != null)
                 {
                     StatusDisplayer.getDefault().setStatusText("Raindrop saved");                         

@@ -3146,15 +3146,32 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             }             
             */          
         } 
-        
+
         @Override
         public FileObject createRaindrop(String link, boolean important, List<String> tags, String note)
+        {
+            return createRaindrop(getRaindropCollection(), link, important, tags, note);
+        }
+        
+        @Override
+        public FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note)
         {
             FileObject root = getRootFolder();
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
             if(root != null && markdown != null)
             {
-                Properties props = RaindropUtils.createRaindrop(getRaindropAccount(), getRaindropCollection(), link, important, tags, note);
+                Properties props = RaindropUtils.createRaindrop(getRaindropAccount(), collection, link, important, tags, note);
+                if(collection instanceof RaindropChildrenCollection childrenCollection)
+                {
+                    try
+                    {
+                        props.setProperty(TopicsProvider.PROP_TOPICS, getTreeID(childrenCollection));                        
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                }
                 Raindrop raindrop = getFactory().getRaindrop(props);
                 if(raindrop != null)
                 {

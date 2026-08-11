@@ -7,6 +7,7 @@ package openpkm.core.raindrop;
 import javax.swing.event.ChangeListener;
 import openpkm.base.TagsProvider;
 import openpkm.raindrop.Raindrop;
+import openpkm.raindrop.RaindropCollection;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -55,7 +56,7 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
         RaindropProject project = getComponent().getSelectedProject();
         if(project == null) 
         {
-            throw new WizardValidationException(null, "Collection can not be empty", null);
+            throw new WizardValidationException(null, "Project can not be empty", null);
         }          
     }  
 
@@ -87,6 +88,11 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
         if(project != null)
         {
             wiz.putProperty("project", project); 
+        }
+        RaindropCollection collection = getComponent().getSelectedCollection();
+        if(collection != null)
+        {
+            wiz.putProperty("collection", collection);        
         }
         wiz.putProperty(Raindrop.PROPS_IMPORTANT, Boolean.valueOf(getComponent().isRaindropImportant()));        
         wiz.putProperty(TagsProvider.PROP_TAGS, getComponent().getSelectedTags());        

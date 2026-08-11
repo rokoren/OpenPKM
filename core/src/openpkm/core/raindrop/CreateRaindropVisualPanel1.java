@@ -6,12 +6,15 @@ package openpkm.core.raindrop;
 
 import java.awt.Component;
 import java.beans.BeanInfo;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,6 +29,11 @@ import javax.swing.SwingConstants;
 import openpkm.base.IconProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
+import openpkm.raindrop.RaindropAccount;
+import openpkm.raindrop.RaindropChildrenCollection;
+import openpkm.raindrop.RaindropCollection;
+import openpkm.raindrop.RaindropCollectionProvider;
+import openpkm.utils.Utils;
 import org.controlsfx.control.CheckComboBox;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
@@ -33,8 +41,12 @@ import org.openide.util.ImageUtilities;
 
 public final class CreateRaindropVisualPanel1 extends JPanel 
 {
-    private final DefaultComboBoxModel<RaindropProject> projects = new DefaultComboBoxModel<>();     
-    private final ListCellRenderer renderer = new ListCellRendererImpl();
+    private static final Logger LOG = Logger.getLogger(CreateRaindropVisualPanel1.class.getName());
+    
+    private final DefaultComboBoxModel<RaindropProject> projects = new DefaultComboBoxModel<>();  
+    private final DefaultComboBoxModel<RaindropChildrenCollection> model = new DefaultComboBoxModel<>();  
+    private final ListCellRenderer renderer1 = new ListCellRendererImpl1();
+    private final ListCellRenderer renderer2 = new ListCellRendererImpl2();
     private final ObservableList<String> tags = FXCollections.observableArrayList();  
     
     private CheckComboBox<String> comboBox;
@@ -78,6 +90,11 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         return (RaindropProject)projects.getSelectedItem();
     }
     
+    public RaindropCollection getSelectedCollection()
+    {
+        return (RaindropCollection)model.getSelectedItem();
+    }    
+    
     public boolean isRaindropImportant()
     {
         return jCheckBox1.isSelected();
@@ -101,6 +118,38 @@ public final class CreateRaindropVisualPanel1 extends JPanel
             projects.setSelectedItem(raindropProject);                     
         }
     }
+    
+    private List<RaindropChildrenCollection> getCollections(RaindropAccount account, RaindropCollection collection) throws IOException
+    {
+        List<RaindropChildrenCollection> list = new ArrayList();
+        List<RaindropChildrenCollection> collections = account.getChildrenCollections(collection.getCollectionID());
+        for(RaindropChildrenCollection childrenCollection : collections)
+        {
+            list.addAll(getCollections(account, childrenCollection));
+        }
+        list.addAll(collections);
+        return list;
+    }
+    
+    private void setCollections()
+    {
+        model.removeAllElements();
+        RaindropCollectionProvider provider = getSelectedProject();
+        if(provider != null)
+        {
+            try
+            {
+                List<RaindropChildrenCollection> collections = getCollections(provider.getRaindropAccount(), provider.getRaindropCollection());
+                Set<RaindropChildrenCollection> sorted = new TreeSet<RaindropChildrenCollection>(RaindropCollection.titleComparator());
+                sorted.addAll(collections);
+                model.addAll(sorted);                 
+            }  
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }
+        }
+    }    
     
     private void setTags(Set<String> projectTags)
     {
@@ -127,9 +176,9 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         return comboBox.getCheckModel().getCheckedItems();
     }     
     
-    private static class ListCellRendererImpl extends JLabel implements ListCellRenderer<RaindropProject>
+    private static class ListCellRendererImpl1 extends JLabel implements ListCellRenderer<RaindropProject>
     {        
-        public ListCellRendererImpl() 
+        public ListCellRendererImpl1() 
         {
             setOpaque(true);
             setHorizontalAlignment(SwingConstants.LEADING);
@@ -171,6 +220,48 @@ public final class CreateRaindropVisualPanel1 extends JPanel
             return this;
         }
     } 
+    
+    private static class ListCellRendererImpl2 extends JLabel implements ListCellRenderer<RaindropChildrenCollection>
+    {
+        public ListCellRendererImpl2() 
+        {
+            setOpaque(true);
+            setHorizontalAlignment(SwingConstants.LEADING);
+            setVerticalAlignment(CENTER);
+        }   
+
+        @Override
+        public Component getListCellRendererComponent(JList list, RaindropChildrenCollection collection, int index, boolean isSelected, boolean cellHasFocus) 
+        {
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+
+            if(collection == null)
+            {
+                setText("");
+                setIcon(null);
+            }
+            else
+            {
+                try
+                {
+                    setIcon(ImageUtilities.image2Icon(Utils.resizeImage(collection.getImage(), 16, 16)));                    
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+                setText(collection.getTitle());                   
+            }
+            
+            return this;
+        }
+    }      
 
     private static Comparator<RaindropProject> titleComparator() 
     {
@@ -206,6 +297,9 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         jPanel1 = new javax.swing.JPanel();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jCheckBox1 = new javax.swing.JCheckBox();
+        filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jLabel3 = new javax.swing.JLabel();
+        jComboBox2 = new javax.swing.JComboBox<>();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -218,19 +312,18 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel1, gridBagConstraints);
 
-        jComboBox1.setMaximumRowCount(30);
         jComboBox1.setModel(projects);
         jComboBox1.setPreferredSize(new java.awt.Dimension(200, 22));
-        jComboBox1.setRenderer(renderer);
+        jComboBox1.setRenderer(renderer1);
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                collection(evt);
+                project(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jComboBox1, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -242,7 +335,7 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel2.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
@@ -251,12 +344,12 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.LINE_AXIS));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         add(jPanel1, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 5;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         add(filler1, gridBagConstraints);
@@ -264,22 +357,49 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jCheckBox1.text")); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         add(jCheckBox1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        add(filler3, gridBagConstraints);
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel3.text") + ":"); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabel3, gridBagConstraints);
+
+        jComboBox2.setModel(model);
+        jComboBox2.setRenderer(renderer2);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jComboBox2, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void collection(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_collection
+    private void project(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_project
         setTags();
-    }//GEN-LAST:event_collection
+        setCollections();
+    }//GEN-LAST:event_project
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
+    private javax.swing.Box.Filler filler3;
     private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JComboBox<RaindropProject> jComboBox1;
+    private javax.swing.JComboBox<RaindropChildrenCollection> jComboBox2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     // End of variables declaration//GEN-END:variables
 }
