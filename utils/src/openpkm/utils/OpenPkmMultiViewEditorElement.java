@@ -11,8 +11,16 @@ import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDropEvent;
 import java.util.logging.Logger;
 import javax.swing.JEditorPane;
+import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import openpkm.base.LinkFactory;
+import openpkm.base.Source;
+import openpkm.base.SourceProviderWrapper;
+import org.netbeans.core.api.multiview.MultiViewHandler;
+import org.netbeans.core.api.multiview.MultiViewPerspective;
+import org.netbeans.core.api.multiview.MultiViews;
+import org.netbeans.core.spi.multiview.MultiViewDescription;
+import org.netbeans.core.spi.multiview.MultiViewElementCallback;
 import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.LoaderTransfer;
@@ -27,17 +35,55 @@ public class OpenPkmMultiViewEditorElement extends MultiViewEditorElement
 {
     private static final Logger LOG = Logger.getLogger(OpenPkmMultiViewEditorElement.class.getName());
     
-    private DropTarget dropTarget;
+    private transient MultiViewElementCallback callback;    
+    private transient DropTarget dropTarget;
 
     public OpenPkmMultiViewEditorElement(Lookup lookup) 
     {
         super(lookup);
     }
+    
+    @Override
+    public void setMultiViewCallback(MultiViewElementCallback callback) 
+    {
+        this.callback = callback;
+        super.setMultiViewCallback(callback);
+    }    
 
     @Override
     public void componentOpened() 
     {
-        super.componentOpened();        
+        super.componentOpened(); 
+        
+        DataObject data = getLookup().lookup(DataObject.class);
+        if(data != null) 
+        {
+            SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+            if(sourceProvider != null)
+            {
+                Source source = sourceProvider.getSource();
+                if(source != null)
+                {
+                    MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
+                    if(mvd != null)
+                    {
+                        MultiViewHandler handler = MultiViews.findMultiViewHandler(callback.getTopComponent());
+                        if(handler != null)
+                        {
+                            MultiViewPerspective perspective = handler.getSelectedPerspective();
+                            handler.addMultiViewDescription(mvd, -1); 
+                            
+                            SwingUtilities.invokeLater(() -> 
+                            {
+                                handler.requestVisible(perspective);
+                            });                            
+                            
+                        }                           
+                    } 
+                }
+            }
+        }
+                      
         installDropTarget();                
     }
 

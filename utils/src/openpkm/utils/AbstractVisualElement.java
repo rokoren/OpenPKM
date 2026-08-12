@@ -51,7 +51,7 @@ public abstract class AbstractVisualElement extends JFXPanel implements HomeProv
     
     private final Lookup lkp;     
     
-    protected WebView browser;
+    protected transient WebView browser;
     protected transient MultiViewElementCallback callback;
     
     private final ChangeSupport changeSupport = new ChangeSupport(this);    

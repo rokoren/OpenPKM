@@ -61,6 +61,7 @@ public class Installer implements Runnable
                                 MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
                                 if(mvd != null)
                                 {
+                                    /*
                                     MultiViewHandler handler = MultiViews.findMultiViewHandler(topComponent);
                                     if(handler != null)
                                     {
@@ -74,7 +75,8 @@ public class Installer implements Runnable
                                                 handler.requestActive(perspective);
                                             }                                             
                                         }                                      
-                                    }                                                                       
+                                    } 
+                                    */
 
                                     //StatusDisplayer.getDefault().setStatusText("Opened: " + source.getSourceID(), 1);
                                     /*
