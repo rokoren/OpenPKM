@@ -71,13 +71,11 @@ public class OpenPkmMultiViewEditorElement extends MultiViewEditorElement
                         if(handler != null)
                         {
                             MultiViewPerspective perspective = handler.getSelectedPerspective();
-                            handler.addMultiViewDescription(mvd, -1); 
-                            
                             SwingUtilities.invokeLater(() -> 
                             {
                                 handler.requestVisible(perspective);
-                            });                            
-                            
+                            });                              
+                            handler.addMultiViewDescription(mvd, -1);                                                                                   
                         }                           
                     } 
                 }
