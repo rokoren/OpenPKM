@@ -32,18 +32,23 @@
                 <package>com.sun.glass.events</package>
                 <package>com.sun.glass.ui</package>
                 <package>com.sun.glass.ui.delegate</package>
+                <package>com.sun.glass.ui.headless</package>
                 <package>com.sun.glass.ui.win</package>
                 <package>com.sun.glass.utils</package>
                 <package>com.sun.java.scene.web</package>
                 <package>com.sun.javafx</package>
                 <package>com.sun.javafx.animation</package>
                 <package>com.sun.javafx.application</package>
+                <package>com.sun.javafx.application.preferences</package>
                 <package>com.sun.javafx.beans</package>
                 <package>com.sun.javafx.beans.event</package>
+                <package>com.sun.javafx.beans.property</package>
                 <package>com.sun.javafx.binding</package>
                 <package>com.sun.javafx.charts</package>
                 <package>com.sun.javafx.collections</package>
                 <package>com.sun.javafx.css</package>
+                <package>com.sun.javafx.css.media</package>
+                <package>com.sun.javafx.css.media.expression</package>
                 <package>com.sun.javafx.css.parser</package>
                 <package>com.sun.javafx.cursor</package>
                 <package>com.sun.javafx.effect</package>
@@ -67,6 +72,7 @@
                 <package>com.sun.javafx.iio.common</package>
                 <package>com.sun.javafx.iio.gif</package>
                 <package>com.sun.javafx.iio.ios</package>
+                <package>com.sun.javafx.iio.java2d</package>
                 <package>com.sun.javafx.iio.jpeg</package>
                 <package>com.sun.javafx.iio.png</package>
                 <package>com.sun.javafx.image</package>
@@ -150,6 +156,7 @@
                 <package>com.sun.scenario.effect.impl</package>
                 <package>com.sun.scenario.effect.impl.hw</package>
                 <package>com.sun.scenario.effect.impl.hw.d3d</package>
+                <package>com.sun.scenario.effect.impl.hw.mtl</package>
                 <package>com.sun.scenario.effect.impl.prism</package>
                 <package>com.sun.scenario.effect.impl.prism.ps</package>
                 <package>com.sun.scenario.effect.impl.prism.sw</package>
@@ -225,6 +232,7 @@
                 <package>javafx.stage</package>
                 <package>javafx.util</package>
                 <package>javafx.util.converter</package>
+                <package>netscape.javascript</package>
                 <package>openpkm.javafx</package>
                 <package>org.controlsfx.control</package>
                 <package>org.controlsfx.control.action</package>
@@ -260,6 +268,10 @@
             <class-path-extension>
                 <runtime-relative-path>ext/ikonli-javafx-12.4.0.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/ikonli-javafx-12.4.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/jdk.jsobject.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/jdk.jsobject.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
                 <runtime-relative-path>ext/ikonli-materialdesign-pack-12.4.0.jar</runtime-relative-path>
@@ -298,12 +310,12 @@
                 <binary-origin>release/modules/ext/javafx.media.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
-                <runtime-relative-path>ext/javafx.fxml.jar</runtime-relative-path>
-                <binary-origin>release/modules/ext/javafx.fxml.jar</binary-origin>
-            </class-path-extension>
-            <class-path-extension>
                 <runtime-relative-path>ext/ikonli-core-12.4.0.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/ikonli-core-12.4.0.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/javafx.fxml.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/javafx.fxml.jar</binary-origin>
             </class-path-extension>
         </data>
     </configuration>

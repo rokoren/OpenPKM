@@ -159,6 +159,7 @@ import openpkm.raindrop.RaindropProvider;
 import openpkm.raindrop.RaindropService;
 import openpkm.raindrop.RaindropTag;
 import openpkm.raindrop.RaindropUtils;
+import openpkm.base.DataProvider;
 
 /**
  *
@@ -423,6 +424,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 list.add(new PictureProviderImpl()); 
                 list.add(new VideoProviderImpl()); 
                 list.add(new RecycleBinProviderImpl());  
+                list.add(new DataProviderImpl()); 
             }                                   
             
             lkp = Lookups.fixed(list.toArray(new Object[list.size()]));              
@@ -1092,6 +1094,93 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.PROJECTS);
         }               
+    }     
+   
+// TODO DataProvider
+
+    private final class DataProviderImpl implements DataProvider, SourceEventListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public DataProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }                           
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }              
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {  
+                        if(source instanceof StateSupport state)
+                        {
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            if(provider.getWorkflow() == WorkflowProvider.Workflow.RECYCLE_BIN)
+                            {
+                                return false;                                
+                            }
+                        } 
+                        return true;
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }
+
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            changeSupport.fireChange();
+        } 
     }     
     
 // TODO DataGroup    

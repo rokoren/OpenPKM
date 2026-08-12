@@ -47,7 +47,7 @@ import org.openide.util.lookup.ProxyLookup;
 @TopComponent.Description(
         preferredID = "TagsTopComponent",
         iconBase = "openpkm/core/resources/document_hash_tag.png",
-        persistenceType = TopComponent.PERSISTENCE_NEVER
+        persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED
 )
 @TopComponent.Registration(mode = "properties", openAtStartup = true)
 @ActionID(category = "Window", id = "openpkm.core.TagsTopComponent")
@@ -73,9 +73,9 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
         initComponents();
         setName(Bundle.CTL_TagsTopComponent());
         setToolTipText(Bundle.HINT_TagsTopComponent());
-        putClientProperty(TopComponent.PROP_DRAGGING_DISABLED, Boolean.TRUE);
+        putClientProperty(TopComponent.PROP_CLOSING_DISABLED, Boolean.TRUE);
+        //putClientProperty(TopComponent.PROP_DRAGGING_DISABLED, Boolean.TRUE);
         putClientProperty(TopComponent.PROP_MAXIMIZATION_DISABLED, Boolean.TRUE);
-        putClientProperty(TopComponent.PROP_UNDOCKING_DISABLED, Boolean.TRUE);
         associateLookup(new ProxyLookup(ExplorerUtils.createLookup(explorerManager, getActionMap()), Lookups.singleton(this)));  
         explorerManager.setRootContext(new AbstractNode(tags));   
         result = Utilities.actionsGlobalContext().lookupResult(TagsProvider.class);          

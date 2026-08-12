@@ -7,7 +7,11 @@ package openpkm.asciidoc;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import openpkm.base.DisplayNameProvider;
+import openpkm.base.LinkFactory;
+import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
+import openpkm.utils.OpenPkmMultiViewEditorElement;
 import openpkm.utils.Utils;
 import org.netbeans.core.spi.multiview.MultiViewElement;
 import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
@@ -122,7 +126,7 @@ public class AsciiDocDataObject extends MultiDataObject
             }  
             else
             {                   
-                lookup = new ProxyLookup(super.getLookup(), Lookups.singleton(provider));                
+                lookup = new ProxyLookup(super.getLookup(), Lookups.singleton(provider), Lookups.singleton(new AsciiDocLinkFactory()));                
             }
         }
         return lookup; 
@@ -157,6 +161,29 @@ public class AsciiDocDataObject extends MultiDataObject
     )
     @Messages("LBL_AsciiDoc_EDITOR=Source")
     public static MultiViewEditorElement createEditor(Lookup lkp) {
-        return new MultiViewEditorElement(lkp);
+        return new OpenPkmMultiViewEditorElement(lkp);
     }  
+
+    private static class AsciiDocLinkFactory implements LinkFactory 
+    {
+        @Override
+        public String createLink(DataObject data) 
+        {
+            SourceProviderWrapper provider = data.getLookup().lookup(SourceProviderWrapper.class);
+            if(provider != null)
+            {
+                Source source = provider.getSource();
+                if(source != null)
+                {
+                    DisplayNameProvider displayNameProvider = provider.getSource().getLookup().lookup(DisplayNameProvider.class);   
+                    if(displayNameProvider != null)
+                    {
+                        return "link:openpkm:" + data.getPrimaryFile().getNameExt() + "[" + displayNameProvider.getDisplayName(DisplayNameProvider.TextFormat.PLAIN) + "]";
+                        //return "xref:" + data.getPrimaryFile().getNameExt() + "[" + displayNameProvider.getDisplayName(DisplayNameProvider.TextFormat.PLAIN) + "]";                        
+                    }
+                }
+            }
+            return null;
+        }
+    }    
 }

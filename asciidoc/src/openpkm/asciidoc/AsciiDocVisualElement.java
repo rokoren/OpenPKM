@@ -7,7 +7,6 @@ package openpkm.asciidoc;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javax.swing.Action;
 import javax.swing.DefaultComboBoxModel;
@@ -39,9 +38,7 @@ public final class AsciiDocVisualElement extends AbstractVisualElement implement
     public static final String ATTR_ASCIIDOC_THEME = "asciidoc.theme";     
     
     private static final String ACTION_COMMAND_PROVIDER = "provider";
-    private static final String ACTION_COMMAND_THEME    = "theme";
-    
-    private static final Logger LOG = Logger.getLogger(AsciiDocVisualElement.class.getName());    
+    private static final String ACTION_COMMAND_THEME    = "theme";       
     
     private final DefaultComboBoxModel<AsciiDocThemeProvider> themes1 = new DefaultComboBoxModel<>(); 
     private final DefaultComboBoxModel<AsciiDocTheme> themes2 = new DefaultComboBoxModel<>(); 
