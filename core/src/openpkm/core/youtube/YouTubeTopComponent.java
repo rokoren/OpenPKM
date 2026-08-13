@@ -28,6 +28,7 @@ import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.actions.CopyAction;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
+import org.openide.awt.StatusDisplayer;
 import org.openide.awt.UndoRedo;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
@@ -95,7 +96,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
         }  
         
         CopyAction copyAction = SystemAction.get(CopyAction.class);
-        getActionMap().put(copyAction.getActionMapKey(), copyLinkAction);         
+        getActionMap().put(copyAction.getActionMapKey(), copyLinkAction);            
     }
     
     @Override
@@ -239,6 +240,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
             {
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 clipboard.setContents(new StringSelection(url),null);
+                StatusDisplayer.getDefault().setStatusText("Link copied from " + getName()); 
             }
         }
     };     

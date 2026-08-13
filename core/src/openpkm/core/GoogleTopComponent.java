@@ -25,6 +25,7 @@ import org.cef.handler.CefLoadHandler;
 import org.cef.network.CefRequest;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.actions.CopyAction;
+import org.openide.awt.StatusDisplayer;
 import org.openide.awt.UndoRedo;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
@@ -228,6 +229,7 @@ public final class GoogleTopComponent extends TopComponent implements HomeProvid
             {
                 Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 clipboard.setContents(new StringSelection(url),null);
+                StatusDisplayer.getDefault().setStatusText("Link copied from " + getName());
             }
         }
     };   
