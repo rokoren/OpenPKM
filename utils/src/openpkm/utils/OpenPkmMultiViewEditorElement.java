@@ -16,6 +16,8 @@ import javax.swing.text.BadLocationException;
 import openpkm.base.LinkFactory;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.core.api.multiview.MultiViewHandler;
 import org.netbeans.core.api.multiview.MultiViewPerspective;
 import org.netbeans.core.api.multiview.MultiViews;
@@ -63,7 +65,7 @@ public class OpenPkmMultiViewEditorElement extends MultiViewEditorElement
             {
                 Source source = sourceProvider.getSource();
                 if(source != null)
-                {
+                {                                         
                     MultiViewDescription mvd = source.getLookup().lookup(MultiViewDescription.class);
                     if(mvd != null)
                     {
@@ -78,6 +80,16 @@ public class OpenPkmMultiViewEditorElement extends MultiViewEditorElement
                             handler.addMultiViewDescription(mvd, -1);                                                                                   
                         }                           
                     } 
+                    
+                    Project project = source.getLookup().lookup(Project.class);
+                    if(project != null)
+                    {
+                        Project[] projects = {project};                        
+                        SwingUtilities.invokeLater(() -> 
+                        {
+                            OpenProjects.getDefault().open(projects, false);         
+                        });                                                                                                          
+                    }                       
                 }
             }
         }
@@ -89,6 +101,33 @@ public class OpenPkmMultiViewEditorElement extends MultiViewEditorElement
     public void componentClosed() 
     {
         uninstallDropTarget();
+        
+        DataObject data = getLookup().lookup(DataObject.class);
+        if(data != null) 
+        {
+            SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+            if(sourceProvider != null)
+            {
+                Source source = sourceProvider.getSource();
+                if(source != null)
+                {                                                             
+                    Project project = source.getLookup().lookup(Project.class);
+                    if(project != null)
+                    {
+                        if(OpenProjects.getDefault().isProjectOpen(project))
+                        {
+                            Project[] projects = {project};
+
+                            SwingUtilities.invokeLater(() -> 
+                            {
+                                OpenProjects.getDefault().close(projects);   
+                            });                                                                                                                       
+                        }                                                                
+                    }                       
+                }
+            }
+        }        
+        
         super.componentClosed();
     }
 
