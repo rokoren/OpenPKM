@@ -5,7 +5,13 @@
 package openpkm.core.youtube;
 
 import java.awt.BorderLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
@@ -19,6 +25,7 @@ import org.cef.handler.CefLoadHandler;
 import org.cef.handler.CefLoadHandler.ErrorCode;
 import org.cef.network.CefRequest;
 import org.netbeans.api.settings.ConvertAsProperties;
+import org.openide.actions.CopyAction;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.UndoRedo;
@@ -26,7 +33,9 @@ import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.windows.TopComponent;
 import org.openide.util.NbBundle.Messages;
+import org.openide.util.actions.SystemAction;
 import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  * Top component which displays something.
@@ -83,14 +92,17 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
             {
                 LOG.warning(e.getMessage());
             }
-        }         
+        }  
+        
+        CopyAction copyAction = SystemAction.get(CopyAction.class);
+        getActionMap().put(copyAction.getActionMapKey(), copyLinkAction);         
     }
     
     @Override
-    public Lookup getLookup()
+    public Lookup getLookup() 
     {
-        return Lookups.singleton(this);
-    }
+        return new ProxyLookup(super.getLookup(), Lookups.singleton(this));
+    } 
     
     @Override
     public UndoRedo getUndoRedo()
@@ -216,4 +228,18 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     {
         return "Forward";
     }
+    
+    private final Action copyLinkAction = new AbstractAction() 
+    {                
+        @Override
+        public void actionPerformed(ActionEvent e) 
+        {
+            String url = getLink();
+            if (url != null) 
+            {
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(new StringSelection(url),null);
+            }
+        }
+    };     
 }
