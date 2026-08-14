@@ -19,6 +19,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
 import openpkm.trello.TrelloBoard;
+import openpkm.trello.TrelloInbox;
 import openpkm.trello.TrelloService;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
@@ -137,7 +138,7 @@ public class TrelloAccountsProviderImpl implements TrelloAccountsProvider
             {
                 String title = preferences.get(TrelloAccount.PROPS_TITLE, "");
                 String apiKey = preferences.get(TrelloAccount.PROPS_API_KEY, "");
-                String accessToken = preferences.get(TrelloAccount.PROPS_ACCESS_TOKEN, ""); 
+                String accessToken = preferences.get(TrelloAccount.PROPS_ACCESS_TOKEN, "");                                
                 TrelloAccount account = new TrelloAccountImpl(username, apiKey, accessToken);
                 account.setTitle(title);                      
                 return account;            
@@ -150,20 +151,35 @@ public class TrelloAccountsProviderImpl implements TrelloAccountsProvider
     {
         private final String username;
         private final String apiKey;
-        private final String accessToken;   
+        private final String accessToken;  
 
-        private String title;     
+        private String title; 
+        private TrelloInbox inbox;
         private Map<String, TrelloBoard> boards;   
 
         public TrelloAccountImpl(String username, String apiKey, String accessToken) 
         {
             this.username = username;
             this.apiKey = apiKey;
-            this.accessToken = accessToken;  
-        }   
+            this.accessToken = accessToken;
+        } 
+        
+        @Override
+        public TrelloInbox getInbox()
+        {
+            if(inbox == null)
+            {
+                TrelloService service = Lookup.getDefault().lookup(TrelloService.class);
+                if(service != null)
+                {
+                    inbox = service.getInbox(this);
+                }                
+            }
+            return inbox;
+        }
 
         private synchronized Map<String, TrelloBoard> getMap()
-        {
+        {            
             if(boards == null)
             {
                 boards = new HashMap<>();   
@@ -229,5 +245,5 @@ public class TrelloAccountsProviderImpl implements TrelloAccountsProvider
         {
             return PREFERENCES.node(username);
         }         
-    }    
+    }        
 }

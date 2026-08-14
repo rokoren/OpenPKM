@@ -4,6 +4,7 @@
  */
 package openpkm.core.trello;
 
+import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -158,9 +159,14 @@ public class TrelloAccountNode extends AbstractNode
         
         @Override
         public Image getIcon(int type) 
-        {
-            Icon icon = new RoundRectIcon(16, 16, board.getBoardBackground());
-            return ImageUtilities.icon2Image(icon);
+        {            
+            Color color = board.getBoardBackground();
+            if(color != null)
+            {
+                Icon icon = new RoundRectIcon(14, 14, color);
+                return ImageUtilities.icon2Image(icon);
+            }
+            return ImageUtilities.loadImage(ICON);            
         }        
     }     
 }

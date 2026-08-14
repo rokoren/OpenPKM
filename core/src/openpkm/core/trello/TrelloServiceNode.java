@@ -34,11 +34,11 @@ import org.openide.util.Lookup;
  *
  * @author Rok Koren
  */
-@ServicesTabNodeRegistration(name="trello", displayName="Trello", iconResource = "openpkm/core/resources/trello.png")
+@ServicesTabNodeRegistration(name="trello", displayName="Trello", iconResource = "openpkm/core/resources/trello16.png")
 public class TrelloServiceNode extends AbstractNode
 {
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/trello.png";    
+    public static final String ICON = "openpkm/core/resources/trello16.png";    
     
     public TrelloServiceNode() 
     {

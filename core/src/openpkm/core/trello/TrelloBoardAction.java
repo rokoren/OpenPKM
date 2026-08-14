@@ -36,7 +36,7 @@ import openpkm.base.ProjectManagement;
  * @author Rok Koren
  */
 @ActionID(
-        category = "OpenPKM/Notebook",
+        category = "OpenPKM/ProjectManagement",
         id = "openpkm.trello.TrelloBoardAction"
 )
 @ActionRegistration(

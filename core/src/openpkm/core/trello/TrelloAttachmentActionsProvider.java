@@ -42,7 +42,7 @@ public class TrelloAttachmentActionsProvider extends AbstractAttachmentActionsPr
     private static final class AddAttachmentLink extends AbstractAction
     {  
         @StaticResource()
-        public static final String BANNER = "openpkm/core/resources/trello-48.png";          
+        public static final String BANNER = "openpkm/core/resources/trello-logo-icon48.png";          
         
         private final TrelloAttachmentProvider provider;            
 

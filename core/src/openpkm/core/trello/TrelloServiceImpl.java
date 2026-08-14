@@ -49,6 +49,7 @@ import openpkm.trello.TrelloLabelFactory;
 import openpkm.trello.TrelloAttachmentFactory;
 import openpkm.trello.TrelloCardLink;
 import openpkm.trello.TrelloCheckListFactory;
+import openpkm.trello.TrelloInbox;
 import openpkm.trello.TrelloMemberFactory;
 import openpkm.trello.TrelloListFactory;
 
@@ -60,6 +61,20 @@ import openpkm.trello.TrelloListFactory;
 public class TrelloServiceImpl implements TrelloService
 {
     private static final Logger LOG = Logger.getLogger(TrelloService.class.getName());    
+    
+    @Override
+    public TrelloInbox getInbox(TrelloAccount account)
+    {
+        HttpResponse<JsonNode> response = Unirest.get("https://api.trello.com/1/members/me?fields=inbox")
+          .header("Accept", "application/json")
+          .queryString("key", account.getApiKey())
+          .queryString("token", account.getAccessToken())
+          .asJson();  
+        
+        JSONObject json = response.getBody().getObject();
+        JSONObject inbox = json.getJSONObject("inbox");
+        return new TrelloInboxImpl(inbox.getString("idBoard"), inbox.getString("idList"));
+    }
     
     @Override
     public List<TrelloBoard> getBoards(TrelloAccount account, Trello trello)
@@ -688,5 +703,26 @@ public class TrelloServiceImpl implements TrelloService
         {
             return getBoardName();
         }         
-    }     
+    } 
+
+    private static final class TrelloInboxImpl implements TrelloInbox
+    {
+        private final String boardID;
+        private final String listID;
+
+        public TrelloInboxImpl(String boardID, String listID) {
+            this.boardID = boardID;
+            this.listID = listID;
+        }
+
+        @Override
+        public String getBoardID() {
+            return boardID;
+        }
+
+        @Override
+        public String getListID() {
+            return listID;
+        }                
+    }    
 }

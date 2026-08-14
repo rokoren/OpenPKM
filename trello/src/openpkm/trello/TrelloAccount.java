@@ -20,13 +20,14 @@ public interface TrelloAccount
     String PROPS_API_KEY      = "api.key";     
     String PROPS_ACCESS_TOKEN = "access.token";   
     String PROPS_TITLE        = "title";  
-    String PROPS_USERNAME     = "username";  
+    String PROPS_USERNAME     = "username";       
     
     String getUsername();
     String getTitle();
     void setTitle(String title);
     String getApiKey();
     String getAccessToken();
+    TrelloInbox getInbox();
     Collection<TrelloBoard> getBoards();
     TrelloBoard getBoard(String boardID);   
     Preferences getPreferences();

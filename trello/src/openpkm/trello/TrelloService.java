@@ -19,6 +19,7 @@ public interface TrelloService
 {
     int STATUS_OK = 200;
     
+    TrelloInbox getInbox(TrelloAccount account);
     List<TrelloBoard> getBoards(TrelloAccount account, Trello trello); 
     List<TrelloList> getLists(TrelloBoard trelloBoard, TrelloListFactory provider, Trello trello);
     TrelloList createList(String boardID, String name, TrelloListFactory provider, TrelloAccount account);

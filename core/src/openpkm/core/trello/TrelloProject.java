@@ -150,7 +150,7 @@ public class TrelloProject implements ProjectManagement, TrelloBoard, SourceProv
     public static final String PROP_TRELLO_ACTIVITY = "trello.activity";
     
     @StaticResource()
-    public static final String ICON = "openpkm/core/resources/trello-16.png";     
+    public static final String ICON = "openpkm/core/resources/trello-logo-icon.png";     
     
     private static final String DATA_FOLDER = "data";    
     
@@ -858,7 +858,7 @@ public class TrelloProject implements ProjectManagement, TrelloBoard, SourceProv
             Color color = getBoardBackground();
             if(color != null)
             {
-                Icon icon = new RoundRectIcon(14, 14, color);
+                Icon icon = new RoundRectIcon(15, 15, color);
                 return ImageUtilities.icon2Image(icon);
             }
             return ImageUtilities.loadImage(ICON);
