@@ -647,7 +647,7 @@ public class TrelloProject implements ProjectManagement, TrelloBoard, SourceProv
                 {
                     try
                     {
-                        browser = provider.getCefClient().createBrowser(getBoardShortUrl(), false, false);   
+                        browser = provider.getCefClient().createBrowser(getBoardShortUrl(), true, false);   
                         add(browser.getUIComponent(), BorderLayout.CENTER);
                     }
                     catch(Exception e)
@@ -674,7 +674,8 @@ public class TrelloProject implements ProjectManagement, TrelloBoard, SourceProv
         @Override
         public String getDisplayName() 
         {
-            return "Trello";
+            DisplayNameProvider provider = getLookup().lookup(DisplayNameProvider.class);
+            return provider.getDisplayName(DisplayNameProvider.TextFormat.PLAIN);
         }   
         
         @Override
