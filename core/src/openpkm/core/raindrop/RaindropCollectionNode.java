@@ -96,14 +96,10 @@ public class RaindropCollectionNode extends AbstractNode
     @Override
     public Action[] getActions(boolean context) 
     {
-        if(collection.isPublic())
+        return new Action[]
         {
-            return new Action[]
-            {
-                new NewProjectAction()
-            };            
-        }
-        return new Action[0];
+            new NewProjectAction()
+        };  
     }
     
     private final class NewProjectAction extends AbstractAction
