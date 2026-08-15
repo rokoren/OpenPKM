@@ -3437,7 +3437,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                     {
                         try
                         {
-                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file)); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -3521,7 +3521,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file)); 
                 getVideosById().put(video.getSourceID(), video); 
                 sourceAdded(new SourceEventImpl(this, video));            
             }           

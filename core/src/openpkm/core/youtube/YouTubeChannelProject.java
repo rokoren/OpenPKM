@@ -2915,7 +2915,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                     {
                         try
                         {
-                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file)); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -3015,7 +3015,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file)); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 sourceAdded(new SourceEventImpl(this, video));             
             }           
@@ -3092,7 +3092,7 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
                                 VideoListResponse response2 = request2.setId(videoID).execute();  
                                 if(response2.getItems() != null && !response2.getItems().isEmpty())
                                 {   
-                                    YouTubeVideo video = factory.getVideo(YouTubeVideoFactory.getProperties(response2), true);                                
+                                    YouTubeVideo video = factory.getVideo(YouTubeVideoFactory.getProperties(response2));                                
                                     FileObject file = createData(video, fileTypeProvider);
 
                                     FileObject root = getRootFolder();

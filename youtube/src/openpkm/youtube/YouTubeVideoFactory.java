@@ -20,7 +20,8 @@ import openpkm.base.WorkflowProvider;
  */
 public interface YouTubeVideoFactory extends SourceFactory<YouTubeVideo> 
 {
-    YouTubeVideo getVideo(Properties props, boolean isDisplayName);       
+    YouTubeVideo getVideoBase(Properties props);       
+    YouTubeVideo getVideo(Properties props);       
     YouTubeVideo getVideo(GooglePasswordProvider provider, String videoID);  
     
     public static Properties getProperties(VideoListResponse response)

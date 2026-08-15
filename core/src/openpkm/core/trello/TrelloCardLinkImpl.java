@@ -66,7 +66,7 @@ public class TrelloCardLinkImpl implements TrelloCardLink
             YouTubeVideoFactory provider = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
             if(provider != null)
             {
-                YouTubeVideo video = provider.getVideo(props, false);
+                YouTubeVideo video = provider.getVideoBase(props);
                 if(video != null)
                 {
                     lkp = new ProxyLookup(lookup, Lookups.proxy(video));

@@ -232,7 +232,7 @@ public final class YouTubeVideoAction implements ActionListener
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                YouTubeVideo video = provider.getFactory().getVideo(props, true);
+                YouTubeVideo video = provider.getFactory().getVideo(props);
                 try
                 {
                     FileObject file = provider.createData(video, fileType); 

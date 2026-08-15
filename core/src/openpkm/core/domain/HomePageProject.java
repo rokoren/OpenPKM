@@ -687,7 +687,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                                             VideoListResponse response2 = request2.setId(videoID).execute();  
                                             if(response2.getItems() != null && !response2.getItems().isEmpty())
                                             {   
-                                                YouTubeVideo video = youTubeVideoProvider.getFactory().getVideo(YouTubeVideoFactory.getProperties(response2), true);                                
+                                                YouTubeVideo video = youTubeVideoProvider.getFactory().getVideo(YouTubeVideoFactory.getProperties(response2));                                
                                                 FileObject file = youTubeVideoProvider.createData(video, fileTypeProvider);
 
                                                 FileObject root = youTubeVideoProvider.getRootFolder();
@@ -3389,7 +3389,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
                     {
                         try
                         {
-                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                            YouTubeVideo video = factory.getVideo(Utils.getProperties(file)); 
                             videos.put(video.getSourceID(), video);
                         }
                         catch(IOException e)
@@ -3489,7 +3489,7 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
             FileObject file = evt.getFile();
             try
             {
-                YouTubeVideo video = factory.getVideo(Utils.getProperties(file), true); 
+                YouTubeVideo video = factory.getVideo(Utils.getProperties(file)); 
                 getVideosById().put(video.getSourceID(), video);                                                              
                 sourceAdded(new SourceEventImpl(this, video));             
             }           

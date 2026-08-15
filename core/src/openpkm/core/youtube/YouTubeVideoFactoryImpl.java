@@ -16,7 +16,6 @@ import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -28,6 +27,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.GoalsProvider;
 import openpkm.base.IconProvider;
@@ -63,14 +63,16 @@ import openpkm.youtube.YouTubeVideoFactory;
 public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
 {
     private static final Logger LOG = Logger.getLogger(YouTubeVideoFactory.class.getName());     
+
+    @Override
+    public YouTubeVideo getVideoBase(Properties props) 
+    {
+        return new YouTubeVideoBase(props);
+    }
     
     @Override
-    public YouTubeVideo getVideo(Properties props, boolean isDisplayName) 
+    public YouTubeVideo getVideo(Properties props) 
     {
-        if(isDisplayName)
-        {
-            return new StandardImpl(props);
-        }
         return new YouTubeVideoImpl(props);
     }
     
@@ -193,7 +195,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
                     }                     
                 }                 
 
-                return getVideo(props, true);
+                return getVideo(props);
             }                 
         }
         catch (IOException e)
@@ -214,9 +216,9 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         LOG.info("YouTube Video saved");
     }       
     
-    private static class StandardImpl extends YouTubeVideoImpl implements DisplayNameProvider
+    private static class YouTubeVideoImpl extends YouTubeVideoBase implements DisplayNameProvider, TopicsProvider, GoalsProvider, TagsProvider, BacklinksProvider
     {    
-        public StandardImpl(Properties props)
+        public YouTubeVideoImpl(Properties props)
         {
             super(props);
         }
@@ -229,10 +231,54 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
                 return getVideoTitle();
             }
             return null; 
-        }          
+        }  
+        
+        @Override
+        public Set<String> getTags() 
+        {
+            String tags = props.getProperty(PROP_TAGS);
+            if(tags != null)
+            {
+                return Set.of(tags.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        } 
+
+        @Override
+        public Set<String> getTopics() 
+        {
+            String topics = props.getProperty(PROP_TOPICS);
+            if(topics != null)
+            {
+                return Set.of(topics.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        } 
+        
+        @Override
+        public Set<String> getGoals()
+        {
+            String goals = props.getProperty(PROP_GOALS);
+            if(goals != null)
+            {
+                return Set.of(goals.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }         
+
+        @Override
+        public Set<String> getBacklinks() 
+        {
+            String tags = props.getProperty(PROP_BACKLINKS);
+            if(tags != null)
+            {
+                return Set.of(tags.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        } 
     }
     
-    private static class YouTubeVideoImpl implements YouTubeVideo, IconProvider, TopicsProvider, GoalsProvider, TagsProvider, VisibilityProvider, WorkflowProvider, MultiViewDescription
+    private static class YouTubeVideoBase implements YouTubeVideo, IconProvider, VisibilityProvider, WorkflowProvider, MultiViewDescription
     {    
         protected final Properties props; 
         protected final PropertyChangeSupport propertyChangeSupport;       
@@ -240,7 +286,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         private Lookup lkp;  
         private State state;  
 
-        public YouTubeVideoImpl(Properties props)
+        public YouTubeVideoBase(Properties props)
         {
             this.props = props;
             propertyChangeSupport = new PropertyChangeSupport(this);         
@@ -418,45 +464,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
             {
                 props.setProperty(PROP_PUBLISHED_AT, time.toStringRfc3339());
             }
-        }
-
-        @Override
-        public Set<String> getTags() 
-        {
-            if(getModifier() != VisibilityProvider.Modifier.PUBLIC)
-            {
-                Set<String> tags = new HashSet<>(getYouTubeTags());
-                return tags;
-            }
-            String tags = props.getProperty(PROP_TAGS);
-            if(tags != null)
-            {
-                return Set.of(tags.split(","));                   
-            }                
-            return Collections.EMPTY_SET;
-        } 
-
-        @Override
-        public Set<String> getTopics() 
-        {
-            String topics = props.getProperty(PROP_TOPICS);
-            if(topics != null)
-            {
-                return Set.of(topics.split(","));                   
-            }                
-            return Collections.EMPTY_SET;
-        } 
-        
-        @Override
-        public Set<String> getGoals()
-        {
-            String goals = props.getProperty(PROP_GOALS);
-            if(goals != null)
-            {
-                return Set.of(goals.split(","));                   
-            }                
-            return Collections.EMPTY_SET;
-        }         
+        }        
 
         @Override
         public VisibilityProvider.Modifier getModifier()
@@ -666,7 +674,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         
         private final YouTubeVideo video;
 
-        public MultiViewElementImpl(YouTubeVideoImpl video) 
+        public MultiViewElementImpl(YouTubeVideo video) 
         {
             this.video = video;
             setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
