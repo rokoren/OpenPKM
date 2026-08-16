@@ -507,11 +507,11 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     @Override
     public Set<String> getTags()
     {
-        if(props.containsKey(PROP_TAGS))
+        String tags = props.getProperty(PROP_TAGS);
+        if(tags != null&& !tags.isBlank())
         {
-            String string = props.getProperty(PROP_TAGS);
-            return Set.of(string.split(","));
-        }   
+            return Set.of(tags.split(","));                   
+        }                
         return Collections.EMPTY_SET;
     }    
 
