@@ -11,10 +11,12 @@ import javax.swing.event.ChangeListener;
  *
  * @author rok
  */
-public interface SourceProviderWrapper extends TagsProvider, ActionsProvider
+public interface SourceProviderWrapper extends TagsProvider, BacklinksProvider, ActionsProvider
 {
     Source getSource();
     void deleteSource() throws IOException;
+    void addBacklink(String link);
+    void removeBacklink(String link);    
     SourceProvider getProvider();
     void addListener(ChangeListener listener);
     void removeListener(ChangeListener listener);

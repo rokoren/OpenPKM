@@ -53,6 +53,7 @@ import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.AsciiDocSupport;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
@@ -146,7 +147,7 @@ import openpkm.utils.SourceEventImpl;
  *
  * @author Rok Koren
  */
-public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, SourceProviders, BatchUpdateSupport
+public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, SourceProviders, BacklinksProvider, BatchUpdateSupport
 {           
     private static final String DATA_FOLDER = "data";    
     
@@ -817,6 +818,19 @@ public class YouTubeChannelProject implements Project, Domain, YouTubeChannel, S
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
     }          
+    
+// TODO BacklinksProvider
+
+    @Override
+    public Set<String> getBacklinks() 
+    {
+        String backlinks = props.getProperty(PROP_BACKLINKS);
+        if(backlinks != null && !backlinks.isBlank())
+        {
+            return Set.of(backlinks.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }     
     
 // TODO BatchUpdateSupport    
     

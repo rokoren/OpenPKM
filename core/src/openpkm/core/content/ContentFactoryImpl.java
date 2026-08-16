@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 import openpkm.base.Article;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.Book;
 import openpkm.base.Content;
 import openpkm.base.DescriptionProvider;
@@ -99,7 +100,7 @@ public class ContentFactoryImpl implements ContentFactory
         LOG.info("Content saved");
     }      
     
-    private static abstract class AbstractContent implements Content, IconProvider, TagsProvider, TopicsProvider, GoalsProvider, VisibilityProvider
+    private static abstract class AbstractContent implements Content, IconProvider, TagsProvider, TopicsProvider, GoalsProvider, BacklinksProvider, VisibilityProvider
     {          
         protected static final Logger LOG = Logger.getLogger(AbstractContent.class.getName());     
 
@@ -200,13 +201,24 @@ public class ContentFactoryImpl implements ContentFactory
         @Override
         public Set<String> getTags()
         {
-            if(props.containsKey(PROP_TAGS))
+            String tags = props.getProperty(PROP_TAGS);
+            if(tags != null && !tags.isBlank())
             {
-                String string = props.getProperty(PROP_TAGS);
-                return Set.of(string.split(","));
-            }   
+                return Set.of(tags.split(","));                   
+            }                
             return Collections.EMPTY_SET;
         } 
+        
+        @Override
+        public Set<String> getBacklinks() 
+        {
+            String backlinks = props.getProperty(PROP_BACKLINKS);
+            if(backlinks != null && !backlinks.isBlank())
+            {
+                return Set.of(backlinks.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }         
 
         @Override
         public Set<String> getTopics()

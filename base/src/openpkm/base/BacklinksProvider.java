@@ -14,5 +14,5 @@ public interface BacklinksProvider
 {
     String PROP_BACKLINKS = "backlinks";     
     
-    Set<String> getBacklinks();      
+    Set<String> getBacklinks();
 }

@@ -8,12 +8,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
@@ -229,10 +227,8 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
 
         private void updateKeys() 
         {                         
-            SortedSet<DataObject> sorted = new TreeSet<DataObject>(DataGroupProvider.displayNameComparator());
-            
-            Iterator<DataProvider> iterator = getProviders().iterator();
-            for(DataProvider provider : providers)
+            SortedSet<DataObject> sorted = new TreeSet<DataObject>(DataGroupProvider.displayNameComparator());            
+            for(DataProvider provider : getProviders())
             {                                
                 try
                 {

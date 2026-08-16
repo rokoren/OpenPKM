@@ -13,12 +13,16 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.PdfFilesProvider;
 import openpkm.base.RemoteDataProvider;
+import openpkm.base.SourceProviderWrapper;
+import openpkm.base.SourceProviders;
+import openpkm.utils.HtmlUtils;
 import org.netbeans.api.diff.Diff;
 import org.netbeans.api.diff.DiffView;
 import org.netbeans.api.diff.StreamSource;
@@ -31,6 +35,7 @@ import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
 import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 
@@ -113,13 +118,72 @@ public class OnSaveTaskImpl implements OnSaveTask
             HtmlFilesProvider providerHtml = project.getLookup().lookup(HtmlFilesProvider.class);
             if(providerHtml != null)
             {
+                String oldHtml = null;
+                
                 FileObject file = providerHtml.getDataDirectory().getFileObject(data.getPrimaryFile().getName(), HtmlFilesProvider.FILE_EXT);
                 if(file == null)
                 {
                     file = providerHtml.getDataDirectory().createData(data.getPrimaryFile().getName(), HtmlFilesProvider.FILE_EXT);
                 } 
+                else
+                {
+                    oldHtml = file.asText();
+                }                
                 
-                String html = MarkdownService.getDeafult().getRenderer().render(MarkdownService.getDeafult().getParser().parse(text));                 
+                String html = MarkdownService.getDeafult().getRenderer().render(MarkdownService.getDeafult().getParser().parse(text));   
+                
+                SourceProviders sourceProviders = project.getLookup().lookup(SourceProviders.class);
+                if(sourceProviders != null)
+                {
+                    Set<String> oldLinks = HtmlUtils.findOpenPkmLinks(oldHtml);
+                    Set<String> newLinks = HtmlUtils.findOpenPkmLinks(html);                
+
+                    for (String oldLink : oldLinks) 
+                    {
+                        if (!newLinks.remove(oldLink)) 
+                        {
+                            try 
+                            {
+                                FileObject backlinkFile = sourceProviders.getDataDirectory().getFileObject(oldLink);
+                                if (backlinkFile != null) 
+                                {
+                                    DataObject backlinkData = DataObject.find(backlinkFile);
+                                    SourceProviderWrapper sourceProvider = backlinkData.getLookup().lookup(SourceProviderWrapper.class);
+                                    if(sourceProvider != null)
+                                    {
+                                        sourceProvider.removeBacklink(data.getPrimaryFile().getNameExt());
+                                    }
+                                }
+                            } 
+                            catch (IOException e) 
+                            {
+                                LOG.warning(e.getMessage());
+                            } 
+                        }
+                    }
+
+                    for (String newLink : newLinks) 
+                    {
+                        try 
+                        {
+                            FileObject backlinkFile = sourceProviders.getDataDirectory().getFileObject(newLink);
+                            if (backlinkFile != null) 
+                            {
+                                DataObject backlinkData = DataObject.find(backlinkFile);
+                                SourceProviderWrapper sourceProvider = backlinkData.getLookup().lookup(SourceProviderWrapper.class);
+                                if(sourceProvider != null)
+                                {
+                                    sourceProvider.addBacklink(data.getPrimaryFile().getNameExt());
+                                }
+                            }
+                        } 
+                        catch (IOException e) 
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                       
+                }                   
+                
                 OutputStream os = file.getOutputStream();
                 os.write(html.getBytes());
                 os.close();  

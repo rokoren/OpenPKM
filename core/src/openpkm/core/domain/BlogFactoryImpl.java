@@ -14,10 +14,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.event.ChangeListener;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.CloseSupport;
 import openpkm.base.IconProvider;
@@ -63,7 +66,7 @@ public class BlogFactoryImpl implements BlogFactory
         LOG.info("Blog saved");      
     }   
 
-    public class BlogImpl implements Blog, Domain, StateSupport, MultiViewDescription
+    public class BlogImpl implements Blog, Domain, StateSupport, BacklinksProvider, MultiViewDescription
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -250,6 +253,19 @@ public class BlogFactoryImpl implements BlogFactory
             props.putAll(provider.getProperties());        
             return true;
         } 
+        
+    // BacklinksProvider
+
+        @Override
+        public Set<String> getBacklinks() 
+        {
+            String backlinks = props.getProperty(PROP_BACKLINKS);
+            if(backlinks != null && !backlinks.isBlank())
+            {
+                return Set.of(backlinks.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }           
        
 // TODO MultiViewDescription        
         

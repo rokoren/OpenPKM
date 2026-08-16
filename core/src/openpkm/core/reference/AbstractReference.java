@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.GoalsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -34,7 +35,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rokor
  */
-public abstract class AbstractReference implements Reference, TitleProvider, IconProvider, ShortDescriptionProvider, TagsProvider, TopicsProvider, GoalsProvider, VisibilityProvider
+public abstract class AbstractReference implements Reference, TitleProvider, IconProvider, ShortDescriptionProvider, TagsProvider, BacklinksProvider, TopicsProvider, GoalsProvider, VisibilityProvider
 {
     public static final String EXT_GIF = "gif";
     public static final String EXT_JPG = "jpg";
@@ -160,15 +161,26 @@ public abstract class AbstractReference implements Reference, TitleProvider, Ico
     }     
 
     @Override
-    public Set<String> getTags()
+    public Set<String> getTags() 
     {
-        if(props.containsKey(PROP_TAGS))
+        String tags = props.getProperty(PROP_TAGS);
+        if(tags != null&& !tags.isBlank())
         {
-            String string = props.getProperty(PROP_TAGS);
-            return Set.of(string.split(","));
-        }   
+            return Set.of(tags.split(","));                   
+        }                
         return Collections.EMPTY_SET;
-    } 
+    }
+    
+    @Override
+    public Set<String> getBacklinks() 
+    {
+        String backlinks = props.getProperty(PROP_BACKLINKS);
+        if(backlinks != null && !backlinks.isBlank())
+        {
+            return Set.of(backlinks.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }     
 
     @Override
     public Set<String> getTopics()

@@ -8,15 +8,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionProvider;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
+import openpkm.base.StateSupport;
 import openpkm.base.TagsProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
@@ -80,6 +84,63 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
             }
         }
         return Collections.EMPTY_SET;
+    }  
+    
+    @Override
+    public Set<String> getBacklinks() 
+    {
+        Source source = provider.getSource(sourceID);
+        if(source != null)
+        {
+            BacklinksProvider backlinksProvider = source.getLookup().lookup(BacklinksProvider.class);
+            if(backlinksProvider != null)
+            {
+                return backlinksProvider.getBacklinks();
+            }
+        }
+        return Collections.EMPTY_SET;
+    }  
+    
+    @Override
+    public void addBacklink(String link)
+    {
+        Source source = provider.getSource(sourceID);
+        if(source instanceof PropertiesProvider propertiesProvider)
+        {
+            Set<String> backlinks = new HashSet<>(getBacklinks());
+            backlinks.add(link);
+            StringJoiner joiner = new StringJoiner(",");
+            for(String backlink : backlinks)
+            {
+                joiner.add(backlink);
+            }
+            propertiesProvider.getProperties().setProperty(BacklinksProvider.PROP_BACKLINKS, joiner.toString());
+            if(source instanceof StateSupport state)
+            {
+                state.markModified();;
+            }
+        }        
+    }
+    
+    @Override
+    public void removeBacklink(String link)
+    {
+        Source source = provider.getSource(sourceID);
+        if(source instanceof PropertiesProvider propertiesProvider)
+        {
+            Set<String> backlinks = new HashSet(getBacklinks());
+            backlinks.remove(link);
+            StringJoiner joiner = new StringJoiner(",");
+            for(String backlink : backlinks)
+            {
+                joiner.add(backlink);
+            }
+            propertiesProvider.getProperties().setProperty(BacklinksProvider.PROP_BACKLINKS, joiner.toString());
+            if(source instanceof StateSupport state)
+            {
+                state.markModified();;
+            }
+        }        
     }    
 
     @Override

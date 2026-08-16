@@ -26,6 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
 import openpkm.base.Article;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.Book;
 import openpkm.base.BulletIconProvider;
 import openpkm.base.Document;
@@ -64,7 +65,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, TopicsProvider, MultiViewDescription
+public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, BacklinksProvider, TopicsProvider, MultiViewDescription
 {
     @StaticResource()
     public static final String ICON = "openpkm/core/resources/raindrop.png";       
@@ -368,12 +369,23 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
     public Set<String> getTags() 
     {
         String tags = props.getProperty(PROP_TAGS);
-        if(tags != null)
+        if(tags != null&& !tags.isBlank())
         {
             return Set.of(tags.split(","));                   
         }                
         return Collections.EMPTY_SET;
     }
+    
+    @Override
+    public Set<String> getBacklinks() 
+    {
+        String backlinks = props.getProperty(PROP_BACKLINKS);
+        if(backlinks != null && !backlinks.isBlank())
+        {
+            return Set.of(backlinks.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }     
     
     @Override
     public Set<String> getTopics()

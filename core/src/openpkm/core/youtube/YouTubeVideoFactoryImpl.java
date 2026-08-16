@@ -237,7 +237,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         public Set<String> getTags() 
         {
             String tags = props.getProperty(PROP_TAGS);
-            if(tags != null)
+            if(tags != null && !tags.isBlank())
             {
                 return Set.of(tags.split(","));                   
             }                
@@ -269,10 +269,10 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         @Override
         public Set<String> getBacklinks() 
         {
-            String tags = props.getProperty(PROP_BACKLINKS);
-            if(tags != null)
+            String backlinks = props.getProperty(PROP_BACKLINKS);
+            if(backlinks != null && !backlinks.isBlank())
             {
-                return Set.of(tags.split(","));                   
+                return Set.of(backlinks.split(","));                   
             }                
             return Collections.EMPTY_SET;
         } 

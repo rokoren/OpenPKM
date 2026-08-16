@@ -228,7 +228,6 @@ public final class TagsTopComponent extends TopComponent implements ExplorerMana
                 {
                     tags.addAll(iterator.next().getTags());  
                 } 
-                tags.remove("");
                 setKeys(tags);  
             });  
         }

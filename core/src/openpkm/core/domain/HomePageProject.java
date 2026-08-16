@@ -61,6 +61,7 @@ import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
 import openpkm.base.AsciiDocSupport;
+import openpkm.base.BacklinksProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
@@ -162,7 +163,7 @@ import org.openide.windows.WindowManager;
  *
  * @author Rok Koren
  */
-public class HomePageProject implements Project, Blog, Domain, SourceProviders, MultiViewDescription, BatchUpdateSupport
+public class HomePageProject implements Project, Blog, Domain, SourceProviders, MultiViewDescription, BacklinksProvider, BatchUpdateSupport
 {      
     private static final String DATA_FOLDER = "data";    
     
@@ -523,6 +524,19 @@ public class HomePageProject implements Project, Blog, Domain, SourceProviders, 
     {
         propertyChangeSupport.addPropertyChangeListener(PROP_DESCRIPTION, listener);
     } 
+    
+// BacklinksProvider
+
+    @Override
+    public Set<String> getBacklinks() 
+    {
+        String backlinks = props.getProperty(PROP_BACKLINKS);
+        if(backlinks != null && !backlinks.isBlank())
+        {
+            return Set.of(backlinks.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }      
     
     @Override
     public String preferredID() 
