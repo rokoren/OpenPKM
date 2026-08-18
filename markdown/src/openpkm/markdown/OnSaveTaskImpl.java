@@ -56,6 +56,21 @@ public class OnSaveTaskImpl implements OnSaveTask
         context = ctx;
     }  
      
+    private String getHtml(String html) 
+    {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+            </head>
+            <body>
+            %s
+            </body>
+            </html>
+            """.formatted(html);
+    }    
+    
     @Override
     public void performTask() 
     {
@@ -184,8 +199,8 @@ public class OnSaveTaskImpl implements OnSaveTask
                     }                       
                 }                   
                 
-                OutputStream os = file.getOutputStream();
-                os.write(html.getBytes());
+                OutputStream os = file.getOutputStream();                                                
+                os.write(getHtml(html).getBytes());
                 os.close();  
                 LOG.info("HTML file saved");  
                 StatusDisplayer.getDefault().setStatusText("HTML file saved");      
