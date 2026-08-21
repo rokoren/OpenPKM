@@ -129,7 +129,7 @@ public class MarkdownStructureItem implements StructureItem, ElementHandle
             Node node = heading.getNextAny(Heading.class);
             while(node instanceof Heading next && next.getLevel() > heading.getLevel())
             {
-                MarkdownStructureItem item = new MarkdownStructureItem(next, source);
+                MarkdownStructureItem item = new MarkdownStructureItemChild(next, source, this);
                 nestedItems.add(item);
                 node = next.getNextAny(Heading.class);
             }            

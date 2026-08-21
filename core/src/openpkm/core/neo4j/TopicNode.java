@@ -70,6 +70,12 @@ public class TopicNode extends AbstractNode
         };
     }  
     
+    @Override
+    public Action getPreferredAction()
+    {
+        return new SelectTopic(provider, topic);
+    }    
+    
     private Image getIcon(boolean opened) 
     {
         RaindropCollectionProvider raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
