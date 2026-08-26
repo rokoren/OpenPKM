@@ -56,24 +56,24 @@ import openpkm.utils.FileUtils;
  * @author Rok Koren
  */
 @ActionID(
-        category = "OpenPKM/Comment",
-        id = "openpkm.core.content.CommentAction"
+        category = "OpenPKM/Note",
+        id = "openpkm.core.content.ThoughtAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/comment.png",
-        displayName = "#CTL_CommentAction"
+        displayName = "#CTL_ThoughtAction"
 )
-@Messages("CTL_CommentAction=Add Comment")
-public class CommentAction implements ActionListener
+@Messages("CTL_ThoughtAction=Add Thought")
+public class ThoughtAction implements ActionListener
 {
     @StaticResource()
     private static final String BANNER = "openpkm/core/resources/comment.png";     
     
-    private static final Logger LOG = Logger.getLogger(CommentAction.class.getName());     
+    private static final Logger LOG = Logger.getLogger(ThoughtAction.class.getName());     
     
     private final ContentProvider provider;
 
-    public CommentAction(ContentProvider provider)
+    public ThoughtAction(ContentProvider provider)
     {
         this.provider = provider;
     }
@@ -103,7 +103,7 @@ public class CommentAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add Comment");  
+        wiz.setTitle("Add Thought");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
@@ -118,7 +118,7 @@ public class CommentAction implements ActionListener
 
             Properties props = new Properties(); 
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.COMMENT.getName());
+            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.THOUGHT.getName());
             props.setProperty(Content.PROP_APP_ID, Utils.getAppID());           
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)
@@ -173,12 +173,12 @@ public class CommentAction implements ActionListener
             {
                 FileObject file = provider.createData(content, fileType); 
                 OutputStream os = provider.getRootFolder().createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                provider.getFactory().save(content, os, "New Comment Content created by Wizard");
+                provider.getFactory().save(content, os, "New Thought Content created by Wizard");
                 os.close();  
 
-                StatusDisplayer.getDefault().setStatusText("Comment content saved with title: " + title);  
+                StatusDisplayer.getDefault().setStatusText("Thought content saved with title: " + title);  
 
-                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open comment in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open thought in editor?", title, NotifyDescriptor.YES_NO_OPTION);
                 if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                 {
                     try

@@ -80,9 +80,9 @@ public class ContentFactoryImpl implements ContentFactory
                 {
                     return new Idea(props);
                 }  
-                else if(type.get() == Type.COMMENT)
+                else if(type.get() == Type.THOUGHT)
                 {
-                    return new Comment(props);
+                    return new Thought(props);
                 }   
                 else if(type.get() == Type.DAILY_JOT)
                 {
@@ -986,12 +986,12 @@ public class ContentFactoryImpl implements ContentFactory
         }
     }  
     
-    private static final class Comment extends AbstractContent implements Note, TitleProvider
+    private static final class Thought extends AbstractContent implements Note, TitleProvider
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/comment.png";        
         
-        public Comment(Properties props)
+        public Thought(Properties props)
         {
             super(props);
         } 
