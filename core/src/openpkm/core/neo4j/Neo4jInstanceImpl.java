@@ -7,15 +7,21 @@ package openpkm.core.neo4j;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import openpkm.base.ChildrenGoal;
+import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Goal;
+import openpkm.base.TagsProvider;
+import openpkm.base.Thought;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
 import openpkm.neo4j.Neo4jInstance;
@@ -154,7 +160,13 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     public Preferences getPreferences() 
     {
         return PREFERENCES.node(instanceID);
-    }       
+    }   
+
+    @Override
+    public Session getSession()
+    {
+        return driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());
+    }
 
     @Override
     public List<Topic> getRootTopics(String projectID) 
@@ -504,6 +516,80 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     public void removeChildrenGoal(ChildrenGoal goal) 
     {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }  
+    
+    @Override
+    public List<Thought> getRootThoughts(String projectID)
+    {        
+        List<Thought> thoughts = new ArrayList<>();
+        EagerResult result = getDriver().executableQuery("MATCH (t:Thought {project: $project}) WHERE NOT (t)-[:HAS_PARENT]->() RETURN t.id AS ID, t.text AS text, t.type AS type, t.tags AS tags")
+                .withParameters(Map.of("project", projectID))
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
+                .execute();    
+        
+        var records = result.records();
+        records.forEach(r -> {
+            Set<String> tags = new HashSet<>(r.get("tags").asList(Value::asString));            
+            Thought thought = new ThoughtImpl(r.get("ID").asString(), tags);
+            thought.setText(r.get("text").asString());
+            thought.setType(Thought.Type.valueOf(r.get("type").asString()));
+            thoughts.add(thought);
+        });
+        return thoughts;
+    }
+    
+    @Override
+    public List<ChildrenThought> getChildrenThoughts(String parentID)
+    {
+        List<ChildrenThought> thoughts = new ArrayList<>();
+        EagerResult result = getDriver().executableQuery("MATCH (thought:Thought)-[:HAS_PARENT]->(:Thought {id: $id}) RETURN thought.id AS ID, thought.text AS text, thought.type AS type, thought.tags AS tags")
+                .withParameters(Map.of("id", parentID))
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
+                .execute();    
+        
+        var records = result.records();
+        records.forEach(r -> {
+            Set<String> tags = new HashSet<>(r.get("tags").asList(Value::asString));  
+            ChildrenThought thought = new ChildrenThoughtImpl(parentID, r.get("ID").asString(), tags);
+            thought.setText(r.get("text").asString());
+            thought.setType(Thought.Type.valueOf(r.get("type").asString()));
+            thoughts.add(thought);
+        });
+        return thoughts;
+    }
+    
+    @Override
+    public Thought addThought(Session session, String projectID, String text, Thought.Type type, Set<String> tags) throws Exception
+    {
+        String thoughtID = session.executeWrite(tx -> createThought(tx, projectID, text, type, tags));
+        Thought thought = new ThoughtImpl(thoughtID, tags);
+        thought.setText(text);
+        thought.setType(type);
+        return thought;
+    }  
+    
+    @Override
+    public void thoughtHasTopic(Session session, Thought thought, Topic topic, VisibilityProvider.Modifier visibility) throws Exception
+    {
+        session.executeWriteWithoutResult(tx -> thoughtHasTopic(tx, thought.getThoughtID(), topic.getTopicID(), visibility));       
+    }
+    
+    @Override
+    public void thoughtHasGoal(Session session, Thought thought, Goal goal, VisibilityProvider.Modifier visibility) throws Exception
+    {
+        session.executeWriteWithoutResult(tx -> thoughtHasGoal(tx, thought.getThoughtID(), goal.getGoalID(), visibility));       
+    }    
+    
+    @Override
+    public void thoughtHasParent(Session session, Thought thought, Thought parent, VisibilityProvider.Modifier visibility) throws Exception
+    {
+        session.executeWriteWithoutResult(tx -> thoughtHasParent(tx, thought.getThoughtID(), parent.getThoughtID(), visibility)); 
+    }
+    
+    @Override
+    public void removeThought(Session session, String thoughtID) throws Exception
+    {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }    
     
     @Override
@@ -595,6 +681,81 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         }        
     }  
     
+    private static class ThoughtImpl implements Thought, TagsProvider
+    {
+        private final String thoughtID;
+        
+        private String text, tag;
+        private Thought.Type type;
+        
+        private final Set<String> tags;
+
+        public ThoughtImpl(String thoughtID, Set<String> tags) 
+        {
+            this.thoughtID = thoughtID;
+            this.tags = tags;
+        }
+                
+        @Override
+        public String getThoughtID() 
+        {
+            return thoughtID;
+        }
+
+        @Override
+        public String getText() 
+        {
+            return text;
+        }
+
+        @Override
+        public void setText(String text) 
+        {
+            this.text = text;
+        }
+        
+        @Override
+        public Thought.Type getType()
+        {
+            return type;
+        }
+        
+        @Override
+        public void setType(Thought.Type type)
+        {
+            this.type = type;
+        }
+        
+        @Override
+        public Set<String> getTags() 
+        {
+            return Collections.unmodifiableSet(tags);
+        } 
+        
+        @Override
+        public String toString()
+        {
+            return getText();
+        }
+    } 
+    
+    private static class ChildrenThoughtImpl extends ThoughtImpl implements ChildrenThought
+    {
+        private final String parentID;
+
+        public ChildrenThoughtImpl(String parentID, String thoughtID, Set<String> tags) 
+        {
+            super(thoughtID, tags);
+            this.parentID = parentID;
+        }
+        
+        @Override
+        public String getParentID()
+        {
+            return parentID;
+        }
+    }
+    
     private static String createRootTopic(TransactionContext tx, String projectID, String name, String tag) 
     {
         var result = tx.run("""
@@ -642,6 +803,47 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             """, Map.of("topicID", topicID, "parentID", parentID, "accessibility", modifier.toString())
         );
     }   
+    
+    private static String createThought(TransactionContext tx, String projectID, String text, Thought.Type type, Set<String> tags) 
+    {
+        var result = tx.run("""
+            CREATE (t:Thought {id: randomuuid(), createdDate: datetime(), project: $project, text: $text, type: $type, tags: $tags})
+            RETURN t.id AS ID
+        """, Map.of("project", projectID, "text", text, "type", type.toString(), "tags", tags));
+        var t = result.single();
+        var thoughtID = t.get("ID").asString();
+        return thoughtID;
+    }  
+
+    private static void thoughtHasTopic(TransactionContext tx, String thoughtID, String topicID, VisibilityProvider.Modifier visibility) 
+    {
+        tx.run("""
+            MATCH (thought:Thought {id: $thoughtID})               
+            MATCH (topic:Topic {id: $topicID})
+            MERGE (thought)-[:HAS_TOPIC {visibility: $visibility}]->(topic)
+            """, Map.of("thoughtID", thoughtID, "topicID", topicID, "visibility", visibility.toString())
+        );
+    } 
+    
+    private static void thoughtHasGoal(TransactionContext tx, String thoughtID, String goalID, VisibilityProvider.Modifier visibility) 
+    {
+        tx.run("""
+            MATCH (thought:Thought {id: $thoughtID})               
+            MATCH (goal:Goal {id: goalID})
+            MERGE (thought)-[:HAS_GOAL {visibility: $visibility}]->(goal)
+            """, Map.of("thoughtID", thoughtID, "goalID", goalID, "visibility", visibility.toString())
+        );
+    }     
+    
+    private static void thoughtHasParent(TransactionContext tx, String thoughtID, String parentID, VisibilityProvider.Modifier visibility) 
+    {
+        tx.run("""              
+            MATCH (thought:Thought {id: $thoughtID})
+            MATCH (parent:Thought {id: $parentID})                
+            MERGE (thought)-[:HAS_PARENT {visibility: $visibility}]->(parent)
+            """, Map.of("thoughtID", thoughtID, "parentID", parentID, "visibility", visibility.toString())
+        );
+    }      
     
     private static class GoalImpl implements Goal
     {

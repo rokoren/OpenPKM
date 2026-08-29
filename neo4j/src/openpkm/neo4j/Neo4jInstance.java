@@ -9,12 +9,16 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.prefs.Preferences;
 import openpkm.base.ChildrenGoal;
+import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Goal;
+import openpkm.base.Thought;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
+import org.neo4j.driver.Session;
 
 /**
  *
@@ -45,7 +49,9 @@ public interface Neo4jInstance
     void setNeo4jType(Type type);
     Preferences getPreferences();
     
-    List<Topic> getRootTopics(String topicID);
+    Session getSession();
+    
+    List<Topic> getRootTopics(String projectID);
     List<ChildrenTopic> getChildrenTopics(String parentID);
     Topic addRootTopic(String projectID, String name, String tag);
     Topic addRootTopic(String projectID, String topicID, String name, String tag);
@@ -54,12 +60,20 @@ public interface Neo4jInstance
     ChildrenTopic addChildrenTopic(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier);
     void removeChildrenTopic(ChildrenTopic topic);
    
-    List<Goal> getRootGoals(String topicID);    
+    List<Goal> getRootGoals(String projectID);    
     List<ChildrenGoal> getChildrenGoals(String parentID);    
     Goal addRootGoal(String topic, String name, String tag, Goal.Level level, LocalDate startDate, LocalDate endDate, String vision, String accountability, String rewards, String obstacles, String support, String brainstorming);    
     void removeRootGoal(String goalID);    
     ChildrenGoal addChildrenGoal(String parentID, String name, String tag, Goal.Level level, LocalDate startDate, LocalDate endDate, String vision, String accountability, String rewards, String obstacles, String support, String brainstorming, VisibilityProvider.Modifier modifier);    
-    void removeChildrenGoal(ChildrenGoal goal);    
+    void removeChildrenGoal(ChildrenGoal goal);   
+    
+    List<Thought> getRootThoughts(String projectID);    
+    List<ChildrenThought> getChildrenThoughts(String parentID);    
+    Thought addThought(Session session, String projectID, String text, Thought.Type type, Set<String> tags) throws Exception;  
+    void thoughtHasTopic(Session session, Thought thought, Topic topic, VisibilityProvider.Modifier visibility) throws Exception;
+    void thoughtHasGoal(Session session, Thought thought, Goal goal, VisibilityProvider.Modifier visibility) throws Exception;
+    void thoughtHasParent(Session session, Thought thought, Thought parent, VisibilityProvider.Modifier visibility) throws Exception;  
+    void removeThought(Session session, String thoughtID) throws Exception;       
     
     public enum Type 
     {
