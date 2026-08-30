@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.prefs.Preferences;
 import openpkm.base.ChildrenGoal;
-import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Goal;
 import openpkm.base.Thought;
@@ -68,7 +67,7 @@ public interface Neo4jInstance
     void removeChildrenGoal(ChildrenGoal goal);   
     
     List<Thought> getRootThoughts(String projectID);    
-    List<ChildrenThought> getChildrenThoughts(String parentID);    
+    List<Thought> getChildrenThoughts(String parentID);    
     Thought addThought(Session session, String projectID, String text, Thought.Type type, Set<String> tags) throws Exception;  
     void thoughtHasTopic(Session session, Thought thought, Topic topic, VisibilityProvider.Modifier visibility) throws Exception;
     void thoughtHasGoal(Session session, Thought thought, Goal goal, VisibilityProvider.Modifier visibility) throws Exception;

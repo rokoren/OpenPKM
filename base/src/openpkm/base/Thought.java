@@ -21,14 +21,21 @@ public interface Thought
     
     public enum Type 
     {
-        QUESTION("Question"),
-        STATEMENT("Statement");
+        QUESTION("Question", IconsProvider.ICON.QUESTION),
+        STATEMENT("Statement", IconsProvider.ICON.STATEMENT);
 
         private final String name;
+        private final IconsProvider.ICON icon;
 
-        Type(String name) 
+        Type(String name, IconsProvider.ICON icon) 
         {
             this.name = name;
+            this.icon = icon;
+        }
+        
+        public IconsProvider.ICON getIcon()
+        {
+            return icon;
         }
 
         @Override

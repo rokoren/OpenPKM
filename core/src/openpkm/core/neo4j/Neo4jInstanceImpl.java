@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import openpkm.base.ChildrenGoal;
-import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Goal;
 import openpkm.base.TagsProvider;
@@ -539,9 +538,9 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     }
     
     @Override
-    public List<ChildrenThought> getChildrenThoughts(String parentID)
+    public List<Thought> getChildrenThoughts(String parentID)
     {
-        List<ChildrenThought> thoughts = new ArrayList<>();
+        List<Thought> thoughts = new ArrayList<>();
         EagerResult result = getDriver().executableQuery("MATCH (thought:Thought)-[:HAS_PARENT]->(:Thought {id: $id}) RETURN thought.id AS ID, thought.text AS text, thought.type AS type, thought.tags AS tags")
                 .withParameters(Map.of("id", parentID))
                 .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
@@ -550,7 +549,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         var records = result.records();
         records.forEach(r -> {
             Set<String> tags = new HashSet<>(r.get("tags").asList(Value::asString));  
-            ChildrenThought thought = new ChildrenThoughtImpl(parentID, r.get("ID").asString(), tags);
+            Thought thought = new ThoughtImpl(r.get("ID").asString(), tags);
             thought.setText(r.get("text").asString());
             thought.setType(Thought.Type.valueOf(r.get("type").asString()));
             thoughts.add(thought);
@@ -738,23 +737,6 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             return getText();
         }
     } 
-    
-    private static class ChildrenThoughtImpl extends ThoughtImpl implements ChildrenThought
-    {
-        private final String parentID;
-
-        public ChildrenThoughtImpl(String parentID, String thoughtID, Set<String> tags) 
-        {
-            super(thoughtID, tags);
-            this.parentID = parentID;
-        }
-        
-        @Override
-        public String getParentID()
-        {
-            return parentID;
-        }
-    }
     
     private static String createRootTopic(TransactionContext tx, String projectID, String name, String tag) 
     {

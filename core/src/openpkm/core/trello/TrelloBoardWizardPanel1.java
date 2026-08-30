@@ -9,7 +9,6 @@ import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javafx.scene.paint.Color;
 import javax.swing.event.ChangeListener;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
 import openpkm.trello.TrelloBoard;
@@ -17,6 +16,7 @@ import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -112,7 +112,7 @@ public class TrelloBoardWizardPanel1 implements WizardDescriptor.ValidatingPanel
             List<Topic> topics = getComponent().getBoardTopics();
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getLookup().lookup(KnowledgeGraphProvider.class);
+                TopicsGraphProvider knowledgeGraphProvider = provider.getLookup().lookup(TopicsGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");

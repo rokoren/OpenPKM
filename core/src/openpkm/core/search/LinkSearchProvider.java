@@ -10,7 +10,6 @@ import openpkm.base.DisplayNameProvider;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Link;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
@@ -26,6 +25,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.Lookup;
+import openpkm.base.TopicsGraphProvider;
 
 public class LinkSearchProvider implements SearchProvider 
 {
@@ -48,7 +48,7 @@ public class LinkSearchProvider implements SearchProvider
             {
                 String text = request.getText().toLowerCase();
                 
-                KnowledgeGraphProvider topicProvider = project.getLookup().lookup(KnowledgeGraphProvider.class);
+                TopicsGraphProvider topicProvider = project.getLookup().lookup(TopicsGraphProvider.class);
                 GoalsGraphProvider goalProvider = project.getLookup().lookup(GoalsGraphProvider.class);
                 try
                 {

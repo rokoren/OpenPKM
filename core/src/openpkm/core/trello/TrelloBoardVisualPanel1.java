@@ -17,7 +17,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.paint.Color;
 import javax.swing.DefaultComboBoxModel;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.trello.TrelloAccount;
 import openpkm.trello.TrelloAccountsProvider;
@@ -28,6 +27,7 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.Lookup;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -124,7 +124,7 @@ public class TrelloBoardVisualPanel1 extends javax.swing.JPanel implements Explo
     public void setTopics(Lookup.Provider provider)
     {
         assert provider != null;        
-        KnowledgeGraphProvider knowledgeGraph = provider.getLookup().lookup(KnowledgeGraphProvider.class);
+        TopicsGraphProvider knowledgeGraph = provider.getLookup().lookup(TopicsGraphProvider.class);
         if(knowledgeGraph != null)
         {
             TopicsChildren topics = new TopicsChildren(knowledgeGraph);
@@ -134,9 +134,9 @@ public class TrelloBoardVisualPanel1 extends javax.swing.JPanel implements Explo
     
     static final class TopicsChildren extends Children.Keys<Topic> 
     {
-        private final KnowledgeGraphProvider provider;
+        private final TopicsGraphProvider provider;
 
-        public TopicsChildren(KnowledgeGraphProvider provider)
+        public TopicsChildren(TopicsGraphProvider provider)
         {
             this.provider = provider;
         }  

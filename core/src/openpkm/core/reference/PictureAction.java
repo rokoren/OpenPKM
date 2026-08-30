@@ -23,7 +23,6 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
@@ -49,6 +48,7 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 import openpkm.reference.ReferenceFactory;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -138,7 +138,7 @@ public class PictureAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                TopicsGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");

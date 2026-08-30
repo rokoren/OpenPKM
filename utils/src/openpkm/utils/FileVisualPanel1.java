@@ -21,7 +21,6 @@ import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 import javax.swing.DefaultComboBoxModel;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
 import openpkm.reference.AbstractFilesProvider;
@@ -31,6 +30,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -231,9 +231,9 @@ public class FileVisualPanel1 extends javax.swing.JPanel
 
     static final class TopicsChildren extends Children.Keys<Topic> 
     {
-        private final KnowledgeGraphProvider provider;
+        private final TopicsGraphProvider provider;
 
-        public TopicsChildren(KnowledgeGraphProvider provider)
+        public TopicsChildren(TopicsGraphProvider provider)
         {
             this.provider = provider;
         }  

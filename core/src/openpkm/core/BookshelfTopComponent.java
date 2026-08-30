@@ -39,7 +39,6 @@ import openpkm.base.DataProvider;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.TagsProvider;
@@ -47,6 +46,7 @@ import openpkm.base.TopicsProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
 import org.openide.loaders.DataObjectNotFoundException;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  * Top component which displays something.
@@ -175,7 +175,7 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                 {
                     provider.removeChangeListener(this);
                     
-                    KnowledgeGraphProvider topicProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                    TopicsGraphProvider topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                     if(topicProvider instanceof ChangeSupportProvider csp)
                     {
                         csp.removeChangeListener(this);
@@ -193,7 +193,7 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                 {
                     provider.addChangeListener(this);
                     
-                    KnowledgeGraphProvider topicProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                    TopicsGraphProvider topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                     if(topicProvider instanceof ChangeSupportProvider csp)
                     {
                         csp.addChangeListener(this);
@@ -266,7 +266,7 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                                 }                            
                             }
 
-                            KnowledgeGraphProvider topicProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                            TopicsGraphProvider topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                             if(topicProvider != null)
                             {
                                 SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);

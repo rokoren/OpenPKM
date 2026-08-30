@@ -25,7 +25,6 @@ import openpkm.base.FileTypeProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Topic;
@@ -48,6 +47,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
+import openpkm.base.TopicsGraphProvider;
 
 @ActionID(
         category = "OpenPKM/Video",
@@ -203,13 +203,13 @@ public final class YouTubeVideoAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
-                if(knowledgeGraphProvider != null)
+                TopicsGraphProvider topicsGraphProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
+                if(topicsGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
                     for(Topic topic : topics)
                     {
-                        joiner.add(knowledgeGraphProvider.getTreeID(topic));
+                        joiner.add(topicsGraphProvider.getTreeID(topic));
                     }
                     props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                 }

@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.TreeSet;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.utils.TopicNode;
 import org.openide.explorer.ExplorerManager;
@@ -19,6 +18,7 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.Lookup;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -50,7 +50,7 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
     public void setTopics(Lookup.Provider provider)
     {
         assert provider != null;        
-        KnowledgeGraphProvider knowledgeGraph = provider.getLookup().lookup(KnowledgeGraphProvider.class);
+        TopicsGraphProvider knowledgeGraph = provider.getLookup().lookup(TopicsGraphProvider.class);
         if(knowledgeGraph != null)
         {
             TopicsChildren topics = new TopicsChildren(knowledgeGraph);
@@ -89,9 +89,9 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
     
     static final class TopicsChildren extends Children.Keys<Topic> 
     {
-        private final KnowledgeGraphProvider provider;
+        private final TopicsGraphProvider provider;
 
-        public TopicsChildren(KnowledgeGraphProvider provider)
+        public TopicsChildren(TopicsGraphProvider provider)
         {
             this.provider = provider;
         }  

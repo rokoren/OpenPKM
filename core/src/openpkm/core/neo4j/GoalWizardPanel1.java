@@ -9,12 +9,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.event.ChangeListener;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import org.netbeans.api.project.Project;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
+import openpkm.base.TopicsGraphProvider;
 
 public class GoalWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
@@ -81,7 +81,7 @@ public class GoalWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
     
     private Set<String> getSelectedTags(Project project)
     {
-        KnowledgeGraphProvider provider = project.getLookup().lookup(KnowledgeGraphProvider.class);
+        TopicsGraphProvider provider = project.getLookup().lookup(TopicsGraphProvider.class);
         if(provider != null)
         {
             Collection<Topic> topics = provider.getSelectedTopics();

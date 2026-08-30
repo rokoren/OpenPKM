@@ -63,6 +63,8 @@ public interface IconsProvider
         FILE_MP4, 
         BIN,
         COMMENTS,
+        STATEMENT,
+        QUESTION,
         VIDEOS;    
     }     
 }

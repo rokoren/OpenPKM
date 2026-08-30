@@ -1,0 +1,21 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
+ */
+package openpkm.base;
+
+import java.util.List;
+import java.util.Set;
+import org.openide.util.Lookup;
+
+/**
+ *
+ * @author rok
+ */
+public interface ThoughtsGraphProvider
+{
+    Lookup.Provider getProvider();      
+    List<Thought> getRootThoughts();  
+    List<Thought> getChildrenThoughts(String parentID);
+    void addThought(String text, Thought.Type type, Set<String> tags, List<Thought> parents, List<Topic> topics, List<Goal> goals);
+}

@@ -67,7 +67,6 @@ import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
 import openpkm.base.HtmlFilesProvider;
 import openpkm.base.IconProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Link;
 import openpkm.base.MarkdownSupport;
 import openpkm.base.PropertiesProvider;
@@ -160,6 +159,10 @@ import openpkm.raindrop.RaindropService;
 import openpkm.raindrop.RaindropTag;
 import openpkm.raindrop.RaindropUtils;
 import openpkm.base.DataProvider;
+import openpkm.base.Thought;
+import openpkm.base.ThoughtsGraphProvider;
+import openpkm.base.TopicsGraphProvider;
+import org.neo4j.driver.Session;
 
 /**
  *
@@ -411,8 +414,9 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 list.add(new DomainProviderImpl()); 
                 list.add(new ProjectManagementProviderImpl()); 
                 list.add(new HtmlFilesProviderImpl());                                 
-                list.add(new KnowledgeGraphProviderImpl());
+                list.add(new TopicsGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
+                list.add(new ThoughtsGraphProviderImpl());  
                                 
                 list.addAll(sources.values());
                 
@@ -4170,7 +4174,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
 
 // TODO KnowledgeGraphProvider     
     
-    private final class KnowledgeGraphProviderImpl implements KnowledgeGraphProvider, ChangeSupportProvider
+    private final class TopicsGraphProviderImpl implements TopicsGraphProvider, ChangeSupportProvider
     {
         private List<Topic> rootTopics; 
         
@@ -4723,6 +4727,113 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             changeSupport.fireChange();  
         }
     }  
+    
+// TODO ThoughtsGraphProvider    
+    
+    private final class ThoughtsGraphProviderImpl implements ThoughtsGraphProvider, ChangeSupportProvider
+    {
+        private List<Thought> rootThoughts; 
+        
+        private final Map<String, Thought> thoughts = new HashMap<>();        
+        private final Map<String, List<Thought>> childrenThoughts = new HashMap<>();        
+        private final ChangeSupport changeSupport = new ChangeSupport(this);     
+        
+        @Override
+        public List<Thought> getRootThoughts()
+        {
+            if(rootThoughts == null)
+            {
+                rootThoughts = getNeo4jInstance().getRootThoughts(getProjectDirectory().getName());
+                for(Thought thought : rootThoughts)
+                {
+                    thoughts.put(thought.getThoughtID(), thought);
+                }
+            }
+            return rootThoughts;
+        }
+        
+        @Override
+        public List<Thought> getChildrenThoughts(String parentID)
+        {
+            List<Thought> list = childrenThoughts.get(parentID);
+            if(list == null)
+            {
+                list = getNeo4jInstance().getChildrenThoughts(parentID);
+                childrenThoughts.put(parentID, list);
+                for(Thought thought : list)
+                {
+                    thoughts.put(thought.getThoughtID(), thought);
+                }
+            }  
+            return list;
+        }          
+        
+        @Override
+        public void addThought(String text, Thought.Type type, Set<String> tags, List<Thought> parents, List<Topic> topics, List<Goal> goals)
+        {
+            Session session = null;
+            try
+            {
+                session = getNeo4jInstance().getSession();
+                Thought thought = getNeo4jInstance().addThought(session, getProjectDirectory().getName(), text, type, tags);
+                
+                if(parents.isEmpty())
+                {
+                    getRootThoughts().add(thought);
+                }
+                else
+                {
+                    for(Thought parent : parents)
+                    {
+                        getNeo4jInstance().thoughtHasParent(session, thought, parent, VisibilityProvider.Modifier.PUBLIC);
+                        getChildrenThoughts(parent.getThoughtID()).add(thought);
+                    }   
+                }
+                
+                for(Topic topic : topics)
+                {
+                    getNeo4jInstance().thoughtHasTopic(session, thought, topic, VisibilityProvider.Modifier.PUBLIC);
+                }
+                
+                for(Goal goal : goals)
+                {
+                    getNeo4jInstance().thoughtHasGoal(session, thought, goal, VisibilityProvider.Modifier.PUBLIC);
+                }                
+
+                thoughts.put(thought.getThoughtID(), thought);
+                changeSupport.fireChange();  
+            }
+            catch(Exception e)
+            {
+                LOG.warning(e.getMessage());
+            }
+            finally
+            {
+                if(session != null)
+                {
+                    session.close();
+                }
+            }                       
+        }
+
+        @Override
+        public Lookup.Provider getProvider() 
+        {
+            return RaindropProject.this;
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+    }      
 
 // TODO HtmlFilesProvider        
     

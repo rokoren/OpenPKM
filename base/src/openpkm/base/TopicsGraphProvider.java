@@ -12,7 +12,7 @@ import java.util.Set;
  *
  * @author Rok Koren
  */
-public interface KnowledgeGraphProvider extends GraphProvider
+public interface TopicsGraphProvider extends GraphProvider
 {
     List<Topic> getTopics(); 
     List<Topic> getRootTopics();
@@ -31,7 +31,7 @@ public interface KnowledgeGraphProvider extends GraphProvider
     List<String> getTags(Topic topic);
     Set<String> getTags(Collection<Topic> topics);    
     
-    public static boolean isTag(KnowledgeGraphProvider topicsProvider, TagsProvider tagsProvider)
+    public static boolean isTag(TopicsGraphProvider topicsProvider, TagsProvider tagsProvider)
     {
         if(topicsProvider == null)
         {

@@ -18,7 +18,6 @@ import openpkm.base.DataGroupProvider;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.SourceProviders;
@@ -46,6 +45,7 @@ import org.openide.util.NbBundle.Messages;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  * Top component which displays something.
@@ -245,7 +245,7 @@ public final class BacklinksTopComponent extends TopComponent implements Explore
                                     }                            
                                 }
 
-                                KnowledgeGraphProvider topicProvider = provider.getProvider().getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                                TopicsGraphProvider topicProvider = provider.getProvider().getProvider().getLookup().lookup(TopicsGraphProvider.class);
                                 if(topicProvider != null)
                                 {
                                     SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);

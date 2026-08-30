@@ -23,7 +23,6 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
 import openpkm.raindrop.RaindropCollection;
@@ -35,6 +34,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -44,10 +44,10 @@ public class TopicNode extends AbstractNode
 {
     private static final Logger LOG = Logger.getLogger(TopicNode.class.getName());  
     
-    private final KnowledgeGraphProvider provider;
+    private final TopicsGraphProvider provider;
     private final Topic topic;
 
-    public TopicNode(KnowledgeGraphProvider provider, Topic topic) 
+    public TopicNode(TopicsGraphProvider provider, Topic topic) 
     {
         super(new TopicChildren(provider, topic), new ProxyLookup(Lookups.proxy(provider.getProvider()), Lookups.singleton(topic)));
         setName(topic.getTopicID());
@@ -109,10 +109,10 @@ public class TopicNode extends AbstractNode
     
     static final class TopicChildren extends Children.Keys<Topic> implements ChangeListener 
     {
-        private final KnowledgeGraphProvider topicProvider;
+        private final TopicsGraphProvider topicProvider;
         private final Topic topic;        
 
-        public TopicChildren(KnowledgeGraphProvider topicProvider, Topic topic)
+        public TopicChildren(TopicsGraphProvider topicProvider, Topic topic)
         {
             this.topicProvider = topicProvider;
             this.topic = topic;
@@ -169,10 +169,10 @@ public class TopicNode extends AbstractNode
 
     private static final class SelectTopic extends AbstractAction
     {
-        private final KnowledgeGraphProvider provider;      
+        private final TopicsGraphProvider provider;      
         private final Topic topic;   
 
-        public SelectTopic(KnowledgeGraphProvider provider, Topic topic) 
+        public SelectTopic(TopicsGraphProvider provider, Topic topic) 
         {
             super("Select Topic");
             this.provider = provider;
@@ -189,10 +189,10 @@ public class TopicNode extends AbstractNode
     
     private static final class AddTopic extends AbstractAction
     {
-        private final KnowledgeGraphProvider provider;      
+        private final TopicsGraphProvider provider;      
         private final Topic topic;   
 
-        public AddTopic(KnowledgeGraphProvider provider, Topic topic) 
+        public AddTopic(TopicsGraphProvider provider, Topic topic) 
         {
             super("Add Topic");
             this.provider = provider;

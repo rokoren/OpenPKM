@@ -28,7 +28,6 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.Topic;
 import openpkm.core.raindrop.TopicRaindropWizardPanel1;
 import openpkm.raindrop.RaindropChildrenCollection;
@@ -46,6 +45,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.Lookups;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -66,7 +66,7 @@ public class GraphNodeFactory implements NodeFactory
         
         List<AbstractNode> list = new ArrayList();
 
-        KnowledgeGraphProvider knowledgeProvider = project.getLookup().lookup(KnowledgeGraphProvider.class);
+        TopicsGraphProvider knowledgeProvider = project.getLookup().lookup(TopicsGraphProvider.class);
         if(knowledgeProvider != null)
         {
             list.add(new TopicsNode(project, knowledgeProvider));
@@ -90,9 +90,9 @@ public class GraphNodeFactory implements NodeFactory
         
     static final class TopicsNode extends AbstractNode implements ChangeListener 
     {        
-        private final KnowledgeGraphProvider topicProvider;
+        private final TopicsGraphProvider topicProvider;
 
-        TopicsNode(Project project, KnowledgeGraphProvider topicProvider)
+        TopicsNode(Project project, TopicsGraphProvider topicProvider)
         {
             super(new TopicsChildren(project, topicProvider), Lookups.fixed(project));
             this.topicProvider = topicProvider;
@@ -170,9 +170,9 @@ public class GraphNodeFactory implements NodeFactory
         static final class TopicsChildren extends Children.Keys<Topic> implements ChangeListener 
         {
             private final Project project;
-            private final KnowledgeGraphProvider topicProvider;
+            private final TopicsGraphProvider topicProvider;
 
-            public TopicsChildren(Project project, KnowledgeGraphProvider topicProvider)
+            public TopicsChildren(Project project, TopicsGraphProvider topicProvider)
             {
                 this.project = project;
                 this.topicProvider = topicProvider;
@@ -227,9 +227,9 @@ public class GraphNodeFactory implements NodeFactory
         
         private static final class AddNode extends AbstractAction
         {
-            private final KnowledgeGraphProvider provider;            
+            private final TopicsGraphProvider provider;            
             
-            public AddNode(KnowledgeGraphProvider provider) 
+            public AddNode(TopicsGraphProvider provider) 
             {
                 super("Add Root Topic");
                 this.provider = provider;
@@ -270,11 +270,11 @@ public class GraphNodeFactory implements NodeFactory
         
         private static final class AddNodeRaindrop extends AbstractAction
         {
-            private final KnowledgeGraphProvider provider; 
+            private final TopicsGraphProvider provider; 
             
             private List<RaindropChildrenCollection> collections;             
             
-            public AddNodeRaindrop(KnowledgeGraphProvider provider) 
+            public AddNodeRaindrop(TopicsGraphProvider provider) 
             {
                 super("Add Root Topic from Raindrop");
                 this.provider = provider;
@@ -328,9 +328,9 @@ public class GraphNodeFactory implements NodeFactory
 
         private static final class ClearSelectedNodes extends AbstractAction
         {
-            private final KnowledgeGraphProvider provider;            
+            private final TopicsGraphProvider provider;            
             
-            public ClearSelectedNodes(KnowledgeGraphProvider provider) 
+            public ClearSelectedNodes(TopicsGraphProvider provider) 
             {
                 super("Clear Selected Topics");
                 this.provider = provider;

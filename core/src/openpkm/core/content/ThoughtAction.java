@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import openpkm.base.Content;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.KnowledgeGraphProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
@@ -50,6 +49,7 @@ import openpkm.base.Note;
 import openpkm.core.neo4j.GoalWizardPanel;
 import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.utils.FileUtils;
+import openpkm.base.TopicsGraphProvider;
 
 /**
  *
@@ -139,7 +139,7 @@ public class ThoughtAction implements ActionListener
             
             if(topics != null)
             {
-                KnowledgeGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(KnowledgeGraphProvider.class);
+                TopicsGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                 if(knowledgeGraphProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
