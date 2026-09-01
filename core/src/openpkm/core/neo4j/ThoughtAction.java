@@ -40,7 +40,7 @@ public final class ThoughtAction implements ActionListener {
         // TODO implement action body
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new ThoughtWizardPanel1());
-        //panels.add(new CreateRaindropWizardPanel2());
+        panels.add(new ThoughtWizardPanel2());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) {
             Component c = panels.get(i).getComponent();
