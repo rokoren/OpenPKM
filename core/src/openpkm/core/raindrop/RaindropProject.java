@@ -199,6 +199,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private final List<UpdateCookie> cookies = new ArrayList();  
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
+    private final List<Thought> selectedThoughts = new ArrayList();   
     
     private final FileObject projectDir;        
     private final ProjectState state;
@@ -4833,6 +4834,30 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         {
             changeSupport.removeChangeListener(listener);
         }
+        
+        @Override
+        public Collection<Thought> getSelectedThoughts() 
+        {
+            if(selectedThoughts == null)
+            {
+                return Collections.EMPTY_LIST;
+            }
+            return Collections.unmodifiableCollection(selectedThoughts);
+        }
+        
+        @Override
+        public void selectThought(Thought thought) 
+        {
+            selectedThoughts.add(thought);          
+            changeSupport.fireChange();  
+        }        
+        
+        @Override
+        public void clearSelectedThoughts()
+        {
+            selectedThoughts.clear();
+            changeSupport.fireChange();
+        }        
     }      
 
 // TODO HtmlFilesProvider        

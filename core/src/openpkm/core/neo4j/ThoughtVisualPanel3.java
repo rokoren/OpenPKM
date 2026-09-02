@@ -11,87 +11,87 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.TreeSet;
-import openpkm.base.Topic;
-import openpkm.utils.TopicNode;
+import openpkm.base.Thought;
+import openpkm.base.ThoughtsGraphProvider;
 import org.openide.explorer.ExplorerManager;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.Lookup;
-import openpkm.base.TopicsGraphProvider;
 
 /**
  *
  * @author rok
  */
-public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerManager.Provider
+public class ThoughtVisualPanel3 extends javax.swing.JPanel implements ExplorerManager.Provider
 {
-    private final ExplorerManager explorerManager = new ExplorerManager();     
+    private final ExplorerManager explorerManager = new ExplorerManager(); 
     
     /**
-     * Creates new form TopicVisualPanel
+     * Creates new form ThoughtVisualPanel3
      */
-    public TopicVisualPanel() {
+    public ThoughtVisualPanel3() 
+    {
         initComponents();
     }
     
     @Override
     public String getName() 
     {
-        return "Topics";
+        return "Thoughts";
     }  
-    
+
     @Override
     public ExplorerManager getExplorerManager() 
     {
         return explorerManager;
     }  
     
-    public void setTopics(Lookup.Provider provider)
+    public void setThoughts(Lookup.Provider provider)
     {
         assert provider != null;        
-        TopicsGraphProvider topicsProvider = provider.getLookup().lookup(TopicsGraphProvider.class);
-        if(topicsProvider != null)
+        ThoughtsGraphProvider thoughtsProvider = provider.getLookup().lookup(ThoughtsGraphProvider.class);
+        if(thoughtsProvider != null)
         {
-            TopicsChildren topics = new TopicsChildren(topicsProvider);
-            explorerManager.setRootContext(new AbstractNode(topics));
+            ThoughtsChildren thoughts = new ThoughtsChildren(thoughtsProvider);
+            explorerManager.setRootContext(new AbstractNode(thoughts));
         }        
     } 
     
-    public void setSelectedTopics(Set<Topic> topics)
+    public void setSelectedThoughts(Set<Thought> thoughts)
     {
         StringJoiner joiner = new StringJoiner(", ");
-        for(Topic topic : topics)
+        for(Thought thought : thoughts)
         {
-            joiner.add(topic.getName());
+            joiner.add(thought.getText());
         }
-        jLabel2.setText(joiner.toString());
+        jLabel1.setText(joiner.toString());
     }
     
-    public Set<Topic> getTopics()
+    public Set<Thought> getThoughts()
     {
         Node[] nodes = explorerManager.getSelectedNodes();
         if(nodes.length > 0)
         {
-            Set<Topic> topics = new HashSet<>();
+            Set<Thought> thoughts = new HashSet<>();
             for(Node node : nodes)
             {
-                Topic topic = node.getLookup().lookup(Topic.class);
-                if(topic != null)
+                Thought thought = node.getLookup().lookup(Thought.class);
+                if(thought != null)
                 {
-                    topics.add(topic);
+                    thoughts.add(thought);
                 }
             }
-            return topics;
+            return thoughts;
         }
         return null;
-    }      
+    }     
     
-    static final class TopicsChildren extends Children.Keys<Topic> 
+    static final class ThoughtsChildren extends Children.Keys<Thought> 
     {
-        private final TopicsGraphProvider provider;
+        private final ThoughtsGraphProvider provider;
 
-        public TopicsChildren(TopicsGraphProvider provider)
+        public ThoughtsChildren(ThoughtsGraphProvider provider)
         {
             this.provider = provider;
         }  
@@ -108,9 +108,9 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
             {
                 public void run()
                 {                                                
-                    SortedSet<Topic> topics = new TreeSet<Topic>(Topic.nameComparator());
-                    topics.addAll(provider.getRootTopics());           
-                    setKeys(topics);                   
+                    SortedSet<Thought> thoughts = new TreeSet<Thought>(Thought.textComparator());
+                    thoughts.addAll(provider.getRootThoughts());           
+                    setKeys(thoughts);                   
                 }
             });
         }        
@@ -118,15 +118,15 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
         @Override
         protected void removeNotify() 
         {                            
-            setKeys(Collections.<Topic>emptySet());
+            setKeys(Collections.<Thought>emptySet());
         }
 
         @Override
-        protected Node[] createNodes(Topic topic) 
+        protected Node[] createNodes(Thought thought) 
         {
-            return new Node[] {new TopicNode(provider, topic)};
+            return new Node[] {new ThoughtNode(provider, thought)};
         }           
-    }       
+    }     
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -136,21 +136,20 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
-        iconView3 = new org.openide.explorer.view.IconView();
-        jLabel2 = new javax.swing.JLabel();
+        contextTreeView1 = new org.openide.explorer.view.ContextTreeView();
+        jLabel1 = new javax.swing.JLabel();
 
         setLayout(new java.awt.BorderLayout());
-        add(iconView3, java.awt.BorderLayout.CENTER);
+        add(contextTreeView1, java.awt.BorderLayout.CENTER);
 
-        jLabel2.setPreferredSize(new java.awt.Dimension(0, 16));
-        add(jLabel2, java.awt.BorderLayout.PAGE_START);
+        jLabel1.setPreferredSize(new java.awt.Dimension(0, 16));
+        add(jLabel1, java.awt.BorderLayout.PAGE_START);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private org.openide.explorer.view.IconView iconView3;
-    private javax.swing.JLabel jLabel2;
+    private org.openide.explorer.view.ContextTreeView contextTreeView1;
+    private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
 }

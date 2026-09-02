@@ -5,6 +5,7 @@
 package openpkm.base;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Optional;
 
 /**
@@ -49,5 +50,17 @@ public interface Thought
                     .filter(modifier -> modifier.name.equalsIgnoreCase(name))
                     .findFirst();
         }     
-    }         
+    }  
+    
+    public static Comparator<Thought> textComparator() 
+    {
+        return new Comparator<Thought>() 
+        {
+            @Override
+            public int compare(Thought thought1, Thought thought2) 
+            {
+                return thought1.getText().compareTo(thought2.getText());
+            }
+        };
+    }     
 }
