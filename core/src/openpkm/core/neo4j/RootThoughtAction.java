@@ -15,6 +15,7 @@ import javax.swing.JComponent;
 import openpkm.base.Goal;
 import openpkm.base.GoalsProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.Topic;
 import openpkm.base.TopicsProvider;
@@ -73,10 +74,12 @@ public final class RootThoughtAction implements ActionListener {
         wiz.putProperty("provider", context.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         { 
-            String text = (String) wiz.getProperty("text");      
+            String text = (String) wiz.getProperty("text");  
+            Thought.Type type = (Thought.Type) wiz.getProperty("type");  
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
-            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);                                                       
+            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);  
+            context.addRootThought(text, type, tags, topics, goals);
         }          
     }
 }

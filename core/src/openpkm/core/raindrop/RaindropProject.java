@@ -4769,8 +4769,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             return list;
         }          
         
-        @Override
-        public void addThought(String text, Thought.Type type, Set<String> tags, List<Thought> parents, List<Topic> topics, List<Goal> goals)
+        private void addThought(String text, Thought.Type type, Set<String> tags, Set<Thought> parents, Set<Topic> topics, Set<Goal> goals)
         {
             Session session = null;
             try
@@ -4817,6 +4816,81 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             }                       
         }
 
+        @Override
+        public void addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
+        {
+            Session session = null;
+            try
+            {
+                session = getNeo4jInstance().getSession();
+                Thought thought = getNeo4jInstance().addThought(session, getProjectDirectory().getName(), text, type, tags);
+                
+                getRootThoughts().add(thought);
+                
+                for(Topic topic : topics)
+                {
+                    getNeo4jInstance().thoughtHasTopic(session, thought, topic, VisibilityProvider.Modifier.PUBLIC);
+                }
+                
+                for(Goal goal : goals)
+                {
+                    getNeo4jInstance().thoughtHasGoal(session, thought, goal, VisibilityProvider.Modifier.PUBLIC);
+                }                
+
+                thoughts.put(thought.getThoughtID(), thought);
+                changeSupport.fireChange();  
+            }
+            catch(Exception e)
+            {
+                LOG.warning(e.getMessage());
+            }
+            finally
+            {
+                if(session != null)
+                {
+                    session.close();
+                }
+            }                       
+        }        
+        
+        @Override
+        public void addChildrenThought(Thought parent, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
+        {
+            Session session = null;
+            try
+            {
+                session = getNeo4jInstance().getSession();
+                Thought thought = getNeo4jInstance().addThought(session, getProjectDirectory().getName(), text, type, tags);
+                
+                getNeo4jInstance().thoughtHasParent(session, thought, parent, VisibilityProvider.Modifier.PUBLIC);
+                getChildrenThoughts(parent.getThoughtID()).add(thought);
+                
+                for(Topic topic : topics)
+                {
+                    getNeo4jInstance().thoughtHasTopic(session, thought, topic, VisibilityProvider.Modifier.PUBLIC);
+                }
+                
+                for(Goal goal : goals)
+                {
+                    getNeo4jInstance().thoughtHasGoal(session, thought, goal, VisibilityProvider.Modifier.PUBLIC);
+                }                
+
+                thoughts.put(thought.getThoughtID(), thought);
+                changeSupport.fireChange();  
+            }
+            catch(Exception e)
+            {
+                LOG.warning(e.getMessage());
+            }
+            finally
+            {
+                if(session != null)
+                {
+                    session.close();
+                }
+            }                       
+        }        
+        
         @Override
         public Lookup.Provider getProvider() 
         {
