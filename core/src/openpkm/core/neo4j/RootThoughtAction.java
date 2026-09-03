@@ -24,6 +24,7 @@ import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
+import org.openide.awt.StatusDisplayer;
 import org.openide.util.NbBundle.Messages;
 
 @ActionID(
@@ -79,7 +80,11 @@ public final class RootThoughtAction implements ActionListener {
             Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
             Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);  
-            context.addRootThought(text, type, tags, topics, goals);
+            Thought thought = context.addRootThought(text, type, tags, topics, goals);
+            if(thought != null)
+            {
+                StatusDisplayer.getDefault().setStatusText("Thought saved with text: " + text);                
+            }
         }          
     }
 }

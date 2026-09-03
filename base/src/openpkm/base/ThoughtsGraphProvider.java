@@ -18,8 +18,8 @@ public interface ThoughtsGraphProvider
     Lookup.Provider getProvider();      
     List<Thought> getRootThoughts();  
     List<Thought> getChildrenThoughts(String parentID);
-    void addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
-    void addChildrenThought(Thought thought, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
+    Thought addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
+    Thought addChildrenThought(Thought thought, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
     Collection<Thought> getSelectedThoughts(); 
     void selectThought(Thought thought);
     void clearSelectedThoughts();

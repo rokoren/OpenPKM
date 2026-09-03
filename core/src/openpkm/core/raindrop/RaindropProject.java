@@ -4817,7 +4817,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }
 
         @Override
-        public void addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
+        public Thought addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
         {
             Session session = null;
             try
@@ -4839,6 +4839,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
 
                 thoughts.put(thought.getThoughtID(), thought);
                 changeSupport.fireChange();  
+                return thought;
             }
             catch(Exception e)
             {
@@ -4850,11 +4851,12 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 {
                     session.close();
                 }
-            }                       
+            }  
+            return null;
         }        
         
         @Override
-        public void addChildrenThought(Thought parent, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
+        public Thought addChildrenThought(Thought parent, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
         {
             Session session = null;
             try
@@ -4877,6 +4879,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
 
                 thoughts.put(thought.getThoughtID(), thought);
                 changeSupport.fireChange();  
+                return thought;
             }
             catch(Exception e)
             {
@@ -4888,7 +4891,8 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 {
                     session.close();
                 }
-            }                       
+            }  
+            return null;
         }        
         
         @Override
