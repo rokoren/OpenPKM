@@ -4,6 +4,7 @@
  */
 package openpkm.core.neo4j;
 
+import java.util.HashSet;
 import javax.swing.event.ChangeListener;
 import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
@@ -99,12 +100,9 @@ public class ThoughtWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     public void storeSettings(WizardDescriptor wiz) 
     {
         // use wiz.putProperty to remember current panel state
-
-        wiz.putProperty("text", getComponent().getText());         
-        
+        wiz.putProperty("text", getComponent().getText());                 
         Thought.Type type = getComponent().getSelectedType();
-        wiz.putProperty("type", type); 
-             
-        wiz.putProperty(TagsProvider.PROP_TAGS, getComponent().getSelectedTags());        
+        wiz.putProperty("type", type);              
+        wiz.putProperty(TagsProvider.PROP_TAGS, new HashSet<String>(getComponent().getSelectedTags()));        
     }    
 }
