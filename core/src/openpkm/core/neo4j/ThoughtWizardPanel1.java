@@ -7,16 +7,16 @@ package openpkm.core.neo4j;
 import javax.swing.event.ChangeListener;
 import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
-import org.netbeans.api.project.Project;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author rok
  */
-public class ThoughtWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
+public class ThoughtWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>, WizardDescriptor.FinishablePanel<WizardDescriptor>
 {
     /**
      * The visual component that displays this panel. If you need to access the
@@ -57,12 +57,24 @@ public class ThoughtWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     @Override
     public void validate() throws WizardValidationException 
     {
-        Project project = getComponent().getSelectedProject();
-        if(project == null) 
+        Thought.Type type = getComponent().getSelectedType();
+        if(type == null) 
         {
-            throw new WizardValidationException(null, "Project can not be empty", null);
-        }          
+            throw new WizardValidationException(null, "Type can not be empty", null);
+        }  
+
+        String text = getComponent().getText();
+        if(text.isBlank()) 
+        {
+            throw new WizardValidationException(null, "Text can not be empty", null);
+        }  
     }  
+    
+    @Override
+    public boolean isFinishPanel() 
+    {
+        return true;
+    }    
 
     @Override
     public void addChangeListener(ChangeListener l) {
@@ -75,16 +87,21 @@ public class ThoughtWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     @Override
     public void readSettings(WizardDescriptor wiz) 
     {
-        // use wiz.getProperty to retrieve previous panel state     
+        // use wiz.getProperty to retrieve previous panel state   
+        Lookup.Provider provider = (Lookup.Provider)wiz.getProperty("provider");
+        if(provider != null)
+        { 
+            getComponent().setTags(provider);
+        }          
     }
 
     @Override
     public void storeSettings(WizardDescriptor wiz) 
     {
         // use wiz.putProperty to remember current panel state
-        Project project = getComponent().getSelectedProject();
-        wiz.putProperty("project", project); 
 
+        wiz.putProperty("text", getComponent().getText());         
+        
         Thought.Type type = getComponent().getSelectedType();
         wiz.putProperty("type", type); 
              

@@ -23,14 +23,14 @@ import org.openide.util.Lookup;
  *
  * @author rok
  */
-public class ThoughtVisualPanel3 extends javax.swing.JPanel implements ExplorerManager.Provider
+public class ThoughtVisualPanel extends javax.swing.JPanel implements ExplorerManager.Provider
 {
     private final ExplorerManager explorerManager = new ExplorerManager(); 
     
     /**
      * Creates new form ThoughtVisualPanel3
      */
-    public ThoughtVisualPanel3() 
+    public ThoughtVisualPanel() 
     {
         initComponents();
     }
