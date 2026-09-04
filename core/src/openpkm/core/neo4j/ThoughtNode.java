@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -21,11 +22,17 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsProvider;
 import openpkm.base.IconsProvider;
+import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
+import openpkm.base.Topic;
+import openpkm.base.TopicsProvider;
 import org.openide.DialogDisplayer;
 import org.openide.WizardDescriptor;
+import org.openide.awt.StatusDisplayer;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
@@ -163,24 +170,27 @@ public class ThoughtNode extends AbstractNode
     
     private static final class AddThought extends AbstractAction
     {
-        private final ThoughtsGraphProvider thoughtsProvider;
-        private final Thought thought;   
+        private final ThoughtsGraphProvider provider;
+        private final Thought parent;   
 
-        public AddThought(ThoughtsGraphProvider thoughtsProvider, Thought thought) 
+        public AddThought(ThoughtsGraphProvider provider, Thought parent) 
         {
             super("Add Thought");
-            this.thoughtsProvider = thoughtsProvider;
-            this.thought = thought;
+            this.provider = provider;
+            this.parent = parent;
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
         {            
+            // TODO use context
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-            panels.add(new TopicWizardPanel1());
-            panels.add(new AccessibilityWizardPanel2());
+            panels.add(new ThoughtWizardPanel1());
+            panels.add(new TopicWizardPanel());
+            panels.add(new GoalWizardPanel());
             String[] steps = new String[panels.size()];
-            for (int i = 0; i < panels.size(); i++) {
+            for (int i = 0; i < panels.size(); i++) 
+            {
                 Component c = panels.get(i).getComponent();
                 // Default step name to component name of panel.
                 steps[i] = c.getName();
@@ -194,17 +204,24 @@ public class ThoughtNode extends AbstractNode
                 }
             }
             WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
-            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
             wiz.setTitleFormat(new MessageFormat("{0}"));
-            wiz.setTitle("Add Topic");        
+            wiz.setTitle("Add Thought");  
+            //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+            wiz.putProperty("provider", provider.getProvider());
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
-            {
-                /*
-                String name = (String) wiz.getProperty("name");
-                String tag = (String) wiz.getProperty("tag");                
-                thoughtsProvider.addThought(tag, Thought.Type.QUESTION, tags, parents, topics, goals);
-                */
-            }
+            { 
+                String text = (String) wiz.getProperty("text");  
+                Thought.Type type = (Thought.Type) wiz.getProperty("type");  
+                Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+                Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+                Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);  
+                Thought thought = provider.addChildrenThought(parent, text, type, tags, topics, goals);
+                if(thought != null)
+                {
+                    StatusDisplayer.getDefault().setStatusText("Thought saved with text: " + text);                
+                }
+            } 
         }
     }     
 }

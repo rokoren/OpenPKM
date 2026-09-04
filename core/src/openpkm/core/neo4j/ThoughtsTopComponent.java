@@ -9,6 +9,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
 import org.netbeans.api.settings.ConvertAsProperties;
@@ -129,7 +132,7 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
         // TODO read your settings according to their version
     }
     
-    private final class Thoughts extends Children.Keys<ThoughtsGraphProvider> implements LookupListener
+    private final class Thoughts extends Children.Keys<ThoughtsGraphProvider> implements LookupListener, ChangeListener
     {
         private List<ThoughtsGraphProvider> providers;
                         
@@ -145,8 +148,24 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
                 }
                 else
                 {
+                    for(ThoughtsGraphProvider provider : providers)
+                    {
+                        if(provider instanceof ChangeSupportProvider csp)
+                        {
+                            csp.removeChangeListener(this);
+                        }
+                    }
                     providers.clear();                    
                 }
+                
+                for (ThoughtsGraphProvider provider : coll) 
+                {
+                    if (provider instanceof ChangeSupportProvider csp) 
+                    {
+                        csp.addChangeListener(this);
+                    }
+                }                             
+                
                 providers.addAll(coll);
                 updateKeys();                
             }
@@ -178,6 +197,15 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
         @Override
         protected void removeNotify()
         {
+            for(ThoughtsGraphProvider provider : providers)
+            {
+                if(provider instanceof ChangeSupportProvider csp)
+                {
+                    csp.removeChangeListener(this);
+                }
+            }
+            providers.clear();            
+            
             setKeys(Collections.<ThoughtsGraphProvider>emptySet());
         }
 
@@ -193,6 +221,12 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
             }         
             
             return nodes;
+        }  
+        
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            updateKeys();
         }         
     }    
 }

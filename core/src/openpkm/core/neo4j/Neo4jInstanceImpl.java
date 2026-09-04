@@ -554,8 +554,12 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         records.forEach(r -> {
             Set<String> tags = new HashSet<>(r.get("tags").asList(Value::asString));  
             Thought thought = new ThoughtImpl(r.get("ID").asString(), tags);
-            thought.setText(r.get("text").asString());
-            thought.setType(Thought.Type.valueOf(r.get("type").asString()));
+            thought.setText(r.get("text").asString());            
+            Optional<Thought.Type> type = Thought.Type.get(r.get("type").asString());
+            if(type.isPresent())
+            {
+                thought.setType(type.get());                
+            }                          
             thoughts.add(thought);
         });
         return thoughts;

@@ -46,7 +46,8 @@ public final class RootThoughtAction implements ActionListener {
     }
 
     @Override
-    public void actionPerformed(ActionEvent ev) {
+    public void actionPerformed(ActionEvent ev) 
+    {
         // TODO use context
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new ThoughtWizardPanel1());
