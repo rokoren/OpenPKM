@@ -11,7 +11,7 @@ import javax.swing.event.ChangeListener;
  *
  * @author rok
  */
-public interface SourceProviderWrapper extends TagsProvider, BacklinksProvider, ActionsProvider
+public interface SourceProviderWrapper extends TagsProvider, ThoughtsProvider, BacklinksProvider, ActionsProvider
 {
     Source getSource();
     void deleteSource() throws IOException;

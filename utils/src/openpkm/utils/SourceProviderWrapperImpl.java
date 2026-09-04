@@ -22,6 +22,9 @@ import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.StateSupport;
 import openpkm.base.TagsProvider;
+import openpkm.base.Thought;
+import openpkm.base.ThoughtsGraphProvider;
+import openpkm.base.ThoughtsProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ChangeSupport;
 
@@ -85,6 +88,31 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
         }
         return Collections.EMPTY_SET;
     }  
+    
+    @Override
+    public Set<Thought> getThoughts()
+    {
+        ThoughtsGraphProvider thoughtsProvider = getProvider().getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+        Source source = provider.getSource(sourceID);
+        if(thoughtsProvider != null && source instanceof PropertiesProvider propsProvider)
+        {
+            String string = propsProvider.getProperties().getProperty(ThoughtsProvider.PROP_THOUGHTS);
+            if(string != null && string.isBlank())
+            {
+                List<Thought> thoughts = new ArrayList<>();
+                for(String thoughtID : Set.of(string.split(",")))
+                {
+                    Thought thought = thoughtsProvider.getThought(thoughtID);
+                    if(thought != null)
+                    {
+                        thoughts.add(thought);
+                    }
+                }
+                return new HashSet<>(thoughts);
+            }
+        }
+        return Collections.EMPTY_SET;        
+    }
     
     @Override
     public Set<String> getBacklinks() 

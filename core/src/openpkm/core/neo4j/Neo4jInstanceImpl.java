@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -516,6 +517,28 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }  
+    
+    @Override
+    public Thought getThought(String thoughtID) throws NoSuchElementException
+    {        
+        EagerResult result = getDriver().executableQuery("MATCH (t:Thought {id: $id}) RETURN t.id AS ID, t.text AS text, t.type AS type, t.tags AS tags")
+                .withParameters(Map.of("id", thoughtID))
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
+                .execute();    
+        
+        var record = result.records().getFirst();
+
+        Set<String> tags = new HashSet<>(record.get("tags").asList(Value::asString));            
+        Thought thought = new ThoughtImpl(record.get("ID").asString(), tags);
+        thought.setText(record.get("text").asString());            
+        Optional<Thought.Type> type = Thought.Type.get(record.get("type").asString());
+        if(type.isPresent())
+        {
+            thought.setType(type.get());                
+        }         
+        
+        return thought;
+    }    
     
     @Override
     public List<Thought> getRootThoughts(String projectID)

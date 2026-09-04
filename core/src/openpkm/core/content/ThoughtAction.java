@@ -50,6 +50,7 @@ import openpkm.core.neo4j.GoalWizardPanel;
 import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.utils.FileUtils;
 import openpkm.base.TopicsGraphProvider;
+import openpkm.core.neo4j.ThoughtWizardPanel;
 
 /**
  *
@@ -85,6 +86,7 @@ public class ThoughtAction implements ActionListener
         panels.add(new NoteWizardPanel1());
         panels.add(new TopicWizardPanel());
         panels.add(new GoalWizardPanel());
+        panels.add(new ThoughtWizardPanel());
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {

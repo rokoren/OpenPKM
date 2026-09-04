@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.prefs.Preferences;
@@ -66,6 +67,7 @@ public interface Neo4jInstance
     ChildrenGoal addChildrenGoal(String parentID, String name, String tag, Goal.Level level, LocalDate startDate, LocalDate endDate, String vision, String accountability, String rewards, String obstacles, String support, String brainstorming, VisibilityProvider.Modifier modifier);    
     void removeChildrenGoal(ChildrenGoal goal);   
     
+    Thought getThought(String thoughtID) throws NoSuchElementException;
     List<Thought> getRootThoughts(String projectID);    
     List<Thought> getChildrenThoughts(String parentID);    
     Thought addThought(Session session, String projectID, String text, Thought.Type type, Set<String> tags) throws Exception;  

@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -4738,6 +4739,25 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         private final Map<String, Thought> thoughts = new HashMap<>();        
         private final Map<String, List<Thought>> childrenThoughts = new HashMap<>();        
         private final ChangeSupport changeSupport = new ChangeSupport(this);     
+        
+        @Override
+        public Thought getThought(String toughtID)
+        {
+            Thought thought = thoughts.get(toughtID);
+            if(thought == null)
+            {
+                try
+                {
+                    thought = getNeo4jInstance().getThought(toughtID);
+                    thoughts.put(toughtID, thought);                   
+                }
+                catch(NoSuchElementException e)
+                {
+                    LOG.info(e.getMessage());
+                }
+            }
+            return thought;
+        }
         
         @Override
         public List<Thought> getRootThoughts()

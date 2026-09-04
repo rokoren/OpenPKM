@@ -44,14 +44,14 @@ import org.openide.util.lookup.ProxyLookup;
  *
  * @author rok
  */
-public class ThoughtNode extends AbstractNode
+public class TreeOfThoughtsNode extends AbstractNode
 {
-    private static final Logger LOG = Logger.getLogger(ThoughtNode.class.getName());  
+    private static final Logger LOG = Logger.getLogger(TreeOfThoughtsNode.class.getName());  
     
     private final ThoughtsGraphProvider provider;
     private final Thought thought;
 
-    public ThoughtNode(ThoughtsGraphProvider provider, Thought thought) 
+    public TreeOfThoughtsNode(ThoughtsGraphProvider provider, Thought thought) 
     {
         super(new ThoughtChildren(provider, thought), new ProxyLookup(Lookups.proxy(provider.getProvider()), Lookups.singleton(thought)));
         setName(thought.getThoughtID());
@@ -138,7 +138,7 @@ public class ThoughtNode extends AbstractNode
         @Override
         protected Node[] createNodes(Thought thought) 
         {
-            return new Node[] {new ThoughtNode(thoughtsProvider, thought)};
+            return new Node[] {new TreeOfThoughtsNode(thoughtsProvider, thought)};
         }
 
         @Override

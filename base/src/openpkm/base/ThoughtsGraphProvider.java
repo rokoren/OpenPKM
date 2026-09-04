@@ -15,7 +15,8 @@ import org.openide.util.Lookup;
  */
 public interface ThoughtsGraphProvider
 {
-    Lookup.Provider getProvider();      
+    Lookup.Provider getProvider();  
+    Thought getThought(String thoughtID);
     List<Thought> getRootThoughts();  
     List<Thought> getChildrenThoughts(String parentID);
     Thought addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);

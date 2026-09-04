@@ -4,18 +4,16 @@
  */
 package openpkm.core.neo4j;
 
-import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import javax.swing.SwingUtilities;
-import openpkm.base.IconsProvider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Thought;
-import openpkm.base.ThoughtsProvider;
+import openpkm.base.ThoughtsGraphProvider;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -38,45 +36,43 @@ import org.openide.util.lookup.ProxyLookup;
  * Top component which displays something.
  */
 @ConvertAsProperties(
-        dtd = "-//openpkm.core.neo4j//Thoughts//EN",
+        dtd = "-//openpkm.core.neo4j//TreeOfThoughts//EN",
         autostore = false
 )
 @TopComponent.Description(
-        preferredID = "ThoughtsTopComponent",
-        iconBase = "openpkm/core/resources/comments.png",
+        preferredID = "TreeOfThoughtsTopComponent",
+        iconBase = "openpkm/core/resources/tree_list.png",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
 @TopComponent.Registration(mode = "output", openAtStartup = true)
-@ActionID(category = "Window", id = "openpkm.core.neo4j.ThoughtsTopComponent")
+@ActionID(category = "Window", id = "openpkm.core.neo4j.TreeOfThoughtsTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
-        displayName = "#CTL_ThoughtsAction",
-        preferredID = "ThoughtsTopComponent"
+        displayName = "#CTL_TreeOfThoughtsAction",
+        preferredID = "TreeOfThoughtsTopComponent"
 )
 @Messages({
-    "CTL_ThoughtsAction=Thoughts",
-    "CTL_ThoughtsTopComponent=Thoughts Window",
-    "HINT_ThoughtsTopComponent=This is a Thoughts window"
+    "CTL_TreeOfThoughtsAction=Tree Of Thoughts",
+    "CTL_TreeOfThoughtsTopComponent=Tree Of Thoughts Window",
+    "HINT_TreeOfThoughtsTopComponent=This is a Tree Of Thoughts window"
 })
-public final class ThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider
+public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider
 {
     private final ExplorerManager explorerManager = new ExplorerManager();
     private final UndoRedo.Manager undoRedoManager = new UndoRedo.Manager();  
-    private final Thoughts thoughts = new Thoughts();
+    private final Thoughts thoughts = new Thoughts();   
     
-    private Lookup.Result<ThoughtsProvider> result;   
+    private Lookup.Result<ThoughtsGraphProvider> result;
     
-    public ThoughtsTopComponent() {
+    public TreeOfThoughtsTopComponent() 
+    {
         initComponents();
-        setName(Bundle.CTL_ThoughtsTopComponent());
-        setToolTipText(Bundle.HINT_ThoughtsTopComponent());
-        putClientProperty(TopComponent.PROP_DRAGGING_DISABLED, Boolean.TRUE);
+        setName(Bundle.CTL_TreeOfThoughtsTopComponent());
+        setToolTipText(Bundle.HINT_TreeOfThoughtsTopComponent());
         putClientProperty(TopComponent.PROP_MAXIMIZATION_DISABLED, Boolean.TRUE);
-        putClientProperty(TopComponent.PROP_SLIDING_DISABLED, Boolean.TRUE);
-        putClientProperty(TopComponent.PROP_UNDOCKING_DISABLED, Boolean.TRUE);
         associateLookup(new ProxyLookup(ExplorerUtils.createLookup(explorerManager, getActionMap()), Lookups.singleton(this)));  
         explorerManager.setRootContext(new AbstractNode(thoughts));   
-        result = Utilities.actionsGlobalContext().lookupResult(ThoughtsProvider.class);    
+        result = Utilities.actionsGlobalContext().lookupResult(ThoughtsGraphProvider.class);  
     }
     
     @Override
@@ -89,7 +85,7 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
     public UndoRedo getUndoRedo() 
     {
         return undoRedoManager;
-    }       
+    }     
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -99,14 +95,16 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        listView1 = new org.openide.explorer.view.ListView();
+        beanTreeView1 = new org.openide.explorer.view.BeanTreeView();
 
         setLayout(new java.awt.BorderLayout());
-        add(listView1, java.awt.BorderLayout.CENTER);
+
+        beanTreeView1.setRootVisible(false);
+        add(beanTreeView1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private org.openide.explorer.view.ListView listView1;
+    private org.openide.explorer.view.BeanTreeView beanTreeView1;
     // End of variables declaration//GEN-END:variables
     @Override
     public void componentOpened() {
@@ -132,14 +130,14 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
         // TODO read your settings according to their version
     }
     
-    private final class Thoughts extends Children.Keys<Thought> implements LookupListener
+    private final class Thoughts extends Children.Keys<ThoughtsGraphProvider> implements LookupListener, ChangeListener
     {
-        private List<ThoughtsProvider> providers;
+        private List<ThoughtsGraphProvider> providers;
                         
         @Override
         public void resultChanged(LookupEvent event) 
         { 
-            Collection<ThoughtsProvider> coll = (Collection<ThoughtsProvider>) result.allInstances();
+            Collection<ThoughtsGraphProvider> coll = (Collection<ThoughtsGraphProvider>) result.allInstances();
             if(!coll.isEmpty())
             {
                 if(providers == null)
@@ -148,8 +146,24 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
                 }
                 else
                 {
+                    for(ThoughtsGraphProvider provider : providers)
+                    {
+                        if(provider instanceof ChangeSupportProvider csp)
+                        {
+                            csp.removeChangeListener(this);
+                        }
+                    }
                     providers.clear();                    
-                }                                                          
+                }
+                
+                for (ThoughtsGraphProvider provider : coll) 
+                {
+                    if (provider instanceof ChangeSupportProvider csp) 
+                    {
+                        csp.addChangeListener(this);
+                    }
+                }                             
+                
                 providers.addAll(coll);
                 updateKeys();                
             }
@@ -161,7 +175,7 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
             updateKeys();
         }
         
-        public Collection<ThoughtsProvider> getProviders()
+        public Collection<ThoughtsGraphProvider> getProviders()
         {
             if(providers != null)
             {
@@ -174,57 +188,43 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
         {               
             SwingUtilities.invokeLater(() -> 
             {
-                SortedSet<Thought> thoughts = new TreeSet<Thought>();  
-                Iterator<ThoughtsProvider> iterator = getProviders().iterator();
-                while(iterator.hasNext())
-                {
-                    thoughts.addAll(iterator.next().getThoughts());  
-                } 
-                setKeys(thoughts);                                                  
+                setKeys(getProviders());  
             });  
         }
 
         @Override
         protected void removeNotify()
-        {                   
-            setKeys(Collections.<Thought>emptySet());
+        {
+            for(ThoughtsGraphProvider provider : providers)
+            {
+                if(provider instanceof ChangeSupportProvider csp)
+                {
+                    csp.removeChangeListener(this);
+                }
+            }
+            providers.clear();            
+            
+            setKeys(Collections.<ThoughtsGraphProvider>emptySet());
         }
 
         @Override
-        protected Node[] createNodes(Thought thought) 
+        protected Node[] createNodes(ThoughtsGraphProvider provider) 
         {
-            return new Node[] {new ThoughtNode(thought)};
-        }         
-    } 
-    
-    private static final class ThoughtNode extends AbstractNode
-    {
-        private final Thought thought;        
+            List<Thought> thoughts = provider.getRootThoughts();
+            Node[] nodes = new Node[thoughts.size()];
+            
+            for (int i = 0; i < thoughts.size(); i++) 
+            {
+                nodes[i] = new TreeOfThoughtsNode(provider, thoughts.get(i));
+            }         
+            
+            return nodes;
+        }  
         
-        public ThoughtNode(Thought thought) 
-        {
-            super(Children.LEAF, new ProxyLookup(Lookups.singleton(thought)));
-            setName(thought.getThoughtID());
-            setDisplayName(thought.getText());
-            this.thought = thought;
-        }   
-
-        private Image getIcon(boolean opened) 
-        {
-            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
-            return provider.getImage(thought.getType().getIcon());        
-        }
-
         @Override
-        public Image getIcon(int type) 
+        public void stateChanged(ChangeEvent e) 
         {
-            return getIcon(false);
-        }
-
-        @Override
-        public Image getOpenedIcon(int type) 
-        {
-            return getIcon(true);
-        }          
-    }
+            updateKeys();
+        }         
+    }     
 }
