@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.LinkFactory;
+import openpkm.base.LiteratureNoteFactory;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.utils.OpenPkmMultiViewEditorElement;
@@ -124,8 +125,16 @@ public class MarkdownDataObject extends MultiDataObject
                 lookup = super.getLookup();
             }  
             else
-            {                   
-                lookup = new ProxyLookup(super.getLookup(), Lookups.singleton(provider), Lookups.singleton(new MarkdownLinkFactory()));                
+            {   
+                LiteratureNoteFactory literatureNoteFactory = provider.getLiteratureNoteFactory(this);
+                if(literatureNoteFactory == null)
+                {
+                    lookup = new ProxyLookup(super.getLookup(), Lookups.singleton(provider), Lookups.singleton(new MarkdownLinkFactory()));                     
+                }
+                else
+                {
+                    lookup = new ProxyLookup(super.getLookup(), Lookups.singleton(provider), Lookups.singleton(new MarkdownLinkFactory()), Lookups.singleton(literatureNoteFactory)); 
+                }                               
             }
         }
         return lookup;   

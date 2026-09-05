@@ -5,17 +5,31 @@
 package openpkm.utils;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ActionProvider;
 import openpkm.base.BacklinksProvider;
+import openpkm.base.Content;
+import openpkm.base.ContentFactory;
+import openpkm.base.FileTypeProvider;
+import openpkm.base.Goal;
+import openpkm.base.GoalsGraphProvider;
+import openpkm.base.GoalsProvider;
+import openpkm.base.LiteratureNoteFactory;
+import openpkm.base.Note;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProvider;
@@ -25,7 +39,20 @@ import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.ThoughtsProvider;
+import openpkm.base.TitleProvider;
+import openpkm.base.Topic;
+import openpkm.base.TopicsGraphProvider;
+import openpkm.base.TopicsProvider;
+import openpkm.base.VisibilityProvider;
+import openpkm.raindrop.Raindrop;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+import org.openide.WizardDescriptor;
+import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.ChangeSupport;
 
 /**
@@ -34,6 +61,8 @@ import org.openide.util.ChangeSupport;
  */
 public class SourceProviderWrapperImpl implements SourceProviderWrapper
 {
+    private static final Logger LOG = Logger.getLogger(SourceProviderWrapper.class.getName());    
+    
     private final String sourceID;
     private final SourceProvider provider;
     private final ChangeSupport changeSupport;
@@ -201,5 +230,143 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
             }          
         }
         return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public LiteratureNoteFactory getLiteratureNoteFactory(DataObject data) 
+    {
+        ContentProvider contentProvider = provider.getProvider().getLookup().lookup(ContentProvider.class);
+        Source source = getSource();
+        if(contentProvider != null && source != null)
+        {
+            if(source instanceof Raindrop raindrop)
+            {
+                return new LiteratureNoteFactoryImpl(data, contentProvider, raindrop.getTitle(), raindrop.getExcerpt(), null, raindrop.getLink());
+            }
+        }
+        return null;
+    }
+    
+    private static final class LiteratureNoteFactoryImpl implements LiteratureNoteFactory
+    {
+        private final DataObject data;
+        private final ContentProvider provider;
+        
+        private final String title;
+        private final String subtitle;
+        private final String authorName;
+        private final String sourceUrl;
+
+        public LiteratureNoteFactoryImpl(DataObject data, ContentProvider provider, String title, String subtitle, String authorName, String sourceUrl) {
+            this.data = data;
+            this.provider = provider;
+            this.title = title;
+            this.subtitle = subtitle;
+            this.authorName = authorName;
+            this.sourceUrl = sourceUrl;
+        }
+                
+        @Override
+        public void createLiteratureNote(List<WizardDescriptor.Panel<WizardDescriptor>> panels) 
+        {
+            WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+            // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
+            wiz.setTitleFormat(new MessageFormat("{0}"));
+            wiz.setTitle("Create Literature Note");  
+            //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+            wiz.putProperty("provider", provider.getProvider());
+            if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+            {  
+                FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
+                String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);     
+                Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+                Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
+                Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
+
+                LocalDateTime now = LocalDateTime.now();
+
+                Properties props = new Properties(); 
+                props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+                props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.LITERATURE_NOTE.getName());
+                props.setProperty(Content.PROP_APP_ID, Utils.getAppID());           
+                VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
+                if(visibiltyModifier != null)
+                {
+                    props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());                  
+                }          
+                props.setProperty(TitleProvider.PROP_TITLE, title);
+
+                if(tags != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(String tag : tags)
+                    {
+                        joiner.add(tag);
+                    }
+                    props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());
+                }             
+
+                if(topics != null)
+                {
+                    TopicsGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
+                    if(knowledgeGraphProvider != null)
+                    {
+                        StringJoiner joiner = new StringJoiner(",");
+                        for(Topic topic : topics)
+                        {
+                            joiner.add(knowledgeGraphProvider.getTreeID(topic));
+                        }
+                        props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
+                    }
+                }  
+
+                if(goals != null)
+                {
+                    GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                    if(goalsGraphProvider != null)
+                    {
+                        StringJoiner joiner = new StringJoiner(",");
+                        for(Goal goal : goals)
+                        {
+                            joiner.add(goalsGraphProvider.getTreeID(goal));
+                        }
+                        props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
+                    }
+                }  
+
+                String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
+                props.setProperty(Note.PROP_FILE_NAME, fileName);  
+
+                Content content = provider.getFactory().getContent(props);
+                try
+                {
+                    FileObject file = provider.createData(content, fileType); 
+                    OutputStream os = provider.getRootFolder().createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    provider.getFactory().save(content, os, "New Literature Note Content created by Wizard");
+                    os.close();  
+
+                    StatusDisplayer.getDefault().setStatusText("Literature Note content saved with title: " + title);  
+
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open Literature Note in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                            
+                }                      
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                      
+            } 
+        }   
     }
 }

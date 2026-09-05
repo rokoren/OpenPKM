@@ -1086,24 +1086,27 @@ public class ContentFactoryImpl implements ContentFactory
         }
 
         @Override
-        public String getSubtitle() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        public String getSubtitle() 
+        {
+            return props.getProperty(PROP_SUBTITLE);
         }
 
         @Override
-        public String getSourceUrl() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        public String getSourceUrl() 
+        {
+            return props.getProperty(PROP_SOURCE_URL);
         }
 
         @Override
         public String getSummary() 
         {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            return props.getProperty(PROP_SUMMARY);
         }
 
         @Override
-        public List<Quote> getQuotes() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        public List<Quote> getQuotes() 
+        {
+            return null;
         }
     }   
     

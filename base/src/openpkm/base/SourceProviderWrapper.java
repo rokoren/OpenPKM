@@ -6,6 +6,7 @@ package openpkm.base;
 
 import java.io.IOException;
 import javax.swing.event.ChangeListener;
+import org.openide.loaders.DataObject;
 
 /**
  *
@@ -18,6 +19,7 @@ public interface SourceProviderWrapper extends TagsProvider, ThoughtsProvider, B
     void addBacklink(String link);
     void removeBacklink(String link);    
     SourceProvider getProvider();
+    LiteratureNoteFactory getLiteratureNoteFactory(DataObject data);
     void addListener(ChangeListener listener);
     void removeListener(ChangeListener listener);
 }
