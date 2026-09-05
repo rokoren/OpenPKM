@@ -126,7 +126,7 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
         if(thoughtsProvider != null && source instanceof PropertiesProvider propsProvider)
         {
             String string = propsProvider.getProperties().getProperty(ThoughtsProvider.PROP_THOUGHTS);
-            if(string != null && string.isBlank())
+            if(string != null && !string.isBlank())
             {
                 List<Thought> thoughts = new ArrayList<>();
                 for(String thoughtID : Set.of(string.split(",")))
@@ -282,6 +282,7 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                 Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
                 Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
                 Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
+                Set<Thought> thoughts = (Set<Thought>) wiz.getProperty(ThoughtsProvider.PROP_THOUGHTS);
 
                 LocalDateTime now = LocalDateTime.now();
 
@@ -333,6 +334,20 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                         props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
                     }
                 }  
+                
+                if(thoughts != null)
+                {
+                    ThoughtsGraphProvider thoughtsGraphProvider = provider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+                    if(thoughtsGraphProvider != null)
+                    {
+                        StringJoiner joiner = new StringJoiner(",");
+                        for(Thought thought : thoughts)
+                        {
+                            joiner.add(thought.getThoughtID());
+                        }
+                        props.setProperty(ThoughtsProvider.PROP_THOUGHTS, joiner.toString());                    
+                    }
+                }                 
 
                 String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
                 props.setProperty(Note.PROP_FILE_NAME, fileName);  

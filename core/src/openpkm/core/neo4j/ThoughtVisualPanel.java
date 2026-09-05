@@ -137,21 +137,19 @@ public class ThoughtVisualPanel extends javax.swing.JPanel implements ExplorerMa
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        contextTreeView1 = new org.openide.explorer.view.ContextTreeView();
         jLabel1 = new javax.swing.JLabel();
+        listView1 = new org.openide.explorer.view.ListView();
 
-        setLayout(new java.awt.BorderLayout());
-
-        contextTreeView1.setRootVisible(false);
-        add(contextTreeView1, java.awt.BorderLayout.CENTER);
+        setLayout(new java.awt.BorderLayout(0, 10));
 
         jLabel1.setPreferredSize(new java.awt.Dimension(0, 16));
         add(jLabel1, java.awt.BorderLayout.PAGE_START);
+        add(listView1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private org.openide.explorer.view.ContextTreeView contextTreeView1;
     private javax.swing.JLabel jLabel1;
+    private org.openide.explorer.view.ListView listView1;
     // End of variables declaration//GEN-END:variables
 }

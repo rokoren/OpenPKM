@@ -136,12 +136,13 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
         iconView3 = new org.openide.explorer.view.IconView();
         jLabel2 = new javax.swing.JLabel();
 
         setLayout(new java.awt.BorderLayout());
+
+        iconView3.setFocusable(false);
         add(iconView3, java.awt.BorderLayout.CENTER);
 
         jLabel2.setPreferredSize(new java.awt.Dimension(0, 16));

@@ -174,7 +174,7 @@ public final class ThoughtsTopComponent extends TopComponent implements Explorer
         {               
             SwingUtilities.invokeLater(() -> 
             {
-                SortedSet<Thought> thoughts = new TreeSet<Thought>();  
+                SortedSet<Thought> thoughts = new TreeSet<Thought>(Thought.textComparator());  
                 Iterator<ThoughtsProvider> iterator = getProviders().iterator();
                 while(iterator.hasNext())
                 {
