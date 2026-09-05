@@ -5,7 +5,6 @@
 package openpkm.core.neo4j;
 
 import java.awt.Component;
-import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.text.MessageFormat;
@@ -53,12 +52,12 @@ public class TreeOfThoughtsNode extends AbstractNode
 
     public TreeOfThoughtsNode(ThoughtsGraphProvider provider, Thought thought) 
     {
-        super(new ThoughtChildren(provider, thought), new ProxyLookup(Lookups.proxy(provider.getProvider()), Lookups.singleton(thought)));
+        super(new ThoughtChildren(provider, thought), new ProxyLookup(Lookups.proxy(provider.getProvider())));
         setName(thought.getThoughtID());
         setDisplayName(thought.getText());
         this.provider = provider;
         this.thought = thought;
-    }  
+    }   
     
     @Override
     public Action[] getActions(boolean context) 
@@ -111,7 +110,12 @@ public class TreeOfThoughtsNode extends AbstractNode
         }
 
         private void updateKeys() 
-        {
+        { 
+            SortedSet<Thought> thoughts = new TreeSet<>(Thought.textComparator());
+            thoughts.addAll(thoughtsProvider.getChildrenThoughts(thought.getThoughtID()));           
+            setKeys(thoughts);                 
+            
+            /*
             EventQueue.invokeLater(new Runnable() 
             {
                 @Override
@@ -122,6 +126,7 @@ public class TreeOfThoughtsNode extends AbstractNode
                     setKeys(thoughts);                   
                 }
             });
+            */
         }        
 
         @Override

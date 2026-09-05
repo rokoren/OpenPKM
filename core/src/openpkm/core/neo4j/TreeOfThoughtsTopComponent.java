@@ -4,10 +4,12 @@
  */
 package openpkm.core.neo4j;
 
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -56,13 +58,16 @@ import org.openide.util.lookup.ProxyLookup;
     "CTL_TreeOfThoughtsTopComponent=Tree Of Thoughts Window",
     "HINT_TreeOfThoughtsTopComponent=This is a Tree Of Thoughts window"
 })
-public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider
+public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener
 {
+    private static final Logger LOG = Logger.getLogger(TreeOfThoughtsTopComponent.class.getName());  
+    
     private final ExplorerManager explorerManager = new ExplorerManager();
     private final UndoRedo.Manager undoRedoManager = new UndoRedo.Manager();  
     private final Thoughts thoughts = new Thoughts();   
     
-    private Lookup.Result<ThoughtsGraphProvider> result;
+    private Lookup.Result<ThoughtsGraphProvider> result1;
+    private Lookup.Result<Thought> result2;
     
     public TreeOfThoughtsTopComponent() 
     {
@@ -72,7 +77,8 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         putClientProperty(TopComponent.PROP_MAXIMIZATION_DISABLED, Boolean.TRUE);
         associateLookup(new ProxyLookup(ExplorerUtils.createLookup(explorerManager, getActionMap()), Lookups.singleton(this)));  
         explorerManager.setRootContext(new AbstractNode(thoughts));   
-        result = Utilities.actionsGlobalContext().lookupResult(ThoughtsGraphProvider.class);  
+        result1 = Utilities.actionsGlobalContext().lookupResult(ThoughtsGraphProvider.class);  
+        result2 = Utilities.actionsGlobalContext().lookupResult(Thought.class); 
     }
     
     @Override
@@ -109,13 +115,15 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
     @Override
     public void componentOpened() {
         // TODO add custom code on component opening
-        result.addLookupListener(thoughts);  
+        result1.addLookupListener(thoughts);  
+        result2.addLookupListener(this);  
     }
 
     @Override
     public void componentClosed() {
         // TODO add custom code on component closing
-        result.removeLookupListener(thoughts); 
+        result1.removeLookupListener(thoughts); 
+        result2.removeLookupListener(this); 
     }
 
     void writeProperties(java.util.Properties p) {
@@ -130,6 +138,47 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         // TODO read your settings according to their version
     }
     
+    @Override
+    public void resultChanged(LookupEvent event) 
+    { 
+        Collection<Thought> coll = (Collection<Thought>) result2.allInstances();
+        if(!coll.isEmpty())
+        {
+            Node node = findPath(explorerManager.getRootContext(), coll.iterator().next());
+            if(node != null)
+            {
+                Node[] nodes = {node};
+                try
+                {
+                    explorerManager.setSelectedNodes(nodes);   
+                    //beanTreeView1.expandNode(node);
+                }
+                catch(PropertyVetoException e)
+                {
+                    LOG.warning(e.getMessage());
+                }
+            }
+        }
+    }  
+
+    private Node findPath(Node root, Thought target) 
+    {
+        Node node = root.getChildren().findChild(target.getThoughtID());
+        if(node != null)
+        {
+            return node;
+        }
+        for(Node child : root.getChildren().getNodes())
+        {
+            node = findPath(child, target);
+            if(node != null)
+            {
+                return node;
+            }
+        }
+        return null;
+    } 
+    
     private final class Thoughts extends Children.Keys<ThoughtsGraphProvider> implements LookupListener, ChangeListener
     {
         private List<ThoughtsGraphProvider> providers;
@@ -137,7 +186,7 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         @Override
         public void resultChanged(LookupEvent event) 
         { 
-            Collection<ThoughtsGraphProvider> coll = (Collection<ThoughtsGraphProvider>) result.allInstances();
+            Collection<ThoughtsGraphProvider> coll = (Collection<ThoughtsGraphProvider>) result1.allInstances();
             if(!coll.isEmpty())
             {
                 if(providers == null)
