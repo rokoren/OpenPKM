@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -41,6 +42,8 @@ import org.openide.util.lookup.ServiceProvider;
 import openpkm.base.ContentFactory;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.GoalsProvider;
+import openpkm.base.LiteratureNote;
+import openpkm.base.Quote;
 
 /**
  *
@@ -80,9 +83,9 @@ public class ContentFactoryImpl implements ContentFactory
                 {
                     return new Idea(props);
                 }  
-                else if(type.get() == Type.THOUGHT)
+                else if(type.get() == Type.LITERATURE_NOTE)
                 {
-                    return new Thought(props);
+                    return new LiteratureNoteImpl(props);
                 }   
                 else if(type.get() == Type.DAILY_JOT)
                 {
@@ -986,12 +989,12 @@ public class ContentFactoryImpl implements ContentFactory
         }
     }  
     
-    private static final class Thought extends AbstractContent implements Note, TitleProvider
+    private static final class LiteratureNoteImpl extends AbstractContent implements LiteratureNote, TitleProvider
     { 
         @StaticResource()
-        public static final String ICON = "openpkm/core/resources/comment.png";        
+        public static final String ICON = "openpkm/core/resources/document_notes.png";        
         
-        public Thought(Properties props)
+        public LiteratureNoteImpl(Properties props)
         {
             super(props);
         } 
@@ -1075,6 +1078,33 @@ public class ContentFactoryImpl implements ContentFactory
         {    
             return ImageUtilities.loadImage(ICON);           
         }         
+
+        @Override
+        public String getAuthorName() 
+        {
+            return props.getProperty(PROP_AUTHOR_NAME);
+        }
+
+        @Override
+        public String getSubtitle() {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public String getSourceUrl() {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public String getSummary() 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public List<Quote> getQuotes() {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
     }   
     
     private static final class DailyJot extends AbstractContent implements Note

@@ -160,6 +160,8 @@ import openpkm.raindrop.RaindropService;
 import openpkm.raindrop.RaindropTag;
 import openpkm.raindrop.RaindropUtils;
 import openpkm.base.DataProvider;
+import openpkm.base.LiteratureNote;
+import openpkm.base.LiteratureNoteProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.TopicsGraphProvider;
@@ -2541,6 +2543,17 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                     output.close();
                 }                         
             } 
+            else if(content instanceof LiteratureNote)
+            {
+                LiteratureNote literatureNote = (LiteratureNote)content;
+                if(fileTypeProvider instanceof LiteratureNoteProvider)
+                {
+                    LiteratureNoteProvider literatureNoteProvider = (LiteratureNoteProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(literatureNoteProvider.getLiteratureNote(literatureNote.getTitle(), literatureNote.getSubtitle(), literatureNote.getAuthorName(), literatureNote.getSourceUrl(), literatureNote.getSummary(), literatureNote.getQuotes()).getBytes());
+                    output.close();
+                }                         
+            }             
             
             return primaryFile;            
         }  

@@ -25,7 +25,7 @@ public interface ContentFactory extends SourceFactory<Content>
         DOCUMENT("document"),       
         IDEA("idea"),        
         DAILY_JOT("daily-jot"), 
-        THOUGHT("thought"),         
+        LITERATURE_NOTE("literature-note"),         
         NOTE("note");
 
         private String name;       

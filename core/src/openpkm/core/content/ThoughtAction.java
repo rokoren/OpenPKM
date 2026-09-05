@@ -120,7 +120,7 @@ public class ThoughtAction implements ActionListener
 
             Properties props = new Properties(); 
             props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.THOUGHT.getName());
+            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.NOTE.getName());
             props.setProperty(Content.PROP_APP_ID, Utils.getAppID());           
             VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
             if(visibiltyModifier != null)

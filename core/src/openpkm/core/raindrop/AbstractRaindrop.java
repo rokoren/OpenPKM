@@ -25,6 +25,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.BacklinksProvider;
 import openpkm.base.Book;
@@ -978,6 +979,14 @@ public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsPr
                     .findFirst();
         }     
     }  
+    
+    private final class ActionsProviderImpl implements ActionsProvider
+    {
+        @Override
+        public List<Action> getActions() {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }        
+    }
     
     private final class BulletIconProviderImpl implements BulletIconProvider, PropertyChangeListener
     {
