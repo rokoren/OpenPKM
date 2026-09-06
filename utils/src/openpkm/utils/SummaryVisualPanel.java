@@ -8,12 +8,12 @@ package openpkm.utils;
  *
  * @author Rok Koren
  */
-public class DescriptionVisualPanel extends javax.swing.JPanel 
+public class SummaryVisualPanel extends javax.swing.JPanel 
 {
     /**
-     * Creates new form DescVisualPanel
+     * Creates new form SummaryVisualPanel
      */
-    public DescriptionVisualPanel() 
+    public SummaryVisualPanel() 
     {
         initComponents();
     }
@@ -21,18 +21,18 @@ public class DescriptionVisualPanel extends javax.swing.JPanel
     @Override
     public String getName() 
     {
-        return "Description";
+        return "Summary";
     } 
 
-    public String getDescription()
+    public String getSummary()
     {
         return jTextArea1.getText().trim();
     }
     
-    public void setDescription(String text)
+    public void setSummary(String text)
     {
         jTextArea1.setText(text);
-    }
+    }    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -51,6 +51,7 @@ public class DescriptionVisualPanel extends javax.swing.JPanel
         jTextArea1.setColumns(20);
         jTextArea1.setLineWrap(true);
         jTextArea1.setRows(5);
+        jTextArea1.setWrapStyleWord(true);
         jScrollPane1.setViewportView(jTextArea1);
 
         add(jScrollPane1);

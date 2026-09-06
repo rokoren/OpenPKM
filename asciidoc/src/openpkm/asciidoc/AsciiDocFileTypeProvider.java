@@ -4,13 +4,11 @@
  */
 package openpkm.asciidoc;
 
-import java.util.List;
 import openpkm.base.ArticleProvider;
 import openpkm.base.AsciiDocSupport;
 import openpkm.base.BookProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.LiteratureNoteProvider;
-import openpkm.base.Quote;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.util.lookup.ServiceProviders;
 
@@ -83,7 +81,7 @@ public class AsciiDocFileTypeProvider implements AsciiDocSupport, ArticleProvide
     }
     
     @Override
-    public String getLiteratureNote(String primaryFileName, String title, String subtitle, String authorName, String sourceUrl, String summary, List<Quote> quotes)
+    public String getLiteratureNote(String primaryFileName, String title, String subtitle, String authorName, String sourceUrl, String summary)
     {
         StringBuilder sb = new StringBuilder();
         String link = "link:openpkm:" + primaryFileName + "[" + title + "]";
@@ -94,8 +92,12 @@ public class AsciiDocFileTypeProvider implements AsciiDocSupport, ArticleProvide
             sb.append(": " + subtitle);
         }
         
-        sb.append("\n");
-        sb.append(authorName);
+        if(authorName != null)
+        {
+            sb.append("\n");
+            sb.append(authorName);            
+        }
+        
         sb.append("\n");
         sb.append(":doctype: article");
         
@@ -120,24 +122,7 @@ public class AsciiDocFileTypeProvider implements AsciiDocSupport, ArticleProvide
             sb.append("== Summary"); 
             sb.append("\n");
             sb.append(summary);              
-        }                
-        
-        if(quotes != null)
-        {
-            sb.append("\n\n"); 
-            sb.append("== Quotes"); 
-            sb.append("\n");            
-            for(Quote quote : quotes)
-            {
-                sb.append("[quote, " + quote.getAuthorName() + ", " + quote.getTitle() + "]"); 
-                sb.append("\n");  
-                sb.append("____");   
-                sb.append("\n"); 
-                sb.append(quote.getText());
-                sb.append("\n"); 
-                sb.append("____");  
-            }                        
-        }        
+        }                              
 
         sb.append("\n\n");         
         sb.append("== My Thoughts"); 

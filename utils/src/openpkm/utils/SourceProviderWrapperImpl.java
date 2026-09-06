@@ -38,6 +38,7 @@ import openpkm.base.Source;
 import openpkm.base.SourceProvider;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.StateSupport;
+import openpkm.base.SummaryProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
@@ -286,6 +287,7 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
             {  
                 FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
                 String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);     
+                String summary = (String) wiz.getProperty(SummaryProvider.PROP_SUMMARY); 
                 Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
                 Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
                 Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
@@ -305,6 +307,11 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                 
                 props.setProperty(LiteratureNote.PROP_PRIMARY_FILE_NAME, primaryFile.getNameExt());
                 props.setProperty(TitleProvider.PROP_TITLE, title);
+                
+                if(summary != null)
+                {
+                    props.setProperty(SummaryProvider.PROP_SUMMARY, summary);
+                }
                 
                 if(descriptionProvider != null)
                 {

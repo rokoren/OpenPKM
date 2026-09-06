@@ -6,9 +6,11 @@ package openpkm.base;
 
 /**
  *
- * @author Rok Koren
+ * @author rok
  */
-public interface LiteratureNoteProvider
+public interface SummaryProvider 
 {
-    String getLiteratureNote(String primaryFileName, String title, String subtitle, String authorName, String sourceUrl, String summary);
+    String PROP_SUMMARY = "summary"; 
+    
+    String getSummary();    
 }

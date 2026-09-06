@@ -4,26 +4,19 @@
  */
 package openpkm.base;
 
-import java.util.List;
-
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
-public interface LiteratureNote extends Note
+public interface LiteratureNote extends Note, TitleProvider, SummaryProvider
 {
     String PROP_PRIMARY_FILE_NAME = "primary.file.name";
     String PROP_AUTHOR_NAME       = "author.name"; 
-    String PROP_SUMMARY           = "summary"; 
     String PROP_SUBTITLE          = "subtitle"; 
-    String PROP_SOURCE_URL        = "source.url";     
-    String PROP_QUOTES            = "quotes";     
+    String PROP_SOURCE_URL        = "source.url";        
     
     String getPrimaryFileName();
-    String getTitle();
     String getSubtitle();
     String getAuthorName();
     String getSourceUrl();
-    String getSummary();
-    List<Quote> getQuotes();    
 }

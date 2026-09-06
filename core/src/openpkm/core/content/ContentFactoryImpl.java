@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -43,7 +42,6 @@ import openpkm.base.ContentFactory;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.GoalsProvider;
 import openpkm.base.LiteratureNote;
-import openpkm.base.Quote;
 
 /**
  *
@@ -989,7 +987,7 @@ public class ContentFactoryImpl implements ContentFactory
         }
     }  
     
-    private static final class LiteratureNoteImpl extends AbstractContent implements LiteratureNote, TitleProvider
+    private static final class LiteratureNoteImpl extends AbstractContent implements LiteratureNote
     { 
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/document_notes.png";        
@@ -1107,12 +1105,6 @@ public class ContentFactoryImpl implements ContentFactory
         public String getSummary() 
         {
             return props.getProperty(PROP_SUMMARY);
-        }
-
-        @Override
-        public List<Quote> getQuotes() 
-        {
-            return null;
         }
     }   
     

@@ -14,6 +14,7 @@ import openpkm.base.LiteratureNoteFactory;
 import openpkm.core.neo4j.GoalWizardPanel;
 import openpkm.core.neo4j.ThoughtWizardPanel;
 import openpkm.core.neo4j.TopicWizardPanel;
+import openpkm.utils.SummaryWizardPanel;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -48,6 +49,7 @@ public final class LiteratureNoteAction implements ActionListener {
         panels.add(new TopicWizardPanel());
         panels.add(new GoalWizardPanel());
         panels.add(new ThoughtWizardPanel());
+        panels.add(new SummaryWizardPanel());        
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
