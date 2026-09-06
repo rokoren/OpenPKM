@@ -24,7 +24,6 @@ import openpkm.base.ActionProvider;
 import openpkm.base.BacklinksProvider;
 import openpkm.base.Content;
 import openpkm.base.ContentFactory;
-import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
@@ -245,9 +244,8 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
             if(contentProvider != null && source != null)
             {
                 TitleProvider titleProvider = source.getLookup().lookup(TitleProvider.class);
-                DescriptionProvider descriptionProvider = source.getLookup().lookup(DescriptionProvider.class);
                 LinkProvider linkProvider = source.getLookup().lookup(LinkProvider.class);
-                return new LiteratureNoteFactoryImpl(data.getPrimaryFile(), contentProvider, titleProvider, descriptionProvider, linkProvider);
+                return new LiteratureNoteFactoryImpl(data.getPrimaryFile(), contentProvider, titleProvider, linkProvider);
             }            
         }
         return null;
@@ -258,15 +256,13 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
         private final FileObject primaryFile;
         private final ContentProvider contetntProvider; 
         private final TitleProvider titleProvider;
-        private final DescriptionProvider descriptionProvider;
         private final LinkProvider linkProvider;
 
-        public LiteratureNoteFactoryImpl(FileObject primaryFile, ContentProvider contetntProvider, TitleProvider titleProvider, DescriptionProvider descriptionProvider, LinkProvider linkProvider) 
+        public LiteratureNoteFactoryImpl(FileObject primaryFile, ContentProvider contetntProvider, TitleProvider titleProvider, LinkProvider linkProvider) 
         {
             this.primaryFile = primaryFile;
             this.contetntProvider = contetntProvider;
             this.titleProvider = titleProvider;
-            this.descriptionProvider = descriptionProvider;
             this.linkProvider = linkProvider;
         }
                 
@@ -282,11 +278,13 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
             if(titleProvider != null)
             {
                 wiz.putProperty(TitleProvider.PROP_TITLE, titleProvider.getTitle());                
-            }
+            }          
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {  
                 FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
                 String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);     
+                String subtitle = (String) wiz.getProperty(LiteratureNote.PROP_SUBTITLE);
+                String authorName = (String) wiz.getProperty(LiteratureNote.PROP_AUTHOR_NAME);
                 String summary = (String) wiz.getProperty(SummaryProvider.PROP_SUMMARY); 
                 Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
                 Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
@@ -306,17 +304,30 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                 }
                 
                 props.setProperty(LiteratureNote.PROP_PRIMARY_FILE_NAME, primaryFile.getNameExt());
+                if(titleProvider == null)
+                {
+                    props.setProperty(LiteratureNote.PROP_PRIMARY_TITLE, title);                
+                }                 
+                else
+                {
+                    props.setProperty(LiteratureNote.PROP_PRIMARY_TITLE, titleProvider.getTitle());                
+                }
                 props.setProperty(TitleProvider.PROP_TITLE, title);
+                
+                if(subtitle != null)
+                {
+                    props.setProperty(LiteratureNote.PROP_SUBTITLE, subtitle);                    
+                }
+                
+                if(authorName != null)
+                {
+                    props.setProperty(LiteratureNote.PROP_AUTHOR_NAME, authorName);                    
+                }                
                 
                 if(summary != null)
                 {
                     props.setProperty(SummaryProvider.PROP_SUMMARY, summary);
-                }
-                
-                if(descriptionProvider != null)
-                {
-                    props.setProperty(LiteratureNote.PROP_SUBTITLE, descriptionProvider.getDescription());                    
-                }
+                }                
 
                 if(linkProvider != null)
                 {

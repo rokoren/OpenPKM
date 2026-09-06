@@ -10,5 +10,5 @@ package openpkm.base;
  */
 public interface LiteratureNoteProvider
 {
-    String getLiteratureNote(String primaryFileName, String title, String subtitle, String authorName, String sourceUrl, String summary);
+    String getLiteratureNote(String primaryFileName, String primaryTitle, String title, String subtitle, String authorName, String sourceUrl, String summary);
 }

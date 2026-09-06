@@ -31,11 +31,12 @@ import org.openide.util.NbBundle.Messages;
 )
 @ActionReference(path = "Toolbars/OpenPKM", position = 77)
 @Messages("CTL_LiteratureNoteAction=Create Literature Note")
-public final class LiteratureNoteAction implements ActionListener {
-
+public final class LiteratureNoteAction implements ActionListener 
+{
     private final LiteratureNoteFactory context;
 
-    public LiteratureNoteAction(LiteratureNoteFactory context) {
+    public LiteratureNoteAction(LiteratureNoteFactory context) 
+    {
         this.context = context;
     }
 
@@ -45,10 +46,10 @@ public final class LiteratureNoteAction implements ActionListener {
         // TODO use context
         
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
-        panels.add(new NoteWizardPanel1());
+        panels.add(new LiteratureNoteWizardPanel1());
         panels.add(new TopicWizardPanel());
         panels.add(new GoalWizardPanel());
-        panels.add(new ThoughtWizardPanel());
+        panels.add(new ThoughtWizardPanel());       
         panels.add(new SummaryWizardPanel());        
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 

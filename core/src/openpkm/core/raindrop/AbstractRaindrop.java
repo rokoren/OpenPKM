@@ -35,6 +35,7 @@ import openpkm.base.IconsProvider;
 import openpkm.base.TagsProvider;
 import openpkm.base.Video;
 import openpkm.base.Link;
+import openpkm.base.LinkProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.TitleProvider;
 import openpkm.base.TopicsProvider;
@@ -65,7 +66,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, IconProvider, TagsProvider, BacklinksProvider, TopicsProvider, MultiViewDescription
+public abstract class AbstractRaindrop implements Raindrop, LinkProvider, IconProvider, TagsProvider, BacklinksProvider, TopicsProvider, MultiViewDescription
 {
     @StaticResource()
     public static final String ICON = "openpkm/core/resources/raindrop.png";       

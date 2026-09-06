@@ -1014,6 +1014,12 @@ public class ContentFactoryImpl implements ContentFactory
         {
             return props.getProperty(PROP_PRIMARY_FILE_NAME);
         }
+
+        @Override
+        public String getPrimaryTitle()
+        {
+            return props.getProperty(PROP_PRIMARY_TITLE);
+        }
         
         @Override
         public Lookup getLookup() 

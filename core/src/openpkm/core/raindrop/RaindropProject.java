@@ -2550,7 +2550,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 {
                     LiteratureNoteProvider literatureNoteProvider = (LiteratureNoteProvider)fileTypeProvider;
                     OutputStream output = primaryFile.getOutputStream();
-                    output.write(literatureNoteProvider.getLiteratureNote(literatureNote.getPrimaryFileName(), literatureNote.getTitle(), literatureNote.getSubtitle(), literatureNote.getAuthorName(), literatureNote.getSourceUrl(), literatureNote.getSummary()).getBytes());
+                    output.write(literatureNoteProvider.getLiteratureNote(literatureNote.getPrimaryFileName(), literatureNote.getPrimaryTitle(), literatureNote.getTitle(), literatureNote.getSubtitle(), literatureNote.getAuthorName(), literatureNote.getSourceUrl(), literatureNote.getSummary()).getBytes());
                     output.close();
                 }                         
             }             
