@@ -32,6 +32,12 @@ public abstract class YouTubeVideoProvider implements SourceProvider<YouTubeVide
     } 
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }      
+    
+    @Override
     public YouTubeVideoFactory getFactory()
     {
         return factory;

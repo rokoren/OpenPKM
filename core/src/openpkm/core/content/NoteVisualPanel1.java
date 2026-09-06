@@ -100,6 +100,11 @@ public class NoteVisualPanel1 extends javax.swing.JPanel
         return jTextField1.getText().trim();
     } 
     
+    public void setNoteTitle(String title)
+    {
+        jTextField1.setText(title);
+    }
+    
     public List<String> getNoteTags()
     {
         return comboBox.getCheckModel().getCheckedItems();

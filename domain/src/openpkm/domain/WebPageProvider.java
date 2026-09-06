@@ -30,6 +30,12 @@ public abstract class WebPageProvider implements SourceProvider<WebPage>
     } 
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }
+    
+    @Override
     public WebPageFactory getFactory()
     {
         return factory;

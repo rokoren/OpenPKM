@@ -32,6 +32,12 @@ public abstract class YouTubeChannelProvider implements SourceProvider<YouTubeCh
     } 
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }      
+    
+    @Override
     public YouTubeChannelFactory getFactory()
     {
         return factory;

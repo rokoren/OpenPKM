@@ -91,6 +91,12 @@ public class NoteWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wizard
                 getComponent().setTags(tagsProvider.getTags());                                 
             }            
         }
+        
+        String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
+        if(title != null)
+        {
+            getComponent().setNoteTitle(title);
+        }
     }
 
     @Override

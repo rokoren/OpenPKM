@@ -2550,7 +2550,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 {
                     LiteratureNoteProvider literatureNoteProvider = (LiteratureNoteProvider)fileTypeProvider;
                     OutputStream output = primaryFile.getOutputStream();
-                    output.write(literatureNoteProvider.getLiteratureNote(literatureNote.getTitle(), literatureNote.getSubtitle(), literatureNote.getAuthorName(), literatureNote.getSourceUrl(), literatureNote.getSummary(), literatureNote.getQuotes()).getBytes());
+                    output.write(literatureNoteProvider.getLiteratureNote(literatureNote.getPrimaryFileName(), literatureNote.getTitle(), literatureNote.getSubtitle(), literatureNote.getAuthorName(), literatureNote.getSourceUrl(), literatureNote.getSummary(), literatureNote.getQuotes()).getBytes());
                     output.close();
                 }                         
             }             
@@ -2841,7 +2841,13 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             super("Synchronize Raindrops");
             this.factory = factory;
             RP.post(this);             
-        }   
+        }  
+        
+        @Override
+        public boolean isLiteratureNoteProvider()
+        {
+            return true;
+        }          
         
         public LocalDateTime getLastSync()
         {
@@ -4911,7 +4917,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 }                
 
                 thoughts.put(thought.getThoughtID(), thought);
-                changeSupport.fireChange();  
+                parent.childrenThoughtAdded();
                 return thought;
             }
             catch(Exception e)

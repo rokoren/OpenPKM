@@ -12,5 +12,5 @@ import java.util.List;
  */
 public interface LiteratureNoteProvider
 {
-    String getLiteratureNote(String title, String subtitle, String authorName, String sourceUrl, String summary, List<Quote> quotes);
+    String getLiteratureNote(String primaryFileName, String title, String subtitle, String authorName, String sourceUrl, String summary, List<Quote> quotes);
 }

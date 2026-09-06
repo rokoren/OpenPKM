@@ -29,6 +29,12 @@ public abstract class TrelloCardProvider implements SourceProvider<TrelloCard>
     {
         this.factory = factory;                            
     } 
+    
+    @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }
 
     @Override
     public TrelloCardFactory getFactory()

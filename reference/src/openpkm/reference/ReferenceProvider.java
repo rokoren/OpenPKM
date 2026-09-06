@@ -32,6 +32,12 @@ public abstract class ReferenceProvider implements SourceProvider<Reference>
     } 
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }    
+    
+    @Override
     public ReferenceFactory getFactory()
     {
         return factory;

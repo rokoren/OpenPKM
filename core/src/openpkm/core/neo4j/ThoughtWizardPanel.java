@@ -105,7 +105,7 @@ public class ThoughtWizardPanel implements WizardDescriptor.Panel<WizardDescript
     @Override
     public void actionPerformed(ActionEvent e) 
     {
-        thoughts.addAll(getComponent().getThoughts());
+        thoughts.addAll(getComponent().getSelectedThoughts());
         getComponent().setSelectedThoughts(thoughts);
     }     
 }

@@ -20,7 +20,6 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsProvider;
 import openpkm.base.IconsProvider;
@@ -59,6 +58,11 @@ public class TreeOfThoughtsNode extends AbstractNode
         this.thought = thought;
     }   
     
+    public Thought getThought()
+    {
+        return thought;
+    }
+    
     @Override
     public Action[] getActions(boolean context) 
     {
@@ -96,11 +100,7 @@ public class TreeOfThoughtsNode extends AbstractNode
         {
             this.thoughtsProvider = thoughtsProvider;
             this.thought = thought;
-            
-            if(thoughtsProvider instanceof ChangeSupportProvider provider)
-            {
-                provider.addChangeListener(this);                    
-            }              
+            thought.addChangeListener(this);           
         }  
 
         @Override
@@ -132,11 +132,7 @@ public class TreeOfThoughtsNode extends AbstractNode
         @Override
         protected void removeNotify() 
         {
-            if(thoughtsProvider instanceof ChangeSupportProvider provider)
-            {
-                provider.removeChangeListener(this);                    
-            }             
-                                        
+            thought.removeChangeListener(this);
             setKeys(Collections.<Thought>emptySet());
         }
 

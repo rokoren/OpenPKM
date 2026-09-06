@@ -33,6 +33,12 @@ public abstract class BlogProvider implements SourceProvider<Blog>
     } 
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }      
+    
+    @Override
     public BlogFactory getFactory()
     {
         return factory;

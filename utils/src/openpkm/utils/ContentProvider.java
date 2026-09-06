@@ -31,6 +31,12 @@ public abstract class ContentProvider implements SourceProvider<Content>
     }
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }
+    
+    @Override
     public ContentFactory getFactory()
     {
         return factory;

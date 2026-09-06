@@ -83,10 +83,11 @@ public class AsciiDocFileTypeProvider implements AsciiDocSupport, ArticleProvide
     }
     
     @Override
-    public String getLiteratureNote(String title, String subtitle, String authorName, String sourceUrl, String summary, List<Quote> quotes)
+    public String getLiteratureNote(String primaryFileName, String title, String subtitle, String authorName, String sourceUrl, String summary, List<Quote> quotes)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("= " + title);
+        String link = "link:openpkm:" + primaryFileName + "[" + title + "]";
+        sb.append("= " + link);
         
         if(subtitle != null)
         {

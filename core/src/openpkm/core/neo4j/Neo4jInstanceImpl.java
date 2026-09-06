@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import javax.swing.event.ChangeListener;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Goal;
@@ -719,12 +720,26 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         private Thought.Type type;
         
         private final Set<String> tags;
+        
+        private final ChangeSupport changeSupport = new ChangeSupport(this);  
 
         public ThoughtImpl(String thoughtID, Set<String> tags) 
         {
             this.thoughtID = thoughtID;
             this.tags = tags;
         }
+        
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }                  
                 
         @Override
         public String getThoughtID() 
@@ -761,6 +776,12 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         {
             return Collections.unmodifiableSet(tags);
         } 
+        
+        @Override
+        public void childrenThoughtAdded() 
+        {
+            changeSupport.fireChange();
+        }        
         
         @Override
         public String toString()

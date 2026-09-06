@@ -32,6 +32,12 @@ public abstract class GitHubProvider implements SourceProvider<GitHubUser>
     } 
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }      
+    
+    @Override
     public GitHubFactory getFactory()
     {
         return factory;

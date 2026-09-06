@@ -68,7 +68,7 @@ public class ThoughtVisualPanel extends javax.swing.JPanel implements ExplorerMa
         jLabel1.setText(joiner.toString());
     }
     
-    public Set<Thought> getThoughts()
+    public Set<Thought> getSelectedThoughts()
     {
         Node[] nodes = explorerManager.getSelectedNodes();
         if(nodes.length > 0)
@@ -76,10 +76,9 @@ public class ThoughtVisualPanel extends javax.swing.JPanel implements ExplorerMa
             Set<Thought> thoughts = new HashSet<>();
             for(Node node : nodes)
             {
-                Thought thought = node.getLookup().lookup(Thought.class);
-                if(thought != null)
+                if(node instanceof TreeOfThoughtsNode treeNode)
                 {
-                    thoughts.add(thought);
+                    thoughts.add(treeNode.getThought());                    
                 }
             }
             return thoughts;

@@ -12,12 +12,14 @@ import java.util.List;
  */
 public interface LiteratureNote extends Note
 {
-    String PROP_AUTHOR_NAME = "author.name"; 
-    String PROP_SUMMARY     = "summary"; 
-    String PROP_SUBTITLE    = "subtitle"; 
-    String PROP_SOURCE_URL  = "source.url";     
-    String PROP_QUOTES      = "quotes";     
+    String PROP_PRIMARY_FILE_NAME = "primary.file.name";
+    String PROP_AUTHOR_NAME       = "author.name"; 
+    String PROP_SUMMARY           = "summary"; 
+    String PROP_SUBTITLE          = "subtitle"; 
+    String PROP_SOURCE_URL        = "source.url";     
+    String PROP_QUOTES            = "quotes";     
     
+    String getPrimaryFileName();
     String getTitle();
     String getSubtitle();
     String getAuthorName();

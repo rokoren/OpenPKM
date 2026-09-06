@@ -42,6 +42,12 @@ public abstract class TrelloActionProvider implements SourceProvider<TrelloComme
     }
     
     @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }    
+    
+    @Override
     public TrelloCommentFactory getFactory()
     {
         return getCommentFactory();

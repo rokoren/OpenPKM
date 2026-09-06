@@ -24,10 +24,13 @@ import openpkm.base.ActionProvider;
 import openpkm.base.BacklinksProvider;
 import openpkm.base.Content;
 import openpkm.base.ContentFactory;
+import openpkm.base.DescriptionProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
+import openpkm.base.LinkProvider;
+import openpkm.base.LiteratureNote;
 import openpkm.base.LiteratureNoteFactory;
 import openpkm.base.Note;
 import openpkm.base.PropertiesProvider;
@@ -44,7 +47,6 @@ import openpkm.base.Topic;
 import openpkm.base.TopicsGraphProvider;
 import openpkm.base.TopicsProvider;
 import openpkm.base.VisibilityProvider;
-import openpkm.raindrop.Raindrop;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
@@ -235,46 +237,51 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
     @Override
     public LiteratureNoteFactory getLiteratureNoteFactory(DataObject data) 
     {
-        ContentProvider contentProvider = provider.getProvider().getLookup().lookup(ContentProvider.class);
-        Source source = getSource();
-        if(contentProvider != null && source != null)
+        if(provider.isLiteratureNoteProvider())
         {
-            if(source instanceof Raindrop raindrop)
+            ContentProvider contentProvider = provider.getProvider().getLookup().lookup(ContentProvider.class);
+            Source source = getSource();
+            if(contentProvider != null && source != null)
             {
-                return new LiteratureNoteFactoryImpl(data, contentProvider, raindrop.getTitle(), raindrop.getExcerpt(), null, raindrop.getLink());
-            }
+                TitleProvider titleProvider = source.getLookup().lookup(TitleProvider.class);
+                DescriptionProvider descriptionProvider = source.getLookup().lookup(DescriptionProvider.class);
+                LinkProvider linkProvider = source.getLookup().lookup(LinkProvider.class);
+                return new LiteratureNoteFactoryImpl(data.getPrimaryFile(), contentProvider, titleProvider, descriptionProvider, linkProvider);
+            }            
         }
         return null;
     }
     
     private static final class LiteratureNoteFactoryImpl implements LiteratureNoteFactory
     {
-        private final DataObject data;
-        private final ContentProvider provider;
-        
-        private final String title;
-        private final String subtitle;
-        private final String authorName;
-        private final String sourceUrl;
+        private final FileObject primaryFile;
+        private final ContentProvider contetntProvider; 
+        private final TitleProvider titleProvider;
+        private final DescriptionProvider descriptionProvider;
+        private final LinkProvider linkProvider;
 
-        public LiteratureNoteFactoryImpl(DataObject data, ContentProvider provider, String title, String subtitle, String authorName, String sourceUrl) {
-            this.data = data;
-            this.provider = provider;
-            this.title = title;
-            this.subtitle = subtitle;
-            this.authorName = authorName;
-            this.sourceUrl = sourceUrl;
+        public LiteratureNoteFactoryImpl(FileObject primaryFile, ContentProvider contetntProvider, TitleProvider titleProvider, DescriptionProvider descriptionProvider, LinkProvider linkProvider) 
+        {
+            this.primaryFile = primaryFile;
+            this.contetntProvider = contetntProvider;
+            this.titleProvider = titleProvider;
+            this.descriptionProvider = descriptionProvider;
+            this.linkProvider = linkProvider;
         }
                 
         @Override
         public void createLiteratureNote(List<WizardDescriptor.Panel<WizardDescriptor>> panels) 
-        {
+        {                        
             WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
             // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
             wiz.setTitleFormat(new MessageFormat("{0}"));
             wiz.setTitle("Create Literature Note");  
             //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("provider", provider.getProvider());
+            wiz.putProperty("provider", contetntProvider.getProvider());
+            if(titleProvider != null)
+            {
+                wiz.putProperty(TitleProvider.PROP_TITLE, titleProvider.getTitle());                
+            }
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {  
                 FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
@@ -294,8 +301,20 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                 if(visibiltyModifier != null)
                 {
                     props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());                  
-                }          
+                }
+                
+                props.setProperty(LiteratureNote.PROP_PRIMARY_FILE_NAME, primaryFile.getNameExt());
                 props.setProperty(TitleProvider.PROP_TITLE, title);
+                
+                if(descriptionProvider != null)
+                {
+                    props.setProperty(LiteratureNote.PROP_SUBTITLE, descriptionProvider.getDescription());                    
+                }
+
+                if(linkProvider != null)
+                {
+                    props.setProperty(LiteratureNote.PROP_SOURCE_URL, linkProvider.getLink());                    
+                }
 
                 if(tags != null)
                 {
@@ -309,7 +328,7 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
 
                 if(topics != null)
                 {
-                    TopicsGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
+                    TopicsGraphProvider knowledgeGraphProvider = contetntProvider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                     if(knowledgeGraphProvider != null)
                     {
                         StringJoiner joiner = new StringJoiner(",");
@@ -323,7 +342,7 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
 
                 if(goals != null)
                 {
-                    GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
+                    GoalsGraphProvider goalsGraphProvider = contetntProvider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
                     if(goalsGraphProvider != null)
                     {
                         StringJoiner joiner = new StringJoiner(",");
@@ -337,7 +356,7 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                 
                 if(thoughts != null)
                 {
-                    ThoughtsGraphProvider thoughtsGraphProvider = provider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+                    ThoughtsGraphProvider thoughtsGraphProvider = contetntProvider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
                     if(thoughtsGraphProvider != null)
                     {
                         StringJoiner joiner = new StringJoiner(",");
@@ -349,15 +368,15 @@ public class SourceProviderWrapperImpl implements SourceProviderWrapper
                     }
                 }                 
 
-                String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
+                String fileName = FileUtils.getFileName(contetntProvider.getRootFolder(), PropertiesProvider.EXTENSION);
                 props.setProperty(Note.PROP_FILE_NAME, fileName);  
 
-                Content content = provider.getFactory().getContent(props);
+                Content content = contetntProvider.getFactory().getContent(props);
                 try
                 {
-                    FileObject file = provider.createData(content, fileType); 
-                    OutputStream os = provider.getRootFolder().createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    provider.getFactory().save(content, os, "New Literature Note Content created by Wizard");
+                    FileObject file = contetntProvider.createData(content, fileType); 
+                    OutputStream os = contetntProvider.getRootFolder().createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    contetntProvider.getFactory().save(content, os, "New Literature Note Content created by Wizard");
                     os.close();  
 
                     StatusDisplayer.getDefault().setStatusText("Literature Note content saved with title: " + title);  
