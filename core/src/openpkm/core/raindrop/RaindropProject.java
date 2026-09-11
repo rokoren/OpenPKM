@@ -4917,7 +4917,6 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 }                
 
                 thoughts.put(thought.getThoughtID(), thought);
-                parent.childrenThoughtAdded();
                 return thought;
             }
             catch(Exception e)

@@ -12,6 +12,7 @@ import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.TreeSet;
 import openpkm.base.Thought;
+import openpkm.base.ThoughtProvider;
 import openpkm.base.ThoughtsGraphProvider;
 import org.openide.explorer.ExplorerManager;
 import org.openide.nodes.AbstractNode;
@@ -78,7 +79,7 @@ public class ThoughtVisualPanel extends javax.swing.JPanel implements ExplorerMa
             {
                 if(node instanceof TreeOfThoughtsNode treeNode)
                 {
-                    thoughts.add(treeNode.getThought());                    
+                    thoughts.add(treeNode.getThoughtProvider().getThought());                    
                 }
             }
             return thoughts;
@@ -123,7 +124,8 @@ public class ThoughtVisualPanel extends javax.swing.JPanel implements ExplorerMa
         @Override
         protected Node[] createNodes(Thought thought) 
         {
-            return new Node[] {new TreeOfThoughtsNode(provider, thought)};
+            ThoughtProvider thoughtProvider = new TreeOfThoughtsNode.ThoughtProviderImpl(thought, provider);
+            return new Node[] {new TreeOfThoughtsNode(thoughtProvider)};
         }           
     }     
 

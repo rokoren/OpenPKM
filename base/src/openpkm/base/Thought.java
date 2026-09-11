@@ -12,14 +12,13 @@ import java.util.Optional;
  *
  * @author rok
  */
-public interface Thought extends ChangeSupportProvider
+public interface Thought
 {
     String getThoughtID();
     String getText();
     void setText(String text);   
     Type getType();
     void setType(Type type); 
-    void childrenThoughtAdded();
     
     public enum Type 
     {

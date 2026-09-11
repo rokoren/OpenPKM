@@ -15,6 +15,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Thought;
+import openpkm.base.ThoughtProvider;
 import openpkm.base.ThoughtsGraphProvider;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.awt.ActionID;
@@ -264,7 +265,8 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
             
             for (int i = 0; i < thoughts.size(); i++) 
             {
-                nodes[i] = new TreeOfThoughtsNode(provider, thoughts.get(i));
+                ThoughtProvider thoughtProvider = new TreeOfThoughtsNode.ThoughtProviderImpl(thoughts.get(i), provider);
+                nodes[i] = new TreeOfThoughtsNode(thoughtProvider);
             }         
             
             return nodes;
