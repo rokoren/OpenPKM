@@ -163,6 +163,7 @@ import openpkm.base.DataProvider;
 import openpkm.base.LiteratureNote;
 import openpkm.base.LiteratureNoteProvider;
 import openpkm.base.Thought;
+import openpkm.base.ThoughtProvider;
 import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.TopicsGraphProvider;
 import org.neo4j.driver.Session;
@@ -202,7 +203,6 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private final List<UpdateCookie> cookies = new ArrayList();  
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
-    private final List<Thought> selectedThoughts = new ArrayList();   
     
     private final FileObject projectDir;        
     private final ProjectState state;
@@ -4754,6 +4754,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private final class ThoughtsGraphProviderImpl implements ThoughtsGraphProvider, ChangeSupportProvider
     {
         private List<Thought> rootThoughts; 
+        private ThoughtProvider selectedThought;
         
         private final Map<String, Thought> thoughts = new HashMap<>();        
         private final Map<String, List<Thought>> childrenThoughts = new HashMap<>();        
@@ -4952,26 +4953,22 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }
         
         @Override
-        public Collection<Thought> getSelectedThoughts() 
+        public ThoughtProvider getSelectedThought() 
         {
-            if(selectedThoughts == null)
-            {
-                return Collections.EMPTY_LIST;
-            }
-            return Collections.unmodifiableCollection(selectedThoughts);
+            return selectedThought;
         }
         
         @Override
-        public void selectThought(Thought thought) 
+        public void setSelectedThought(ThoughtProvider thought) 
         {
-            selectedThoughts.add(thought);          
+            selectedThought = thought;          
             changeSupport.fireChange();  
         }        
         
         @Override
-        public void clearSelectedThoughts()
+        public void clearSelectedThought()
         {
-            selectedThoughts.clear();
+            selectedThought = null;
             changeSupport.fireChange();
         }        
     }      

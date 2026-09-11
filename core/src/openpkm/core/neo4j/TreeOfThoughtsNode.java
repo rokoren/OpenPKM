@@ -211,6 +211,7 @@ public class TreeOfThoughtsNode extends AbstractNode
         }            
     }  
 
+    /*
     private static final class SelectThought extends AbstractAction
     {
         private final ThoughtsGraphProvider thoughtsProvider;
@@ -229,7 +230,8 @@ public class TreeOfThoughtsNode extends AbstractNode
         {            
             thoughtsProvider.selectThought(thought);
         }
-    }     
+    } 
+    */
     
     private static final class AddThought extends AbstractAction
     {
