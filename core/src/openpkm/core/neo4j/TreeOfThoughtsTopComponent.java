@@ -4,6 +4,8 @@
  */
 package openpkm.core.neo4j;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +15,7 @@ import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.tree.TreeSelectionModel;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtProvider;
@@ -59,7 +62,7 @@ import org.openide.util.lookup.ProxyLookup;
     "CTL_TreeOfThoughtsTopComponent=Tree Of Thoughts Window",
     "HINT_TreeOfThoughtsTopComponent=This is a Tree Of Thoughts window"
 })
-public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener
+public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener, PropertyChangeListener
 {
     private static final Logger LOG = Logger.getLogger(TreeOfThoughtsTopComponent.class.getName());  
     
@@ -79,7 +82,7 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         associateLookup(new ProxyLookup(ExplorerUtils.createLookup(explorerManager, getActionMap()), Lookups.singleton(this)));  
         explorerManager.setRootContext(new AbstractNode(thoughts));   
         result1 = Utilities.actionsGlobalContext().lookupResult(ThoughtsGraphProvider.class);  
-        result2 = Utilities.actionsGlobalContext().lookupResult(Thought.class); 
+        result2 = Utilities.actionsGlobalContext().lookupResult(Thought.class);         
     }
     
     @Override
@@ -107,6 +110,7 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         setLayout(new java.awt.BorderLayout());
 
         beanTreeView1.setRootVisible(false);
+        beanTreeView1.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         add(beanTreeView1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -118,6 +122,8 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         // TODO add custom code on component opening
         result1.addLookupListener(thoughts);  
         result2.addLookupListener(this);  
+
+        explorerManager.addPropertyChangeListener(this);        
     }
 
     @Override
@@ -125,6 +131,8 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         // TODO add custom code on component closing
         result1.removeLookupListener(thoughts); 
         result2.removeLookupListener(this); 
+
+        explorerManager.removePropertyChangeListener(this);        
     }
 
     void writeProperties(java.util.Properties p) {
@@ -179,6 +187,13 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         }
         return null;
     } 
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) 
+    {
+        Node[] nodes = explorerManager.getSelectedNodes();
+        System.out.println("Selected size: " + nodes.length);
+    }
     
     private final class Thoughts extends Children.Keys<ThoughtsGraphProvider> implements LookupListener, ChangeListener
     {

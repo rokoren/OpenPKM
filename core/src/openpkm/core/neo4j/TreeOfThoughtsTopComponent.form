@@ -40,6 +40,9 @@
     <Component class="org.openide.explorer.view.BeanTreeView" name="beanTreeView1">
       <Properties>
         <Property name="rootVisible" type="boolean" value="false"/>
+        <Property name="selectionMode" type="int" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="TreeSelectionModel.SINGLE_TREE_SELECTION" type="code"/>
+        </Property>
       </Properties>
       <Constraints>
         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
