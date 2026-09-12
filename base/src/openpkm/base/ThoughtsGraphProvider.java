@@ -22,6 +22,7 @@ public interface ThoughtsGraphProvider
     Thought addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
     ChildrenThought addChildrenThought(Thought thought, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
     void selectThought(Thought thought);
+    void clearSelectedThought(Thought thought);
     Collection<Thought> getSelectedThoughts();
     void clearSelectedThoughts();
     boolean isThought(ThoughtsProvider provider);

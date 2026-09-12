@@ -4907,8 +4907,19 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         @Override
         public void selectThought(Thought thought)
         {
-            selectedThoughts.add(thought);          
-            changeSupport.fireChange();              
+            if(selectedThoughts.add(thought))
+            {
+                changeSupport.fireChange();                              
+            }
+        }
+        
+        @Override
+        public void clearSelectedThought(Thought thought)
+        {
+            if(selectedThoughts.remove(thought))
+            {
+                changeSupport.fireChange();
+            }
         }
         
         @Override

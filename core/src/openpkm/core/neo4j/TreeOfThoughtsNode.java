@@ -21,6 +21,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ChangeSupportProvider;
 import openpkm.base.ChildrenThought;
 import openpkm.base.Goal;
 import openpkm.base.GoalsProvider;
@@ -39,6 +40,7 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ChangeSupport;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 
@@ -46,7 +48,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author rok
  */
-public class TreeOfThoughtsNode extends AbstractNode
+public class TreeOfThoughtsNode extends AbstractNode implements ChangeListener
 {
     private static final Logger LOG = Logger.getLogger(TreeOfThoughtsNode.class.getName());  
     
@@ -58,6 +60,7 @@ public class TreeOfThoughtsNode extends AbstractNode
         setName(thoughtProvider.getThought().getThoughtID());
         setDisplayName(thoughtProvider.getThought().getText());
         this.thoughtProvider = thoughtProvider;
+        thoughtProvider.addChangeListener(this);
     }  
     
     public ThoughtProvider getThoughtProvider()
@@ -71,13 +74,26 @@ public class TreeOfThoughtsNode extends AbstractNode
         return new Action[]
         {
             new SelectThought(thoughtProvider),
+            new DeselectThought(thoughtProvider),
             new AddThought(thoughtProvider)
         };
     }  
     
+    @Override
+    public Action getPreferredAction()
+    {
+        return new SelectDeselectThought(thoughtProvider);
+    }    
+    
     private Image getIcon(boolean opened) 
     {
         IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+        if(thoughtProvider.isSelected())
+        {
+            Image icon = provider.getImage(thoughtProvider.getThought().getType().getIcon());
+            Image bullet = provider.getImage(IconsProvider.ICON.BULLET_MAGNIFY);
+            return ImageUtilities.mergeImages(icon, bullet, 7, -4);            
+        }
         return provider.getImage(thoughtProvider.getThought().getType().getIcon());        
     }
 
@@ -92,18 +108,30 @@ public class TreeOfThoughtsNode extends AbstractNode
     {
         return getIcon(true);
     }    
+
+    @Override
+    public void stateChanged(ChangeEvent e) 
+    {
+        fireIconChange();
+    }
     
-    public static class ThoughtProviderImpl implements ThoughtProvider, ThoughtsProvider
+    public static class ThoughtProviderImpl implements ThoughtProvider, ThoughtsProvider, ChangeListener
     {
         private final Thought thought;
         private final ThoughtsGraphProvider provider;
         
         private final ChangeSupport changeSupport = new ChangeSupport(this);
+        
+        private boolean selected;
 
         public ThoughtProviderImpl(Thought thought, ThoughtsGraphProvider provider) 
         {
             this.thought = thought;
             this.provider = provider;
+            if(provider instanceof ChangeSupportProvider csp)
+            {
+                csp.addChangeListener(this);
+            }
         }                
 
         @Override
@@ -119,16 +147,23 @@ public class TreeOfThoughtsNode extends AbstractNode
         } 
         
         @Override
-        public void select()
-        {
-            provider.selectThought(thought);
-        }
-        
-        @Override
         public boolean isSelected()
         {
-            return provider.getSelectedThoughts().contains(thought);
-        }
+            return selected;
+        }        
+        
+        @Override
+        public void setSelected(boolean selected)
+        {
+            if(selected)
+            {
+                provider.selectThought(thought);                
+            }
+            else
+            {
+                provider.clearSelectedThought(thought);                
+            }
+        }        
         
         @Override
         public Thought addChildrenThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals) 
@@ -162,6 +197,17 @@ public class TreeOfThoughtsNode extends AbstractNode
         public void removeChangeListener(ChangeListener listener) 
         {
             changeSupport.removeChangeListener(listener);
+        }
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            boolean isSelected = provider.getSelectedThoughts().contains(thought);
+            if(isSelected != selected)
+            {
+                selected = isSelected;
+                changeSupport.fireChange();
+            }
         }
     }
     
@@ -228,17 +274,51 @@ public class TreeOfThoughtsNode extends AbstractNode
 
         public SelectThought(ThoughtProvider provider) 
         {
-            super("Select Thought");
+            super("Add Thought to Filter");
             this.provider = provider;
-            //setEnabled(!thoughtsProvider.getSelectedThoughts().contains(thought));
+            setEnabled(!provider.isSelected());
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
         {            
-            provider.select();
+            provider.setSelected(true);
         }
     } 
+    
+    private static final class DeselectThought extends AbstractAction
+    {
+        private final ThoughtProvider provider; 
+
+        public DeselectThought(ThoughtProvider provider) 
+        {
+            super("Remove Thought from Filter");
+            this.provider = provider;
+            setEnabled(provider.isSelected());
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {            
+            provider.setSelected(false);
+        }
+    }   
+    
+    private static final class SelectDeselectThought extends AbstractAction
+    {
+        private final ThoughtProvider provider; 
+
+        public SelectDeselectThought(ThoughtProvider provider) 
+        {
+            this.provider = provider;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {              
+            provider.setSelected(!provider.isSelected());
+        }
+    }     
     
     private static final class AddThought extends AbstractAction
     {

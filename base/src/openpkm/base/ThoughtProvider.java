@@ -15,6 +15,6 @@ public interface ThoughtProvider extends ChangeSupportProvider
     Thought getThought();
     ThoughtsGraphProvider getProvider();
     Thought addChildrenThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
-    void select();
-    boolean isSelected();
+    boolean isSelected();    
+    void setSelected(boolean selected);
 }

@@ -49,6 +49,7 @@ public interface IconsProvider
         BULLET_BELL,
         BULLET_STAR, 
         BULLET_DELETE,
+        BULLET_MAGNIFY,
         TAG_YELLOW,
         TAG_PURPLE,
         TAG_BLUE,
