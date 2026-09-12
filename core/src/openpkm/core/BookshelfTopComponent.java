@@ -42,6 +42,8 @@ import openpkm.base.GoalsProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.TagsProvider;
+import openpkm.base.ThoughtsGraphProvider;
+import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
@@ -185,7 +187,13 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                     if(goalProvider instanceof ChangeSupportProvider csp)
                     {
                         csp.removeChangeListener(this);
-                    }                     
+                    }      
+                    
+                    ThoughtsGraphProvider thoughtProvider = provider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+                    if(thoughtProvider instanceof ChangeSupportProvider csp)
+                    {
+                        csp.removeChangeListener(this);
+                    }                      
                 }
                 
                 providers.clear();
@@ -203,7 +211,13 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                     if(goalProvider instanceof ChangeSupportProvider csp)
                     {
                         csp.addChangeListener(this);
-                    }                     
+                    }  
+                    
+                    ThoughtsGraphProvider thoughtProvider = provider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+                    if(thoughtProvider instanceof ChangeSupportProvider csp)
+                    {
+                        csp.addChangeListener(this);
+                    }                      
                 }                
                 providers.addAll(coll);
                 updateKeys();                
@@ -256,6 +270,7 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                             boolean isTag = true;
                             boolean isTopic = true;
                             boolean isGoal = true;
+                            boolean isThought = true;
 
                             if(filterTags != null)
                             {
@@ -300,9 +315,19 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                                         }                                                 
                                     }            
                                 }                                                                                    
-                            }                        
+                            }  
+                            
+                            ThoughtsGraphProvider thoughtProvider = provider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+                            if(thoughtProvider != null)
+                            {
+                                ThoughtsProvider thoughtsProvider = data.getLookup().lookup(ThoughtsProvider.class);
+                                if(thoughtsProvider != null)
+                                {
+                                    isThought = thoughtProvider.isThought(thoughtsProvider);
+                                }                                                                                    
+                            }                              
 
-                            if(isTag && isTopic && isGoal)                    
+                            if(isTag && isTopic && isGoal && isThought)                    
                             {
                                 sorted.add(data);                  
                             }                        
