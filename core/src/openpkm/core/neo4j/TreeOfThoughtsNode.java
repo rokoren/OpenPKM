@@ -21,6 +21,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ChildrenThought;
 import openpkm.base.Goal;
 import openpkm.base.GoalsProvider;
 import openpkm.base.IconsProvider;
@@ -69,7 +70,7 @@ public class TreeOfThoughtsNode extends AbstractNode
     {
         return new Action[]
         {
-            //new SelectThought(provider, thought),
+            new SelectThought(thoughtProvider),
             new AddThought(thoughtProvider)
         };
     }  
@@ -91,8 +92,6 @@ public class TreeOfThoughtsNode extends AbstractNode
     {
         return getIcon(true);
     }    
-
-
     
     public static class ThoughtProviderImpl implements ThoughtProvider, ThoughtsProvider
     {
@@ -120,6 +119,18 @@ public class TreeOfThoughtsNode extends AbstractNode
         } 
         
         @Override
+        public void select()
+        {
+            provider.selectThought(thought);
+        }
+        
+        @Override
+        public boolean isSelected()
+        {
+            return provider.getSelectedThoughts().contains(thought);
+        }
+        
+        @Override
         public Thought addChildrenThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals) 
         {
             Thought child = provider.addChildrenThought(thought, text, type, tags, topics, goals);
@@ -133,7 +144,7 @@ public class TreeOfThoughtsNode extends AbstractNode
         @Override
         public Set<Thought> getThoughts() 
         {
-            List<Thought> thoughts = provider.getChildrenThoughts(thought.getThoughtID());
+            List<ChildrenThought> thoughts = provider.getChildrenThoughts(thought.getThoughtID());
             if(thoughts.isEmpty())
             {
                 return Collections.EMPTY_SET;
@@ -211,27 +222,23 @@ public class TreeOfThoughtsNode extends AbstractNode
         }            
     }  
 
-    /*
     private static final class SelectThought extends AbstractAction
     {
-        private final ThoughtsGraphProvider thoughtsProvider;
-        private final Thought thought;   
+        private final ThoughtProvider provider; 
 
-        public SelectThought(ThoughtsGraphProvider thoughtsProvider, Thought thought) 
+        public SelectThought(ThoughtProvider provider) 
         {
             super("Select Thought");
-            this.thoughtsProvider = thoughtsProvider;
-            this.thought = thought;
-            setEnabled(!thoughtsProvider.getSelectedThoughts().contains(thought));
+            this.provider = provider;
+            //setEnabled(!thoughtsProvider.getSelectedThoughts().contains(thought));
         }
 
         @Override
         public void actionPerformed(ActionEvent evt) 
         {            
-            thoughtsProvider.selectThought(thought);
+            provider.select();
         }
     } 
-    */
     
     private static final class AddThought extends AbstractAction
     {
@@ -271,7 +278,7 @@ public class TreeOfThoughtsNode extends AbstractNode
             wiz.setTitleFormat(new MessageFormat("{0}"));
             wiz.setTitle("Add Thought");  
             //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
-            wiz.putProperty("provider", provider.getProvider());
+            wiz.putProperty("provider", provider.getProvider().getProvider());
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             { 
                 String text = (String) wiz.getProperty("text");  

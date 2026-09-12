@@ -4,6 +4,7 @@
  */
 package openpkm.base;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.openide.util.Lookup;
@@ -17,10 +18,11 @@ public interface ThoughtsGraphProvider
     Lookup.Provider getProvider();  
     Thought getThought(String thoughtID);
     List<Thought> getRootThoughts();  
-    List<Thought> getChildrenThoughts(String parentID);
+    List<ChildrenThought> getChildrenThoughts(String parentID);
     Thought addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
-    Thought addChildrenThought(Thought thought, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
-    ThoughtProvider getSelectedThought(); 
-    void setSelectedThought(ThoughtProvider thought);
-    void clearSelectedThought();
+    ChildrenThought addChildrenThought(Thought thought, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals);
+    void selectThought(Thought thought);
+    Collection<Thought> getSelectedThoughts();
+    void clearSelectedThoughts();
+    boolean isThought(ThoughtsProvider provider);
 }

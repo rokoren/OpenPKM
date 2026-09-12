@@ -57,6 +57,7 @@ import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.ChildrenGoal;
+import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.CloseSupport;
 import openpkm.base.Content;
@@ -163,8 +164,8 @@ import openpkm.base.DataProvider;
 import openpkm.base.LiteratureNote;
 import openpkm.base.LiteratureNoteProvider;
 import openpkm.base.Thought;
-import openpkm.base.ThoughtProvider;
 import openpkm.base.ThoughtsGraphProvider;
+import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsGraphProvider;
 import org.neo4j.driver.Session;
 
@@ -203,6 +204,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private final List<UpdateCookie> cookies = new ArrayList();  
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
+    private final List<Thought> selectedThoughts = new ArrayList();  
     
     private final FileObject projectDir;        
     private final ProjectState state;
@@ -4754,10 +4756,9 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private final class ThoughtsGraphProviderImpl implements ThoughtsGraphProvider, ChangeSupportProvider
     {
         private List<Thought> rootThoughts; 
-        private ThoughtProvider selectedThought;
         
         private final Map<String, Thought> thoughts = new HashMap<>();        
-        private final Map<String, List<Thought>> childrenThoughts = new HashMap<>();        
+        private final Map<String, List<ChildrenThought>> childrenThoughts = new HashMap<>();        
         private final ChangeSupport changeSupport = new ChangeSupport(this);     
         
         @Override
@@ -4794,9 +4795,9 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }
         
         @Override
-        public List<Thought> getChildrenThoughts(String parentID)
+        public List<ChildrenThought> getChildrenThoughts(String parentID)
         {
-            List<Thought> list = childrenThoughts.get(parentID);
+            List<ChildrenThought> list = childrenThoughts.get(parentID);
             if(list == null)
             {
                 list = getNeo4jInstance().getChildrenThoughts(parentID);
@@ -4808,53 +4809,6 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             }  
             return list;
         }          
-        
-        private void addThought(String text, Thought.Type type, Set<String> tags, Set<Thought> parents, Set<Topic> topics, Set<Goal> goals)
-        {
-            Session session = null;
-            try
-            {
-                session = getNeo4jInstance().getSession();
-                Thought thought = getNeo4jInstance().addThought(session, getProjectDirectory().getName(), text, type, tags);
-                
-                if(parents.isEmpty())
-                {
-                    getRootThoughts().add(thought);
-                }
-                else
-                {
-                    for(Thought parent : parents)
-                    {
-                        getNeo4jInstance().thoughtHasParent(session, thought, parent, VisibilityProvider.Modifier.PUBLIC);
-                        getChildrenThoughts(parent.getThoughtID()).add(thought);
-                    }   
-                }
-                
-                for(Topic topic : topics)
-                {
-                    getNeo4jInstance().thoughtHasTopic(session, thought, topic, VisibilityProvider.Modifier.PUBLIC);
-                }
-                
-                for(Goal goal : goals)
-                {
-                    getNeo4jInstance().thoughtHasGoal(session, thought, goal, VisibilityProvider.Modifier.PUBLIC);
-                }                
-
-                thoughts.put(thought.getThoughtID(), thought);
-                changeSupport.fireChange();  
-            }
-            catch(Exception e)
-            {
-                LOG.warning(e.getMessage());
-            }
-            finally
-            {
-                if(session != null)
-                {
-                    session.close();
-                }
-            }                       
-        }
 
         @Override
         public Thought addRootThought(String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
@@ -4863,7 +4817,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             try
             {
                 session = getNeo4jInstance().getSession();
-                Thought thought = getNeo4jInstance().addThought(session, getProjectDirectory().getName(), text, type, tags);
+                Thought thought = getNeo4jInstance().addRootThought(session, getProjectDirectory().getName(), text, type, tags);
                 
                 getRootThoughts().add(thought);
                 
@@ -4896,15 +4850,13 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }        
         
         @Override
-        public Thought addChildrenThought(Thought parent, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
+        public ChildrenThought addChildrenThought(Thought parent, String text, Thought.Type type, Set<String> tags, Set<Topic> topics, Set<Goal> goals)
         {
             Session session = null;
             try
             {
                 session = getNeo4jInstance().getSession();
-                Thought thought = getNeo4jInstance().addThought(session, getProjectDirectory().getName(), text, type, tags);
-                
-                getNeo4jInstance().thoughtHasParent(session, thought, parent, VisibilityProvider.Modifier.PUBLIC);
+                ChildrenThought thought = getNeo4jInstance().addChildrenThought(session, getProjectDirectory().getName(), parent, text, type, tags);                
                 getChildrenThoughts(parent.getThoughtID()).add(thought);
                 
                 for(Topic topic : topics)
@@ -4953,24 +4905,73 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }
         
         @Override
-        public ThoughtProvider getSelectedThought() 
+        public void selectThought(Thought thought)
         {
-            return selectedThought;
+            selectedThoughts.add(thought);          
+            changeSupport.fireChange();              
         }
         
         @Override
-        public void setSelectedThought(ThoughtProvider thought) 
+        public Collection<Thought> getSelectedThoughts() 
         {
-            selectedThought = thought;          
-            changeSupport.fireChange();  
-        }        
+            if(selectedThoughts == null)
+            {
+                return Collections.EMPTY_LIST;
+            }
+            return Collections.unmodifiableCollection(selectedThoughts);
+        }
         
         @Override
-        public void clearSelectedThought()
+        public void clearSelectedThoughts()
         {
-            selectedThought = null;
+            selectedThoughts.clear();
             changeSupport.fireChange();
-        }        
+        }   
+        
+        private boolean isParent(Thought selectedThought, ChildrenThought childrenThought)
+        {
+            if(selectedThought.getThoughtID().equals(childrenThought.getParentID()))
+            {
+                return true;
+            }
+            Thought parentThought = getThought(childrenThought.getParentID());
+            if(parentThought instanceof ChildrenThought thought)
+            {
+                return isParent(selectedThought, thought);
+            }
+            return false;
+        }
+        
+        @Override
+        public boolean isThought(ThoughtsProvider provider)
+        {
+            if(!selectedThoughts.isEmpty())
+            {
+                Set<Thought> thoughts = provider.getThoughts();
+                if(!thoughts.isEmpty())
+                {
+                    for(Thought selectedThought : selectedThoughts)
+                    {
+                        for(Thought thought : thoughts)
+                        {
+                            if(selectedThought.getThoughtID().equals(thought.getThoughtID()))
+                            {
+                                return true;
+                            }
+                            else if(thought instanceof ChildrenThought childrenThought)
+                            {
+                                if(isParent(selectedThought, childrenThought))
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+            return true;
+        }      
     }      
 
 // TODO HtmlFilesProvider        

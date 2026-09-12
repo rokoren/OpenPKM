@@ -4,14 +4,15 @@
  */
 package openpkm.core.neo4j;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -62,7 +63,7 @@ import org.openide.util.lookup.ProxyLookup;
     "CTL_TreeOfThoughtsTopComponent=Tree Of Thoughts Window",
     "HINT_TreeOfThoughtsTopComponent=This is a Tree Of Thoughts window"
 })
-public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener, PropertyChangeListener
+public final class TreeOfThoughtsTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener
 {
     private static final Logger LOG = Logger.getLogger(TreeOfThoughtsTopComponent.class.getName());  
     
@@ -121,19 +122,27 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
     public void componentOpened() {
         // TODO add custom code on component opening
         result1.addLookupListener(thoughts);  
-        result2.addLookupListener(this);  
-
-        explorerManager.addPropertyChangeListener(this);        
+        result2.addLookupListener(this);       
     }
 
     @Override
     public void componentClosed() {
         // TODO add custom code on component closing
         result1.removeLookupListener(thoughts); 
-        result2.removeLookupListener(this); 
-
-        explorerManager.removePropertyChangeListener(this);        
+        result2.removeLookupListener(this);       
     }
+    
+    @Override
+    public Action[] getActions() 
+    {
+        List<Action> actions = new ArrayList();
+        for (Action action : super.getActions())
+        {
+            actions.add(action);
+        }
+        actions.add(new ClearSelectedThoughtsAction(thoughts.getProviders()));
+        return actions.toArray(new Action[actions.size()]);
+    }     
 
     void writeProperties(java.util.Properties p) {
         // better to version settings since initial version as advocated at
@@ -187,13 +196,6 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         }
         return null;
     } 
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) 
-    {
-        Node[] nodes = explorerManager.getSelectedNodes();
-        System.out.println("Selected size: " + nodes.length);
-    }
     
     private final class Thoughts extends Children.Keys<ThoughtsGraphProvider> implements LookupListener, ChangeListener
     {
@@ -292,5 +294,25 @@ public final class TreeOfThoughtsTopComponent extends TopComponent implements Ex
         {
             updateKeys();
         }         
+    }  
+    
+    private static final class ClearSelectedThoughtsAction extends AbstractAction
+    {   
+        private final Collection<ThoughtsGraphProvider> providers;
+        
+        public ClearSelectedThoughtsAction(Collection<ThoughtsGraphProvider> providers) 
+        {
+            super("Remove All Thoughts from Filter");
+            this.providers = providers;
+        }        
+        
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            for(ThoughtsGraphProvider provider : providers)
+            {
+                provider.clearSelectedThoughts();
+            }
+        }        
     }     
 }

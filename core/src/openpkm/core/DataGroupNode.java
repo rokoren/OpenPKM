@@ -38,6 +38,8 @@ import openpkm.base.OpenIconProvider;
 import openpkm.base.Source;
 import openpkm.base.SourceProviderWrapper;
 import openpkm.base.TagsProvider;
+import openpkm.base.ThoughtsGraphProvider;
+import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsProvider;
 import org.openide.util.Lookup;
 import openpkm.base.TopicsGraphProvider;
@@ -190,6 +192,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
         private final FilterTagsProvider filterTags;
         private final TopicsGraphProvider topicProvider;
         private final GoalsGraphProvider goalProvider;
+        private final ThoughtsGraphProvider thoughtProvider;
 
         public ChildrenImpl(DataGroupProvider provider)
         {
@@ -211,7 +214,13 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             if(goalProvider instanceof ChangeSupportProvider csp)
             {
                 csp.addChangeListener(this);
-            }            
+            }   
+            
+            thoughtProvider = provider.getProvider().getLookup().lookup(ThoughtsGraphProvider.class);
+            if(thoughtProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.addChangeListener(this);
+            }             
         }  
 
         @Override
@@ -249,6 +258,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                         boolean isTag = true;
                         boolean isTopic = true;
                         boolean isGoal = true;
+                        boolean isThought = true;
                         
                         if(filterTags != null)
                         {
@@ -291,9 +301,18 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                                     }                                                 
                                 }            
                             }                                                                                    
-                        }                        
+                        }  
                         
-                        if(isTag && isTopic && isGoal)                    
+                        if(thoughtProvider != null)
+                        {
+                            ThoughtsProvider thoughtsProvider = data.getLookup().lookup(ThoughtsProvider.class);
+                            if(thoughtsProvider != null)
+                            {
+                                isThought = thoughtProvider.isThought(thoughtsProvider);
+                            }                                                                                   
+                        }                         
+                        
+                        if(isTag && isTopic && isGoal && isThought)                    
                         {
                             sorted.add(data);                  
                         }                        

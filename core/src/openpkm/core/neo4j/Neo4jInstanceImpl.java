@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import openpkm.base.ChildrenGoal;
+import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
 import openpkm.base.Goal;
 import openpkm.base.TagsProvider;
@@ -521,15 +522,25 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     @Override
     public Thought getThought(String thoughtID) throws NoSuchElementException
     {        
-        EagerResult result = getDriver().executableQuery("MATCH (t:Thought {id: $id}) RETURN t.id AS ID, t.text AS text, t.type AS type, t.tags AS tags")
+        EagerResult result = getDriver().executableQuery("MATCH (t:Thought {id: $id}) OPTIONAL MATCH (t)-[:HAS_PARENT]->(parent:Thought) RETURN t.id AS ID, t.text AS text, t.type AS type, t.tags AS tags, parent.id AS parentID")
                 .withParameters(Map.of("id", thoughtID))
                 .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
                 .execute();    
         
         var record = result.records().getFirst();
+        String parentID = record.get("parentID").asString();
+        Set<String> tags = new HashSet<>(record.get("tags").asList(Value::asString)); 
+        
+        Thought thought = null;
+        if(parentID == null)
+        {
+            thought = new ThoughtImpl(record.get("ID").asString(), tags);
+        }
+        else
+        {
+            thought = new ChildrenThoughtImpl(parentID, record.get("ID").asString(), tags);
+        }
 
-        Set<String> tags = new HashSet<>(record.get("tags").asList(Value::asString));            
-        Thought thought = new ThoughtImpl(record.get("ID").asString(), tags);
         thought.setText(record.get("text").asString());            
         Optional<Thought.Type> type = Thought.Type.get(record.get("type").asString());
         if(type.isPresent())
@@ -565,9 +576,9 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     }
     
     @Override
-    public List<Thought> getChildrenThoughts(String parentID)
+    public List<ChildrenThought> getChildrenThoughts(String parentID)
     {
-        List<Thought> thoughts = new ArrayList<>();
+        List<ChildrenThought> thoughts = new ArrayList<>();
         EagerResult result = getDriver().executableQuery("MATCH (thought:Thought)-[:HAS_PARENT]->(:Thought {id: $id}) RETURN thought.id AS ID, thought.text AS text, thought.type AS type, thought.tags AS tags")
                 .withParameters(Map.of("id", parentID))
                 .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
@@ -576,7 +587,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         var records = result.records();
         records.forEach(r -> {
             Set<String> tags = new HashSet<>(r.get("tags").asList(Value::asString));  
-            Thought thought = new ThoughtImpl(r.get("ID").asString(), tags);
+            ChildrenThought thought = new ChildrenThoughtImpl(parentID, r.get("ID").asString(), tags);
             thought.setText(r.get("text").asString());            
             Optional<Thought.Type> type = Thought.Type.get(r.get("type").asString());
             if(type.isPresent())
@@ -589,14 +600,24 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     }
     
     @Override
-    public Thought addThought(Session session, String projectID, String text, Thought.Type type, Set<String> tags) throws Exception
+    public Thought addRootThought(Session session, String projectID, String text, Thought.Type type, Set<String> tags) throws Exception
     {
-        String thoughtID = session.executeWrite(tx -> createThought(tx, projectID, text, type, tags));
+        String thoughtID = session.executeWrite(tx -> createRootThought(tx, projectID, text, type, tags));
         Thought thought = new ThoughtImpl(thoughtID, tags);
         thought.setText(text);
         thought.setType(type);
         return thought;
     }  
+    
+    @Override
+    public ChildrenThought addChildrenThought(Session session, String projectID, Thought parent, String text, Thought.Type type, Set<String> tags) throws Exception
+    {
+        String thoughtID = session.executeWrite(tx -> createChildrenThought(tx, parent.getThoughtID(), projectID, text, type, tags));
+        ChildrenThought thought = new ChildrenThoughtImpl(parent.getThoughtID(), thoughtID, tags);
+        thought.setText(text);
+        thought.setType(type);
+        return thought;
+    }      
     
     @Override
     public void thoughtHasTopic(Session session, Thought thought, Topic topic, VisibilityProvider.Modifier visibility) throws Exception
@@ -769,6 +790,23 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         }
     } 
     
+    private static class ChildrenThoughtImpl extends ThoughtImpl implements ChildrenThought
+    {
+        private final String parentID;
+        
+        public ChildrenThoughtImpl(String parentID, String thoughtID, Set<String> tags) 
+        {
+            super(thoughtID, tags);
+            this.parentID = parentID;
+        }          
+
+        @Override
+        public String getParentID() 
+        {
+            return parentID;
+        }
+    }
+    
     private static String createRootTopic(TransactionContext tx, String projectID, String name, String tag) 
     {
         var result = tx.run("""
@@ -817,7 +855,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         );
     }   
     
-    private static String createThought(TransactionContext tx, String projectID, String text, Thought.Type type, Set<String> tags) 
+    private static String createRootThought(TransactionContext tx, String projectID, String text, Thought.Type type, Set<String> tags) 
     {
         var result = tx.run("""
             CREATE (t:Thought {id: randomuuid(), createdDate: datetime(), project: $project, text: $text, type: $type, tags: $tags})
@@ -827,6 +865,18 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         var thoughtID = t.get("ID").asString();
         return thoughtID;
     }  
+    
+    private static String createChildrenThought(TransactionContext tx, String parentID, String projectID, String text, Thought.Type type, Set<String> tags) 
+    {
+        var result = tx.run("""
+            CREATE (t:Thought {id: randomuuid(), createdDate: datetime(), project: $project, text: $text, type: $type, tags: $tags})
+            RETURN t.id AS ID
+        """, Map.of("project", projectID, "text", text, "type", type.toString(), "tags", tags));
+        var t = result.single();
+        var thoughtID = t.get("ID").asString();
+        thoughtHasParent(tx, thoughtID, parentID, VisibilityProvider.Modifier.PUBLIC);
+        return thoughtID;
+    }      
 
     private static void thoughtHasTopic(TransactionContext tx, String thoughtID, String topicID, VisibilityProvider.Modifier visibility) 
     {
