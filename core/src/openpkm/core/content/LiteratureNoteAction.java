@@ -22,7 +22,7 @@ import org.openide.awt.ActionRegistration;
 import org.openide.util.NbBundle.Messages;
 
 @ActionID(
-        category = "OpenPKM/Note",
+        category = "OpenPKM/LiteratureNote",
         id = "openpkm.core.content.LiteratureNoteAction"
 )
 @ActionRegistration(
