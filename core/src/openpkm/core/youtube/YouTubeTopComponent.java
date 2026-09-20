@@ -69,7 +69,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     private static final Logger LOG = Logger.getLogger(YouTubeTopComponent.class.getName());     
     
     private CefClient client;    
-    private CefBrowser browser; 
+    private CefBrowser browser;
     
     private final ChangeSupport changeSupport = new ChangeSupport(this);    
     
@@ -85,9 +85,6 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
             try
             {                
                 client = provider.getApp().createClient();
-                browser = client.createBrowser(YOUTUBE_URL, false, false);                 
-                
-                add(browser.getUIComponent(), BorderLayout.CENTER);
             }
             catch(Exception e)
             {
@@ -126,7 +123,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     // End of variables declaration//GEN-END:variables
     @Override
     public void componentOpened() {
-        client.addLoadHandler(this);
+        client.addLoadHandler(this);          
     }
 
     @Override
@@ -144,11 +141,15 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
         // better to version settings since initial version as advocated at
         // http://wiki.apidesign.org/wiki/PropertyFiles
         p.setProperty("version", "1.0");
+        p.setProperty(LinkProvider.PROP_LINK, getLink());
         // TODO store your settings
     }
 
     void readProperties(java.util.Properties p) {
         String version = p.getProperty("version");
+        String link = p.getProperty(LinkProvider.PROP_LINK, YOUTUBE_URL);  
+        browser = client.createBrowser(link, false, false);  
+        add(browser.getUIComponent(), BorderLayout.CENTER);  
         // TODO read your settings according to their version
     }
 

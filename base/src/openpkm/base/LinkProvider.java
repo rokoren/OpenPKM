@@ -10,5 +10,7 @@ package openpkm.base;
  */
 public interface LinkProvider 
 {
+    String PROP_LINK = "link";
+    
     String getLink();
 }
