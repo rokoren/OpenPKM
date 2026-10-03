@@ -65,7 +65,7 @@ import openpkm.base.TopicsGraphProvider;
         iconBase = "openpkm/reference/resources/link.png",
         displayName = "#CTL_BookAction"
 )
-@Messages("CTL_BookAction=Add Book Reference")
+@Messages("CTL_BookAction=Add Reference")
 public class BookAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(BookAction.class.getName());     
@@ -103,7 +103,7 @@ public class BookAction implements ActionListener
         WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
         // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
         wiz.setTitleFormat(new MessageFormat("{0}"));
-        wiz.setTitle("Add Book Reference");  
+        wiz.setTitle("Add Reference");  
         //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
         wiz.putProperty("provider", provider.getProvider());
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 

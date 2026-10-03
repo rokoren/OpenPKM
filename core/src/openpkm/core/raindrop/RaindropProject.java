@@ -161,12 +161,16 @@ import openpkm.raindrop.RaindropService;
 import openpkm.raindrop.RaindropTag;
 import openpkm.raindrop.RaindropUtils;
 import openpkm.base.DataProvider;
+import openpkm.base.DrawboardPdf;
+import openpkm.base.DrawboardPdfFactory;
 import openpkm.base.LiteratureNote;
 import openpkm.base.LiteratureNoteProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsGraphProvider;
+import openpkm.core.drawboard.pdf.AbstractDrawboardPdf;
+import openpkm.utils.DrawboardPdfProvider;
 import org.neo4j.driver.Session;
 
 /**
@@ -242,12 +246,19 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             sources.put(provider.getName(), provider);            
         }
         
+        DrawboardPdfFactory drawboardPdfFactory = Lookup.getDefault().lookup(DrawboardPdfFactory.class);
+        if(drawboardPdfFactory != null)
+        {          
+            SourceProvider provider = new DrawboardPdfProviderImpl(drawboardPdfFactory);
+            sources.put(provider.getName(), provider);            
+        }         
+        
         ReferenceFactory referenceFactory = Lookup.getDefault().lookup(ReferenceFactory.class);
         if(referenceFactory != null)
         {          
             SourceProvider provider = new ReferenceProviderImpl(referenceFactory);
             sources.put(provider.getName(), provider);            
-        }
+        }               
 
         YouTubeVideoFactory youTubeVideoFactory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
         if(youTubeVideoFactory != null)
@@ -2621,6 +2632,228 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }          
     } 
+    
+    private final class DrawboardPdfProviderImpl extends DrawboardPdfProvider implements FileChangeListener, CloseSupport
+    {          
+        public DrawboardPdfProviderImpl(DrawboardPdfFactory factory) 
+        {
+            super(factory);
+        }               
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        } 
+        
+        @Override
+        public void close()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(DrawboardPdf pdf : getPdfs())
+                {
+                    FileObject file = rootDir.getFileObject(pdf.getSourceID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
+                    {
+                        try
+                        {
+                            if(pdf.isModified())
+                            {
+                                OutputStream os = file.getOutputStream();
+                                factory.save(pdf, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(pdf.isDeleted())
+                            {
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    }  
+                }                
+            }
+        }
+        
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(AbstractDrawboardPdf.ICON));
+        }        
+        
+        @Override
+        public synchronized Map<String, DrawboardPdf> getPdfsById()
+        {
+            if(pdfs == null)
+            {
+                pdfs = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            DrawboardPdf pdf = factory.getDrawboardPdf(Utils.getProperties(file)); 
+                            pdfs.put(pdf.getSourceID(), pdf);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return pdfs;
+        }                
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Drawboard PDF root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }         
+        
+        @Override
+        public FileObject createData(DrawboardPdf pdf, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, pdf.getSourceID());  
+
+            if(pdf instanceof Article)
+            {
+                Article article = (Article)pdf;
+                if(fileTypeProvider instanceof ArticleProvider)
+                {
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }
+            else if(pdf instanceof Book)
+            {
+                Book book = (Book)pdf;
+                if(fileTypeProvider instanceof BookProvider)
+                {
+                    BookProvider bookProvider = (BookProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(bookProvider.getBook(book.getTitle(), book.getAuthors()).getBytes());
+                    output.close();
+                }                         
+            } 
+            else if(pdf instanceof LiteratureNote)
+            {
+                LiteratureNote literatureNote = (LiteratureNote)pdf;
+                if(fileTypeProvider instanceof LiteratureNoteProvider)
+                {
+                    LiteratureNoteProvider literatureNoteProvider = (LiteratureNoteProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(literatureNoteProvider.getLiteratureNote(literatureNote.getPrimaryFileName(), literatureNote.getPrimaryTitle(), literatureNote.getTitle(), literatureNote.getSubtitle(), literatureNote.getAuthorName(), literatureNote.getSourceUrl(), literatureNote.getSummary()).getBytes());
+                    output.close();
+                }                         
+            }             
+            
+            return primaryFile;            
+        }  
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            setLastData(data);
+            */
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                DrawboardPdf pdf = factory.getDrawboardPdf(Utils.getProperties(file)); 
+                getPdfsById().put(pdf.getSourceID(), pdf);               
+                sourceAdded(new SourceEventImpl(this, pdf));
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            Content content = getContentsById().get(file.getName());  
+            if(content != null)
+            {
+                
+            }
+            */
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            DrawboardPdf pdf = getPdfsById().remove(file.getName());  
+            if(pdf != null)
+            {
+                pdf.notifyDeleted();
+                sourceDeleted(new SourceEventImpl(this, pdf)); 
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }          
+    }     
     
     private final class ReferenceProviderImpl extends ReferenceProvider implements FileChangeListener, CloseSupport
     {               

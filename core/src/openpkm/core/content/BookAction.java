@@ -57,13 +57,13 @@ import openpkm.base.TopicsGraphProvider;
  */
 @ActionID(
         category = "OpenPKM/Book",
-        id = "openpkm.core.content.BookContentAction"
+        id = "openpkm.core.content.BookAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/book.png",
-        displayName = "#CTL_BookContentAction"
+        displayName = "#CTL_BookAction"
 )
-@Messages("CTL_BookContentAction=Add Book")
+@Messages("CTL_BookAction=Add Book")
 public class BookAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(BookAction.class.getName());     
