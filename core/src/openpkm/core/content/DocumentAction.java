@@ -57,13 +57,13 @@ import openpkm.base.TopicsGraphProvider;
  */
 @ActionID(
         category = "OpenPKM/Document",
-        id = "openpkm.core.content.DocumentContentAction"
+        id = "openpkm.core.content.DocumentAction"
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/document_notes.png",
-        displayName = "#CTL_DocumentContentAction"
+        displayName = "#CTL_DocumentAction"
 )
-@Messages("CTL_DocumentContentAction=Add Document")
+@Messages("CTL_DocumentAction=Add Document")
 public class DocumentAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(DocumentAction.class.getName());     

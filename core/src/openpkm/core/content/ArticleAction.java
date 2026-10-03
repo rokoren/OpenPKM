@@ -60,9 +60,9 @@ import openpkm.base.TopicsGraphProvider;
 )
 @ActionRegistration(
         iconBase = "openpkm/core/resources/document_image.png",
-        displayName = "#CTL_ArticleContentAction"
+        displayName = "#CTL_ArticleAction"
 )
-@Messages("CTL_ArticleContentAction=Add Article")
+@Messages("CTL_ArticleAction=Add Article")
 public class ArticleAction implements ActionListener
 {
     private static final Logger LOG = Logger.getLogger(ArticleAction.class.getName());     
