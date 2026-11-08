@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
 public interface Thought
 {

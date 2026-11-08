@@ -2,12 +2,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package openpkm.domain;
+package openpkm.base;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
-public interface Domain
-{    
+public interface ChildrenDomain extends Domain
+{
+    String getParentID();
+    void setParentID(String parentID);       
 }

@@ -12,9 +12,11 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.prefs.Preferences;
+import openpkm.base.ChildrenDomain;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
+import openpkm.base.Domain;
 import openpkm.base.Goal;
 import openpkm.base.Thought;
 import openpkm.base.Topic;
@@ -51,6 +53,15 @@ public interface Neo4jInstance
     Preferences getPreferences();
     
     Session getSession();
+    
+    List<Domain> getRootDomains(String projectID);
+    List<ChildrenDomain> getChildrenDomains(String parentID);
+    Domain addRootDomain(String projectID, String name, String tag);
+    Domain addRootDomain(String projectID, String domainID, String name, String tag);
+    void removeRootDomain(String domainID);
+    ChildrenDomain addChildrenDomain(String parentID, String name, String tag, VisibilityProvider.Modifier modifier);
+    ChildrenDomain addChildrenDomain(String parentID, String domainID, String name, String tag, VisibilityProvider.Modifier modifier);
+    void removeChildrenDomain(ChildrenDomain domain);    
     
     List<Topic> getRootTopics(String projectID);
     List<ChildrenTopic> getChildrenTopics(String parentID);

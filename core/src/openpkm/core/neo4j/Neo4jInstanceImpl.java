@@ -4,6 +4,7 @@
  */
 package openpkm.core.neo4j;
 
+import com.google.api.client.util.DateTime;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -14,18 +15,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
+import openpkm.base.Domain;
 import openpkm.base.Goal;
 import openpkm.base.TagsProvider;
 import openpkm.base.Thought;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
 import openpkm.neo4j.Neo4jInstance;
+import openpkm.youtube.YouTubeChannel;
+import org.json.JSONObject;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
@@ -168,6 +173,33 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     {
         return driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());
     }
+    
+    @Override
+    public List<Domain> getRootDomains(String projectID) 
+    {
+        List<Domain> domains = new ArrayList<>();
+        EagerResult result = getDriver().executableQuery("MATCH (d:Domain {project: $project}) RETURN d.id AS ID, d.name AS name, d.type AS type, d.data AS data")
+                .withParameters(Map.of("project", projectID))
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
+                .execute();    
+        
+        var records = result.records();
+        records.forEach(r -> {
+            Optional<Domain.Type> type = Domain.Type.get(r.get("type").asString());
+            if(type.isPresent())
+            {
+                thought.setType(type.get());                
+            }             
+            
+            Topic t = new TopicImpl(r.get("ID").asString());
+            JSONObject data = new JSONObject(r.get("data").asString());
+            t.setName(r.get("name").asString());
+            
+            t.setTag();
+            topics.add(t);
+        });
+        return topics;
+    }    
 
     @Override
     public List<Topic> getRootTopics(String projectID) 
@@ -648,6 +680,138 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     {
         return getInstanceName();
     }
+
+    private static class YouTubeChannelImpl implements Domain, YouTubeChannel
+    {
+        private final String domainID;
+        private final Properties props;        
+
+        public YouTubeChannelImpl(String domainID, Properties props) 
+        {
+            this.domainID = domainID;
+            this.props = props;
+        }
+                
+        @Override
+        public String getDomainID() 
+        {
+            return domainID;
+        }
+        
+        @Override
+        public Properties getProperties()
+        {
+            return props;
+        }
+        
+        @Override
+        public String getChannelID() 
+        {
+            return channelID;
+        }        
+
+        @Override
+        public String getTitle() 
+        {
+            return title;
+        }
+
+        @Override
+        public void setTitle(String title) 
+        {
+            this.title = title;
+        }
+        
+        @Override
+        public String getDescription() 
+        {
+            return desc;
+        }
+
+        @Override
+        public void setDescription(String desc) 
+        {
+            this.desc = desc;
+        }
+        
+        @Override
+        public String getThumbnail() 
+        {
+            return thumbnail;
+        }        
+
+        @Override
+        public void setThumbnail(String thumbnail) 
+        {
+            this.thumbnail = thumbnail;
+        }  
+        
+        @Override
+        public DateTime getPublishedAt() 
+        {
+            return publishedAt;
+        }        
+
+        @Override
+        public void setPublishedAt(DateTime publishedAt)
+        {
+            this.publishedAt = publishedAt;
+        }   
+        
+        @Override
+        public String getCustomUrl() 
+        {
+            return customerUrl;
+        }        
+
+        @Override
+        public void setCustomUrl(String customerUrl) 
+        {
+            this.customerUrl = customerUrl;
+        }     
+        
+        @Override
+        public String getCountry() 
+        {
+            return country;
+        }        
+
+        @Override
+        public void setCountry(String country) 
+        {
+            this.country = country;
+        }   
+        
+        @Override
+        public String getLocalizedTitle() 
+        {
+            return localizedTitle;
+        }        
+
+        @Override
+        public void setLocalizedTitle(String localizedTitle)
+        {
+            this.localizedTitle = localizedTitle;
+        }    
+        
+        @Override
+        public String getLocalizedDescription() 
+        {
+            return localizedDescription;
+        }        
+
+        @Override
+        public void setLocalizedDescription(String localizedDescription)
+        {
+            this.localizedDescription = localizedDescription;
+        }          
+        
+        @Override
+        public String toString()
+        {
+            return getTitle();
+        }
+    }  
     
     private static class TopicImpl implements Topic
     {
