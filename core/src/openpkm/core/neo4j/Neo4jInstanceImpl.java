@@ -4,7 +4,9 @@
  */
 package openpkm.core.neo4j;
 
-import com.google.api.client.util.DateTime;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import openpkm.base.ChildrenDomain;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
@@ -29,8 +32,6 @@ import openpkm.base.Thought;
 import openpkm.base.Topic;
 import openpkm.base.VisibilityProvider;
 import openpkm.neo4j.Neo4jInstance;
-import openpkm.youtube.YouTubeChannel;
-import org.json.JSONObject;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.EagerResult;
@@ -42,6 +43,8 @@ import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.Value;
 import org.openide.util.ChangeSupport;
 import org.openide.util.NbPreferences;
+import openpkm.base.DomainChannel;
+import openpkm.core.domain.AbstractDomainChannel;
 
 /**
  *
@@ -178,27 +181,221 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     public List<Domain> getRootDomains(String projectID) 
     {
         List<Domain> domains = new ArrayList<>();
-        EagerResult result = getDriver().executableQuery("MATCH (d:Domain {project: $project}) RETURN d.id AS ID, d.name AS name, d.type AS type, d.data AS data")
+        EagerResult result = getDriver().executableQuery("MATCH (d:Domain {project: $project}) RETURN d.id AS ID, d.name AS name, d.tag AS tag")
                 .withParameters(Map.of("project", projectID))
                 .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
                 .execute();    
         
         var records = result.records();
         records.forEach(r -> {
-            Optional<Domain.Type> type = Domain.Type.get(r.get("type").asString());
+            Domain domain = new DomainImpl(r.get("ID").asString());  
+            domain.setName(r.get("name").asString());
+            domain.setTag(r.get("tag").asString());
+            domains.add(domain);
+        });
+        return domains;        
+    } 
+    
+    @Override
+    public List<ChildrenDomain> getChildrenDomains(String parentID) 
+    {
+        List<ChildrenDomain> domains = new ArrayList<>();
+        EagerResult result = getDriver().executableQuery("MATCH (d:Domain)-[:SUBCLASS]->(:Domain {id: $id}) RETURN d.id AS ID, d.name AS name, d.tag AS tag")
+                .withParameters(Map.of("id", parentID))
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
+                .execute();    
+        
+        var records = result.records();
+        records.forEach(r -> {
+            ChildrenDomain domain = new ChildrenDomainImpl(r.get("ID").asString());
+            domain.setParentID(parentID);
+            domain.setName(r.get("name").asString());
+            domain.setTag(r.get("tag").asString());
+            domains.add(domain);
+        });
+        return domains;        
+    }      
+    
+    @Override
+    public Domain addRootDomain(String projectID, String name, String tag) 
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
+            String domainID = session.executeWrite(tx -> createRootDomain(tx, projectID, name, tag));
+            Domain domain = new DomainImpl(domainID);
+            domain.setName(name);
+            domain.setTag(tag);
+            return domain;
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }
+        return null;        
+    }  
+    
+    @Override
+    public Domain addRootDomain(String projectID, String domainID, String name, String tag) 
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
+            session.executeWriteWithoutResult(tx -> createRootDomain(tx, projectID, domainID, name, tag));
+            Domain domain = new DomainImpl(domainID);
+            domain.setName(name);
+            domain.setTag(tag);
+            return domain;
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }
+        return null;        
+    }   
+    
+    @Override
+    public void removeRootDomain(String domainID) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public ChildrenDomain addChildrenDomain(String parentID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
+            String domainID = session.executeWrite(tx -> createChildrenDomain(tx, parentID, name, tag, modifier));
+            ChildrenDomain domain = new ChildrenDomainImpl(domainID);
+            domain.setParentID(parentID);
+            domain.setName(name);
+            domain.setTag(tag);
+            return domain;
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }        
+        return null;        
+    }
+    
+    @Override
+    public ChildrenDomain addChildrenDomain(String parentID, String domainID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());    
+            session.executeWriteWithoutResult(tx -> createChildrenDomain(tx, parentID, domainID, name, tag, modifier));
+            ChildrenDomain domain = new ChildrenDomainImpl(domainID);
+            domain.setParentID(parentID);
+            domain.setName(name);
+            domain.setTag(tag);
+            domain.setModifier(modifier);
+            return domain;            
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }        
+        return null;        
+    }    
+
+    @Override
+    public void removeChildrenDomain(ChildrenDomain domain) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }  
+    
+    @Override
+    public List<DomainChannel> getDomainChannels(String domainID) 
+    {
+        List<DomainChannel> channels = new ArrayList<>();
+        EagerResult result = getDriver().executableQuery("MATCH (dc:DomainChannel)-[d:DOMAIN]->(:Domain {id: $id}) RETURN dc.id AS ID, dc.name AS name, dc.props AS props, d.type AS type")
+                .withParameters(Map.of("id", domainID))
+                .withConfig(QueryConfig.builder().withDatabase(getNeo4jDatabase()).build())
+                .execute();    
+        
+        var records = result.records();
+        records.forEach(r -> {            
+            Optional<DomainChannel.Type> type = DomainChannel.Type.get(r.get("type").asString());
             if(type.isPresent())
             {
-                thought.setType(type.get());                
-            }             
-            
-            Topic t = new TopicImpl(r.get("ID").asString());
-            JSONObject data = new JSONObject(r.get("data").asString());
-            t.setName(r.get("name").asString());
-            
-            t.setTag();
-            topics.add(t);
+                Properties props = new Properties();
+                try
+                {  
+                    props.load(new StringReader(r.get("props").asString()));
+                    String channelID = r.get("ID").asString();
+                    String name = r.get("name").asString();                    
+                    channels.add(AbstractDomainChannel.getDomainChannel(domainID, channelID, name, props, type.get()));                      
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                                                                                                 
+            }              
         });
-        return topics;
+        return channels;
+    }   
+    
+   @Override
+    public DomainChannel addDomainChannel(String domainID, String name, Properties props, DomainChannel.Type type)
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());  
+            StringWriter writer = new StringWriter();
+            props.store(writer, "Created by OpenPKM");
+            String channelID = session.executeWrite(tx -> createDomainChannel(tx, domainID, name, writer.toString(), type));
+            ChildrenDomain domain = new ChildrenDomainImpl(domainID);
+            domain.setParentID(parentID);
+            domain.setName(name);
+            domain.setTag(tag);
+            return domain;
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }        
+        return null;        
     }    
 
     @Override
@@ -681,15 +878,15 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         return getInstanceName();
     }
 
-    private static class YouTubeChannelImpl implements Domain, YouTubeChannel
+    private static class DomainImpl implements Domain
     {
         private final String domainID;
-        private final Properties props;        
+        
+        private String name, tag;          
 
-        public YouTubeChannelImpl(String domainID, Properties props) 
+        public DomainImpl(String domainID) 
         {
-            this.domainID = domainID;
-            this.props = props;
+            this.domainID = domainID;           
         }
                 
         @Override
@@ -699,119 +896,70 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         }
         
         @Override
-        public Properties getProperties()
+        public String getName()
         {
-            return props;
+            return name;
         }
         
         @Override
-        public String getChannelID() 
+        public void setName(String name)
         {
-            return channelID;
-        }        
-
-        @Override
-        public String getTitle() 
-        {
-            return title;
-        }
-
-        @Override
-        public void setTitle(String title) 
-        {
-            this.title = title;
+            this.name = name;
         }
         
         @Override
-        public String getDescription() 
+        public String getTag() 
         {
-            return desc;
+            return tag;
         }
 
         @Override
-        public void setDescription(String desc) 
+        public void setTag(String tag) 
         {
-            this.desc = desc;
-        }
-        
-        @Override
-        public String getThumbnail() 
-        {
-            return thumbnail;
-        }        
-
-        @Override
-        public void setThumbnail(String thumbnail) 
-        {
-            this.thumbnail = thumbnail;
+            this.tag = tag;
         }  
-        
-        @Override
-        public DateTime getPublishedAt() 
-        {
-            return publishedAt;
-        }        
-
-        @Override
-        public void setPublishedAt(DateTime publishedAt)
-        {
-            this.publishedAt = publishedAt;
-        }   
-        
-        @Override
-        public String getCustomUrl() 
-        {
-            return customerUrl;
-        }        
-
-        @Override
-        public void setCustomUrl(String customerUrl) 
-        {
-            this.customerUrl = customerUrl;
-        }     
-        
-        @Override
-        public String getCountry() 
-        {
-            return country;
-        }        
-
-        @Override
-        public void setCountry(String country) 
-        {
-            this.country = country;
-        }   
-        
-        @Override
-        public String getLocalizedTitle() 
-        {
-            return localizedTitle;
-        }        
-
-        @Override
-        public void setLocalizedTitle(String localizedTitle)
-        {
-            this.localizedTitle = localizedTitle;
-        }    
-        
-        @Override
-        public String getLocalizedDescription() 
-        {
-            return localizedDescription;
-        }        
-
-        @Override
-        public void setLocalizedDescription(String localizedDescription)
-        {
-            this.localizedDescription = localizedDescription;
-        }          
         
         @Override
         public String toString()
         {
-            return getTitle();
+            return getName();
+        }       
+    }
+    
+    private static final class ChildrenDomainImpl extends DomainImpl implements ChildrenDomain
+    {
+        private String parentID;
+        private VisibilityProvider.Modifier modifier;
+
+        public ChildrenDomainImpl(String domainID) 
+        {
+            super(domainID);
         }
-    }  
+                
+        @Override
+        public String getParentID() 
+        {
+            return parentID;
+        }
+
+        @Override
+        public void setParentID(String parentID)
+        {
+            this.parentID = parentID;
+        }  
+
+        @Override
+        public VisibilityProvider.Modifier getModifier() 
+        {
+            return modifier;
+        }
+
+        @Override
+        public void setModifier(VisibilityProvider.Modifier modifier) 
+        {
+            this.modifier = modifier;
+        }                
+    }         
     
     private static class TopicImpl implements Topic
     {
@@ -970,6 +1118,84 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             return parentID;
         }
     }
+
+    private static String createRootDomain(TransactionContext tx, String projectID, String name, String tag)
+    {
+        var result = tx.run("""
+            CREATE (d:Domain {id: randomuuid(), createdDate: datetime(), project: $project, name: $name, tag: $tag})
+            RETURN t.id AS ID
+        """, Map.of("project", projectID, "name", name, "tag", tag));
+        var d = result.single();
+        var domainID = d.get("ID").asString();
+        return domainID;
+    } 
+    
+    private static void createRootDomain(TransactionContext tx, String projectID, String domainID, String name, String tag) 
+    {
+        tx.run("""
+            CREATE (d:Domain {id: $domainID, createdDate: datetime(), project: $project, name: $name, tag: $tag})
+        """, Map.of("project", projectID, "domainID", domainID, "name", name, "tag", tag));
+    }  
+    
+    private static String createChildrenDomain(TransactionContext tx, String parentID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    {
+        var result = tx.run("""
+            CREATE (d:Domain {id: randomuuid(), createdDate: datetime(), name: $name, tag: $tag})
+            RETURN d.id AS ID
+        """, Map.of("name", name, "tag", tag));
+        var d = result.single();
+        var domainID = d.get("ID").asString();
+        addDomainToParent(tx, parentID, domainID, modifier);
+        return domainID;
+    }  
+    
+    private static void createChildrenDomain(TransactionContext tx, String parentID, String domainID, String name, String tag, VisibilityProvider.Modifier modifier) 
+    {
+        var result = tx.run("""
+            CREATE (d:Domain {id: $domainID, createdDate: datetime(), name: $name, tag: $tag})
+        """, Map.of("domainID", domainID, "name", name, "tag", tag));
+        addDomainToParent(tx, parentID, domainID, modifier);
+    }      
+    
+    private static void addDomainToParent(TransactionContext tx, String parentID, String domainID, VisibilityProvider.Modifier modifier) 
+    {
+        tx.run("""
+            MATCH (d:Domain {id: domainID})
+            MATCH (p:Domain {id: $parentID})
+            MERGE (t)-[:SUBCLASS {accessibility: $accessibility}]->(p)
+            """, Map.of("domainID", domainID, "parentID", parentID, "accessibility", modifier.toString())
+        );
+    }  
+    
+    private static String createDomainChannel(TransactionContext tx, String domainID, String name, String props, DomainChannel.Type type) 
+    {
+        var result = tx.run("""
+            CREATE (dc:DomainChannel {id: randomuuid(), createdDate: datetime(), name: $name, props: $props})
+            RETURN d.id AS ID
+        """, Map.of("name", name, "props", props));
+        var d = result.single();
+        var channelID = d.get("ID").asString();
+        addChannelToDomain(tx, domainID, channelID, type);
+        return domainID;
+    }      
+    
+    private static void createDomainChannel(TransactionContext tx, String domainID, String channelID, String name, String props, DomainChannel.Type type) 
+    {
+        var result = tx.run("""
+            CREATE (dc:DomainChannel {id: $channelID, createdDate: datetime(), name: $name, props: $props})
+        """, Map.of("channelID", channelID, "name", name, "props", props));
+        addChannelToDomain(tx, domainID, channelID, type);
+    }  
+    
+    private static void addChannelToDomain(TransactionContext tx, String domainID, String channelID, DomainChannel.Type type) 
+    {
+        tx.run("""
+            MATCH (dc:DomainChannel {id: channelID})
+            MATCH (p:Domain {id: $domainID})
+            MERGE (t)-[:DOMAIN {type: $type}]->(p)
+            """, Map.of("domainID", domainID, "channelID", channelID, "type", type.toString())
+        );
+    }      
     
     private static String createRootTopic(TransactionContext tx, String projectID, String name, String tag) 
     {

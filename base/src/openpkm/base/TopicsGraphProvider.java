@@ -20,7 +20,7 @@ public interface TopicsGraphProvider extends GraphProvider
     Collection<Topic> getSelectedTopics(); 
     void clearSelectedTopics();
     void selectTopic(Topic topic);
-    boolean isTopic(TopicsProvider project);
+    boolean isTopic(TopicsProvider provider);
     List<ChildrenTopic> getChildrenTopics(String parentID);
     void addRootTopic(String name, String tag);
     void addRootTopic(String topicID, String name, String tag);    

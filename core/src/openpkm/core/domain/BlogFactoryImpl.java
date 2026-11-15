@@ -30,7 +30,6 @@ import openpkm.base.PropertiesProvider;
 import openpkm.base.StateSupport;
 import openpkm.domain.Blog;
 import openpkm.domain.BlogFactory;
-import openpkm.domain.Domain;
 import openpkm.domain.FaviconProvider;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.ShortDescriptionProviderImpl;
@@ -66,7 +65,7 @@ public class BlogFactoryImpl implements BlogFactory
         LOG.info("Blog saved");      
     }   
 
-    public class BlogImpl implements Blog, Domain, StateSupport, BacklinksProvider, MultiViewDescription
+    public class BlogImpl implements Blog, StateSupport, BacklinksProvider, MultiViewDescription
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;

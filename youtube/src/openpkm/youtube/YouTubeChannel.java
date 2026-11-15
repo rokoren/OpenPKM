@@ -16,6 +16,8 @@ public interface YouTubeChannel
     String YOUTUBE_CHANNEL_URL = "https://www.youtube.com/channel/";    
     
     String PROP_CHANNEL_ID            = "channel.id";
+    String PROP_TITLE                 = "title";
+    String PROP_DESCRIPTION           = "description";
     String PROP_THUMBNAIL             = "thumbnail";
     String PROP_PUBLISHED_AT          = "published.at";
     String PROP_CUSTOM_URL            = "custom.url";    

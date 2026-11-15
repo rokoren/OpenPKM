@@ -102,7 +102,6 @@ import org.openide.windows.TopComponent;
 import openpkm.github.GitHubUser;
 import openpkm.utils.LogicalViewProviderImpl;
 import openpkm.utils.TopComponentProvider;
-import openpkm.domain.Domain;
 import openpkm.domain.WebPage;
 import openpkm.domain.WebPageFactory;
 import openpkm.domain.WebPageProvider;
@@ -114,7 +113,7 @@ import openpkm.utils.SourceEventImpl;
  *
  * @author Rok Koren
  */
-public class GitHubProject implements Project, Domain, GitHubUser, SourceProviders, BatchUpdateSupport
+public class GitHubProject implements Project, GitHubUser, SourceProviders, BatchUpdateSupport
 {
     private static final String DATA_FOLDER = "data";    
     

@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.TreeSet;
@@ -26,6 +27,8 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.Domain;
+import openpkm.base.DomainsGraphProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.Topic;
@@ -46,6 +49,7 @@ import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.Lookups;
 import openpkm.base.TopicsGraphProvider;
+import openpkm.core.raindrop.DomainRaindropWizardPanel1;
 
 /**
  *
@@ -66,10 +70,16 @@ public class GraphNodeFactory implements NodeFactory
         
         List<AbstractNode> list = new ArrayList();
 
-        TopicsGraphProvider knowledgeProvider = project.getLookup().lookup(TopicsGraphProvider.class);
-        if(knowledgeProvider != null)
+        DomainsGraphProvider domainsProvider = project.getLookup().lookup(DomainsGraphProvider.class);
+        if(domainsProvider != null)
         {
-            list.add(new TopicsNode(project, knowledgeProvider));
+            list.add(new DomainsNode(project, domainsProvider));
+        }          
+        
+        TopicsGraphProvider topicsProvider = project.getLookup().lookup(TopicsGraphProvider.class);
+        if(topicsProvider != null)
+        {
+            list.add(new TopicsNode(project, topicsProvider));
         }   
 
         GoalsGraphProvider goalsProvider = project.getLookup().lookup(GoalsGraphProvider.class);
@@ -87,7 +97,267 @@ public class GraphNodeFactory implements NodeFactory
         }                     
         return NodeFactorySupport.fixedNodeList(nodes); 
     }   
+
+    static final class DomainsNode extends AbstractNode implements ChangeListener 
+    {        
+        private final DomainsGraphProvider domainsProvider;
+
+        DomainsNode(Project project, DomainsGraphProvider domainsProvider)
+        {
+            super(new DomainsChildren(project, domainsProvider), Lookups.fixed(project));
+            this.domainsProvider = domainsProvider;
+            setName("domains"); // NOI18N
+            
+            if(domainsProvider instanceof ChangeSupportProvider provider)
+            {
+                provider.addChangeListener(this);                    
+            }             
+        } 
         
+        private String getDomainsName(Collection<Domain> domains)
+        {
+            if(!domains.isEmpty())
+            {
+                StringJoiner joiner = new StringJoiner(", ");
+                Iterator<Domain> iterator = domains.iterator();
+                while(iterator.hasNext())
+                {
+                    joiner.add(iterator.next().getName());
+                } 
+
+                LOG.info("Domains: " + joiner.toString());
+
+                return joiner.toString();                
+            }
+            return null;
+        }        
+
+        @Override
+        public Action[] getActions(boolean context) 
+        {
+            return new Action[]
+            {
+                new AddNode(domainsProvider),
+                new AddNodeRaindrop(domainsProvider),
+                new ClearSelectedNodes(domainsProvider)
+            };
+        }
+        
+        @Override
+        public String getDisplayName() 
+        {
+            String domainsName = getDomainsName(domainsProvider.getSelectedDomains());
+            if(domainsName != null)
+            {
+                return "Domains [" + domainsName + "]";      
+            }
+            return "Domains";
+        }         
+
+        private Image getIcon(boolean opened) 
+        {
+            return ImageUtilities.loadImage(ICON);
+        }
+
+        @Override
+        public Image getIcon(int type) 
+        {
+            return getIcon(false);
+        }
+
+        @Override
+        public Image getOpenedIcon(int type) 
+        {
+            return getIcon(true);
+        }
+
+        @Override
+        public void stateChanged(ChangeEvent e) 
+        {
+            fireIconChange();
+        }
+
+        static final class DomainsChildren extends Children.Keys<Domain> implements ChangeListener 
+        {
+            private final Project project;
+            private final DomainsGraphProvider domainsProvider;
+
+            public DomainsChildren(Project project, DomainsGraphProvider domainsProvider)
+            {
+                this.project = project;
+                this.domainsProvider = domainsProvider;
+                
+                if(domainsProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.addChangeListener(this);                    
+                }                 
+            }  
+                        
+            protected @Override void addNotify() 
+            {
+                updateKeys();                             
+            }
+
+            private void updateKeys() 
+            {
+                EventQueue.invokeLater(new Runnable() 
+                {
+                    public void run()
+                    {                                                
+                        SortedSet<Domain> domains = new TreeSet<Domain>(Domain.nameComparator());
+                        domains.addAll(domainsProvider.getRootDomains());           
+                        setKeys(domains);                   
+                    }
+                });
+            }        
+
+            @Override
+            protected void removeNotify() 
+            {
+                if(domainsProvider instanceof ChangeSupportProvider provider)
+                {
+                    provider.removeChangeListener(this);                    
+                }                  
+                                             
+                setKeys(Collections.<Domain>emptySet());
+            }
+
+            @Override
+            protected Node[] createNodes(Domain domain) 
+            {
+                return new Node[] {new DomainNode(project, domainsProvider, domain)};
+            }
+
+            @Override
+            public void stateChanged(ChangeEvent ev) 
+            {
+                updateKeys();
+            }            
+        }  
+        
+        private static final class AddNode extends AbstractAction
+        {
+            private final DomainsGraphProvider provider;            
+            
+            public AddNode(DomainsGraphProvider provider) 
+            {
+                super("Add Root Domain");
+                this.provider = provider;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent evt) 
+            {
+                List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+                panels.add(new DomainWizardPanel1());
+                String[] steps = new String[panels.size()];
+                for (int i = 0; i < panels.size(); i++) 
+                {
+                    Component c = panels.get(i).getComponent();
+                    // Default step name to component name of panel.
+                    steps[i] = c.getName();
+                    if (c instanceof JComponent) { // assume Swing components
+                        JComponent jc = (JComponent) c;
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                        jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+                    }
+                }
+                WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+                // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+                wiz.setTitleFormat(new MessageFormat("{0}"));
+                wiz.setTitle("Add Root Domain");        
+                if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+                {
+                    String name = (String) wiz.getProperty("name");
+                    String desc = (String) wiz.getProperty("desc");
+                    Properties props = new Properties();
+                    props.setProperty("desc", desc);
+                    provider.addRootDomain(name, props);
+                }
+            }
+        }  
+        
+        private static final class AddNodeRaindrop extends AbstractAction
+        {
+            private final DomainsGraphProvider provider; 
+            
+            private List<RaindropChildrenCollection> collections;             
+            
+            public AddNodeRaindrop(DomainsGraphProvider provider) 
+            {
+                super("Add Root Domain from Raindrop");
+                this.provider = provider;
+                RaindropCollectionProvider raindrop = provider.getProvider().getLookup().lookup(RaindropCollectionProvider.class);
+                if(raindrop != null)
+                {
+                    try
+                    {
+                        collections = raindrop.getRaindropAccount().getChildrenCollections(raindrop.getRaindropCollection().getCollectionID());
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                      
+                }
+                setEnabled(collections != null && !collections.isEmpty());
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent evt) 
+            {
+                List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+                panels.add(new DomainRaindropWizardPanel1(collections));
+                String[] steps = new String[panels.size()];
+                for (int i = 0; i < panels.size(); i++) 
+                {
+                    Component c = panels.get(i).getComponent();
+                    // Default step name to component name of panel.
+                    steps[i] = c.getName();
+                    if (c instanceof JComponent) { // assume Swing components
+                        JComponent jc = (JComponent) c;
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                        jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                        jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+                    }
+                }
+                WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+                // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+                wiz.setTitleFormat(new MessageFormat("{0}"));
+                wiz.setTitle("Add Root Domain from Raindrop");        
+                if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+                {
+                    String desc = (String) wiz.getProperty("desc");
+                    RaindropCollection collection = (RaindropCollection) wiz.getProperty("collection");                    
+                    Properties props = new Properties();
+                    props.setProperty("desc", desc);
+                    provider.addRootDomain(collection.getCollectionID() + "", collection.getTitle(), props);
+                }
+            }
+        }          
+
+        private static final class ClearSelectedNodes extends AbstractAction
+        {
+            private final DomainsGraphProvider provider;            
+            
+            public ClearSelectedNodes(DomainsGraphProvider provider) 
+            {
+                super("Clear Selected Domains");
+                this.provider = provider;
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent evt) 
+            {
+                provider.clearSelectedDomains();
+            }
+        } 
+    }     
+    
     static final class TopicsNode extends AbstractNode implements ChangeListener 
     {        
         private final TopicsGraphProvider topicProvider;

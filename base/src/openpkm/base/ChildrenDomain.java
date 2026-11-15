@@ -11,5 +11,7 @@ package openpkm.base;
 public interface ChildrenDomain extends Domain
 {
     String getParentID();
-    void setParentID(String parentID);       
+    void setParentID(String parentID);  
+    VisibilityProvider.Modifier getModifier();
+    void setModifier(VisibilityProvider.Modifier modifier);
 }
