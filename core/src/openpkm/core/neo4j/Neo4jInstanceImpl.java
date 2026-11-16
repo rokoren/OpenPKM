@@ -378,11 +378,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             StringWriter writer = new StringWriter();
             props.store(writer, "Created by OpenPKM");
             String channelID = session.executeWrite(tx -> createDomainChannel(tx, domainID, name, writer.toString(), type));
-            ChildrenDomain domain = new ChildrenDomainImpl(domainID);
-            domain.setParentID(parentID);
-            domain.setName(name);
-            domain.setTag(tag);
-            return domain;
+            return AbstractDomainChannel.getDomainChannel(domainID, channelID, name, props, type);
         }
         catch(Exception e)
         {
@@ -396,7 +392,33 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             }
         }        
         return null;        
-    }    
+    }   
+    
+   @Override
+    public DomainChannel addDomainChannel(String domainID, String channelID, String name, Properties props, DomainChannel.Type type)
+    {
+        Session session = null;
+        try
+        {
+            session = driver.session(SessionConfig.builder().withDatabase(getNeo4jDatabase()).build());  
+            StringWriter writer = new StringWriter();
+            props.store(writer, "Created by OpenPKM");
+            session.executeWriteWithoutResult(tx -> createDomainChannel(tx, domainID, channelID, name, writer.toString(), type));            
+            return AbstractDomainChannel.getDomainChannel(domainID, channelID, name, props, type);
+        }
+        catch(Exception e)
+        {
+            LOG.warning(e.getMessage());
+        }
+        finally
+        {
+            if(session != null)
+            {
+                session.close();
+            }
+        }        
+        return null;        
+    }      
 
     @Override
     public List<Topic> getRootTopics(String projectID) 
