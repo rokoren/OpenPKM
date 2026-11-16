@@ -56,6 +56,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.ChildrenDomain;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenThought;
 import openpkm.base.ChildrenTopic;
@@ -151,6 +152,9 @@ import openpkm.raindrop.RaindropService;
 import openpkm.raindrop.RaindropTag;
 import openpkm.raindrop.RaindropUtils;
 import openpkm.base.DataProvider;
+import openpkm.base.Domain;
+import openpkm.base.DomainsGraphProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.DrawboardPdf;
 import openpkm.base.DrawboardPdfFactory;
 import openpkm.base.LiteratureNote;
@@ -196,6 +200,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     
     private final Map<String, SourceProvider> sources = new HashMap();  
     private final List<UpdateCookie> cookies = new ArrayList();  
+    private final List<Domain> selectedDomains = new ArrayList(); 
     private final List<Topic> selectedTopics = new ArrayList(); 
     private final List<Goal> selectedGoals = new ArrayList();     
     private final List<Thought> selectedThoughts = new ArrayList();  
@@ -398,7 +403,8 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 */
                  
                 list.add(new ProjectManagementProviderImpl()); 
-                list.add(new HtmlFilesProviderImpl());                                 
+                list.add(new HtmlFilesProviderImpl());  
+                list.add(new DomainsGraphProviderImpl());
                 list.add(new TopicsGraphProviderImpl());
                 list.add(new GoalsGraphProviderImpl());   
                 list.add(new ThoughtsGraphProviderImpl());  
@@ -3669,7 +3675,297 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }         
     }      
 
-// TODO KnowledgeGraphProvider     
+// TODO DomainsGraphProvider     
+    
+    private final class DomainsGraphProviderImpl implements DomainsGraphProvider, ChangeSupportProvider
+    {
+        private List<Domain> rootDomains; 
+        
+        private final Map<String, Domain> domains = new HashMap<>();
+        private final Map<String, List<ChildrenDomain>> childrenDomains = new HashMap<>();        
+        private final ChangeSupport changeSupport = new ChangeSupport(this);  
+        
+        private List<Domain> getDomains(List<? extends Domain> parentDomains)
+        {
+            List<Domain> domains = new ArrayList<>();
+            for(Domain domain : parentDomains)
+            {
+                List<ChildrenDomain> childrenDomains = getChildrenDomains(domain.getDomainID());
+                domains.addAll(childrenDomains);
+                domains.addAll(getDomains(childrenDomains));
+            }  
+            return domains;
+        }
+        
+        @Override
+        public List<Domain> getDomains()
+        {
+            return Collections.unmodifiableList(getDomains(getRootDomains()));
+        }        
+        
+        @Override
+        public List<Domain> getRootDomains()
+        {
+            if(rootDomains == null)
+            {
+                rootDomains = getNeo4jInstance().getRootDomains(getProjectDirectory().getName());
+                for(Domain domain : rootDomains)
+                {
+                    domains.put(domain.getDomainID(), domain);
+                }
+            }
+            return rootDomains;
+        }
+        
+        @Override
+        public List<ChildrenDomain> getChildrenDomains(String parentID)
+        {
+            List<ChildrenDomain> list = childrenDomains.get(parentID);
+            if(list == null)
+            {
+                list = getNeo4jInstance().getChildrenDomains(parentID);
+                childrenDomains.put(parentID, list);
+                for(ChildrenDomain domain : list)
+                {
+                    domains.put(domain.getDomainID(), domain);
+                }
+            }  
+            return list;
+        }          
+        
+        @Override
+        public void addRootDomain(String name, String tag) 
+        {
+            Domain domain = getNeo4jInstance().addRootDomain(getProjectDirectory().getName(), name, tag);
+            if(domain != null)
+            {
+                getRootDomains().add(domain);
+                domains.put(domain.getDomainID(), domain);
+                changeSupport.fireChange();                 
+            }             
+        }
+        
+        @Override
+        public void addRootDomain(String domainID, String name, String tag) 
+        {
+            Domain domain = getNeo4jInstance().addRootDomain(getProjectDirectory().getName(), domainID, name, tag);
+            if(domain != null)
+            {
+                getRootDomains().add(domain);
+                domains.put(domain.getDomainID(), domain);
+                changeSupport.fireChange();                 
+            }             
+        }        
+
+        @Override
+        public void removeRootDomain(Domain domain) 
+        {
+            getRootDomains().remove(domain); 
+            domains.remove(domain.getDomainID());
+            changeSupport.fireChange();
+        }  
+        
+        @Override
+        public void addChildrenDomain(String parentID, String name, String tag, VisibilityProvider.Modifier modifier) 
+        {
+            ChildrenDomain domain = getNeo4jInstance().addChildrenDomain(parentID, name, tag, modifier);
+            if(domain != null)
+            {
+                getChildrenDomains(domain.getParentID()).add(domain);
+                domains.put(domain.getDomainID(), domain);
+                changeSupport.fireChange();                 
+            }
+        }
+        
+        @Override
+        public void addChildrenDomain(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier) 
+        {
+            ChildrenDomain domain = getNeo4jInstance().addChildrenDomain(parentID, topicID, name, tag, modifier);
+            if(domain != null)
+            {
+                getChildrenDomains(domain.getParentID()).add(domain);
+                domains.put(domain.getDomainID(), domain);
+                changeSupport.fireChange();                 
+            }
+        }        
+
+        @Override
+        public void removeChildrenDomain(ChildrenDomain domain) 
+        {
+            getChildrenDomains(domain.getParentID()).remove(domain);
+            domains.remove(domain.getDomainID());
+            changeSupport.fireChange(); 
+        } 
+        
+        @Override
+        public List<String> getTags(Domain domain)
+        {
+            List<ChildrenDomain> domains = getChildrenDomains(domain.getDomainID());
+            if(domains.isEmpty())
+            {
+                List<String> tags = new ArrayList<>(1);
+                tags.add(domain.getTag());
+                return Collections.unmodifiableList(tags);
+            }
+            List<String> tags = new ArrayList<>();
+            tags.add(domain.getTag());
+            for(ChildrenDomain childrenDomain : domains)
+            {
+                tags.addAll(getTags(childrenDomain));                
+            }
+            return Collections.unmodifiableList(tags);
+        }
+
+        @Override
+        public Lookup.Provider getProvider() 
+        {
+            return RaindropProject.this;
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }
+
+        @Override
+        public Collection<Domain> getSelectedDomains() 
+        {
+            if(selectedDomains == null)
+            {
+                return Collections.EMPTY_LIST;
+            }
+            return Collections.unmodifiableCollection(selectedDomains);
+        }
+        
+        @Override
+        public void clearSelectedDomains()
+        {
+            selectedDomains.clear();
+            changeSupport.fireChange();
+        }
+
+        @Override
+        public boolean isTag(TagsProvider provider) 
+        {
+            if(selectedDomains.isEmpty())
+            {
+                return true;
+            }
+            else
+            {
+                Set<String> tags = getTags(getSelectedDomains());
+                for(String tag : provider.getTags())
+                {
+                    if(tags.contains(tag))
+                    {
+                        return true;
+                    }
+                }                
+            }
+            return false;
+        } 
+        
+        @Override
+        public boolean isDomain(DomainsProvider provider)
+        {
+            Set<String> domains = provider.getDomains();
+            if(selectedDomains.isEmpty() || domains.isEmpty())
+            {
+                return true;
+            }
+            else
+            {
+                Iterator<Domain> iterator1 = getSelectedDomains().iterator();
+                while(iterator1.hasNext())
+                {
+                    String treeID = getTreeID(iterator1.next());
+                    Iterator<String> iterator2 = domains.iterator();
+                    while(iterator2.hasNext())
+                    {
+                        if(iterator2.next().startsWith(treeID))
+                        {
+                            return true;
+                        }                        
+                    }
+                }                
+            }
+            return false;            
+        }
+        
+        @Override
+        public String getTreeID(Domain domain)
+        {
+            if(domain instanceof ChildrenDomain)
+            {
+                ChildrenDomain childrenDomain = (ChildrenDomain)domain;
+                Domain parentDomain = domains.get(childrenDomain.getParentID());
+                if(parentDomain != null)
+                {
+                    StringBuilder sb = new StringBuilder();                        
+                    sb.append(getTreeID(parentDomain));
+                    sb.append(domain.getDomainID());
+                    return sb.toString();
+                }  
+            }
+            return domain.getDomainID();
+        }
+        
+        private Set<String> getRootDomains(Collection<Domain> domains)
+        {
+            Set<String> rootDomains = new HashSet<>();
+            for(Domain domain : domains)
+            {
+                Domain rootDomain = getRootDomain(domain);
+                if(rootDomain != null)
+                {
+                    rootDomains.add(rootDomain.getDomainID());                    
+                }
+            }
+            return Collections.unmodifiableSet(rootDomains);            
+        }
+        
+        private Domain getRootDomain(Domain domain)
+        {
+            if(domain instanceof ChildrenDomain)
+            {
+                ChildrenDomain childrenDomain = (ChildrenDomain)domain;
+                Domain parentDomain = domains.get(childrenDomain.getParentID());
+                if(parentDomain != null)
+                {
+                    return getRootDomain(parentDomain);
+                }   
+                return null;
+            }
+            return domain;
+        }
+        
+        @Override
+        public Set<String> getTags(Collection<Domain> domains)
+        {
+            Set<String> tags = new HashSet<>();
+            for(Domain domain : domains)
+            {
+                tags.addAll(getTags(domain));
+            }
+            return Collections.unmodifiableSet(tags);
+        }
+
+        @Override
+        public void selectDomain(Domain domain) 
+        {
+            selectedDomains.add(domain);          
+            changeSupport.fireChange();  
+        }
+    }     
+    
+// TODO TopicsGraphProvider     
     
     private final class TopicsGraphProviderImpl implements TopicsGraphProvider, ChangeSupportProvider
     {

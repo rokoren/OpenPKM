@@ -79,8 +79,8 @@ public class DomainWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiza
     {
         // use wiz.putProperty to remember current panel state
         String name = getComponent().getDomainName();
-        String desc = getComponent().getDomainDescription();
+        String tag = getComponent().getDomainTag();
         wiz.putProperty("name", name); 
-        wiz.putProperty("desc", desc); 
+        wiz.putProperty("tag", tag); 
     }    
 }

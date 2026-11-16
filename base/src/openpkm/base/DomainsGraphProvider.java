@@ -6,6 +6,7 @@ package openpkm.base;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -24,7 +25,9 @@ public interface DomainsGraphProvider extends GraphProvider
     void addRootDomain(String name, String tag);
     void addRootDomain(String domainID, String name, String tag);    
     void removeRootDomain(Domain domain);
-    void addChildrenDomain(String parentID, String name, String tag);
-    void addChildrenDomain(String parentID, String domainID, String name, String tag);
-    void removeChildrenDomain(ChildrenDomain domain);          
+    void addChildrenDomain(String parentID, String name, String tag, VisibilityProvider.Modifier modifier);
+    void addChildrenDomain(String parentID, String domainID, String name, String tag, VisibilityProvider.Modifier modifier);
+    void removeChildrenDomain(ChildrenDomain domain);   
+    List<String> getTags(Domain domain);
+    Set<String> getTags(Collection<Domain> domains);      
 }

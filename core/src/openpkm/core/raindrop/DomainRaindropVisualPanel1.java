@@ -44,9 +44,9 @@ public class DomainRaindropVisualPanel1 extends javax.swing.JPanel
         return "General";
     }  
     
-    public String getDomainDescription()
+    public String getDomainTag()
     {
-        return jTextArea1.getText().trim();
+        return jTextField1.getText().trim();
     }       
     
     public RaindropCollection getRaindropCollection()
@@ -123,8 +123,7 @@ public class DomainRaindropVisualPanel1 extends javax.swing.JPanel
         jComboBox1 = new javax.swing.JComboBox<>();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel2 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        jTextField1 = new javax.swing.JTextField();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -137,7 +136,7 @@ public class DomainRaindropVisualPanel1 extends javax.swing.JPanel
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel1, gridBagConstraints);
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        jComboBox1.setModel(model);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
@@ -159,25 +158,20 @@ public class DomainRaindropVisualPanel1 extends javax.swing.JPanel
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel2, gridBagConstraints);
 
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane1.setViewportView(jTextArea1);
-
+        jTextField1.setColumns(18);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        add(jScrollPane1, gridBagConstraints);
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jTextField1, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.Box.Filler filler1;
-    private javax.swing.JComboBox<String> jComboBox1;
+    private javax.swing.JComboBox<RaindropChildrenCollection> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea jTextArea1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }

@@ -28,9 +28,9 @@ public class DomainVisualPanel1 extends javax.swing.JPanel {
         return jTextField1.getText().trim();
     }
     
-    public String getDomainDescription()
+    public String getDomainTag()
     {
-        return jTextArea1.getText().trim();
+        return jTextField2.getText().trim();
     }    
 
     /**
@@ -47,8 +47,7 @@ public class DomainVisualPanel1 extends javax.swing.JPanel {
         jTextField1 = new javax.swing.JTextField();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
         jLabel2 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        jTextField2 = new javax.swing.JTextField();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -82,17 +81,11 @@ public class DomainVisualPanel1 extends javax.swing.JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
         add(jLabel2, gridBagConstraints);
-
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane1.setViewportView(jTextArea1);
-
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        add(jScrollPane1, gridBagConstraints);
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        add(jTextField2, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
@@ -100,8 +93,7 @@ public class DomainVisualPanel1 extends javax.swing.JPanel {
     private javax.swing.Box.Filler filler1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
 }

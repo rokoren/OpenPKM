@@ -16,7 +16,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.TreeSet;
@@ -272,10 +271,8 @@ public class GraphNodeFactory implements NodeFactory
                 if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
                 {
                     String name = (String) wiz.getProperty("name");
-                    String desc = (String) wiz.getProperty("desc");
-                    Properties props = new Properties();
-                    props.setProperty("desc", desc);
-                    provider.addRootDomain(name, props);
+                    String tag = (String) wiz.getProperty("tag");
+                    provider.addRootDomain(name, tag);
                 }
             }
         }  
@@ -331,11 +328,9 @@ public class GraphNodeFactory implements NodeFactory
                 wiz.setTitle("Add Root Domain from Raindrop");        
                 if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
                 {
-                    String desc = (String) wiz.getProperty("desc");
+                    String tag = (String) wiz.getProperty("tag");
                     RaindropCollection collection = (RaindropCollection) wiz.getProperty("collection");                    
-                    Properties props = new Properties();
-                    props.setProperty("desc", desc);
-                    provider.addRootDomain(collection.getCollectionID() + "", collection.getTitle(), props);
+                    provider.addRootDomain(collection.getCollectionID() + "", collection.getTitle(), tag);
                 }
             }
         }          

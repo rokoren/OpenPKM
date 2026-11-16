@@ -88,8 +88,8 @@ public class DomainRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
     public void storeSettings(WizardDescriptor wiz) 
     {
         // use wiz.putProperty to remember current panel state
-        String desc = getComponent().getDomainDescription();
-        wiz.putProperty("desc", desc); 
+        String tag = getComponent().getDomainTag();
+        wiz.putProperty("tag", tag); 
         wiz.putProperty("collection", getComponent().getRaindropCollection()); 
     }     
 }
