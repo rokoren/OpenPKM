@@ -5,29 +5,41 @@
 package openpkm.core.rss;
 
 import com.rometools.rome.feed.synd.SyndFeed;
-import com.rometools.rome.io.SyndFeedInput;
-import com.rometools.rome.io.XmlReader;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.URL;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.Domain;
+import openpkm.base.DomainsGraphProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.rss.RssChannel;
+import openpkm.rss.RssChannelFactory;
 import openpkm.rss.RssChannelProvider;
 import openpkm.utils.FileUtils;
+import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.WizardDescriptor;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
+import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -84,81 +96,44 @@ public class RssChannelAction implements ActionListener
         { 
             LocalDateTime now = LocalDateTime.now();
             
-            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
-            String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);      
-            Set<String> tags = (Set<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
-            Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
-            Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);
+            String feedUrl = (String) wiz.getProperty(RssChannelFactory.PROP_FEED_URL);
+            SyndFeed feed = (SyndFeed) wiz.getProperty("feed");
+            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);  
+            Set<Domain> domains = (Set<Domain>) wiz.getProperty(DomainsProvider.PROP_DOMAINS);
+            String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
 
-            Properties props = new Properties();
-            props.setProperty(Content.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
-            props.setProperty(ContentFactory.PROP_TYPE, ContentFactory.Type.ARTICLE.getName());
-            props.setProperty(Content.PROP_APP_ID, Utils.getAppID());          
-            VisibilityProvider.Modifier visibiltyModifier = (VisibilityProvider.Modifier)wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);
-            if(visibiltyModifier != null)
+            Properties props = provider.getFactory().getProperties(feedUrl, feed, fileName);
+            props.setProperty(RssChannel.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(RssChannel.PROP_APP_ID, Utils.getAppID());                                         
+
+            if(domains != null)
             {
-                props.setProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier.toString());                  
-            }          
-            props.setProperty(TitleProvider.PROP_TITLE, title);
-
-            String publisher = (String)wiz.getProperty(Article.PROP_PUBLISHER);
-            String language = (String)wiz.getProperty(Article.PROP_LANGUAGE);     
-
-            props.setProperty(Article.PROP_PUBLISHER, publisher);
-            props.setProperty(Article.PROP_LANGUAGE, language);       
-
-            if(tags != null)
-            {
-                StringJoiner joiner = new StringJoiner(",");
-                for(String tag : tags)
-                {
-                    joiner.add(tag);
-                }
-                props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());
-            }  
-            
-            if(topics != null)
-            {
-                TopicsGraphProvider knowledgeGraphProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
-                if(knowledgeGraphProvider != null)
+                DomainsGraphProvider domainsProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+                if(domainsProvider != null)
                 {
                     StringJoiner joiner = new StringJoiner(",");
-                    for(Topic topic : topics)
+                    for(Domain domain : domains)
                     {
-                        joiner.add(knowledgeGraphProvider.getTreeID(topic));
+                        joiner.add(domainsProvider.getTreeID(domain));
                     }
-                    props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
+                    props.setProperty(DomainsProvider.PROP_DOMAINS, joiner.toString());                    
                 }
-            }   
-            
-            if(goals != null)
-            {
-                GoalsGraphProvider goalsGraphProvider = provider.getProvider().getLookup().lookup(GoalsGraphProvider.class);
-                if(goalsGraphProvider != null)
-                {
-                    StringJoiner joiner = new StringJoiner(",");
-                    for(Goal goal : goals)
-                    {
-                        joiner.add(goalsGraphProvider.getTreeID(goal));
-                    }
-                    props.setProperty(GoalsProvider.PROP_GOALS, joiner.toString());                    
-                }
-            }             
+            }                         
 
             FileObject root = provider.getRootFolder();
             if(root != null)
             {
-                Content content = provider.getFactory().getContent(props);
+                RssChannel channel = provider.getFactory().getChannel(props);
                 try
                 {
-                    FileObject file = provider.createData(content, fileType); 
-                    OutputStream os = root.createAndOpen(content.getSourceID() + "." + PropertiesProvider.EXTENSION);  
-                    provider.getFactory().save(content, os, "New Article Content created by Wizard");
+                    FileObject file = provider.createData(channel, fileType); 
+                    OutputStream os = root.createAndOpen(channel.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    provider.getFactory().save(channel, os, "New RSS Channel created by Wizard");
                     os.close();  
 
-                    StatusDisplayer.getDefault().setStatusText("Article content saved with title: " + title);   
+                    StatusDisplayer.getDefault().setStatusText("RSS Channel saved with title: " + feed.getTitle());   
                     
-                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open article in editor?", title, NotifyDescriptor.YES_NO_OPTION);
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open RSS Channel in editor?", feed.getTitle(), NotifyDescriptor.YES_NO_OPTION);
                     if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
                     {
                         try
@@ -180,44 +155,5 @@ public class RssChannelAction implements ActionListener
             }             
                                                                   
         }        
-    }      
-    
-    @Override
-    public void actionPerformed(ActionEvent evt) 
-    {
-        NotifyDescriptor descriptor = new NotifyDescriptor.InputLine("URL:", "Add RSS Channel");
-        Object retVal = DialogDisplayer.getDefault().notify(descriptor);
-        if (retVal == NotifyDescriptor.OK_OPTION) 
-        {
-            String feedUrl = ((NotifyDescriptor.InputLine)descriptor).getInputText();
-
-            try
-            {
-                SyndFeedInput input = new SyndFeedInput();
-                SyndFeed feed = input.build(new XmlReader(new URL(feedUrl)));  
-                String fileName = FileUtils.getFileName(provider.getRootFolder(), PropertiesProvider.EXTENSION);
-                RssChannel channel = provider.getFactory().getChannel(feedUrl, fileName, feed);
-                if(channel != null)
-                {                      
-                    OutputStream os = provider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);  
-                    provider.getFactory().save(channel, os, "New RSS Channel Created by Dialog");
-                    os.close();  
-
-                    StatusDisplayer.getDefault().setStatusText("RSS Channel saved with title: " + channel.getTitle());    
-                }
-            }
-            catch (MalformedURLException e)
-            {
-                LOG.warning(e.getMessage());
-            }
-            catch (IOException e)
-            {
-                LOG.warning(e.getMessage());
-            }    
-            catch (FeedException e)
-            {
-                LOG.warning(e.getMessage());
-            }              
-        }  
-    }    
+    }          
 }

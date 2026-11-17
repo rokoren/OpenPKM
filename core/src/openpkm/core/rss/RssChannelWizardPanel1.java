@@ -12,8 +12,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import javax.swing.event.ChangeListener;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
-import openpkm.base.TagsProvider;
+import openpkm.rss.RssChannelFactory;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
@@ -103,29 +104,21 @@ public class RssChannelWizardPanel1 implements WizardDescriptor.ValidatingPanel<
     }  
 
     @Override
-    public void readSettings(WizardDescriptor wiz) 
+    public void readSettings(WizardDescriptor descriptor) 
     {
-        Lookup.Provider lookupProvider = (Lookup.Provider)wiz.getProperty("provider");
-        if(lookupProvider != null)
-        {
-            TagsProvider tagsProvider = lookupProvider.getLookup().lookup(TagsProvider.class);
-            if(tagsProvider != null)
-            {
-                getComponent().setTags(tagsProvider.getTags());                                 
-            }            
-        }
-        
-        String title = (String) wiz.getProperty(TitleProvider.PROP_TITLE);
-        if(title != null)
-        {
-            getComponent().setNoteTitle(title);
-        }
+        Lookup.Provider provider = (Lookup.Provider)descriptor.getProperty("provider");
+        if(provider != null)
+        { 
+            getComponent().setDomains(provider);
+        }  
     }
 
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {
         descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getChannelFileType()); 
+        descriptor.putProperty(RssChannelFactory.PROP_FEED_URL, getComponent().getFeedURL()); 
         descriptor.putProperty("feed", feed); 
+        descriptor.putProperty(DomainsProvider.PROP_DOMAINS, getComponent().getDomains());   
     }      
 }

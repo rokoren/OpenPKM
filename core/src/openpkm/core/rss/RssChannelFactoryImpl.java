@@ -12,19 +12,20 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
-import java.util.logging.Logger;
 import openpkm.base.Channel;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
+import openpkm.base.DomainsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.rss.RssChannel;
 import openpkm.utils.DateTimeUtils;
 import org.openide.util.Lookup;
-import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
 import openpkm.rss.RssChannelFactory;
@@ -35,39 +36,21 @@ import openpkm.rss.RssChannelFactory;
  */
 @ServiceProvider(service=RssChannelFactory.class)
 public class RssChannelFactoryImpl implements RssChannelFactory
-{
-    public static final String PROP_FEED_URL        = "feed.url"; 
-    public static final String PROP_FILE_NAME       = "file.name"; 
-    public static final String PROP_TITLE           = "title"; 
-    public static final String PROP_DESCRIPTION     = "description";    
-    public static final String PROP_LINK            = "link"; 
-    public static final String PROP_IMAGE           = "image";     
-    public static final String PROP_ICON            = "icon";
-    public static final String PROP_URI             = "uri";
-    public static final String PROP_AUTHOR          = "author";
-    public static final String PROP_COPYRIGHT       = "copyright";
-    public static final String PROP_PUBLISHED_DATE  = "published.date"; 
-    public static final String PROP_GENERATOR       = "generator";     
-    public static final String PROP_LANGUAGE        = "language";
-    public static final String PROP_MANAGING_EDITOR = "managing.editor";    
-    public static final String PROP_CATEGORY        = "category";   
-    
-    private static final RequestProcessor RP = new RequestProcessor(RssChannelFactory.class);   
-    private static final Logger LOG = Logger.getLogger(RssChannelFactory.class.getName());  
-    
+{         
     @Override
     public RssChannel getChannel(Properties props) 
     {
         return new RssChannelImpl(props);
     }
-
+    
     @Override
-    public RssChannel getChannel(String feedUrl, String fileName, SyndFeed feed) 
-    {
+    public Properties getProperties(String feedUrl, SyndFeed feed, String fileName) 
+    {        
         Properties props = new Properties();
+                     
         LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
         props.setProperty(PROP_FEED_URL, feedUrl);
-        props.setProperty(PROP_FILE_NAME, fileName);        
+        props.setProperty(PROP_FILE_NAME, fileName);              
         props.setProperty(PROP_PUBLISHED_DATE, publishedDate.format(DateTimeFormatter.ISO_DATE_TIME));
         props.setProperty(PROP_TITLE, feed.getTitle());
         props.setProperty(PROP_DESCRIPTION, feed.getDescription());
@@ -123,8 +106,8 @@ public class RssChannelFactoryImpl implements RssChannelFactory
             props.setProperty(PROP_CATEGORY, joiner.toString());                    
         }
 
-        return getChannel(props);
-    } 
+        return props;
+    }     
     
     @Override
     public void save(RssChannel channel, OutputStream os, String comments) throws IOException
@@ -133,7 +116,7 @@ public class RssChannelFactoryImpl implements RssChannelFactory
         LOG.info("RSS Channel saved");      
     }     
     
-    private static final class RssChannelImpl implements RssChannel, Channel, DisplayNameProvider, IconProvider
+    private static final class RssChannelImpl implements RssChannel, Channel, DisplayNameProvider, IconProvider, DomainsProvider
     {                 
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;
@@ -342,5 +325,18 @@ public class RssChannelFactoryImpl implements RssChannelFactory
             IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
             return provider.getImage(IconsProvider.ICON.RSS_CHANNEL);            
         }
-    }      
+        
+// TODO DomainsProvider         
+        
+        @Override
+        public Set<String> getDomains()
+        {
+            String domains = props.getProperty(PROP_DOMAINS);
+            if(domains != null)
+            {
+                return Set.of(domains.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }          
+    }         
 }

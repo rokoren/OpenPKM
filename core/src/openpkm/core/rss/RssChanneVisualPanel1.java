@@ -24,7 +24,7 @@ import org.openide.util.Lookup;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
 public class RssChanneVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
 {
