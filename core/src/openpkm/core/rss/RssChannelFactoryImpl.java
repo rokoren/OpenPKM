@@ -2,11 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.core.domain;
+package openpkm.core.rss;
 
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndFeed;
 import java.awt.Image;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
@@ -14,27 +15,26 @@ import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+import openpkm.base.Channel;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.rss.RssChannel;
-import openpkm.rss.RssFactory;
 import openpkm.utils.DateTimeUtils;
-import org.openide.nodes.Children;
-import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ServiceProvider;
+import openpkm.rss.RssChannelFactory;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
-@ServiceProvider(service=RssFactory.class)
-public class RssFactoryImpl implements RssFactory
+@ServiceProvider(service=RssChannelFactory.class)
+public class RssChannelFactoryImpl implements RssChannelFactory
 {
     public static final String PROP_FEED_URL        = "feed.url"; 
     public static final String PROP_FILE_NAME       = "file.name"; 
@@ -52,17 +52,17 @@ public class RssFactoryImpl implements RssFactory
     public static final String PROP_MANAGING_EDITOR = "managing.editor";    
     public static final String PROP_CATEGORY        = "category";   
     
-    private static final RequestProcessor RP = new RequestProcessor(RssFactory.class);   
-    private static final Logger LOG = Logger.getLogger(RssFactory.class.getName());  
+    private static final RequestProcessor RP = new RequestProcessor(RssChannelFactory.class);   
+    private static final Logger LOG = Logger.getLogger(RssChannelFactory.class.getName());  
     
     @Override
-    public RssChannel getRssChannel(Properties props) 
+    public RssChannel getChannel(Properties props) 
     {
         return new RssChannelImpl(props);
     }
 
     @Override
-    public RssChannel getRssChannel(String feedUrl, String fileName, SyndFeed feed) 
+    public RssChannel getChannel(String feedUrl, String fileName, SyndFeed feed) 
     {
         Properties props = new Properties();
         LocalDateTime publishedDate = DateTimeUtils.convertToLocalDateTime(feed.getPublishedDate());
@@ -123,7 +123,7 @@ public class RssFactoryImpl implements RssFactory
             props.setProperty(PROP_CATEGORY, joiner.toString());                    
         }
 
-        return getRssChannel(props);
+        return getChannel(props);
     } 
     
     @Override
@@ -133,18 +133,26 @@ public class RssFactoryImpl implements RssFactory
         LOG.info("RSS Channel saved");      
     }     
     
-    private static final class RssChannelImpl implements RssChannel, DisplayNameProvider, IconProvider
+    private static final class RssChannelImpl implements RssChannel, Channel, DisplayNameProvider, IconProvider
     {                 
         private final Properties props; 
+        private final PropertyChangeSupport propertyChangeSupport;
         
         private Lookup lkp;  
         private State state;
         
         public RssChannelImpl(Properties props)
         {
-            this.props = props;            
-        }  
-
+            this.props = props; 
+            propertyChangeSupport = new PropertyChangeSupport(this);  
+        } 
+        
+        @Override
+        public String getSourceID()
+        {            
+            return getFileName();
+        }         
+        
 // TODO RssChannel        
          
         @Override
@@ -274,6 +282,12 @@ public class RssFactoryImpl implements RssFactory
         } 
         
         @Override
+        public String getAppID()
+        {
+            return props.getProperty(PROP_APP_ID);
+        }         
+        
+        @Override
         public boolean isModified() 
         {
             return state == State.MODIFIED;
@@ -289,15 +303,26 @@ public class RssFactoryImpl implements RssFactory
         public boolean isDeleted() 
         {
             return state == State.DELETED;
-        }       
-
-// TODO NodeProvider         
-
+        } 
+        
         @Override
-        public String getName() 
+        public void notifyDeleted()
         {
-            return getUri();
-        }
+            State oldValue = state;
+            state = State.DELETED;
+            propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
+        } 
+        
+        @Override
+        public LocalDateTime getTimeCreated() 
+        {
+            String created = props.getProperty(PROP_TIME_CREATED);
+            if(created != null)
+            {
+                return LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME);
+            }
+            return null;
+        }         
         
         @Override
         public Lookup getLookup() 
@@ -308,18 +333,6 @@ public class RssFactoryImpl implements RssFactory
             }
             return lkp;
         }                           
-
-        @Override
-        public Children getChildren() 
-        {
-            return Children.LEAF;
-        }
-        
-        @Override
-        public HelpCtx getHelp()
-        {
-            return HelpCtx.DEFAULT_HELP;
-        }  
 
 // TODO IconProvider    
     

@@ -56,6 +56,7 @@ import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
 import openpkm.base.ChangeSupportProvider;
+import openpkm.base.Channel;
 import openpkm.base.ChildrenDomain;
 import openpkm.base.ChildrenGoal;
 import openpkm.base.ChildrenThought;
@@ -164,8 +165,14 @@ import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsGraphProvider;
 import openpkm.core.drawboard.pdf.AbstractDrawboardPdf;
+import openpkm.rss.RssChannel;
+import openpkm.rss.RssChannelProvider;
 import openpkm.utils.DrawboardPdfProvider;
+import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeChannelFactory;
+import openpkm.youtube.YouTubeChannelProvider;
 import org.neo4j.driver.Session;
+import openpkm.rss.RssChannelFactory;
 
 /**
  *
@@ -192,7 +199,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
     private static final int POSITION_RECYCLE_BIN = 800;     
-    private static final int POSITION_DOMAINS     = 900;       
+    private static final int POSITION_CHANNELS    = 900;       
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
@@ -260,7 +267,21 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         {
             SourceProvider provider = new YouTubeVideoProviderImpl(youTubeVideoFactory);
             sources.put(provider.getName(), provider);                       
-        }                
+        }  
+        
+        YouTubeChannelFactory youTubeChannelFactory = Lookup.getDefault().lookup(YouTubeChannelFactory.class);
+        if(youTubeChannelFactory != null)
+        {
+            SourceProvider provider = new YouTubeChannelProviderImpl(youTubeChannelFactory);
+            sources.put(provider.getName(), provider);                       
+        }   
+        
+        RssChannelFactory rssFactory = Lookup.getDefault().lookup(RssChannelFactory.class);
+        if(rssFactory != null)
+        {
+            RssChannelProvider provider = new RssChannelProviderImpl(rssFactory);
+            sources.put(provider.getName(), provider);             
+        }        
     } 
 
 // TODO PropertiesProvider
@@ -411,6 +432,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                                 
                 list.addAll(sources.values());
                 
+                list.add(new ChannelProviderImpl());
                 list.add(new NoteProviderImpl()); 
                 list.add(new BookProviderImpl()); 
                 list.add(new ArticleProviderImpl()); 
@@ -1350,6 +1372,132 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         } 
     }        
     
+    private final class ChannelProviderImpl implements DataGroupProvider, SourceEventListener
+    {                        
+        private final ChangeSupport changeSupport; 
+
+        public ChannelProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }        
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }   
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_CHANNEL;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_CHANNEL;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_CHANNEL;
+        }          
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_CHANNELS;
+        }                
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.displayNameComparator();
+        }  
+        
+        @Override
+        public boolean isReversed()
+        {
+            return false;
+        }        
+
+        @Override
+        public String getName() 
+        {
+            return "channel";
+        }
+
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {
+                        Channel channel = source.getLookup().lookup(Channel.class);
+                        if(channel != null)
+                        {
+                            return true;
+                        }  
+                    }            
+                }                                                               
+            }                                    
+            return false;
+        }           
+
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Channel)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Channel)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof Channel)
+            {
+                changeSupport.fireChange();
+            }
+        }
+    }      
+    
     private final class NoteProviderImpl implements DataGroupProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
@@ -2254,8 +2402,8 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }         
     }    
     
-// TODO SourceGroup    
-
+// TODO SourceGroup          
+    
     private final class ContentProviderImpl extends ContentProvider implements FileChangeListener, CloseSupport
     {  
         @StaticResource()
@@ -3673,7 +3821,398 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         public void fileAttributeChanged(FileAttributeEvent fae) {
             throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
         }         
-    }      
+    } 
+    
+    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener
+    {
+        public YouTubeChannelProviderImpl(YouTubeChannelFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }         
+        
+        @Override
+        public synchronized Map<String, YouTubeChannel> getChannelsById()
+        {
+            if(channels == null)
+            {
+                channels = new HashMap<>();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject fo : folder.getChildren()) 
+                    {
+                        if(fo.isFolder())
+                        {
+                            try
+                            {
+                                Project project = ProjectManager.getDefault().findProject(fo);  
+                                if(project != null)
+                                {
+                                    YouTubeChannel channel = project.getLookup().lookup(YouTubeChannel.class);
+                                    if(channel != null)
+                                    {
+                                        channels.put(channel.getChannelID(), channel);
+                                    }                                      
+                                }                                
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                YouTubeChannel channel = factory.getChannel(Utils.getProperties(fo)); 
+                                channels.put(channel.getSourceID(), channel);
+                            }
+                            catch(IOException e)
+                            {
+                                LOG.warning(e.getMessage());
+                            }                             
+                        }                                                                                                                                                                                                                                            
+                    }                     
+                }                
+            }
+            return channels;
+        }        
+
+        @Override
+        public synchronized FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("YouTube root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }          
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }                 
+        
+        @Override
+        public FileObject createData(YouTubeChannel channel, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, channel.getSourceID());  
+
+            if(fileTypeProvider instanceof ArticleProvider)
+            {
+                ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                OutputStream output = primaryFile.getOutputStream();
+                output.write(articleProvider.getArticle(channel.getTitle(), channel.getDescription()).getBytes());
+                output.close();
+            }
+            
+            return primaryFile;             
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            FileObject folder = evt.getFile();
+            if(!getChannelsById().containsKey(folder.getName()))
+            {
+                try
+                {
+                    Project project = ProjectManager.getDefault().findProject(folder);
+                    if(project != null)
+                    {
+                        YouTubeChannel channel = project.getLookup().lookup(YouTubeChannel.class);  
+                        if(channel != null)
+                        {
+                            getChannelsById().put(channel.getChannelID(), channel);
+                            sourceAdded(new SourceEventImpl(this, channel));    
+                        }                    
+                    }                
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                 
+            }  
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                YouTubeChannel channel = factory.getChannel(Utils.getProperties(file)); 
+                if(channel != null)
+                {
+                    getChannelsById().put(channel.getChannelID(), channel); 
+                    sourceAdded(new SourceEventImpl(this, channel));                      
+                }          
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }             
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            YouTubeChannel channel = getChannelsById().remove(file.getName());  
+            if(channel != null)
+            {
+                channel.notifyDeleted();
+                sourceDeleted(new SourceEventImpl(this, channel));  
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    }  
+    
+    private final class RssChannelProviderImpl extends RssChannelProvider implements FileChangeListener, CloseSupport
+    {
+        public RssChannelProviderImpl(RssChannelFactory factory) 
+        {
+            super(factory);
+        }          
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        } 
+
+        @Override
+        public void close()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(RssChannel channel : getChannels().getChannels())
+                {
+                    FileObject file = rootDir.getFileObject(channel.getFileName(), PropertiesProvider.EXTENSION);
+                    if(file != null)
+                    {
+                        try
+                        {
+                            if(channel.isModified())
+                            {
+                                OutputStream os = file.getOutputStream();
+                                factory.save(channel, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(channel.isDeleted())
+                            {
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
+                }                
+            }
+        } 
+
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);
+            return provider.getIcon(IconsProvider.ICON.RSS_CHANNEL);
+        }           
+        
+        @Override
+        public synchronized Channels getChannels()
+        {
+            if(channels == null)
+            {
+                channels = new Channels();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            RssChannel channel = factory.getChannel(Utils.getProperties(file)); 
+                            channels.addChannel(channel);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return channels;
+        }       
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("RSS Channel root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }         
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }              
+        
+        @Override
+        public FileObject createData(RssChannel channel, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, channel.getSourceID());  
+
+            if(channel instanceof Article)
+            {
+                Article article = (Article)channel;
+                if(fileTypeProvider instanceof ArticleProvider)
+                {
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }  
+            
+            return primaryFile;            
+        }          
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            setLastData(data);
+            */
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                RssChannel channel = factory.getChannel(Utils.getProperties(file)); 
+                getChannels().addChannel(channel);             
+                sourceAdded(new SourceEventImpl(this, channel));                
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            WebPage webPage = getLinksById().get(file.getName());  
+            if(webPage != null)
+            {                
+            }
+            */
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            RssChannel channel = getChannels().removeChannel(file.getName());
+            if(channel != null)
+            {
+                channel.notifyDeleted();
+                sourceDeleted(new SourceEventImpl(this, channel));
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) 
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }         
+    }     
 
 // TODO DomainsGraphProvider     
     

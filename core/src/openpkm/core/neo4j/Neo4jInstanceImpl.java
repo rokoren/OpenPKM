@@ -44,7 +44,6 @@ import org.neo4j.driver.Value;
 import org.openide.util.ChangeSupport;
 import org.openide.util.NbPreferences;
 import openpkm.base.DomainChannel;
-import openpkm.core.domain.AbstractDomainChannel;
 
 /**
  *
@@ -337,6 +336,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }  
     
+    /*    
     @Override
     public List<DomainChannel> getDomainChannels(String domainID) 
     {
@@ -418,7 +418,8 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             }
         }        
         return null;        
-    }      
+    } 
+    */
 
     @Override
     public List<Topic> getRootTopics(String projectID) 

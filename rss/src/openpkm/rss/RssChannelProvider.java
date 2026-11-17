@@ -8,47 +8,46 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import javax.swing.event.ChangeListener;
-import org.netbeans.api.project.SourceGroup;
+import openpkm.base.SourceProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.util.ChangeSupport;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
-public abstract class RssProvider implements SourceGroup
+public abstract class RssChannelProvider implements SourceProvider<RssChannel>
 {
-    protected static final String ROOT_FOLDER = "rss";       
-
+    protected static final String ROOT_FOLDER = "rss-channel"; 
+    
     protected FileObject rootDir; 
-    protected Channels channels;
+    protected Channels channels; 
 
-    protected final RssFactory factory;
-    protected final ChangeSupport changeSupport; 
+    protected final RssChannelFactory factory;    
 
-    public RssProvider(RssFactory factory) 
+    public RssChannelProvider(RssChannelFactory factory) 
     {
         this.factory = factory;
-        changeSupport = new ChangeSupport(this); 
     } 
     
-    public RssFactory getFactory()
+    @Override
+    public boolean isLiteratureNoteProvider()
+    {
+        return false;
+    }     
+    
+    @Override
+    public RssChannelFactory getFactory()
     {
         return factory;
     }
     
     public abstract Channels getChannels();
     
-    public void addChangeListener(ChangeListener listener) 
+    @Override
+    public RssChannel getSource(String sourceID) 
     {
-        changeSupport.addChangeListener(listener);
-    }
-
-    public void removeChangeListener(ChangeListener listener) 
-    {
-        changeSupport.removeChangeListener(listener);
-    }                                     
+        return getChannels().getChannelsByFile().get(sourceID);
+    }      
 
     @Override
     public String getName() 
@@ -59,7 +58,7 @@ public abstract class RssProvider implements SourceGroup
     @Override
     public String getDisplayName() 
     {
-        return "Feeds";
+        return "RSS";
     }
 
     @Override
@@ -67,7 +66,7 @@ public abstract class RssProvider implements SourceGroup
     {
         if(file.isData())
         {
-            return getChannels().hasChannel(file.getName());                
+            return getChannels().getChannelsByFile().containsKey(file.getName()); 
         }
         return false;            
     }   
@@ -80,7 +79,17 @@ public abstract class RssProvider implements SourceGroup
         public Collection<RssChannel> getChannels()
         {
             return Collections.unmodifiableCollection(channelsByUrl.values());
-        }   
+        } 
+        
+        public Map<String, RssChannel> getChannelsByUrl()
+        {
+            return channelsByUrl;
+        }
+        
+        public Map<String, RssChannel> getChannelsByFile()
+        {
+            return channelsByFile;
+        }         
         
         public void addChannel(RssChannel channel)
         {
@@ -96,11 +105,6 @@ public abstract class RssProvider implements SourceGroup
                 channelsByUrl.remove(channel.getFeedUrl());
             }
             return channel;
-        }
-        
-        public boolean hasChannel(String fileName)
-        {
-            return channelsByFile.containsKey(fileName);
         }
     }
 }

@@ -64,9 +64,11 @@ public interface Neo4jInstance
     ChildrenDomain addChildrenDomain(String parentID, String name, String tag, VisibilityProvider.Modifier modifier);
     ChildrenDomain addChildrenDomain(String parentID, String domainID, String name, String tag, VisibilityProvider.Modifier modifier);
     void removeChildrenDomain(ChildrenDomain domain);  
+    /*
     List<DomainChannel> getDomainChannels(String domainID);    
     DomainChannel addDomainChannel(String domainID, String name, Properties props, DomainChannel.Type type);
     DomainChannel addDomainChannel(String domainID, String channelID, String name, Properties props, DomainChannel.Type type);    
+    */
     
     List<Topic> getRootTopics(String projectID);
     List<ChildrenTopic> getChildrenTopics(String parentID);

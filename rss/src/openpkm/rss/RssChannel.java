@@ -5,15 +5,15 @@
 package openpkm.rss;
 
 import java.time.LocalDateTime;
-import openpkm.base.NodeProvider;
 import openpkm.base.PropertiesProvider;
+import openpkm.base.Source;
 import openpkm.base.StateSupport;
 
 /**
  *
  * @author Rok Koren
  */
-public interface RssChannel extends StateSupport, PropertiesProvider, NodeProvider
+public interface RssChannel extends Source, StateSupport, PropertiesProvider
 { 
     String getFeedUrl();
     String getFileName();

@@ -6,18 +6,20 @@ package openpkm.youtube;
 
 import com.google.api.client.util.DateTime;
 import java.util.List;
+import openpkm.base.DescriptionProvider;
+import openpkm.base.PropertiesProvider;
+import openpkm.base.Source;
+import openpkm.base.TitleProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public interface YouTubeChannel
+public interface YouTubeChannel extends Source, PropertiesProvider, TitleProvider, DescriptionProvider
 {  
     String YOUTUBE_CHANNEL_URL = "https://www.youtube.com/channel/";    
     
     String PROP_CHANNEL_ID            = "channel.id";
-    String PROP_TITLE                 = "title";
-    String PROP_DESCRIPTION           = "description";
     String PROP_THUMBNAIL             = "thumbnail";
     String PROP_PUBLISHED_AT          = "published.at";
     String PROP_CUSTOM_URL            = "custom.url";    
@@ -33,10 +35,6 @@ public interface YouTubeChannel
     String PROP_LAST_UPLOAD_TIME      = "last.upload.time";     
     
     String getChannelID();
-    String getTitle();
-    void setTitle(String title);
-    String getDescription();
-    void setDescription(String description);      
     String getThumbnail(); 
     void setThumbnail(String thumbnail);
     DateTime getPublishedAt();
