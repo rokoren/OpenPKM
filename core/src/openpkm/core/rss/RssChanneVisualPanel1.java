@@ -4,150 +4,30 @@
  */
 package openpkm.core.rss;
 
-import java.awt.EventQueue;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.StringJoiner;
-import java.util.TreeSet;
-import javax.swing.DefaultComboBoxModel;
-import openpkm.base.Domain;
-import openpkm.base.DomainsGraphProvider;
-import openpkm.base.FileTypeProvider;
-import openpkm.utils.DomainNode;
-import org.openide.explorer.ExplorerManager;
-import org.openide.nodes.AbstractNode;
-import org.openide.nodes.Children;
-import org.openide.nodes.Node;
-import org.openide.util.Lookup;
-
 /**
  *
  * @author Rok Koren
  */
-public class RssChanneVisualPanel1 extends javax.swing.JPanel implements ExplorerManager.Provider
-{
-    private final ExplorerManager explorerManager = new ExplorerManager(); 
-    private final DefaultComboBoxModel<FileTypeProvider> fileTypes = new DefaultComboBoxModel<>();   
-    
+public class RssChanneVisualPanel1 extends javax.swing.JPanel
+{    
     /**
      * Creates new form RssChanneVisualPanel1
      */
     public RssChanneVisualPanel1() 
     {
-        setFileTypes();
         initComponents();
     }
     
     @Override
     public String getName() 
     {
-        return "General";
+        return "Feed URL";
     }   
-    
-    @Override
-    public ExplorerManager getExplorerManager() 
-    {
-        return explorerManager;
-    }      
-    
-    private void setFileTypes()
-    {
-        fileTypes.removeAllElements();
-        fileTypes.addAll(FileTypeProvider.getAll());        
-    }  
-
-    public FileTypeProvider getChannelFileType()
-    {
-        return (FileTypeProvider)fileTypes.getSelectedItem();
-    }  
     
     public String getFeedURL()
     {
         return jTextField1.getText().trim();
-    }
-    
-    public void setDomains(Lookup.Provider provider)
-    {
-        assert provider != null;        
-        DomainsGraphProvider domainsProvider = provider.getLookup().lookup(DomainsGraphProvider.class);
-        if(domainsProvider != null)
-        {
-            DomainsChildren domains = new DomainsChildren(domainsProvider);
-            explorerManager.setRootContext(new AbstractNode(domains));
-        }        
-    } 
-    
-    public void setSelectedDomains(Set<Domain> domains)
-    {
-        StringJoiner joiner = new StringJoiner(", ");
-        for(Domain domain : domains)
-        {
-            joiner.add(domain.getName());
-        }
-        jLabel2.setText(joiner.toString());
-    }
-    
-    public Set<Domain> getDomains()
-    {
-        Node[] nodes = explorerManager.getSelectedNodes();
-        if(nodes.length > 0)
-        {
-            Set<Domain> domains = new HashSet<>();
-            for(Node node : nodes)
-            {
-                Domain domain = node.getLookup().lookup(Domain.class);
-                if(domain != null)
-                {
-                    domains.add(domain);
-                }
-            }
-            return domains;
-        }
-        return null;
-    }      
-    
-    static final class DomainsChildren extends Children.Keys<Domain> 
-    {
-        private final DomainsGraphProvider provider;
-
-        public DomainsChildren(DomainsGraphProvider provider)
-        {
-            this.provider = provider;
-        }  
-
-        @Override
-        protected void addNotify() 
-        {
-            updateKeys();                             
-        }
-
-        private void updateKeys() 
-        {
-            EventQueue.invokeLater(new Runnable() 
-            {
-                public void run()
-                {                                                
-                    SortedSet<Domain> domains = new TreeSet<Domain>(Domain.nameComparator());
-                    domains.addAll(provider.getRootDomains());           
-                    setKeys(domains);                   
-                }
-            });
-        }        
-
-        @Override
-        protected void removeNotify() 
-        {                            
-            setKeys(Collections.<Domain>emptySet());
-        }
-
-        @Override
-        protected Node[] createNodes(Domain domain) 
-        {
-            return new Node[] {new DomainNode(provider, domain)};
-        }           
-    }     
+    }    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -157,87 +37,31 @@ public class RssChanneVisualPanel1 extends javax.swing.JPanel implements Explore
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
-        jLabel1 = new javax.swing.JLabel();
-        jComboBox1 = new javax.swing.JComboBox<>();
-        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jLabel2 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
-        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jLabel3 = new javax.swing.JLabel();
-        choiceView1 = new org.openide.explorer.view.ChoiceView();
-
-        setLayout(new java.awt.GridBagLayout());
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(RssChanneVisualPanel1.class, "RssChanneVisualPanel1.jLabel1.text") + ":"); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel1, gridBagConstraints);
-
-        jComboBox1.setModel(fileTypes);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        add(jComboBox1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler1, gridBagConstraints);
-
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(RssChanneVisualPanel1.class, "RssChanneVisualPanel1.jLabel2.text") + ":"); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel2, gridBagConstraints);
 
         jTextField1.setColumns(20);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        add(jTextField1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler2, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(RssChanneVisualPanel1.class, "RssChanneVisualPanel1.jLabel3.text") + ":"); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel3, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        add(choiceView1, gridBagConstraints);
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 388, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private org.openide.explorer.view.ChoiceView choiceView1;
-    private javax.swing.Box.Filler filler1;
-    private javax.swing.Box.Filler filler2;
-    private javax.swing.JComboBox<FileTypeProvider> jComboBox1;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }

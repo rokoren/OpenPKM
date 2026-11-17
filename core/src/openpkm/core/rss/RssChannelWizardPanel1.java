@@ -12,13 +12,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import javax.swing.event.ChangeListener;
-import openpkm.base.DomainsProvider;
-import openpkm.base.FileTypeProvider;
 import openpkm.rss.RssChannelFactory;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
-import org.openide.util.Lookup;
 
 /**
  *
@@ -67,12 +64,8 @@ public class RssChannelWizardPanel1 implements WizardDescriptor.ValidatingPanel<
     
     @Override
     public void validate() throws WizardValidationException 
-    {
-        if (getComponent().getChannelFileType() == null) 
-        {
-            throw new WizardValidationException(null, "File Type can not be empty", null);
-        }        
-        if(getComponent().getFeedURL().equals("")) 
+    {     
+        if(getComponent().getFeedURL().isBlank()) 
         {
             throw new WizardValidationException(null, "Feed URL can not be empty", null);
         } 
@@ -105,20 +98,15 @@ public class RssChannelWizardPanel1 implements WizardDescriptor.ValidatingPanel<
 
     @Override
     public void readSettings(WizardDescriptor descriptor) 
-    {
-        Lookup.Provider provider = (Lookup.Provider)descriptor.getProperty("provider");
-        if(provider != null)
-        { 
-            getComponent().setDomains(provider);
-        }  
+    { 
     }
 
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {
-        descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getChannelFileType()); 
         descriptor.putProperty(RssChannelFactory.PROP_FEED_URL, getComponent().getFeedURL()); 
         descriptor.putProperty("feed", feed); 
-        descriptor.putProperty(DomainsProvider.PROP_DOMAINS, getComponent().getDomains());   
+        
+        descriptor.setTitle(feed.getTitle());
     }      
 }

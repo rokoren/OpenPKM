@@ -28,6 +28,8 @@ import openpkm.base.PropertiesProvider;
 import openpkm.rss.RssChannel;
 import openpkm.rss.RssChannelFactory;
 import openpkm.rss.RssChannelProvider;
+import openpkm.utils.DomainWizardPanel;
+import openpkm.utils.FileTypeWizardPanel;
 import openpkm.utils.FileUtils;
 import openpkm.utils.Utils;
 import org.openide.DialogDisplayer;
@@ -71,6 +73,8 @@ public class RssChannelAction implements ActionListener
     {
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new RssChannelWizardPanel1());
+        panels.add(new FileTypeWizardPanel());
+        panels.add(new DomainWizardPanel());           
         String[] steps = new String[panels.size()];
         for (int i = 0; i < panels.size(); i++) 
         {
@@ -106,7 +110,7 @@ public class RssChannelAction implements ActionListener
             props.setProperty(RssChannel.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
             props.setProperty(RssChannel.PROP_APP_ID, Utils.getAppID());                                         
 
-            if(domains != null)
+            if(!domains.isEmpty())
             {
                 DomainsGraphProvider domainsProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
                 if(domainsProvider != null)

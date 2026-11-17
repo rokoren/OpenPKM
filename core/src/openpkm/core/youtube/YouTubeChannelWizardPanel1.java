@@ -1,8 +1,8 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/wizardPanel.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.youtube;
+package openpkm.core.youtube;
 
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
@@ -18,21 +18,27 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.event.ChangeListener;
-import openpkm.base.FileTypeProvider;
+import openpkm.youtube.GooglePasswordProvider;
+import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeService;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
-public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
+/**
+ *
+ * @author Rok Koren
+ */
+public class YouTubeChannelWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
-    private static final Logger LOG = Logger.getLogger(YouTubeProjectWizardPanel1.class.getName());
+    private static final Logger LOG = Logger.getLogger(YouTubeChannelWizardPanel1.class.getName());
     
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
      */
-    private YouTubeProjectVisualPanel1 component;
+    private YouTubeChannelVisualPanel1 component;
     private ChannelListResponse response;
 
     // Get the visual component for the panel. In this template, the component
@@ -40,9 +46,9 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
     // but never displayed, or not all panels are displayed, it is better to
     // create only those which really need to be visible.
     @Override
-    public YouTubeProjectVisualPanel1 getComponent() {
+    public YouTubeChannelVisualPanel1 getComponent() {
         if (component == null) {
-            component = new YouTubeProjectVisualPanel1();
+            component = new YouTubeChannelVisualPanel1();
         }
         return component;
     }
@@ -76,10 +82,6 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         if(getComponent().getChannelID().isBlank()) 
         {
             throw new WizardValidationException(getComponent(), "Channel ID can not be empty", null);
-        }  
-        if (getComponent().getFileType() == null) 
-        {
-            throw new WizardValidationException(component, "File Type can not be empty", null);
         }           
         try
         {
@@ -151,9 +153,7 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
         descriptor.putProperty(YouTubeChannel.PROP_VIDEO_COUNT, videoCount);
         descriptor.putProperty(YouTubeChannel.PROP_COMMENT_COUNT, commentCount);
         descriptor.putProperty(YouTubeChannel.PROP_PRIVACY_STATUS, privacyStatus);
-        descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);                     
-        
-        descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getFileType());  
+        descriptor.putProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, topicCategories);                             
         
         try
         {                
@@ -179,11 +179,13 @@ public class YouTubeProjectWizardPanel1 implements WizardDescriptor.ValidatingPa
             int y = spaceHeight;
             g2d.drawImage(image, x, y, null);            
 
-            descriptor.putProperty("WizardPanel_image", newImage);                                            
+            descriptor.putProperty("WizardPanel_image", newImage);   
+            
+            descriptor.setTitle(title);
         }
         catch(IOException e)
         {
             LOG.warning(e.getMessage());
         }         
-    }
+    }    
 }

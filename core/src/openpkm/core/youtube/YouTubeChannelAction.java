@@ -1,0 +1,202 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package openpkm.core.youtube;
+
+import com.google.api.client.util.DateTime;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.math.BigInteger;
+import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.logging.Logger;
+import javax.swing.JComponent;
+import openpkm.base.Domain;
+import openpkm.base.DomainsGraphProvider;
+import openpkm.base.DomainsProvider;
+import openpkm.base.FileTypeProvider;
+import openpkm.base.PropertiesProvider;
+import openpkm.utils.DomainWizardPanel;
+import openpkm.utils.FileTypeWizardPanel;
+import openpkm.youtube.YouTubeChannel;
+import openpkm.youtube.YouTubeChannelProvider;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+import org.openide.WizardDescriptor;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionRegistration;
+import org.openide.awt.StatusDisplayer;
+import org.openide.cookies.OpenCookie;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.util.NbBundle.Messages;
+
+/**
+ *
+ * @author Rok Koren
+ */
+@ActionID(
+        category = "OpenPKM/Channel",
+        id = "openpkm.core.youtube.YouTubeChannelAction"
+)
+@ActionRegistration(
+        iconBase = "openpkm/core/resources/youtube_channel.png",
+        displayName = "#CTL_YouTubeChannelAction"
+)
+@Messages("CTL_YouTubeChannelAction=Add YouTube Channel")
+public class YouTubeChannelAction implements ActionListener
+{
+    private static final Logger LOG = Logger.getLogger(YouTubeChannelAction.class.getName());    
+    
+    private final YouTubeChannelProvider provider;
+
+    public YouTubeChannelAction(YouTubeChannelProvider provider) 
+    {
+        this.provider = provider;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent evt) 
+    {                     
+        List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
+        panels.add(new YouTubeChannelWizardPanel1());
+        panels.add(new FileTypeWizardPanel());
+        panels.add(new DomainWizardPanel());        
+        String[] steps = new String[panels.size()];
+        for (int i = 0; i < panels.size(); i++) 
+        {
+            Component c = panels.get(i).getComponent();
+            // Default step name to component name of panel.
+            steps[i] = c.getName();
+            if (c instanceof JComponent) { // assume Swing components
+                JComponent jc = (JComponent) c;
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+            }
+        }
+        WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator<WizardDescriptor>(panels));
+        // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()  
+        wiz.setTitleFormat(new MessageFormat("{0}"));
+        wiz.setTitle("Add YouTube Channel");  
+        //wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));                    
+        wiz.putProperty("provider", provider.getProvider());
+        if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
+        { 
+            LocalDateTime now = LocalDateTime.now();            
+            
+            FileTypeProvider fileType = (FileTypeProvider) wiz.getProperty(FileTypeProvider.PROP_FILE_TYPE);
+            
+            String channelID = (String) wiz.getProperty(YouTubeChannel.PROP_CHANNEL_ID);
+            String title = (String) wiz.getProperty(YouTubeChannel.PROP_TITLE);
+            String description = (String) wiz.getProperty(YouTubeChannel.PROP_DESCRIPTION);            
+            String thumbnail = (String) wiz.getProperty(YouTubeChannel.PROP_THUMBNAIL);
+            DateTime publishedAt = (DateTime) wiz.getProperty(YouTubeChannel.PROP_PUBLISHED_AT);
+            String customUrl = (String) wiz.getProperty(YouTubeChannel.PROP_CUSTOM_URL);
+            String country = (String) wiz.getProperty(YouTubeChannel.PROP_COUNTRY);
+            String localizedTitle = (String) wiz.getProperty(YouTubeChannel.PROP_LOCALIZED_TITLE);
+            String localizedDescription = (String) wiz.getProperty(YouTubeChannel.PROP_LOCALIZED_DESCRIPTION);
+            BigInteger viewCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_VIEW_COUNT);
+            BigInteger subscriberCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_SUBSCRIBER_COUNT);
+            BigInteger videoCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_VIDEO_COUNT);
+            BigInteger commentCount = (BigInteger) wiz.getProperty(YouTubeChannel.PROP_COMMENT_COUNT);    
+            String privacyStatus = (String) wiz.getProperty(YouTubeChannel.PROP_PRIVACY_STATUS);
+            List<String> topicCategories = (List<String>) wiz.getProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES); 
+            
+            Set<Domain> domains = (Set<Domain>) wiz.getProperty(DomainsProvider.PROP_DOMAINS);
+            
+            Properties props = new Properties();
+            props.setProperty(YouTubeChannel.PROP_TIME_CREATED, now.format(DateTimeFormatter.ISO_DATE_TIME));
+            props.setProperty(YouTubeChannel.PROP_CHANNEL_ID, channelID); 
+            props.setProperty(YouTubeChannel.PROP_TITLE, title);       
+            props.setProperty(YouTubeChannel.PROP_DESCRIPTION, description);
+            props.setProperty(YouTubeChannel.PROP_THUMBNAIL, thumbnail);
+            props.setProperty(YouTubeChannel.PROP_PUBLISHED_AT, publishedAt.toStringRfc3339());
+            props.setProperty(YouTubeChannel.PROP_CUSTOM_URL, customUrl);
+            if(country != null)
+            {
+                props.setProperty(YouTubeChannel.PROP_COUNTRY, country);                
+            }
+            props.setProperty(YouTubeChannel.PROP_LOCALIZED_TITLE, localizedTitle);
+            props.setProperty(YouTubeChannel.PROP_LOCALIZED_DESCRIPTION, localizedDescription);
+            props.setProperty(YouTubeChannel.PROP_VIEW_COUNT, viewCount.toString());
+            props.setProperty(YouTubeChannel.PROP_SUBSCRIBER_COUNT, subscriberCount.toString());
+            props.setProperty(YouTubeChannel.PROP_VIDEO_COUNT, videoCount.toString());
+            if(commentCount != null)
+            {
+                props.setProperty(YouTubeChannel.PROP_COMMENT_COUNT, commentCount.toString());
+            }
+            props.setProperty(YouTubeChannel.PROP_PRIVACY_STATUS, privacyStatus);
+            if(topicCategories != null)
+            {
+                StringJoiner joiner = new StringJoiner(",");
+                for(String topicCategory : topicCategories)
+                {
+                    joiner.add(topicCategory);
+                }            
+                props.setProperty(YouTubeChannel.PROP_TOPIC_CATEGORIES, joiner.toString());                
+            }
+            
+            if(!domains.isEmpty())
+            {
+                DomainsGraphProvider domainsProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+                if(domainsProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Domain domain : domains)
+                    {
+                        joiner.add(domainsProvider.getTreeID(domain));
+                    }
+                    props.setProperty(DomainsProvider.PROP_DOMAINS, joiner.toString());                    
+                }
+            }  
+            
+            FileObject root = provider.getRootFolder();
+            if(root != null)
+            {  
+                YouTubeChannel channel = provider.getFactory().getChannel(props);
+                try
+                {
+                    FileObject file = provider.createData(channel, fileType); 
+                    OutputStream os = root.createAndOpen(channel.getSourceID() + "." + PropertiesProvider.EXTENSION);  
+                    provider.getFactory().save(channel, os, "New YouTube Channel created by Wizard");
+                    os.close();  
+
+                    StatusDisplayer.getDefault().setStatusText("YouTube Channel saved with title: " + channel.getTitle());   
+                    
+                    NotifyDescriptor d = new NotifyDescriptor.Confirmation("Do you want to open YouTube Channel in editor?", channel.getTitle(), NotifyDescriptor.YES_NO_OPTION);
+                    if(DialogDisplayer.getDefault().notify(d) == NotifyDescriptor.YES_OPTION)
+                    {
+                        try
+                        {
+                            DataObject data = DataObject.find(file);
+                            OpenCookie open = data.getCookie(OpenCookie.class);
+                            open.open();                            
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }                                                                 
+                }                    
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                  
+            }                                                                                     
+        } 
+    }      
+}
