@@ -1183,9 +1183,9 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     private static void addDomainToParent(TransactionContext tx, String parentID, String domainID, VisibilityProvider.Modifier modifier) 
     {
         tx.run("""
-            MATCH (d:Domain {id: domainID})
+            MATCH (d:Domain {id: $domainID})
             MATCH (p:Domain {id: $parentID})
-            MERGE (t)-[:SUBCLASS {accessibility: $accessibility}]->(p)
+            MERGE (d)-[:SUBCLASS {accessibility: $accessibility}]->(p)
             """, Map.of("domainID", domainID, "parentID", parentID, "accessibility", modifier.toString())
         );
     }  

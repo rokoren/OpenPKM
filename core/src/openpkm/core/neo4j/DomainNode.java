@@ -25,6 +25,7 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Domain;
 import openpkm.base.DomainsGraphProvider;
+import openpkm.base.VisibilityProvider;
 import openpkm.core.raindrop.DomainRaindropWizardPanel1;
 import openpkm.raindrop.RaindropChildrenCollection;
 import openpkm.raindrop.RaindropCollection;
@@ -215,6 +216,7 @@ public class DomainNode extends AbstractNode
         {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
             panels.add(new DomainWizardPanel1());
+            panels.add(new AccessibilityWizardPanel2());             
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();
@@ -236,7 +238,9 @@ public class DomainNode extends AbstractNode
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {
                 String name = (String) wiz.getProperty("name");
-                //provider.addChildrenDomain(domain.getDomainID(), name, tag, visibilityModifier);
+                String tag = (String) wiz.getProperty("tag");
+                VisibilityProvider.Modifier visibilityModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);                
+                provider.addChildrenDomain(domain.getDomainID(), name, tag, visibilityModifier);
             }
         }
     } 
@@ -281,6 +285,7 @@ public class DomainNode extends AbstractNode
         {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
             panels.add(new DomainRaindropWizardPanel1(collections));
+            panels.add(new AccessibilityWizardPanel2());
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();
@@ -302,7 +307,9 @@ public class DomainNode extends AbstractNode
             if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
             {
                 RaindropCollection collection = (RaindropCollection) wiz.getProperty("collection");
-                //provider.addChildrenTopic(domain.getDomainID(), collection.getCollectionID() + "", collection.getTitle(), tag, visibilityModifier);
+                String tag = (String) wiz.getProperty("tag");
+                VisibilityProvider.Modifier visibilityModifier = (VisibilityProvider.Modifier) wiz.getProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER);                   
+                provider.addChildrenDomain(domain.getDomainID(), collection.getCollectionID() + "", collection.getTitle(), tag, visibilityModifier);
             }
         }
     }     

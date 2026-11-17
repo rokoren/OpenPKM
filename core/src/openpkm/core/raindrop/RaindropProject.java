@@ -4317,9 +4317,9 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }
         
         @Override
-        public void addChildrenDomain(String parentID, String topicID, String name, String tag, VisibilityProvider.Modifier modifier) 
+        public void addChildrenDomain(String parentID, String domainID, String name, String tag, VisibilityProvider.Modifier modifier) 
         {
-            ChildrenDomain domain = getNeo4jInstance().addChildrenDomain(parentID, topicID, name, tag, modifier);
+            ChildrenDomain domain = getNeo4jInstance().addChildrenDomain(parentID, domainID, name, tag, modifier);
             if(domain != null)
             {
                 getChildrenDomains(domain.getParentID()).add(domain);
