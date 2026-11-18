@@ -9,13 +9,14 @@ import java.util.List;
 import openpkm.base.DescriptionProvider;
 import openpkm.base.PropertiesProvider;
 import openpkm.base.Source;
+import openpkm.base.StateSupport;
 import openpkm.base.TitleProvider;
 
 /**
  *
  * @author Rok Koren
  */
-public interface YouTubeChannel extends Source, PropertiesProvider, TitleProvider, DescriptionProvider
+public interface YouTubeChannel extends Source, PropertiesProvider, TitleProvider, DescriptionProvider, StateSupport
 {  
     String YOUTUBE_CHANNEL_URL = "https://www.youtube.com/channel/";    
     

@@ -142,7 +142,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
         LOG.info("YouTube Channel saved");
     }
     
-    private static final class YouTubeChannelImpl implements YouTubeChannel, Channel, StateSupport, MultiViewDescription
+    private static final class YouTubeChannelImpl implements YouTubeChannel, Channel, MultiViewDescription
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;        

@@ -55,6 +55,7 @@ import openpkm.base.ArticleProvider;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
+import openpkm.base.BulletIconProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Channel;
 import openpkm.base.ChildrenDomain;
@@ -160,10 +161,12 @@ import openpkm.base.DrawboardPdf;
 import openpkm.base.DrawboardPdfFactory;
 import openpkm.base.LiteratureNote;
 import openpkm.base.LiteratureNoteProvider;
+import openpkm.base.ReadLaterProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
 import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsGraphProvider;
+import openpkm.base.WatchLaterProvider;
 import openpkm.core.drawboard.pdf.AbstractDrawboardPdf;
 import openpkm.rss.RssChannel;
 import openpkm.rss.RssChannelProvider;
@@ -198,8 +201,10 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     private static final int POSITION_LINKS       = 500;
     private static final int POSITION_PICTURES    = 600;    
     private static final int POSITION_VIDEOS      = 700;
-    private static final int POSITION_RECYCLE_BIN = 800;     
-    private static final int POSITION_CHANNELS    = 900;       
+    private static final int POSITION_READ_LATER  = 800;
+    private static final int POSITION_WATCH_LATER = 900;
+    private static final int POSITION_CHANNELS    = 1000;     
+    private static final int POSITION_RECYCLE_BIN = 1100;           
 
     private static final Logger LOG = Logger.getLogger(RaindropProject.class.getName());        
     
@@ -440,6 +445,8 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 list.add(new LinkProviderImpl());                
                 list.add(new PictureProviderImpl()); 
                 list.add(new VideoProviderImpl()); 
+                list.add(new ReadLaterProviderImpl()); 
+                list.add(new WatchLaterProviderImpl()); 
                 list.add(new RecycleBinProviderImpl());  
                 list.add(new DataProviderImpl()); 
             }                                   
@@ -1202,6 +1209,384 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
     
 // TODO DataGroup    
 
+    private final class ReadLaterProviderImpl implements ReadLaterProvider, BulletIconProvider, SourceEventListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public ReadLaterProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_READ_LATER;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_READ_LATER;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_READ_LATER;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_READ_LATER;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        } 
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    } 
+                    
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }                 
+                
+        @Override
+        public String getName() 
+        {
+            return "read_later";
+        }
+        
+        @Override
+        public Image getBullet()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = DataObject.find(file);
+                    if(contains(data))
+                    {
+                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
+                    }
+                }
+            }
+            catch(IOException e)                
+            {
+                LOG.warning(e.getMessage());
+            }
+            return null;
+        }         
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {                                               
+                        WorkflowProvider workflowProvider = source.getLookup().lookup(WorkflowProvider.class);
+                        if(workflowProvider != null)
+                        {                                                       
+                            return workflowProvider.getWorkflow() == WorkflowProvider.Workflow.READ_LATER;
+                        }                                                 
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        }                     
+
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        } 
+    }      
+    
+    private final class WatchLaterProviderImpl implements WatchLaterProvider, BulletIconProvider, SourceEventListener
+    {        
+        private final ChangeSupport changeSupport; 
+
+        public WatchLaterProviderImpl()
+        {
+            changeSupport = new ChangeSupport(this); 
+            listeners.add(SourceEventListener.class, this);
+        }              
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        }  
+        
+        @Override
+        public DisplayNameProvider getDisplayNameProvider() 
+        {
+            return DISPLAY_NAME_PROVIDER_WATCH_LATER;
+        } 
+        
+        @Override
+        public IconProvider getIconProvider()
+        {
+            return ICON_PROVIDER_WATCH_LATER;
+        }
+        
+        @Override
+        public ActionsProvider getActionsProvider() 
+        {
+            return ACTIONS_PROVIDER_WATCH_LATER;
+        }         
+        
+        @Override
+        public Integer getPosition() 
+        {
+            return POSITION_WATCH_LATER;
+        }                  
+
+        @Override
+        public void addChangeListener(ChangeListener listener) 
+        {
+            changeSupport.addChangeListener(listener);
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener listener) 
+        {
+            changeSupport.removeChangeListener(listener);
+        }   
+
+        @Override
+        public List<FileObject> getFiles() throws IOException
+        {
+            return List.of(getDataDirectory().getChildren());
+        }
+        
+        @Override
+        public Comparator<DataObject> getComparator() 
+        {
+            return DataGroupProvider.timeCreatedComparator();
+        } 
+        
+        @Override
+        public boolean isReversed()
+        {
+            return true;
+        } 
+        
+        @Override
+        public boolean isNotEmpty()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = null;
+                    if(file.isData())
+                    {
+                        try
+                        {
+                            data = DataObject.find(file);                    
+                        }
+                        catch(DataObjectNotFoundException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }
+                    }
+                    else if(file.isFolder())
+                    {
+                        data = DataFolder.findFolder(file);
+                    } 
+                    
+                    if(contains(data))
+                    {
+                        return true;                        
+                    }
+                }              
+            } 
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }            
+            
+            return false;
+        }                 
+                
+        @Override
+        public String getName() 
+        {
+            return "watch_later";
+        }
+        
+        @Override
+        public Image getBullet()
+        {
+            try
+            {
+                for(FileObject file : getFiles())
+                {
+                    DataObject data = DataObject.find(file);
+                    if(contains(data))
+                    {
+                        IconsProvider provider = Lookup.getDefault().lookup(IconsProvider.class);            
+                        return provider.getImage(IconsProvider.ICON.BULLET_BLUE);
+                    }
+                }
+            }
+            catch(IOException e)                
+            {
+                LOG.warning(e.getMessage());
+            }
+            return null;
+        }         
+        
+        @Override
+        public boolean contains(DataObject data) 
+        {
+            if(data != null)
+            {
+                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                if(sourceProvider != null)
+                {
+                    Source source = sourceProvider.getSource();
+                    if(source != null)
+                    {  
+                        if(source instanceof StateSupport state)
+                        {
+                            if(state.isDeleted())
+                            {
+                                return false;
+                            }
+                        }
+                        if(source instanceof WorkflowProvider provider)
+                        {
+                            return provider.getWorkflow() == WorkflowProvider.Workflow.WATCH_LATER;
+                        }                                                                        
+                    }            
+                }                                                                                  
+            }                                    
+            return false;            
+        } 
+        
+        @Override
+        public void sourceDeleted(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceModified(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }
+
+        @Override
+        public void sourceAdded(SourceEvent evt) 
+        {
+            if(evt.getSource() instanceof WorkflowProvider)
+            {
+                changeSupport.fireChange();
+            }
+        }         
+    }     
+    
     private final class RecycleBinProviderImpl implements RecycleBinProvider, SourceEventListener
     {        
         private final ChangeSupport changeSupport; 
@@ -3823,7 +4208,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }         
     } 
     
-    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener
+    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener, CloseSupport
     {
         public YouTubeChannelProviderImpl(YouTubeChannelFactory factory) 
         {
@@ -3834,7 +4219,41 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         public Lookup.Provider getProvider()
         {
             return RaindropProject.this;
-        }         
+        } 
+
+        @Override
+        public void close()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(YouTubeChannel channel : getChannels())
+                {
+                    FileObject file = rootDir.getFileObject(channel.getChannelID(), PropertiesProvider.EXTENSION);
+                    if(file != null)
+                    {
+                        try
+                        {
+                            if(channel.isModified())
+                            {
+                                OutputStream os = file.getOutputStream();
+                                factory.save(channel, os, "Updated by Raindrop project: " + getTitle());
+                                os.close();
+                            }
+                            else if(channel.isDeleted())
+                            {
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
+                }                
+            }
+        }                 
         
         @Override
         public synchronized Map<String, YouTubeChannel> getChannelsById()
