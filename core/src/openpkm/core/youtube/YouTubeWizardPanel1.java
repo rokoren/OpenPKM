@@ -1,8 +1,8 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/wizardPanel.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package openpkm.youtube;
+package openpkm.core.youtube;
 
 import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
@@ -15,19 +15,25 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.event.ChangeListener;
-import openpkm.base.FileTypeProvider;
-import openpkm.base.TagsProvider;
-import openpkm.base.VisibilityProvider;
+import openpkm.youtube.GooglePasswordProvider;
+import openpkm.youtube.YouTubeService;
+import openpkm.youtube.YouTubeVideo;
 import org.openide.WizardDescriptor;
 import org.openide.WizardValidationException;
-import org.openide.util.Exceptions;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
+/**
+ *
+ * @author Rok Koren
+ */
 public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<WizardDescriptor>
 {
+    private static final Logger LOG = Logger.getLogger(YouTubeWizardPanel1.class.getName());       
+    
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
@@ -72,12 +78,8 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
         if(provider == null) 
         {
             throw new WizardValidationException(getComponent(), "Google Key not found.", null);
-        }          
-        if (getComponent().getVideoFileType() == null) 
-        {
-            throw new WizardValidationException(null, "File Type can not be empty", null);
-        }                 
-        if (getComponent().getVideoID().equals("")) 
+        }                         
+        if (getComponent().getVideoID().isBlank()) 
         {
             throw new WizardValidationException(null, "Video ID can not be empty", null);
         }
@@ -113,17 +115,7 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     
     @Override
     public void readSettings(WizardDescriptor descriptor) 
-    {        
-        Lookup.Provider lookupProvider = (Lookup.Provider)descriptor.getProperty("provider");
-        if(lookupProvider != null)
-        {
-            TagsProvider tagsProvider = lookupProvider.getLookup().lookup(TagsProvider.class);
-            if(tagsProvider != null)
-            {
-                getComponent().setTags(tagsProvider.getTags());                                 
-            }            
-        }
-        
+    {                
         String videoID = (String)descriptor.getProperty(YouTubeVideo.PROP_VIDEO_ID);
         if(videoID != null)
         {
@@ -134,10 +126,6 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
     @Override
     public void storeSettings(WizardDescriptor descriptor) 
     {
-        descriptor.putProperty(FileTypeProvider.PROP_FILE_TYPE, getComponent().getVideoFileType()); 
-        descriptor.putProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, getComponent().getVideoVisibilityModifier());      
-        descriptor.putProperty(TagsProvider.PROP_TAGS, getComponent().getVideoTags());
-
         if(response != null)
         {
             String videoID = response.getItems().get(0).getId();
@@ -229,12 +217,13 @@ public class YouTubeWizardPanel1 implements WizardDescriptor.ValidatingPanel<Wiz
                 int y = spaceHeight;
                 g2d.drawImage(image, x, y, null);            
 
-                descriptor.putProperty("WizardPanel_image", newImage);                   
+                descriptor.putProperty("WizardPanel_image", newImage);   
+                descriptor.setTitle(videoTitle);                
             }
             catch (IOException e)
             {
-                Exceptions.printStackTrace(e);
+                LOG.warning(e.getMessage());
             }               
         }
-    }
+    }    
 }

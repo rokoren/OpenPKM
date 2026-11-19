@@ -204,7 +204,7 @@ public class TopicNode extends AbstractNode
         {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
             panels.add(new TopicWizardPanel1());
-            panels.add(new AccessibilityWizardPanel2());
+            panels.add(new VisibilityWizardPanel());
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();

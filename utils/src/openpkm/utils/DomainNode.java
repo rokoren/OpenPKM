@@ -205,7 +205,7 @@ public class DomainNode extends AbstractNode
         {            
             List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
             panels.add(new DomainWizardPanel1());
-            panels.add(new AccessibilityWizardPanel2());            
+            panels.add(new VisibilityWizardPanel());            
             String[] steps = new String[panels.size()];
             for (int i = 0; i < panels.size(); i++) {
                 Component c = panels.get(i).getComponent();

@@ -72,7 +72,7 @@ public class DomainVisualPanel extends javax.swing.JPanel implements ExplorerMan
             }
             return domains;
         }
-        return null;
+        return Collections.EMPTY_SET;
     }      
     
     static final class DomainsChildren extends Children.Keys<Domain> 

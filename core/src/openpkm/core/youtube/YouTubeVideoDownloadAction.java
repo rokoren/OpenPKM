@@ -42,7 +42,6 @@ import openpkm.utils.Utils;
 import openpkm.youtube.YouTubeDownloadWizardPanel;
 import openpkm.youtube.YouTubeDownloadWizardPanel.DownloadType;
 import openpkm.youtube.YouTubeVideo;
-import openpkm.youtube.YouTubeWizardPanel1;
 import org.netbeans.api.progress.ProgressHandle;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;

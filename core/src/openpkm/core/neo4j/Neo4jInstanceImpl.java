@@ -4,9 +4,6 @@
  */
 package openpkm.core.neo4j;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -43,7 +39,6 @@ import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.Value;
 import org.openide.util.ChangeSupport;
 import org.openide.util.NbPreferences;
-import openpkm.base.DomainChannel;
 
 /**
  *
@@ -1146,7 +1141,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
     {
         var result = tx.run("""
             CREATE (d:Domain {id: randomuuid(), createdDate: datetime(), project: $project, name: $name, tag: $tag})
-            RETURN t.id AS ID
+            RETURN d.id AS ID
         """, Map.of("project", projectID, "name", name, "tag", tag));
         var d = result.single();
         var domainID = d.get("ID").asString();
@@ -1190,6 +1185,7 @@ public class Neo4jInstanceImpl implements Neo4jInstance
         );
     }  
     
+    /*    
     private static String createDomainChannel(TransactionContext tx, String domainID, String name, String props, DomainChannel.Type type) 
     {
         var result = tx.run("""
@@ -1218,7 +1214,8 @@ public class Neo4jInstanceImpl implements Neo4jInstance
             MERGE (t)-[:DOMAIN {type: $type}]->(p)
             """, Map.of("domainID", domainID, "channelID", channelID, "type", type.toString())
         );
-    }      
+    } 
+    */
     
     private static String createRootTopic(TransactionContext tx, String projectID, String name, String tag) 
     {

@@ -29,6 +29,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import openpkm.base.BacklinksProvider;
 import openpkm.base.DisplayNameProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.GoalsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
@@ -216,7 +217,7 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
         LOG.info("YouTube Video saved");
     }       
     
-    private static class YouTubeVideoImpl extends YouTubeVideoBase implements DisplayNameProvider, TopicsProvider, GoalsProvider, TagsProvider, BacklinksProvider
+    private static class YouTubeVideoImpl extends YouTubeVideoBase implements DisplayNameProvider, DomainsProvider, TopicsProvider, GoalsProvider, TagsProvider, BacklinksProvider
     {    
         public YouTubeVideoImpl(Properties props)
         {
@@ -242,7 +243,18 @@ public class YouTubeVideoFactoryImpl implements YouTubeVideoFactory
                 return Set.of(tags.split(","));                   
             }                
             return Collections.EMPTY_SET;
-        } 
+        }                 
+        
+        @Override
+        public Set<String> getDomains()
+        {
+            String domains = props.getProperty(PROP_DOMAINS);
+            if(domains != null)
+            {
+                return Set.of(domains.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }          
 
         @Override
         public Set<String> getTopics() 

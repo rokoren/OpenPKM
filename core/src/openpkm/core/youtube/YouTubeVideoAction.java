@@ -4,7 +4,6 @@
  */
 package openpkm.core.youtube;
 
-import openpkm.youtube.YouTubeWizardPanel1;
 import com.google.api.client.util.DateTime;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -21,6 +20,9 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import openpkm.base.Domain;
+import openpkm.base.DomainsGraphProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FileTypeProvider;
 import openpkm.base.Goal;
 import openpkm.base.GoalsGraphProvider;
@@ -48,6 +50,10 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.util.NbBundle.Messages;
 import openpkm.base.TopicsGraphProvider;
+import openpkm.utils.DomainWizardPanel;
+import openpkm.utils.FileTypeWizardPanel;
+import openpkm.utils.TagsWizardPanel;
+import openpkm.utils.VisibilityWizardPanel;
 
 @ActionID(
         category = "OpenPKM/Video",
@@ -74,6 +80,10 @@ public final class YouTubeVideoAction implements ActionListener
     {        
         List<WizardDescriptor.Panel<WizardDescriptor>> panels = new ArrayList<WizardDescriptor.Panel<WizardDescriptor>>();
         panels.add(new YouTubeWizardPanel1());
+        panels.add(new FileTypeWizardPanel());
+        panels.add(new VisibilityWizardPanel());
+        panels.add(new TagsWizardPanel());
+        panels.add(new DomainWizardPanel());          
         panels.add(new TopicWizardPanel());
         panels.add(new GoalWizardPanel());
         /*
@@ -125,6 +135,7 @@ public final class YouTubeVideoAction implements ActionListener
             List<String> youTubeTags = (List<String>) wiz.getProperty(YouTubeVideo.PROP_YOUTUBE_TAGS);   
             
             List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
+            Set<Domain> domains = (Set<Domain>) wiz.getProperty(DomainsProvider.PROP_DOMAINS);
             Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);
             Set<Goal> goals = (Set<Goal>) wiz.getProperty(GoalsProvider.PROP_GOALS);              
 
@@ -200,6 +211,20 @@ public final class YouTubeVideoAction implements ActionListener
                 }
                 props.setProperty(TagsProvider.PROP_TAGS, joiner.toString());
             }  
+            
+            if(!domains.isEmpty())
+            {
+                DomainsGraphProvider domainsProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+                if(domainsProvider != null)
+                {
+                    StringJoiner joiner = new StringJoiner(",");
+                    for(Domain domain : domains)
+                    {
+                        joiner.add(domainsProvider.getTreeID(domain));
+                    }
+                    props.setProperty(DomainsProvider.PROP_DOMAINS, joiner.toString());                    
+                }
+            }             
             
             if(topics != null)
             {

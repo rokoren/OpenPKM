@@ -1,30 +1,35 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/NetBeansModuleDevelopment-files/wizardPanel.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package openpkm.utils;
 
 import javax.swing.event.ChangeListener;
-import openpkm.base.VisibilityProvider;
+import openpkm.base.TagsProvider;
 import org.openide.WizardDescriptor;
 import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
 
-public class AccessibilityWizardPanel2 implements WizardDescriptor.Panel<WizardDescriptor> 
-{    
+/**
+ *
+ * @author Rok Koren
+ */
+public class TagsWizardPanel implements WizardDescriptor.Panel<WizardDescriptor>
+{
     /**
      * The visual component that displays this panel. If you need to access the
      * component from this class, just use getComponent().
      */
-    private AccessibilityVisualPanel2 component;
+    private TagsVisualPanel component;      
 
     // Get the visual component for the panel. In this template, the component
     // is kept separate. This can be more efficient: if the wizard is created
     // but never displayed, or not all panels are displayed, it is better to
     // create only those which really need to be visible.
     @Override
-    public AccessibilityVisualPanel2 getComponent() {
+    public TagsVisualPanel getComponent() {
         if (component == null) {
-            component = new AccessibilityVisualPanel2();
+            component = new TagsVisualPanel();
         }
         return component;
     }
@@ -45,7 +50,7 @@ public class AccessibilityWizardPanel2 implements WizardDescriptor.Panel<WizardD
         // this condition changes (last form field filled in...) then
         // use ChangeSupport to implement add/removeChangeListener below.
         // WizardDescriptor.ERROR/WARNING/INFORMATION_MESSAGE will also be useful.
-    }
+    }    
 
     @Override
     public void addChangeListener(ChangeListener l) {
@@ -53,18 +58,25 @@ public class AccessibilityWizardPanel2 implements WizardDescriptor.Panel<WizardD
 
     @Override
     public void removeChangeListener(ChangeListener l) {
+    }   
+    
+    @Override
+    public void readSettings(WizardDescriptor descriptor) 
+    {        
+        Lookup.Provider lookupProvider = (Lookup.Provider)descriptor.getProperty("provider");
+        if(lookupProvider != null)
+        {
+            TagsProvider tagsProvider = lookupProvider.getLookup().lookup(TagsProvider.class);
+            if(tagsProvider != null)
+            {
+                getComponent().setTags(tagsProvider.getTags());                                 
+            }            
+        }
     }
 
     @Override
-    public void readSettings(WizardDescriptor wiz) {
-        // use wiz.getProperty to retrieve previous panel state
-    }
-
-    @Override
-    public void storeSettings(WizardDescriptor wiz) 
-    {
-        // use wiz.putProperty to remember current panel state
-        VisibilityProvider.Modifier visibiltyModifier = getComponent().getVisibilityModifier();
-        wiz.putProperty(VisibilityProvider.PROP_VISIBILITY_MODIFIER, visibiltyModifier);         
-    }
+    public void storeSettings(WizardDescriptor descriptor) 
+    {  
+        descriptor.putProperty(TagsProvider.PROP_TAGS, getComponent().getSelectedTags());
+    }      
 }
