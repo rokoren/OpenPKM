@@ -36,6 +36,8 @@ import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
 import openpkm.base.DataProvider;
+import openpkm.base.DomainsGraphProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
@@ -177,6 +179,12 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                 {
                     provider.removeChangeListener(this);
                     
+                    DomainsGraphProvider domainProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+                    if(domainProvider instanceof ChangeSupportProvider csp)
+                    {
+                        csp.removeChangeListener(this);
+                    }                      
+                    
                     TopicsGraphProvider topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                     if(topicProvider instanceof ChangeSupportProvider csp)
                     {
@@ -200,6 +208,12 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                 for(DataProvider provider : coll)
                 {
                     provider.addChangeListener(this);
+                    
+                    DomainsGraphProvider domainProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+                    if(domainProvider instanceof ChangeSupportProvider csp)
+                    {
+                        csp.addChangeListener(this);
+                    }                      
                     
                     TopicsGraphProvider topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                     if(topicProvider instanceof ChangeSupportProvider csp)
@@ -268,6 +282,7 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                         if(provider.contains(data))
                         {                        
                             boolean isTag = true;
+                            boolean isDomain = true;
                             boolean isTopic = true;
                             boolean isGoal = true;
                             boolean isThought = true;
@@ -281,6 +296,24 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                                 }                            
                             }
 
+                            DomainsGraphProvider domainProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+                            if(domainProvider != null)
+                            {
+                                SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                                if(sourceProvider != null)
+                                {
+                                    Source source = sourceProvider.getSource();
+                                    if(source != null)
+                                    {
+                                        DomainsProvider domainsProvider = source.getLookup().lookup(DomainsProvider.class);
+                                        if(domainsProvider != null)
+                                        {
+                                            isDomain = domainProvider.isDomain(domainsProvider);
+                                        }                                                 
+                                    }            
+                                }                                                                                    
+                            }                            
+                            
                             TopicsGraphProvider topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
                             if(topicProvider != null)
                             {
@@ -327,7 +360,7 @@ public final class BookshelfTopComponent extends TopComponent implements Explore
                                 }                                                                                    
                             }                              
 
-                            if(isTag && isTopic && isGoal && isThought)                    
+                            if(isTag && isDomain && isTopic && isGoal && isThought)                    
                             {
                                 sorted.add(data);                  
                             }                        

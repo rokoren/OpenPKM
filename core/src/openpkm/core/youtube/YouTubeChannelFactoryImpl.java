@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringJoiner;
 import javax.imageio.ImageIO;
 import javax.swing.Action;
@@ -35,11 +36,11 @@ import javax.swing.event.ChangeListener;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Channel;
 import openpkm.base.CloseSupport;
+import openpkm.base.DomainsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.OpenSupport;
 import openpkm.base.PropertiesProvider;
-import openpkm.base.StateSupport;
 import openpkm.utils.DisplayNameProviderImpl;
 import openpkm.utils.ShortDescriptionProviderImpl;
 import openpkm.utils.Utils;
@@ -142,7 +143,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
         LOG.info("YouTube Channel saved");
     }
     
-    private static final class YouTubeChannelImpl implements YouTubeChannel, Channel, MultiViewDescription
+    private static final class YouTubeChannelImpl implements YouTubeChannel, Channel, DomainsProvider, MultiViewDescription
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;        
@@ -664,7 +665,20 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
                 }
                 propertyChangeSupport.firePropertyChange(PROP_LAST_UPLOAD_TIME, oldValue, time);            
             }
-        }         
+        }  
+        
+// TODO DomainsProvider         
+        
+        @Override
+        public Set<String> getDomains()
+        {
+            String domains = props.getProperty(PROP_DOMAINS);
+            if(domains != null)
+            {
+                return Set.of(domains.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }                 
         
 // TODO MultiViewDescription        
         

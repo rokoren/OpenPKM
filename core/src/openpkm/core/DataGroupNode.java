@@ -20,6 +20,8 @@ import openpkm.base.ChangeSupportProvider;
 import openpkm.base.DataGroupProvider;
 import openpkm.base.DisplayNameProvider;
 import openpkm.base.DisplayNameProvider.TextFormat;
+import openpkm.base.DomainsGraphProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.FilterTagsProvider;
 import openpkm.base.GoalsGraphProvider;
 import openpkm.base.GoalsProvider;
@@ -190,6 +192,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
     {
         private final DataGroupProvider provider;   
         private final FilterTagsProvider filterTags;
+        private final DomainsGraphProvider domainProvider;
         private final TopicsGraphProvider topicProvider;
         private final GoalsGraphProvider goalProvider;
         private final ThoughtsGraphProvider thoughtProvider;
@@ -202,6 +205,12 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             if(filterTags != null) 
             {
                 filterTags.addChangeListener(this);
+            }
+
+            domainProvider = provider.getProvider().getLookup().lookup(DomainsGraphProvider.class);
+            if(domainProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.addChangeListener(this);
             }
             
             topicProvider = provider.getProvider().getLookup().lookup(TopicsGraphProvider.class);
@@ -256,6 +265,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                     if(provider.contains(data))
                     {                        
                         boolean isTag = true;
+                        boolean isDomain = true;
                         boolean isTopic = true;
                         boolean isGoal = true;
                         boolean isThought = true;
@@ -267,6 +277,23 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                             {
                                 isTag = filterTags.isTag(tagsProvider);
                             }                            
+                        }
+
+                        if(domainProvider != null)
+                        {
+                            SourceProviderWrapper sourceProvider = data.getLookup().lookup(SourceProviderWrapper.class);
+                            if(sourceProvider != null)
+                            {
+                                Source source = sourceProvider.getSource();
+                                if(source != null)
+                                {
+                                    DomainsProvider domainsProvider = source.getLookup().lookup(DomainsProvider.class);
+                                    if(domainsProvider != null)
+                                    {
+                                        isDomain = domainProvider.isDomain(domainsProvider);
+                                    }                                                 
+                                }            
+                            }                                                                                    
                         }
                         
                         if(topicProvider != null)
@@ -312,7 +339,7 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
                             }                                                                                   
                         }                         
                         
-                        if(isTag && isTopic && isGoal && isThought)                    
+                        if(isTag && isDomain && isTopic && isGoal && isThought)                    
                         {
                             sorted.add(data);                  
                         }                        
@@ -348,6 +375,11 @@ public class DataGroupNode extends AbstractNode implements NodeSupport, ChangeLi
             {
                 filterTags.removeChangeListener(this);
             }
+
+            if(domainProvider instanceof ChangeSupportProvider csp)
+            {
+                csp.removeChangeListener(this);
+            }  
             
             if(topicProvider instanceof ChangeSupportProvider csp)
             {
