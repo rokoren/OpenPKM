@@ -30,10 +30,11 @@ public interface YouTubeChannel extends Source, PropertiesProvider, TitleProvide
     String PROP_VIEW_COUNT            = "view.count";  
     String PROP_SUBSCRIBER_COUNT      = "subscriber.count"; 
     String PROP_VIDEO_COUNT           = "video.count"; 
+    String PROP_VIDEO_COUNT_NEW       = "video.count.new"; 
     String PROP_COMMENT_COUNT         = "comment.count"; 
     String PROP_TOPIC_CATEGORIES      = "topic.categories";  
     String PROP_PRIVACY_STATUS        = "privacy.status";   
-    String PROP_LAST_UPLOAD_TIME      = "last.upload.time";     
+    String PROP_LAST_UPLOAD_TIME      = "last.upload.time";    
     
     String getChannelID();
     String getThumbnail(); 
@@ -54,6 +55,9 @@ public interface YouTubeChannel extends Source, PropertiesProvider, TitleProvide
     void setSubscriberCount(Long subscriberCount);
     Long getVideoCount();
     void setVideoCount(Long videoCount);
+    Integer getVideoCountNew();
+    void setVideoCountNew(Integer videoCount);    
+    void addVideoCountNew(int videoCount);  
     Long getCommentCount();
     void setCommentCount(Long commentCount);
     List<String> getTopicCategories();
@@ -61,5 +65,5 @@ public interface YouTubeChannel extends Source, PropertiesProvider, TitleProvide
     String getPrivacyStatus();
     void setPrivacyStatus(String privacyStatus);
     DateTime getLastUploadTime();
-    void setLastUploadTime(DateTime time);    
+    void setLastUploadTime(DateTime time); 
 }

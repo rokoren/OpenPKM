@@ -156,7 +156,7 @@ public class AsciiDocDataNode extends DataNode implements ChangeListener
                 Image bullet = bulletIconProvider.getBullet();
                 if(bullet != null)
                 {
-                    return ImageUtilities.mergeImages(iconProvider.getIcon(type), bullet, 7, -4);                
+                    return ImageUtilities.mergeImages(iconProvider.getIcon(type), bullet, 7, 0);                
                 }                  
             }
             return iconProvider.getIcon(type);              

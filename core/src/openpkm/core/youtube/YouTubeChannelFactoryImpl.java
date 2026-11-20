@@ -8,8 +8,11 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.ChannelListResponse;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.IOException;
@@ -28,11 +31,14 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringJoiner;
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeListener;
+import openpkm.base.ActionProvider;
+import openpkm.base.BulletIconProvider;
 import openpkm.base.ChangeSupportProvider;
 import openpkm.base.Channel;
 import openpkm.base.CloseSupport;
@@ -42,12 +48,14 @@ import openpkm.base.IconsProvider;
 import openpkm.base.OpenSupport;
 import openpkm.base.PropertiesProvider;
 import openpkm.utils.DisplayNameProviderImpl;
+import openpkm.utils.NumberIcon;
 import openpkm.utils.ShortDescriptionProviderImpl;
 import openpkm.utils.Utils;
 import openpkm.youtube.GooglePasswordProvider;
 import openpkm.youtube.YouTubeCefClientProvider;
 import openpkm.youtube.YouTubeChannel;
 import openpkm.youtube.YouTubeChannelFactory;
+import openpkm.youtube.YouTubeChannelProvider;
 import openpkm.youtube.YouTubeService;
 import org.cef.browser.CefBrowser;
 import org.netbeans.core.spi.multiview.CloseOperationState;
@@ -143,7 +151,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
         LOG.info("YouTube Channel saved");
     }
     
-    private static final class YouTubeChannelImpl implements YouTubeChannel, Channel, DomainsProvider, MultiViewDescription
+    private static final class YouTubeChannelImpl implements YouTubeChannel, Channel, DomainsProvider, MultiViewDescription, ActionProvider<YouTubeChannelProvider>
     {
         private final Properties props; 
         private final PropertyChangeSupport propertyChangeSupport;        
@@ -153,7 +161,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
 
         public YouTubeChannelImpl(Properties props)
         {
-            this.props = props;   
+            this.props = props;
             propertyChangeSupport = new PropertyChangeSupport(this);            
         } 
         
@@ -182,7 +190,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
         {
             if (lkp == null) 
             {
-                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new ShortDescriptionProviderImpl(this), new IconProviderImpl());              
+                lkp = Lookups.fixed(this, new DisplayNameProviderImpl(this), new ShortDescriptionProviderImpl(this), new IconProviderImpl(), new BulletIconProviderImpl());              
             }
             return lkp;
         }  
@@ -215,7 +223,7 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
             State oldValue = state;
             state = State.DELETED;
             propertyChangeSupport.firePropertyChange(PROP_STATE, oldValue, state);        
-        }          
+        }                 
         
     // TODO TitleProvider  
 
@@ -546,6 +554,55 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
                 propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT, oldValue, videoCount);
             }
         }  
+        
+        @Override
+        public Integer getVideoCountNew()
+        {
+            String videoCount = props.getProperty(PROP_VIDEO_COUNT_NEW);
+            if(videoCount != null)
+            {
+                return Integer.parseInt(videoCount);
+            }
+            return null;        
+        }
+
+        @Override
+        public void setVideoCountNew(Integer videoCount) 
+        {
+            if(videoCount == null)
+            {
+                Object oldValue = props.remove(PROP_VIDEO_COUNT_NEW);
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }             
+                propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT_NEW, oldValue, videoCount);            
+            }
+            else
+            {
+                Object oldValue = props.setProperty(PROP_VIDEO_COUNT_NEW, videoCount.toString());
+                if(oldValue != null)
+                {
+                    oldValue = Integer.parseInt(oldValue.toString());
+                }              
+                propertyChangeSupport.firePropertyChange(PROP_VIDEO_COUNT_NEW, oldValue, videoCount);
+            }
+        }  
+
+        @Override
+        public void addVideoCountNew(int videoCount)
+        {
+            Integer videoCountNew = getVideoCountNew();
+            if(videoCountNew == null)
+            {
+                videoCountNew = videoCount;
+            }
+            else
+            {
+                videoCountNew += videoCount;
+            }
+            setVideoCountNew(videoCountNew);
+        }
 
         @Override
         public Long getCommentCount()
@@ -678,7 +735,15 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
                 return Set.of(domains.split(","));                   
             }                
             return Collections.EMPTY_SET;
-        }                 
+        }  
+        
+// TODO ActionProvider
+
+        @Override
+        public Action getAction(YouTubeChannelProvider provider) 
+        {
+            return new YouTubeChannelVideoAction(this, provider);
+        }        
         
 // TODO MultiViewDescription        
         
@@ -784,8 +849,49 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
                 icon = null;
                 changeSupport.fireChange();
             }        
+        }  
+        
+        private final class BulletIconProviderImpl implements BulletIconProvider, PropertyChangeListener
+        {        
+            private final ChangeSupport changeSupport; 
+
+            public BulletIconProviderImpl()
+            {
+                changeSupport = new ChangeSupport(this); 
+                propertyChangeSupport.addPropertyChangeListener(PROP_VIDEO_COUNT_NEW, this);
+            }              
+
+            @Override
+            public Image getBullet()
+            {
+                Integer videoCounNew = getVideoCountNew();
+                if(videoCounNew != null && videoCounNew > 0)
+                {           
+                    return new NumberIcon(videoCounNew.toString(), NumberIcon.Type.CIRCLE, Color.CYAN, 10).getImage();                   
+                }
+                return null;
+            }                 
+
+            @Override
+            public void addChangeListener(ChangeListener listener) 
+            {
+                changeSupport.addChangeListener(listener);
+            }
+
+            @Override
+            public void removeChangeListener(ChangeListener listener) 
+            {
+                changeSupport.removeChangeListener(listener);
+            }
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) 
+            {
+                markModified();
+                changeSupport.fireChange();
+            }
         }         
-    }
+    }    
     
     private static final class MultiViewElementImpl extends JPanel implements MultiViewElement
     {
@@ -921,5 +1027,32 @@ public class YouTubeChannelFactoryImpl implements YouTubeChannelFactory
         {
             
         }
-    }      
+    }  
+
+    private static final class YouTubeChannelVideoAction extends AbstractAction implements Runnable
+    {          
+        private final YouTubeChannel channel;
+        private final YouTubeChannelProvider provider;
+
+        public YouTubeChannelVideoAction(YouTubeChannel channel, YouTubeChannelProvider provider) 
+        {
+            super("Add new videos");       
+            this.channel = channel;
+            this.provider = provider;
+            Integer videoCounNew = channel.getVideoCountNew();
+            setEnabled(videoCounNew != null && videoCounNew > 0);
+        }        
+
+        @Override
+        public void actionPerformed(ActionEvent evt) 
+        {
+            RP.post(this);
+        }
+        
+        @Override
+        public void run()
+        {
+            provider.addNewVideos(channel);                                                          
+        }            
+    }     
 }

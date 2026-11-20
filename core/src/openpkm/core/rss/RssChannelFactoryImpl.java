@@ -134,7 +134,7 @@ public class RssChannelFactoryImpl implements RssChannelFactory
         public String getSourceID()
         {            
             return getFileName();
-        }         
+        }        
         
 // TODO RssChannel        
          
@@ -315,7 +315,7 @@ public class RssChannelFactoryImpl implements RssChannelFactory
                 lkp = Lookups.fixed(this);              
             }
             return lkp;
-        }                           
+        }                    
 
 // TODO IconProvider    
     
@@ -337,6 +337,6 @@ public class RssChannelFactoryImpl implements RssChannelFactory
                 return Set.of(domains.split(","));                   
             }                
             return Collections.EMPTY_SET;
-        }          
-    }         
+        }               
+    }     
 }

@@ -44,6 +44,7 @@ public abstract class YouTubeChannelProvider implements SourceProvider<YouTubeCh
     }
     
     protected abstract Map<String, YouTubeChannel> getChannelsById();
+    public abstract void addNewVideos(YouTubeChannel channel);
     
     public Collection<YouTubeChannel> getChannels()
     {

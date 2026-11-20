@@ -6,9 +6,8 @@ package openpkm.base;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
 public interface Channel 
 {
-    
 }

@@ -4,19 +4,34 @@
  */
 package openpkm.core.raindrop;
 
+import com.google.api.client.util.DateTime;
+import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.model.Activity;
+import com.google.api.services.youtube.model.ActivityListResponse;
+import com.google.api.services.youtube.model.VideoListResponse;
+import com.rometools.rome.feed.synd.SyndEnclosure;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
+import com.rometools.rome.io.XmlReader;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.beans.BeanInfo;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -52,6 +67,7 @@ import javax.swing.event.EventListenerList;
 import openpkm.base.ActionsProvider;
 import openpkm.base.Article;
 import openpkm.base.ArticleProvider;
+import openpkm.base.AsciiDocSupport;
 import openpkm.base.BatchUpdateSupport;
 import openpkm.base.Book;
 import openpkm.base.BookProvider;
@@ -161,6 +177,7 @@ import openpkm.base.DrawboardPdf;
 import openpkm.base.DrawboardPdfFactory;
 import openpkm.base.LiteratureNote;
 import openpkm.base.LiteratureNoteProvider;
+import openpkm.base.OpenSupport;
 import openpkm.base.ReadLaterProvider;
 import openpkm.base.Thought;
 import openpkm.base.ThoughtsGraphProvider;
@@ -168,6 +185,9 @@ import openpkm.base.ThoughtsProvider;
 import openpkm.base.TopicsGraphProvider;
 import openpkm.base.WatchLaterProvider;
 import openpkm.core.drawboard.pdf.AbstractDrawboardPdf;
+import openpkm.domain.WebPage;
+import openpkm.domain.WebPageFactory;
+import openpkm.domain.WebPageProvider;
 import openpkm.rss.RssChannel;
 import openpkm.rss.RssChannelProvider;
 import openpkm.utils.DrawboardPdfProvider;
@@ -176,6 +196,9 @@ import openpkm.youtube.YouTubeChannelFactory;
 import openpkm.youtube.YouTubeChannelProvider;
 import org.neo4j.driver.Session;
 import openpkm.rss.RssChannelFactory;
+import openpkm.utils.NotificationUtils;
+import openpkm.youtube.GooglePasswordProvider;
+import openpkm.youtube.YouTubeService;
 
 /**
  *
@@ -265,7 +288,14 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         {          
             SourceProvider provider = new ReferenceProviderImpl(referenceFactory);
             sources.put(provider.getName(), provider);            
-        }               
+        }  
+        
+        WebPageFactory webPageFactory = Lookup.getDefault().lookup(WebPageFactory.class);
+        if(webPageFactory != null)
+        {          
+            SourceProvider links = new WebPageProviderImpl(webPageFactory);
+            sources.put(links.getName(), links);            
+        }          
 
         YouTubeVideoFactory youTubeVideoFactory = Lookup.getDefault().lookup(YouTubeVideoFactory.class);
         if(youTubeVideoFactory != null)
@@ -695,6 +725,12 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         protected void projectOpened() 
         {  
             propertyChangeSupport.addPropertyChangeListener(this);
+            
+            Collection<? extends OpenSupport> providers = getLookup().lookupAll(OpenSupport.class);            
+            for(OpenSupport provider : providers)
+            {
+                provider.open();
+            }                
         }
 
         @Override
@@ -3441,6 +3477,208 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }          
     } 
     
+    private final class WebPageProviderImpl extends WebPageProvider implements FileChangeListener, CloseSupport
+    {  
+        @StaticResource()
+        private static final String ICON = "openpkm/core/resources/www_page.png";         
+        
+        public WebPageProviderImpl(WebPageFactory factory) 
+        {
+            super(factory);
+        }               
+        
+        @Override
+        public Lookup.Provider getProvider()
+        {
+            return RaindropProject.this;
+        } 
+        
+        @Override
+        public void close()
+        {
+            if(rootDir != null)
+            {
+                rootDir.removeFileChangeListener(this);
+                
+                for(WebPage page : getPages().getPages())
+                {
+                    FileObject file = rootDir.getFileObject(page.getFileName(), PropertiesProvider.EXTENSION);
+                    if(file != null)
+                    {
+                        try
+                        {
+                            if(page.isModified())
+                            {
+                                OutputStream os = file.getOutputStream();
+                                factory.save(page, os, "Updated by Raindrope project: " + getTitle());
+                                os.close();
+                            }
+                            else if(page.isDeleted())
+                            {
+                                file.delete();
+                            }                                  
+                        }  
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                             
+                    } 
+                }                
+            }
+        }          
+        
+        @Override
+        public Icon getIcon(boolean bln) 
+        {
+            return new ImageIcon(ImageUtilities.loadImage(ICON));
+        }        
+        
+        @Override
+        public synchronized Pages getPages()
+        {
+            if(pages == null)
+            {
+                pages = new Pages();
+                FileObject folder = getRootFolder();
+                if(folder !=  null)
+                {
+                    for (FileObject file : folder.getChildren()) 
+                    {
+                        try
+                        {
+                            WebPage page = factory.getWebPage(Utils.getProperties(file)); 
+                            pages.addPage(page);
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                                                                                                                                             
+                    }                     
+                }                
+            }
+            return pages;
+        }                
+
+        @Override
+        public FileObject getRootFolder() 
+        {
+            if(rootDir == null)
+            {
+                try
+                {                
+                    rootDir = getProjectDirectory().getFileObject(ROOT_FOLDER);
+                    if(rootDir == null)
+                    {
+                        rootDir = getProjectDirectory().createFolder(ROOT_FOLDER);
+                        LOG.info("Content root folder created: " + rootDir.getPath());                        
+                    } 
+                    rootDir.addFileChangeListener(this);                                        
+                }
+                catch(IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }                
+            }
+            return rootDir;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.addPropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) 
+        {
+            propertyChangeSupport.removePropertyChangeListener(SourceGroup.PROP_CONTAINERSHIP, listener);
+        }               
+        
+        @Override
+        public FileObject createData(WebPage page, FileTypeProvider fileTypeProvider) throws IOException    
+        {
+            String fileName = FileUtils.getFileName(getDataDirectory(), fileTypeProvider.getExtension());
+            FileObject primaryFile = getDataDirectory().createData(fileName, fileTypeProvider.getExtension());
+            FileObject file = getFileWithAttrs(primaryFile, true);
+            file.setAttribute(ATTR_SOURCE_PROVIDER, getName());
+            file.setAttribute(ATTR_SOURCE_ID, page.getSourceID());  
+
+            if(page instanceof Article)
+            {
+                Article article = (Article)page;
+                if(fileTypeProvider instanceof ArticleProvider)
+                {
+                    ArticleProvider articleProvider = (ArticleProvider)fileTypeProvider;
+                    OutputStream output = primaryFile.getOutputStream();
+                    output.write(articleProvider.getArticle(article.getTitle(), article.getPublisher()).getBytes());
+                    output.close();
+                }                         
+            }  
+            
+            return primaryFile;            
+        }                
+        
+        @Override
+        public void fileFolderCreated(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            DataFolder data = DataFolder.findFolder(file);
+            setLastData(data);
+            */
+        }
+
+        @Override
+        public void fileDataCreated(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            try
+            {
+                WebPage page = factory.getWebPage(Utils.getProperties(file)); 
+                getPages().addPage(page);                             
+                sourceAdded(new SourceEventImpl(this, page));              
+            }           
+            catch(IOException e)
+            {
+                LOG.warning(e.getMessage());
+            }               
+        }
+
+        @Override
+        public void fileChanged(FileEvent evt) 
+        {
+            /*
+            FileObject file = evt.getFile();
+            WebPage webPage = getLinksById().get(file.getName());  
+            if(webPage != null)
+            {                
+            }
+            */
+        }
+
+        @Override
+        public void fileDeleted(FileEvent evt) 
+        {
+            FileObject file = evt.getFile();
+            WebPage page = getPages().removePage(file.getName());
+            if(page != null)
+            {
+                page.notifyDeleted();
+                sourceDeleted(new SourceEventImpl(this, page)); 
+            }
+        }
+
+        @Override
+        public void fileRenamed(FileRenameEvent fre) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void fileAttributeChanged(FileAttributeEvent fae) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }          
+    }       
+    
     private final class RaindropProviderImpl extends AbstractAction implements RaindropProvider, FileChangeListener, ActionsProvider, CloseSupport, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
@@ -3455,8 +3693,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         public RaindropProviderImpl(RaindropFactory factory) 
         {
             super("Synchronize Raindrops");
-            this.factory = factory;
-            RP.post(this);             
+            this.factory = factory;          
         }  
         
         @Override
@@ -4208,8 +4445,10 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }         
     } 
     
-    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener, CloseSupport
+    private final class YouTubeChannelProviderImpl extends YouTubeChannelProvider implements FileChangeListener, OpenSupport, CloseSupport, Runnable
     {
+        private RequestProcessor.Task task;  
+        
         public YouTubeChannelProviderImpl(YouTubeChannelFactory factory) 
         {
             super(factory);
@@ -4222,8 +4461,16 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         } 
 
         @Override
+        public void open()
+        {
+            task = YouTubeChannelFactory.RP.create(this);   
+            task.schedule(1000);             
+        }
+        
+        @Override
         public void close()
         {
+            task.cancel();  
             if(rootDir != null)
             {
                 rootDir.removeFileChangeListener(this);
@@ -4253,7 +4500,134 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                     } 
                 }                
             }
-        }                 
+        } 
+        
+        @Override
+        public void addNewVideos(YouTubeChannel channel)
+        {
+            AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
+            GooglePasswordProvider googlePasswordProvider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+            YouTubeVideoProvider provider = getLookup().lookup(YouTubeVideoProvider.class);
+            if(fileTypeProvider != null && googlePasswordProvider != null && provider != null)
+            {
+                DateTime lastUploadTime = channel.getLastUploadTime();
+                try
+                {                   
+                    YouTube.Activities.List request1 = YouTubeService.getDeafult().getService().activities().list("contentDetails,snippet");
+                    request1.setKey(googlePasswordProvider.getKey());
+                    ActivityListResponse response1 = request1.setChannelId(channel.getChannelID()).execute(); 
+                    if(response1.getItems() != null && !response1.isEmpty())
+                    {                                           
+                        DateTime publishedAtMax = null;
+                        for (Activity activity : response1.getItems())
+                        {
+                            DateTime publishedAt = activity.getSnippet().getPublishedAt();
+                            String type = activity.getSnippet().getType();                    
+                            if (type.equals(YouTubeService.ACTIVITY_TYPE_UPLOAD) && (lastUploadTime == null || publishedAt.getValue() > lastUploadTime.getValue()))
+                            {
+                                String videoID = activity.getContentDetails().getUpload().getVideoId();
+                                String title = activity.getSnippet().getTitle();
+                                String description = activity.getSnippet().getDescription();
+                                String thumbnail = activity.getSnippet().getThumbnails().getHigh().getUrl();
+                                                                 
+                                YouTube.Videos.List request2 = YouTubeService.getDeafult().getService().videos().list("snippet,contentDetails,statistics,topicDetails");
+                                request2.setKey(googlePasswordProvider.getKey());
+                                VideoListResponse response2 = request2.setId(videoID).execute();  
+                                if(response2.getItems() != null && !response2.getItems().isEmpty())
+                                {   
+                                    YouTubeVideo video = provider.getFactory().getVideo(YouTubeVideoFactory.getProperties(response2));  
+                                    String domains = channel.getProperties().getProperty(DomainsProvider.PROP_DOMAINS);
+                                    if(domains != null)
+                                    {
+                                        video.getProperties().setProperty(DomainsProvider.PROP_DOMAINS, domains);
+                                    }
+                                    FileObject file = provider.createData(video, fileTypeProvider);
+
+                                    FileObject root = provider.getRootFolder();
+                                    if(root != null)
+                                    {  
+                                        OutputStream os = root.createAndOpen(video.getVideoID() + "." + PropertiesProvider.EXTENSION);  
+                                        provider.getFactory().save(video, os, "New YouTube Video Created");
+                                        os.close();  
+                                    }   
+                                    
+                                    channel.addVideoCountNew(-1);
+
+                                    String text = channel.getTitle() + ": " + title;
+                                    IconProvider iconProvider = channel.getLookup().lookup(IconProvider.class);
+                                    Icon icon = ImageUtilities.image2Icon(iconProvider.getIcon(BeanInfo.ICON_COLOR_16x16));                           
+
+                                    URL url = new URL(thumbnail);
+                                    BufferedImage image = ImageIO.read(url);                          
+
+                                    JLabel baloonDetails = new JLabel();
+                                    baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), 16)));
+                                    baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                    baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                    JComponent details = NotificationUtils.createDetails(Utils.getDescription(description, 600), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+
+                                    //NotificationDisplayer.getDefault().notify(getTitle(), info.getIcon(), title, new YouTubeVideoAction(videoID, getProjectDirectory(), youTubeServiceProvider), NotificationDisplayer.Priority.NORMAL, "YouTube-Category-Name");  
+                                    NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Video-Category-Name");                 
+                                }                                                                    
+
+                                if (publishedAtMax == null || publishedAt.getValue() > publishedAtMax.getValue())
+                                {
+                                    publishedAtMax = publishedAt;
+                                }
+                            }
+                        }
+                        if(publishedAtMax != null && (lastUploadTime == null || publishedAtMax.getValue() > lastUploadTime.getValue()))
+                        {
+                            channel.setLastUploadTime(publishedAtMax);  
+                            channel.markModified();
+                        } 
+                    }  
+                }
+                catch (IOException e)
+                {
+                    LOG.warning(e.getMessage());
+                }  
+                catch (GeneralSecurityException e)
+                {
+                    LOG.warning(e.getMessage());
+                } 
+                finally
+                {
+                    if(channel.getVideoCountNew() != null && channel.getVideoCountNew() != 0)
+                    {
+                        channel.setVideoCountNew(null);
+                    }
+                }
+            }              
+        }        
+        
+        @Override
+        public void run()
+        {
+            GooglePasswordProvider googlePasswordProvider = Lookup.getDefault().lookup(GooglePasswordProvider.class);
+            if(googlePasswordProvider != null)
+            {
+                for(YouTubeChannel channel : getChannels())
+                { 
+                    try
+                    {
+                        YouTubeChannel newValue = getFactory().getChannel(googlePasswordProvider, channel.getChannelID());
+                        Long videoCountNew = newValue.getVideoCount() - channel.getVideoCount(); 
+                        channel.setVideoCount(newValue.getVideoCount());
+                        channel.addVideoCountNew(videoCountNew.intValue());
+                    }
+                    catch(GeneralSecurityException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                    catch(IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }     
+                }
+                task.schedule(100000);
+            }
+        }
         
         @Override
         public synchronized Map<String, YouTubeChannel> getChannelsById()
@@ -4431,8 +4805,10 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }         
     }  
     
-    private final class RssChannelProviderImpl extends RssChannelProvider implements FileChangeListener, CloseSupport
+    private final class RssChannelProviderImpl extends RssChannelProvider implements FileChangeListener, OpenSupport, CloseSupport, Runnable
     {
+        private RequestProcessor.Task task;  
+        
         public RssChannelProviderImpl(RssChannelFactory factory) 
         {
             super(factory);
@@ -4443,10 +4819,18 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         {
             return RaindropProject.this;
         } 
+        
+        @Override
+        public void open()
+        {
+            task = RP.create(this);   
+            task.schedule(1000);             
+        }        
 
         @Override
         public void close()
         {
+            task.cancel();
             if(rootDir != null)
             {
                 rootDir.removeFileChangeListener(this);
@@ -4477,6 +4861,89 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 }                
             }
         } 
+        
+        @Override
+        public void run()
+        {
+            AsciiDocSupport fileTypeProvider = Lookup.getDefault().lookup(AsciiDocSupport.class);
+            WebPageProvider webPagePovider = getLookup().lookup(WebPageProvider.class);
+            if(fileTypeProvider != null && webPagePovider != null)
+            {
+                for(RssChannel channel : getChannels().getChannels())
+                {
+                    try
+                    {
+                        URL url = new URL(channel.getFeedUrl());
+                        SyndFeedInput input = new SyndFeedInput();
+                        SyndFeed feed = input.build(new XmlReader(url));
+
+                        Properties props = getFactory().getProperties(channel.getFeedUrl(), feed, channel.getFileName());
+                        if(!channel.getProperties().equals(props))
+                        {
+                            channel.getProperties().putAll(props);
+                            channel.markModified();
+
+                            for(SyndEntry syndEntry : feed.getEntries()) 
+                            {
+                                String fileName = FileUtils.getFileName(webPagePovider.getRootFolder(), PropertiesProvider.EXTENSION);
+                                WebPage webPage = webPagePovider.getFactory().getWebPage(fileName, syndEntry);
+                                if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
+                                {
+                                    FileObject file = webPagePovider.createData(webPage, fileTypeProvider);
+                                    if (file != null) {
+                                        OutputStream os = webPagePovider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);
+                                        webPagePovider.getFactory().save(webPage, os, "New RSS Web Page Created by Project: " + getTitle());
+                                        os.close();
+
+                                        String text = channel.getTitle() + ": " + syndEntry.getTitle();
+
+                                        BufferedImage image = null;
+                                        if (!syndEntry.getEnclosures().isEmpty()) {
+                                            SyndEnclosure syndEnclosure = syndEntry.getEnclosures().get(0);
+                                            if (syndEnclosure.getType().startsWith("image")) {
+                                                URL url2 = new URL(syndEnclosure.getUrl());
+                                                //Image image = Utils.resizeImage(ImageIO.read(url2), 320, 180); 
+                                                image = ImageIO.read(url2);
+                                            }
+                                        }
+
+                                        IconProvider provider = channel.getLookup().lookup(IconProvider.class);
+                                        Icon icon = ImageUtilities.image2Icon(provider.getIcon(BeanInfo.ICON_COLOR_16x16));
+
+                                        JLabel baloonDetails = new JLabel();
+                                        if (image == null) {
+                                            baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                            baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                            JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), null);
+                                            NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");
+                                        } else {
+                                            baloonDetails.setIcon(ImageUtilities.image2Icon(Utils.resizeImage(image, text, baloonDetails.getFont().deriveFont(Font.BOLD), icon.getIconWidth())));
+                                            baloonDetails.addMouseListener(FileUtils.clicked2open(file));
+                                            baloonDetails.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                                            JComponent details = createDetails(syndEntry.getDescription().getValue(), FileUtils.action2open(file), ImageUtilities.image2Icon(Utils.resizeImage(image, 320)));
+                                            NotificationDisplayer.getDefault().notify(text, icon, baloonDetails, details, NotificationDisplayer.Priority.NORMAL, "Web-Category-Name");
+                                        }
+                                    }                                       
+                                }
+                            }                                  
+                        }                                                    
+                    }
+                    catch (MalformedURLException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }
+                    catch (IOException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }    
+                    catch (FeedException e)
+                    {
+                        LOG.warning(e.getMessage());
+                    }                                      
+                }                
+                task.schedule(100000);                  
+            }                                      
+        }        
 
         @Override
         public Icon getIcon(boolean bln) 

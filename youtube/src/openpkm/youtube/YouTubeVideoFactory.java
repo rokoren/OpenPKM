@@ -75,8 +75,11 @@ public interface YouTubeVideoFactory extends SourceFactory<YouTubeVideo>
         }             
         String defaultLanguage = response.getItems().get(0).getSnippet().getDefaultLanguage();
         props.setProperty(YouTubeVideo.PROP_DEFAULT_LANGUAGE, defaultLanguage);
-        String defaultAudioLanguage = response.getItems().get(0).getSnippet().getDefaultAudioLanguage();               
-        props.setProperty(YouTubeVideo.PROP_DEFAULT_AUDIO_LANGUAGE, defaultAudioLanguage);
+        String defaultAudioLanguage = response.getItems().get(0).getSnippet().getDefaultAudioLanguage();  
+        if(defaultAudioLanguage != null)
+        {
+            props.setProperty(YouTubeVideo.PROP_DEFAULT_AUDIO_LANGUAGE, defaultAudioLanguage);            
+        }
         String description = response.getItems().get(0).getSnippet().getDescription();
         props.setProperty(YouTubeVideo.PROP_DESCRIPTION, description); 
         String liveBroadcastContent = response.getItems().get(0).getSnippet().getLiveBroadcastContent();
