@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import openpkm.base.Article;
 import openpkm.base.DescriptionProvider;
+import openpkm.base.DomainsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.Link;
 import openpkm.base.PropertiesProvider;
@@ -113,7 +114,7 @@ public class WebPageFactoryImpl implements WebPageFactory
         LOG.info("Web Page saved");
     }      
     
-    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, TopicsProvider, MultiViewDescription
+    private static abstract class AbstractWebPage implements WebPage, TitleProvider, IconProvider, TagsProvider, DomainsProvider, TopicsProvider, MultiViewDescription
     {  
         @StaticResource()
         public static final String ICON = "openpkm/core/resources/www_page.png";           
@@ -264,8 +265,19 @@ public class WebPageFactoryImpl implements WebPageFactory
                 return Set.of(string.split(","));
             }   
             return Collections.EMPTY_SET;
-        } 
-
+        }      
+        
+        @Override
+        public Set<String> getDomains()
+        {
+            String domains = props.getProperty(PROP_DOMAINS);
+            if(domains != null)
+            {
+                return Set.of(domains.split(","));                   
+            }                
+            return Collections.EMPTY_SET;
+        }                      
+        
         @Override
         public Set<String> getTopics()
         {

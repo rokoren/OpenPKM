@@ -62,7 +62,7 @@ import org.openide.util.lookup.ProxyLookup;
     "CTL_YouTubeTopComponent=YouTube Window",
     "HINT_YouTubeTopComponent=This is a YouTube window"
 })
-public final class YouTubeTopComponent extends TopComponent implements HomeProvider, LinkProvider, UndoRedo, CefLoadHandler
+public final class YouTubeTopComponent extends TopComponent implements HomeProvider, LinkProvider, CefLoadHandler
 {
     public static final String YOUTUBE_URL = "https://www.youtube.com";
     
@@ -70,6 +70,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     
     private CefClient client;    
     private CefBrowser browser;
+    private BrowserUndoRedo undoRedo;    
     
     private final ChangeSupport changeSupport = new ChangeSupport(this);    
     
@@ -83,14 +84,17 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
         if(provider != null)
         {
             try
-            {                
+            {
                 client = provider.getApp().createClient();
+                browser = client.createBrowser(YOUTUBE_URL, false, false);  
+                undoRedo = new BrowserUndoRedo();                
+                add(browser.getUIComponent(), BorderLayout.CENTER);                                
             }
             catch(Exception e)
             {
                 LOG.warning(e.getMessage());
             }
-        }  
+        }                  
         
         CopyAction copyAction = SystemAction.get(CopyAction.class);
         getActionMap().put(copyAction.getActionMapKey(), copyLinkAction);            
@@ -105,7 +109,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     @Override
     public UndoRedo getUndoRedo()
     {
-        return this;
+        return undoRedo;
     }    
     
     /**
@@ -134,22 +138,18 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
         {
             browser.close(false);
         }        
-        //client.dispose();       
+        client.dispose();       
     }
 
     void writeProperties(java.util.Properties p) {
         // better to version settings since initial version as advocated at
         // http://wiki.apidesign.org/wiki/PropertyFiles
         p.setProperty("version", "1.0");
-        p.setProperty(LinkProvider.PROP_LINK, getLink());
         // TODO store your settings
     }
 
     void readProperties(java.util.Properties p) {
         String version = p.getProperty("version");
-        String link = p.getProperty(LinkProvider.PROP_LINK, YOUTUBE_URL);  
-        browser = client.createBrowser(link, false, false);  
-        add(browser.getUIComponent(), BorderLayout.CENTER);  
         // TODO read your settings according to their version
     }
 
@@ -188,48 +188,51 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     {
     }
 
-    @Override
-    public boolean canUndo() {
-        return browser.canGoBack();
-    }
+    private class BrowserUndoRedo implements UndoRedo 
+    {       
+        @Override
+        public boolean canUndo() {
+            return browser.canGoBack();
+        }
 
-    @Override
-    public void undo() throws CannotUndoException {
-        browser.goBack();
-    }
+        @Override
+        public void undo() throws CannotUndoException {
+            browser.goBack();
+        }
 
-    @Override
-    public boolean canRedo() {
-        return browser.canGoForward();
-    }
+        @Override
+        public boolean canRedo() {
+            return browser.canGoForward();
+        }
 
-    @Override
-    public void redo() throws CannotRedoException {
-        browser.goForward();
-    }
+        @Override
+        public void redo() throws CannotRedoException {
+            browser.goForward();
+        }
 
-    @Override
-    public void addChangeListener(ChangeListener cl) 
-    {
-        changeSupport.addChangeListener(cl);
-    }
+        @Override
+        public void addChangeListener(ChangeListener cl) 
+        {
+            changeSupport.addChangeListener(cl);
+        }
 
-    @Override
-    public void removeChangeListener(ChangeListener cl) {
-        changeSupport.removeChangeListener(cl);
-    }
+        @Override
+        public void removeChangeListener(ChangeListener cl) {
+            changeSupport.removeChangeListener(cl);
+        }
 
-    @Override
-    public String getUndoPresentationName() 
-    {
-        return "Back";
-    }
+        @Override
+        public String getUndoPresentationName() 
+        {
+            return "Back";
+        }
 
-    @Override
-    public String getRedoPresentationName() 
-    {
-        return "Forward";
-    }
+        @Override
+        public String getRedoPresentationName() 
+        {
+            return "Forward";
+        }
+    }  
     
     private final Action copyLinkAction = new AbstractAction() 
     {                

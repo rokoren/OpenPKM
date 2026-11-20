@@ -4536,11 +4536,13 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                                 if(response2.getItems() != null && !response2.getItems().isEmpty())
                                 {   
                                     YouTubeVideo video = provider.getFactory().getVideo(YouTubeVideoFactory.getProperties(response2));  
+                                    
                                     String domains = channel.getProperties().getProperty(DomainsProvider.PROP_DOMAINS);
                                     if(domains != null)
                                     {
                                         video.getProperties().setProperty(DomainsProvider.PROP_DOMAINS, domains);
                                     }
+                                    
                                     FileObject file = provider.createData(video, fileTypeProvider);
 
                                     FileObject root = provider.getRootFolder();
@@ -4887,8 +4889,15 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                             {
                                 String fileName = FileUtils.getFileName(webPagePovider.getRootFolder(), PropertiesProvider.EXTENSION);
                                 WebPage webPage = webPagePovider.getFactory().getWebPage(fileName, syndEntry);
-                                if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
+                                
+                                String domains = channel.getProperties().getProperty(DomainsProvider.PROP_DOMAINS);
+                                if(domains != null)
                                 {
+                                    webPage.getProperties().setProperty(DomainsProvider.PROP_DOMAINS, domains);
+                                }                                
+                                
+                                if(webPage != null && !webPagePovider.getPages().getPagesByUrl().containsKey(webPage.getLinkUrl()))
+                                {                                    
                                     FileObject file = webPagePovider.createData(webPage, fileTypeProvider);
                                     if (file != null) {
                                         OutputStream os = webPagePovider.getRootFolder().createAndOpen(fileName + "." + PropertiesProvider.EXTENSION);
