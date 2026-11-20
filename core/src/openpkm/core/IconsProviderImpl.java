@@ -17,10 +17,7 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service=IconsProvider.class)
 public class IconsProviderImpl implements IconsProvider
-{
-    @StaticResource()
-    private static final String ICON_DOMAINS = "openpkm/core/resources/domain.png"; 
-    
+{    
     @StaticResource()
     private static final String ICON_WEB_PAGE = "openpkm/core/resources/www_page.png";     
     
@@ -49,7 +46,7 @@ public class IconsProviderImpl implements IconsProvider
     private static final String ICON_DOCUMENTS = "openpkm/core/resources/inbox_document.png";   
     
     @StaticResource()
-    private static final String ICON_LINKS = "openpkm/core/resources/web_layout.png"; 
+    private static final String ICON_LINKS = "openpkm/core/resources/links.png"; 
 
     @StaticResource()
     private static final String ICON_PICTURES = "openpkm/core/resources/images.png";  
@@ -172,8 +169,6 @@ public class IconsProviderImpl implements IconsProvider
     {
         switch(icon)
         {
-            case DOMAINS:
-            return ICON_DOMAINS;
             case WEB_PAGE:
             return ICON_WEB_PAGE;            
             case NOTEBOOKS:
