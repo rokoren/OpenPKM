@@ -70,7 +70,7 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
     
     private CefClient client;    
     private CefBrowser browser;
-    private BrowserUndoRedo undoRedo;    
+    private BrowserUndoRedo undoRedo;   
     
     private final ChangeSupport changeSupport = new ChangeSupport(this);    
     
@@ -136,9 +136,9 @@ public final class YouTubeTopComponent extends TopComponent implements HomeProvi
         client.removeLoadHandler();
         if(browser != null)
         {
-            browser.close(false);
+            browser.close(false);            
         }        
-        client.dispose();       
+        //client.dispose();       
     }
 
     void writeProperties(java.util.Properties p) {
