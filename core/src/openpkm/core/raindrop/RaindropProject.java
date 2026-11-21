@@ -4117,11 +4117,11 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         @Override
         public FileObject createRaindrop(String link, boolean important, List<String> tags, String note)
         {
-            return createRaindrop(getRaindropCollection(), link, important, tags, note);
+            return createRaindrop(getRaindropCollection(), link, important, tags, note, Mode.DEFAULT);
         }
         
         @Override
-        public FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note)
+        public FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note, Mode mode)
         {
             FileObject root = getRootFolder();
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
@@ -4130,13 +4130,27 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 Properties props = RaindropUtils.createRaindrop(getRaindropAccount(), collection, link, important, tags, note);
                 if(collection instanceof RaindropChildrenCollection childrenCollection)
                 {
-                    try
+                    if(mode == Mode.DOMAIN)
                     {
-                        props.setProperty(TopicsProvider.PROP_TOPICS, getTreeID(childrenCollection));                        
+                        try
+                        {
+                            props.setProperty(DomainsProvider.PROP_DOMAINS, getTreeID(childrenCollection));                        
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                        
                     }
-                    catch(IOException e)
+                    else if(mode == Mode.TOPIC)
                     {
-                        LOG.warning(e.getMessage());
+                        try
+                        {
+                            props.setProperty(TopicsProvider.PROP_TOPICS, getTreeID(childrenCollection));                        
+                        }
+                        catch(IOException e)
+                        {
+                            LOG.warning(e.getMessage());
+                        }                        
                     }
                 }
                 Raindrop raindrop = getFactory().getRaindrop(props);

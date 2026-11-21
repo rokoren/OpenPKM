@@ -94,6 +94,7 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
     public void storeSettings(WizardDescriptor wiz) 
     {
         // use wiz.putProperty to remember current panel state
+        wiz.putProperty(LinkProvider.PROP_LINK, getComponent().getLink());
         RaindropProject project = getComponent().getSelectedProject();
         if(project != null)
         {
@@ -106,7 +107,6 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
         {
             wiz.putProperty("collection", collection);        
         }
-        wiz.putProperty(Raindrop.PROPS_IMPORTANT, Boolean.valueOf(getComponent().isRaindropImportant()));        
-        //wiz.putProperty("mode", getComponent().getSelectedMode());        
+        wiz.putProperty(Raindrop.PROPS_IMPORTANT, Boolean.valueOf(getComponent().isRaindropImportant()));              
     }
 }

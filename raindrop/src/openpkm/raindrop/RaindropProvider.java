@@ -12,12 +12,19 @@ import org.openide.filesystems.FileObject;
 
 /**
  *
- * @author rok
+ * @author Rok Koren
  */
 public interface RaindropProvider extends SourceProvider<Raindrop>
 {
+    public enum Mode 
+    {
+        DEFAULT,
+        DOMAIN,
+        TOPIC;    
+    }      
+    
     Map<String, Raindrop> getRaindropsById();
     Collection<Raindrop> getRaindrops();
     FileObject createRaindrop(String link, boolean important, List<String> tags, String note);
-    FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note);
+    FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note, Mode mode);
 }

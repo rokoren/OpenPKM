@@ -66,14 +66,7 @@ public final class RaindropAction extends AbstractAction implements LookupListen
     @StaticResource()
     public static final String BANNER = "openpkm/core/resources/raindrop512.png";  
     
-    private static final Logger LOG = Logger.getLogger(RaindropAction.class.getName());  
-    
-    public enum Mode 
-    {
-        DEFAULT,
-        DOMAIN,
-        TOPIC;    
-    }         
+    private static final Logger LOG = Logger.getLogger(RaindropAction.class.getName());            
     
     private Lookup.Result<LinkProvider> result;   
     private LinkProvider provider;
@@ -93,7 +86,20 @@ public final class RaindropAction extends AbstractAction implements LookupListen
         putValue(SMALL_ICON, ImageUtilities.loadIcon("openpkm/core/resources/raindrop24.png"));
         result = Utilities.actionsGlobalContext().lookupResult(LinkProvider.class); 
         result.addLookupListener(this);
-    }    
+    }  
+    
+    private RaindropProvider.Mode getMode()
+    {
+        if(modeDomain.isSelected())
+        {
+            return RaindropProvider.Mode.DOMAIN;
+        }
+        else if(modeTopic.isSelected())
+        {
+            return RaindropProvider.Mode.TOPIC;
+        }
+        return RaindropProvider.Mode.DEFAULT;
+    }
     
     @Override
     public void resultChanged(LookupEvent event) 
@@ -154,7 +160,7 @@ public final class RaindropAction extends AbstractAction implements LookupListen
                 List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
                 Boolean important = (Boolean) wiz.getProperty(Raindrop.PROPS_IMPORTANT);                
                 
-                FileObject file = collection == null ? provider.createRaindrop(link, important.booleanValue(), tags, note) : provider.createRaindrop(collection, link, important.booleanValue(), tags, note);
+                FileObject file = collection == null ? provider.createRaindrop(link, important.booleanValue(), tags, note) : provider.createRaindrop(collection, link, important.booleanValue(), tags, note, getMode());
                 if(file != null)
                 {
                     StatusDisplayer.getDefault().setStatusText("Raindrop saved");                         
