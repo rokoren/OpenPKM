@@ -84,7 +84,7 @@ public class TopicVisualPanel extends javax.swing.JPanel implements ExplorerMana
             }
             return topics;
         }
-        return null;
+        return Collections.EMPTY_SET;
     }      
     
     static final class TopicsChildren extends Children.Keys<Topic> 

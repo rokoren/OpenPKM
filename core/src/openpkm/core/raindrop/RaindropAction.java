@@ -10,6 +10,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -18,8 +19,12 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
+import openpkm.base.Domain;
+import openpkm.base.DomainsProvider;
 import openpkm.base.LinkProvider;
 import openpkm.base.TagsProvider;
+import openpkm.base.Topic;
+import openpkm.base.TopicsProvider;
 import openpkm.core.neo4j.TopicWizardPanel;
 import openpkm.raindrop.Raindrop;
 import openpkm.raindrop.RaindropCollection;
@@ -69,7 +74,7 @@ public final class RaindropAction extends AbstractAction implements LookupListen
     private static final Logger LOG = Logger.getLogger(RaindropAction.class.getName());            
     
     private Lookup.Result<LinkProvider> result;   
-    private LinkProvider provider;
+    private LinkProvider linkProvider;
     
     private JRadioButtonMenuItem modeDefault, modeDomain, modeTopic;   
 
@@ -88,26 +93,13 @@ public final class RaindropAction extends AbstractAction implements LookupListen
         result.addLookupListener(this);
     }  
     
-    private RaindropProvider.Mode getMode()
-    {
-        if(modeDomain.isSelected())
-        {
-            return RaindropProvider.Mode.DOMAIN;
-        }
-        else if(modeTopic.isSelected())
-        {
-            return RaindropProvider.Mode.TOPIC;
-        }
-        return RaindropProvider.Mode.DEFAULT;
-    }
-    
     @Override
     public void resultChanged(LookupEvent event) 
     { 
         Collection<LinkProvider> coll = (Collection<LinkProvider>) result.allInstances();
         if(!coll.isEmpty())
         {
-            provider = coll.iterator().next();              
+            linkProvider = coll.iterator().next();              
         }
     }      
 
@@ -144,9 +136,9 @@ public final class RaindropAction extends AbstractAction implements LookupListen
         wiz.setTitleFormat(new MessageFormat("{0}"));
         wiz.setTitle("Add Raindrop");
         wiz.putProperty("WizardPanel_image", ImageUtilities.loadImage(BANNER, true));  
-        if(provider != null)
+        if(linkProvider != null)
         {
-            wiz.putProperty(LinkProvider.PROP_LINK, provider.getLink());
+            wiz.putProperty(LinkProvider.PROP_LINK, linkProvider.getLink());
         }
         if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) 
         {
@@ -157,10 +149,13 @@ public final class RaindropAction extends AbstractAction implements LookupListen
                 RaindropCollection collection = (RaindropCollection)wiz.getProperty("collection");
                 String link = (String) wiz.getProperty(LinkProvider.PROP_LINK);
                 String note = (String) wiz.getProperty(Raindrop.PROPS_NOTE);
-                List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);
-                Boolean important = (Boolean) wiz.getProperty(Raindrop.PROPS_IMPORTANT);                
+                Boolean important = (Boolean) wiz.getProperty(Raindrop.PROPS_IMPORTANT);  
                 
-                FileObject file = collection == null ? provider.createRaindrop(link, important.booleanValue(), tags, note) : provider.createRaindrop(collection, link, important.booleanValue(), tags, note, getMode());
+                List<String> tags = (List<String>) wiz.getProperty(TagsProvider.PROP_TAGS);  
+                Set<Domain> domains = (Set<Domain>) wiz.getProperty(DomainsProvider.PROP_DOMAINS);  
+                Set<Topic> topics = (Set<Topic>) wiz.getProperty(TopicsProvider.PROP_TOPICS);                
+                                                              
+                FileObject file = collection == null ? provider.createRaindrop(link, important.booleanValue(), note, tags, domains, topics) : provider.createRaindrop(collection, link, important.booleanValue(), note, tags, domains, topics);
                 if(file != null)
                 {
                     StatusDisplayer.getDefault().setStatusText("Raindrop saved");                         

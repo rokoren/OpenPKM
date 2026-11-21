@@ -3679,7 +3679,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         }          
     }       
     
-    private final class RaindropProviderImpl extends AbstractAction implements RaindropProvider, FileChangeListener, ActionsProvider, CloseSupport, Runnable 
+    private final class RaindropProviderImpl extends AbstractAction implements RaindropProvider, FileChangeListener, ActionsProvider, OpenSupport, CloseSupport, Runnable 
     { 
         private static final String PROP_RAINDROP_SYNC = "raindrop.sync";         
         
@@ -3780,6 +3780,12 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         public boolean contains(FileObject file) 
         {                                   
             return getRaindropsById().containsKey(file.getName());
+        }        
+        
+        @Override
+        public void open()
+        {
+            RP.post(this, 1000);            
         }        
         
         @Override
@@ -4115,13 +4121,13 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
         } 
 
         @Override
-        public FileObject createRaindrop(String link, boolean important, List<String> tags, String note)
+        public FileObject createRaindrop(String link, boolean important, String note, List<String> tags, Set<Domain> domains, Set<Topic> topics)
         {
-            return createRaindrop(getRaindropCollection(), link, important, tags, note, Mode.DEFAULT);
+            return createRaindrop(getRaindropCollection(), link, important, note, tags, domains, topics);
         }
         
         @Override
-        public FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note, Mode mode)
+        public FileObject createRaindrop(RaindropCollection collection, String link, boolean important, String note, List<String> tags, Set<Domain> domains, Set<Topic> topics)
         {
             FileObject root = getRootFolder();
             MarkdownSupport markdown = Lookup.getDefault().lookup(MarkdownSupport.class);  
@@ -4130,7 +4136,7 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                 Properties props = RaindropUtils.createRaindrop(getRaindropAccount(), collection, link, important, tags, note);
                 if(collection instanceof RaindropChildrenCollection childrenCollection)
                 {
-                    if(mode == Mode.DOMAIN)
+                    if(domains == null)
                     {
                         try
                         {
@@ -4141,7 +4147,20 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                             LOG.warning(e.getMessage());
                         }                        
                     }
-                    else if(mode == Mode.TOPIC)
+                    else if(!domains.isEmpty())
+                    {
+                        DomainsGraphProvider domainsProvider = getLookup().lookup(DomainsGraphProvider.class);
+                        if(domainsProvider != null)
+                        {
+                            StringJoiner joiner = new StringJoiner(",");
+                            for(Domain domain : domains)
+                            {
+                                joiner.add(domainsProvider.getTreeID(domain));
+                            }
+                            props.setProperty(DomainsProvider.PROP_DOMAINS, joiner.toString());                    
+                        }                      
+                    }
+                    if(topics == null)
                     {
                         try
                         {
@@ -4150,6 +4169,19 @@ public class RaindropProject implements Project, PropertiesProvider, RaindropCol
                         catch(IOException e)
                         {
                             LOG.warning(e.getMessage());
+                        }                        
+                    }
+                    else if(!topics.isEmpty())
+                    {
+                        TopicsGraphProvider topicsGraphProvider = getLookup().lookup(TopicsGraphProvider.class);
+                        if(topicsGraphProvider != null)
+                        {
+                            StringJoiner joiner = new StringJoiner(",");
+                            for(Topic topic : topics)
+                            {
+                                joiner.add(topicsGraphProvider.getTreeID(topic));
+                            }
+                            props.setProperty(TopicsProvider.PROP_TOPICS, joiner.toString());                    
                         }                        
                     }
                 }

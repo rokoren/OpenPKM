@@ -7,7 +7,10 @@ package openpkm.raindrop;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import openpkm.base.Domain;
 import openpkm.base.SourceProvider;
+import openpkm.base.Topic;
 import org.openide.filesystems.FileObject;
 
 /**
@@ -15,16 +18,9 @@ import org.openide.filesystems.FileObject;
  * @author Rok Koren
  */
 public interface RaindropProvider extends SourceProvider<Raindrop>
-{
-    public enum Mode 
-    {
-        DEFAULT,
-        DOMAIN,
-        TOPIC;    
-    }      
-    
+{    
     Map<String, Raindrop> getRaindropsById();
     Collection<Raindrop> getRaindrops();
-    FileObject createRaindrop(String link, boolean important, List<String> tags, String note);
-    FileObject createRaindrop(RaindropCollection collection, String link, boolean important, List<String> tags, String note, Mode mode);
+    FileObject createRaindrop(String link, boolean important, String note, List<String> tags, Set<Domain> domains, Set<Topic> topics);
+    FileObject createRaindrop(RaindropCollection collection, String link, boolean important, String note, List<String> tags, Set<Domain> domains, Set<Topic> topics);
 }
