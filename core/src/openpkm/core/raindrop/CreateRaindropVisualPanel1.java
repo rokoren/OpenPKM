@@ -8,18 +8,12 @@ import java.awt.Component;
 import java.beans.BeanInfo;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -27,14 +21,12 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import openpkm.base.IconProvider;
-import openpkm.base.TagsProvider;
 import openpkm.base.TitleProvider;
 import openpkm.raindrop.RaindropAccount;
 import openpkm.raindrop.RaindropChildrenCollection;
 import openpkm.raindrop.RaindropCollection;
 import openpkm.raindrop.RaindropCollectionProvider;
 import openpkm.utils.Utils;
-import org.controlsfx.control.CheckComboBox;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.util.ImageUtilities;
@@ -46,43 +38,32 @@ public final class CreateRaindropVisualPanel1 extends JPanel
     private final DefaultComboBoxModel<RaindropProject> projects = new DefaultComboBoxModel<>();  
     private final DefaultComboBoxModel<RaindropChildrenCollection> model = new DefaultComboBoxModel<>();  
     private final ListCellRenderer renderer1 = new ListCellRendererImpl1();
-    private final ListCellRenderer renderer2 = new ListCellRendererImpl2();
-    private final ObservableList<String> tags = FXCollections.observableArrayList();  
-    
-    private CheckComboBox<String> comboBox;
-    private JFXPanel panel;       
+    private final ListCellRenderer renderer2 = new ListCellRendererImpl2();   
     
     /**
      * Creates new form CreateRaindropVisualPanel1
      */
     public CreateRaindropVisualPanel1() 
     {
-        setProjects();
-        setTags();
-        
-        initComponents();
-        
-        panel = new JFXPanel();
-        jPanel1.add(panel);
-        
-        Platform.runLater(new Runnable() 
-        {
-            @Override
-            public void run() 
-            {                
-                comboBox = new CheckComboBox(tags);
-                comboBox.setMaxWidth(Double.MAX_VALUE);  
-                comboBox.setMaxHeight(Double.MAX_VALUE);   
-                Scene scene = new Scene(comboBox);                             
-                panel.setScene(scene);                
-            }
-        });          
+        setProjects(); 
+        setCollections();
+        initComponents();                
     }
 
     @Override
     public String getName() 
     {
-        return "General";
+        return "Link";
+    }
+    
+    public String getLink()
+    {
+        return jTextField1.getText().trim();
+    }
+    
+    public void setLink(String link)
+    {
+        jTextField1.setText(link);
     }
     
     public RaindropProject getSelectedProject()
@@ -97,7 +78,7 @@ public final class CreateRaindropVisualPanel1 extends JPanel
     
     public boolean isRaindropImportant()
     {
-        return jCheckBox1.isSelected();
+        return jCheckBox2.isSelected();
     }
     
     private void setProjects()
@@ -149,32 +130,7 @@ public final class CreateRaindropVisualPanel1 extends JPanel
                 LOG.warning(e.getMessage());
             }
         }
-    }    
-    
-    private void setTags(Set<String> projectTags)
-    {
-        tags.clear();
-        tags.addAll(projectTags);
-        Collections.sort(tags);        
-    }      
-
-    private void setTags()
-    {
-        RaindropProject project = getSelectedProject();
-        if(project != null)
-        {
-            TagsProvider tagsProvider = project.getLookup().lookup(TagsProvider.class);
-            if(tagsProvider != null)
-            {
-                setTags(tagsProvider.getTags());                                
-            }             
-        }    
-    } 
-    
-    public List<String> getSelectedTags()
-    {
-        return comboBox.getCheckModel().getCheckedItems();
-    }     
+    }        
     
     private static class ListCellRendererImpl1 extends JLabel implements ListCellRenderer<RaindropProject>
     {        
@@ -290,32 +246,36 @@ public final class CreateRaindropVisualPanel1 extends JPanel
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jLabel1 = new javax.swing.JLabel();
-        jComboBox1 = new javax.swing.JComboBox<>();
-        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jLabel2 = new javax.swing.JLabel();
-        jPanel1 = new javax.swing.JPanel();
-        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jCheckBox1 = new javax.swing.JCheckBox();
+        buttonGroup1 = new javax.swing.ButtonGroup();
         filler3 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
-        jLabel3 = new javax.swing.JLabel();
-        jComboBox2 = new javax.swing.JComboBox<>();
+        filler4 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jTextField1 = new javax.swing.JTextField();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
+        jComboBox3 = new javax.swing.JComboBox<>();
+        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jLabel4 = new javax.swing.JLabel();
+        jComboBox4 = new javax.swing.JComboBox<>();
+        filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 10), new java.awt.Dimension(0, 10), new java.awt.Dimension(32767, 10));
+        jCheckBox2 = new javax.swing.JCheckBox();
 
-        setLayout(new java.awt.GridBagLayout());
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jPanel1.border.title"))); // NOI18N
+        jPanel1.setLayout(new java.awt.GridBagLayout());
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel1.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel2.text_1") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel1, gridBagConstraints);
+        jPanel1.add(jLabel2, gridBagConstraints);
 
-        jComboBox1.setModel(projects);
-        jComboBox1.setPreferredSize(new java.awt.Dimension(200, 22));
-        jComboBox1.setRenderer(renderer1);
-        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+        jComboBox3.setModel(projects);
+        jComboBox3.setPreferredSize(new java.awt.Dimension(200, 22));
+        jComboBox3.setRenderer(renderer1);
+        jComboBox3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 project(evt);
             }
@@ -324,82 +284,96 @@ public final class CreateRaindropVisualPanel1 extends JPanel
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        add(jComboBox1, gridBagConstraints);
+        jPanel1.add(jComboBox3, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler2, gridBagConstraints);
+        jPanel1.add(filler1, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel2.text") + ":"); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel4, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel4.text") + ":"); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel2, gridBagConstraints);
+        jPanel1.add(jLabel4, gridBagConstraints);
 
-        jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.LINE_AXIS));
+        jComboBox4.setModel(model);
+        jComboBox4.setRenderer(renderer2);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 6;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        add(jPanel1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler1, gridBagConstraints);
-
-        org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jCheckBox1.text")); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        add(jCheckBox1, gridBagConstraints);
+        jPanel1.add(jComboBox4, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        add(filler3, gridBagConstraints);
+        jPanel1.add(filler5, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jLabel3.text") + ":"); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        add(jLabel3, gridBagConstraints);
-
-        jComboBox2.setModel(model);
-        jComboBox2.setRenderer(renderer2);
+        org.openide.awt.Mnemonics.setLocalizedText(jCheckBox2, org.openide.util.NbBundle.getMessage(CreateRaindropVisualPanel1.class, "CreateRaindropVisualPanel1.jCheckBox2.text")); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        add(jComboBox2, gridBagConstraints);
+        jPanel1.add(jCheckBox2, gridBagConstraints);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(filler3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(filler4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(filler2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(filler3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(filler4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(filler2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(18, 18, 18)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
     }// </editor-fold>//GEN-END:initComponents
 
     private void project(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_project
-        setTags();
+        // TODO add your handling code here:
         setCollections();
     }//GEN-LAST:event_project
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.Box.Filler filler3;
-    private javax.swing.JCheckBox jCheckBox1;
-    private javax.swing.JComboBox<RaindropProject> jComboBox1;
-    private javax.swing.JComboBox<RaindropChildrenCollection> jComboBox2;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.Box.Filler filler4;
+    private javax.swing.Box.Filler filler5;
+    private javax.swing.JCheckBox jCheckBox2;
+    private javax.swing.JComboBox<RaindropProject> jComboBox3;
+    private javax.swing.JComboBox<RaindropChildrenCollection> jComboBox4;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }

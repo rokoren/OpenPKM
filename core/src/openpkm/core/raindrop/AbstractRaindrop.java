@@ -30,6 +30,7 @@ import openpkm.base.BacklinksProvider;
 import openpkm.base.Book;
 import openpkm.base.BulletIconProvider;
 import openpkm.base.Document;
+import openpkm.base.DomainsProvider;
 import openpkm.base.IconProvider;
 import openpkm.base.IconsProvider;
 import openpkm.base.TagsProvider;
@@ -66,7 +67,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Rok Koren
  */
-public abstract class AbstractRaindrop implements Raindrop, LinkProvider, IconProvider, TagsProvider, BacklinksProvider, TopicsProvider, MultiViewDescription
+public abstract class AbstractRaindrop implements Raindrop, LinkProvider, IconProvider, TagsProvider, BacklinksProvider, DomainsProvider, TopicsProvider, MultiViewDescription
 {
     @StaticResource()
     public static final String ICON = "openpkm/core/resources/raindrop.png";       
@@ -384,6 +385,17 @@ public abstract class AbstractRaindrop implements Raindrop, LinkProvider, IconPr
         if(backlinks != null && !backlinks.isBlank())
         {
             return Set.of(backlinks.split(","));                   
+        }                
+        return Collections.EMPTY_SET;
+    }  
+    
+    @Override
+    public Set<String> getDomains()
+    {
+        String domains = props.getProperty(PROP_DOMAINS);
+        if(domains != null)
+        {
+            return Set.of(domains.split(","));                   
         }                
         return Collections.EMPTY_SET;
     }     

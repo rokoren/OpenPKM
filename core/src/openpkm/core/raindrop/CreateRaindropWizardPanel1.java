@@ -5,7 +5,7 @@
 package openpkm.core.raindrop;
 
 import javax.swing.event.ChangeListener;
-import openpkm.base.TagsProvider;
+import openpkm.base.LinkProvider;
 import openpkm.raindrop.Raindrop;
 import openpkm.raindrop.RaindropCollection;
 import org.openide.WizardDescriptor;
@@ -53,6 +53,11 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
     @Override
     public void validate() throws WizardValidationException 
     {
+        if(getComponent().getLink().isBlank()) 
+        {
+            throw new WizardValidationException(null, "Link can not be empty", null);
+        }         
+        
         RaindropProject project = getComponent().getSelectedProject();
         if(project == null) 
         {
@@ -77,7 +82,12 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
     @Override
     public void readSettings(WizardDescriptor wiz) 
     {
-        // use wiz.getProperty to retrieve previous panel state     
+        // use wiz.getProperty to retrieve previous panel state   
+        String link = (String) wiz.getProperty(LinkProvider.PROP_LINK);
+        if(link != null)
+        {
+            getComponent().setLink(link);
+        }
     }
 
     @Override
@@ -88,6 +98,8 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
         if(project != null)
         {
             wiz.putProperty("project", project); 
+            
+            wiz.putProperty("provider", project); 
         }
         RaindropCollection collection = getComponent().getSelectedCollection();
         if(collection != null)
@@ -95,6 +107,6 @@ public class CreateRaindropWizardPanel1 implements WizardDescriptor.ValidatingPa
             wiz.putProperty("collection", collection);        
         }
         wiz.putProperty(Raindrop.PROPS_IMPORTANT, Boolean.valueOf(getComponent().isRaindropImportant()));        
-        wiz.putProperty(TagsProvider.PROP_TAGS, getComponent().getSelectedTags());        
+        //wiz.putProperty("mode", getComponent().getSelectedMode());        
     }
 }
